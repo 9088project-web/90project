@@ -1,6 +1,6 @@
 # 九零食刻 90 PROJECT 最终静态网站
 
-这是以 `90project_final_design.zip` 为主整理出来的最终 offline 本地版本。当前没有上传 GitHub，没有部署，也没有连接任何云端服务。
+这是以 `90project_final_design.zip` 为主整理出来的最终黑金品牌网站版本。网站可以本地打开测试，也可以部署到 Vercel；Supabase 属于可选云端同步层，未连接时会自动使用浏览器本地记录。
 
 ## 本地查看
 
@@ -82,10 +82,10 @@ Event:
 - 本地 Admin 后台，可修改每周菜单与自由加购
 - 本地 Admin 后台，可查看顾客询问与修改状态
 - WhatsApp 下单系统
-- WhatsApp 下单预览
 - 本地会员系统
 - 会员推荐奖励
 - SEO / Open Graph 分享资料
+- `robots.txt`、`sitemap.xml`、`site.webmanifest` 与 favicon
 - WebP 图片优化，JPG 自动后备
 - 品牌级餐饮包装
 - 外餐 Catering
@@ -103,7 +103,7 @@ https://wa.me/601110977166?text=编码后的订单内容
 
 JavaScript 使用 `encodeURIComponent` 处理中文内容。
 
-表单下方会即时显示 WhatsApp 信息预览，方便发送前检查姓名、电话、配套、人数、配送区域、加购和备注。提交后，该笔询问也会保存到本机浏览器的本地记录，Admin 可以在隐藏后台查看。
+提交后会自动生成 WhatsApp 询问内容，并保存到本机浏览器的本地记录，Admin 可以在隐藏后台查看。
 
 ## 中英双语
 
@@ -190,6 +190,50 @@ Admin 后台可以导出 JSON，本地保存以下资料：
 
 更换电脑或浏览器前，请先导出 JSON；到新环境后再通过 Admin 后台导入。
 
+## Supabase 连接
+
+网站现在支持可选 Supabase 云端同步。没有填写 Supabase 资料时，网站会继续使用本地 `localStorage`；连接后，WhatsApp 表单询问会同步到 Supabase，后台 admin 登录后可以读取云端询问、更新状态，并把每周菜单与 Add-ons 内容同步到云端。
+
+1. 在 Supabase 新建项目。
+2. 打开 Supabase SQL Editor，执行 `supabase/schema.sql`。
+3. 到 Supabase Authentication 创建 admin 用户：
+
+```text
+admin@90project.local
+admin123456
+```
+
+4. 在 SQL Editor 把该用户设成 admin：
+
+```sql
+update public.profiles
+set role = 'admin'
+where user_id = (
+  select id from auth.users where email = 'admin@90project.local'
+);
+```
+
+5. 到 Supabase Project Settings > API，复制 Project URL 和 anon public key。
+6. 本地测试可以打开 `js/supabase-config.json`，填入：
+
+```json
+{
+  "url": "https://你的项目.supabase.co",
+  "anonKey": "你的 anon public key"
+}
+```
+
+注意：不要把 `service_role` key 放进网页。前端只可以使用 anon public key。
+
+Vercel 线上版本建议使用 Environment Variables，不要把 key 写进源码：
+
+```text
+SUPABASE_URL=你的 Supabase Project URL
+SUPABASE_ANON_KEY=你的 anon public key
+```
+
+上线时，`api/supabase-config.js` 会从 Vercel 环境变量读取这些资料；没有设置时，网站会继续使用本地模式。
+
 ## 图片优化
 
 所有原 JPG 图片已保留，同时生成对应 `.webp` 版本。首页会优先加载 WebP，浏览器不支持时自动使用 JPG 后备。
@@ -205,11 +249,11 @@ Admin 后台可以导出 JSON，本地保存以下资料：
 
 ## GitHub 上传
 
-现在先不要上传。确认本地版本后，可以再执行：
+确认本地版本后，可以执行：
 
 ```bash
 git status
-git add index.html css/style.css js/app.js assets/images README.md backup-index.html backup-style.css backup-app.js
-git commit -m "Finalize 90 PROJECT website"
+git add index.html css/style.css js/app.js js/supabase-config.json api/supabase-config.js robots.txt sitemap.xml site.webmanifest README.md supabase/schema.sql
+git commit -m "Connect Supabase and polish order flow"
 git push
 ```

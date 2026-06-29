@@ -19,6 +19,9 @@
   <meta name="twitter:description" content="九零食刻 90 PROJECT - 包伙食、外餐、活动餐饮、布置设计。高级餐饮品牌服务，日常价格享受。" />
   <meta name="twitter:image" content="https://project-ctx0q.vercel.app/assets/images/brand/hero-banquet.jpg" />
   <title>九零食刻 90 PROJECT｜包伙食 · 外餐 · 活动餐饮 · 布置设计</title>
+  <link rel="icon" type="image/jpeg" href="assets/images/logo/logo-icon-dark.jpg" />
+  <link rel="apple-touch-icon" href="assets/images/logo/logo-icon-light.jpg" />
+  <link rel="manifest" href="site.webmanifest" />
   <link rel="stylesheet" href="css/style.css" />
 </head>
 <body>
@@ -219,29 +222,29 @@
             <h2>WhatsApp 下单系统</h2>
             <span>ORDER FORM</span>
           </div>
-          <form id="orderForm">
+          <form id="orderForm" novalidate>
             <div class="form-grid">
-              <label>姓名 Name<input id="name" type="text" placeholder="请输入姓名"></label>
-              <label>电话 Phone<input id="phone" type="tel" placeholder="请输入电话"></label>
+              <label>姓名 Name<input id="name" type="text" placeholder="请输入姓名" autocomplete="name" required></label>
+              <label>电话 Phone<input id="phone" type="tel" placeholder="请输入电话" autocomplete="tel" inputmode="tel" pattern="[0-9+\-\s]{8,20}" required></label>
               <label>配套 Package
-                <select id="package">
+                <select id="package" required>
                   <option value="标准包伙食 RM300/月">标准包伙食 RM300/月</option>
                   <option value="丰富包伙食 RM380/月">丰富包伙食 RM380/月</option>
                   <option value="家庭配套 WhatsApp 询问">家庭配套 WhatsApp 询问</option>
                   <option value="活动餐饮 Catering">活动餐饮 Catering</option>
                 </select>
               </label>
-              <label>人数 Pax<input id="pax" type="number" min="1" placeholder="请输入人数"></label>
+              <label>人数 Pax<input id="pax" type="number" min="1" placeholder="请输入人数" required></label>
               <label>餐期 Meal
-                <select id="meal">
+                <select id="meal" required>
                   <option value="午餐 Lunch">午餐 Lunch</option>
                   <option value="晚餐 Dinner">晚餐 Dinner</option>
                   <option value="午餐 + 晚餐 Lunch + Dinner">午餐 + 晚餐</option>
                 </select>
               </label>
-              <label>开始日期 Start Date<input id="date" type="date"></label>
+              <label>开始日期 Start Date<input id="date" type="date" required></label>
             </div>
-            <label>配送区域 Delivery Area<input id="area" type="text" placeholder="请输入配送地区"></label>
+            <label>配送区域 Delivery Area<input id="area" type="text" placeholder="请输入配送地区" required></label>
             <label>推荐码 Referral Code<input id="referralCode" type="text" placeholder="朋友推荐可填写，例如 NP90-XXXX"></label>
             <fieldset>
               <legend>加购 Add-ons</legend>
@@ -252,13 +255,7 @@
               <label><input type="checkbox" value="饮料 Drink"> 饮料</label>
             </fieldset>
             <label>备注 Notes<textarea id="notes" rows="3" placeholder="其他要求 / 不要辣 / 不要某种食材"></textarea></label>
-            <div class="order-preview" aria-live="polite">
-              <div class="order-preview-head">
-                <span>WHATSAPP PREVIEW</span>
-                <button type="button" id="copyOrderPreview">复制内容</button>
-              </div>
-              <pre id="orderPreviewText">填写资料后，这里会显示即将发送到 WhatsApp 的订单内容。</pre>
-            </div>
+            <p class="form-message" id="orderFormMessage" aria-live="polite"></p>
             <button type="submit" class="btn btn-gold btn-wide">WhatsApp 确认订单</button>
           </form>
         </article>
@@ -373,12 +370,12 @@
 
         <div class="referral-note">
           <strong>透明规则：</strong>
-          <span>奖励只按直接推荐计算，不做层级累计；所有奖励以实际订单、付款与 WhatsApp 确认为准。</span>
+          <span>奖励属于下次服务抵扣，不可兑换现金或转让；1% 只按直接推荐的已确认实付消费额计算，不做多层累计。</span>
         </div>
         <ul class="referral-terms">
           <li>朋友首次成功消费后，RM20 会记录为下次服务抵扣。</li>
-          <li>1% 回馈只按直接推荐的已确认消费额计算。</li>
-          <li>奖励不能兑换现金，最终以 WhatsApp 与管理员确认记录为准。</li>
+          <li>1% 只按直接推荐的已确认实付消费额计算，不做多层累计，不属于投资或现金返利计划。</li>
+          <li>最终以管理员审核、付款记录与 WhatsApp 确认为准；九零食刻保留调整活动条款的权利。</li>
         </ul>
       </div>
     </section>
@@ -567,6 +564,6 @@
 
   <a class="mobile-wa" href="#order">☏ WhatsApp 下单</a>
   <button class="back-top" id="backTop" aria-label="返回顶部">↑</button>
-  <script src="js/app.js"></script>
+  <script src="js/app.js?v=20260629-supabase"></script>
 </body>
 </html>

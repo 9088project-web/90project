@@ -1,0 +1,15 @@
+{
+  "name": "九零食刻 90 PROJECT",
+  "short_name": "90 PROJECT",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0e0b08",
+  "theme_color": "#0e0b08",
+  "icons": [
+    {
+      "src": "assets/images/logo/logo-icon-dark.jpg",
+      "sizes": "512x512",
+      "type": "image/jpeg"
+    }
+  ]
+}

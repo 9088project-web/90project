@@ -4,6 +4,7 @@ const backTop = document.getElementById('backTop');
 const form = document.getElementById('orderForm');
 const orderPreviewText = document.getElementById('orderPreviewText');
 const copyOrderPreview = document.getElementById('copyOrderPreview');
+const orderFormMessage = document.getElementById('orderFormMessage');
 
 const memberOpen = document.getElementById('memberOpen');
 const memberModal = document.getElementById('memberModal');
@@ -52,10 +53,16 @@ const ADMIN_CONTENT_KEY = 'np90_admin_content_v1';
 const ADMIN_SESSION_KEY = 'np90_admin_session_v1';
 const ADMIN_ATTEMPTS_KEY = 'np90_admin_attempts_v1';
 const ADMIN_LOCK_KEY = 'np90_admin_lock_until_v1';
+const SUPABASE_SESSION_KEY = 'np90_supabase_session_v1';
+const ADMIN_CONTENT_SETTING_KEY = 'admin_content';
 const ADMIN_EMAIL = 'admin@90project.local';
 const ADMIN_PASSWORD_HASH = '3b523443';
 const WHATSAPP_NUMBER = '601110977166';
 const INQUIRY_STATUSES = ['new', 'contacted', 'quoted', 'confirmed', 'completed', 'cancelled'];
+
+let supabaseInquiriesCache = [];
+let supabaseFetchInProgress = false;
+let supabaseRuntimeConfig = { ...(window.NP90_SUPABASE || {}) };
 
 const translations = {
   zh: {
@@ -129,11 +136,11 @@ const translations = {
         { title: '会员推荐码', desc: '登录会员中心即可查看自己的推荐码。朋友 WhatsApp 下单时填入推荐码，我们会协助登记。' }
       ],
       noteStrong: '透明规则：',
-      note: '奖励只按直接推荐计算，不做层级累计；所有奖励以实际订单、付款与 WhatsApp 确认为准。',
+      note: '奖励属于下次服务抵扣，不可兑换现金或转让；1% 只按直接推荐的已确认实付消费额计算，不做多层累计。',
       terms: [
         '朋友首次成功消费后，RM20 会记录为下次服务抵扣。',
-        '1% 回馈只按直接推荐的已确认消费额计算。',
-        '奖励不能兑换现金，最终以 WhatsApp 与管理员确认记录为准。'
+        '1% 只按直接推荐的已确认实付消费额计算，不做多层累计，不属于投资或现金返利计划。',
+        '最终以管理员审核、付款记录与 WhatsApp 确认为准；九零食刻保留调整活动条款的权利。'
       ]
     },
     weekly: {
@@ -348,11 +355,11 @@ const translations = {
         { title: 'Member referral code', desc: 'Log in to your member centre to view your referral code. Your friend can enter it when ordering through WhatsApp.' }
       ],
       noteStrong: 'Clear rule:',
-      note: 'Rewards are calculated for direct referrals only, with no tier accumulation. Final rewards depend on actual orders, payment and WhatsApp confirmation.',
+      note: 'Rewards are next-order service credits only. They are not cash, transferable balance or a multi-level commission plan.',
       terms: [
         'RM20 is recorded as next-order credit after the friend completes a first purchase.',
-        'The 1% reward is calculated from the confirmed spending of direct referrals only.',
-        'Rewards cannot be exchanged for cash and depend on WhatsApp and admin confirmation.'
+        'The 1% reward is calculated only from confirmed paid spending by direct referrals, with no multi-level accumulation.',
+        'Final approval depends on admin review, payment records and WhatsApp confirmation. 90 PROJECT may adjust campaign terms when needed.'
       ]
     },
     weekly: {
@@ -512,6 +519,132 @@ function displayValue(value) {
   return value && value.trim ? value.trim() : value || '-';
 }
 
+function supabaseUrl() {
+  return String(supabaseRuntimeConfig.url || '').replace(/\/+$/, '');
+}
+
+function supabaseAnonKey() {
+  return String(supabaseRuntimeConfig.anonKey || '');
+}
+
+async function fetchSupabaseConfig(path) {
+  try {
+    const response = await fetch(path, { cache: 'no-store' });
+    if (!response.ok) return null;
+    const config = await response.json();
+    return config && typeof config === 'object' ? config : null;
+  } catch (error) {
+    return null;
+  }
+}
+
+async function loadSupabaseRuntimeConfig() {
+  const apiConfig = await fetchSupabaseConfig('/api/supabase-config');
+  if (apiConfig?.url && apiConfig?.anonKey) {
+    supabaseRuntimeConfig = { ...supabaseRuntimeConfig, ...apiConfig };
+    return;
+  }
+
+  const jsonConfig = await fetchSupabaseConfig('js/supabase-config.json?v=20260629-supabase');
+  if (jsonConfig) supabaseRuntimeConfig = { ...supabaseRuntimeConfig, ...jsonConfig };
+}
+
+function isSupabaseConfigured() {
+  const url = supabaseUrl();
+  const key = supabaseAnonKey();
+  return /^https:\/\/[a-z0-9-]+\.supabase\.co$/i.test(url)
+    && key.length > 30
+    && !url.includes('your-project')
+    && !key.includes('your-anon-key');
+}
+
+function getSupabaseSession() {
+  try {
+    return JSON.parse(localStorage.getItem(SUPABASE_SESSION_KEY) || 'null');
+  } catch (error) {
+    return null;
+  }
+}
+
+function setSupabaseSession(session) {
+  if (session?.access_token) {
+    localStorage.setItem(SUPABASE_SESSION_KEY, JSON.stringify({
+      access_token: session.access_token,
+      user: session.user || null,
+      expires_at: session.expires_at || null
+    }));
+    return;
+  }
+
+  localStorage.removeItem(SUPABASE_SESSION_KEY);
+}
+
+function supabaseAuthToken() {
+  return getSupabaseSession()?.access_token || supabaseAnonKey();
+}
+
+async function supabaseFetch(path, options = {}) {
+  if (!isSupabaseConfigured()) return null;
+
+  const headers = {
+    apikey: supabaseAnonKey(),
+    Authorization: `Bearer ${options.token || supabaseAuthToken()}`,
+    Accept: 'application/json',
+    ...options.headers
+  };
+
+  if (options.body) headers['Content-Type'] = 'application/json';
+
+  const response = await fetch(`${supabaseUrl()}${path}`, {
+    method: options.method || 'GET',
+    headers,
+    body: options.body ? JSON.stringify(options.body) : undefined
+  });
+
+  if (!response.ok) {
+    const message = await response.text();
+    throw new Error(message || `Supabase request failed: ${response.status}`);
+  }
+
+  if (response.status === 204) return null;
+  const text = await response.text();
+  return text ? JSON.parse(text) : null;
+}
+
+async function supabaseAdminSignIn(email, password) {
+  if (!isSupabaseConfigured()) return { ok: false, skipped: true };
+
+  const response = await fetch(`${supabaseUrl()}/auth/v1/token?grant_type=password`, {
+    method: 'POST',
+    headers: {
+      apikey: supabaseAnonKey(),
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ email, password })
+  });
+
+  if (!response.ok) return { ok: false };
+
+  const session = await response.json();
+  const userId = session?.user?.id;
+  if (!session?.access_token || !userId) return { ok: false };
+
+  const profiles = await supabaseFetch(
+    `/rest/v1/profiles?select=role,status&user_id=eq.${encodeURIComponent(userId)}&limit=1`,
+    { token: session.access_token }
+  );
+  const profile = profiles?.[0];
+  const isAdmin = profile?.status !== 'inactive' && ['admin', 'super_admin'].includes(profile?.role);
+
+  if (!isAdmin) {
+    setSupabaseSession(null);
+    return { ok: false, notAdmin: true };
+  }
+
+  setSupabaseSession(session);
+  return { ok: true };
+}
+
 function cloneData(data) {
   return JSON.parse(JSON.stringify(data));
 }
@@ -522,6 +655,155 @@ function htmlToPlainText(value) {
 
 function formatMultiline(value) {
   return escapeHtml(String(value || '')).replace(/\n/g, '<br>');
+}
+
+const AUTO_TRANSLATION_PHRASES = [
+  ['每周菜单轮换，实际菜色会根据当天新鲜食材调整。', 'Weekly menus rotate and may change based on fresh ingredients available for the day.'],
+  ['每周菜单轮换', 'Weekly menus rotate'],
+  ['实际菜色会根据当天新鲜食材调整', 'actual dishes may change based on fresh ingredients available for the day'],
+  ['请帮我确认价格和配送安排，谢谢。', 'Please help confirm the price and delivery arrangement. Thank you.'],
+  ['可询问', 'Ask us'],
+  ['询问', 'Ask us'],
+  ['星期一', 'Monday'],
+  ['星期二', 'Tuesday'],
+  ['星期三', 'Wednesday'],
+  ['星期四', 'Thursday'],
+  ['星期五', 'Friday'],
+  ['星期六', 'Saturday'],
+  ['星期日', 'Sunday'],
+  ['星期天', 'Sunday'],
+  ['周一', 'Monday'],
+  ['周二', 'Tuesday'],
+  ['周三', 'Wednesday'],
+  ['周四', 'Thursday'],
+  ['周五', 'Friday'],
+  ['周六', 'Saturday'],
+  ['周日', 'Sunday'],
+  ['周天', 'Sunday'],
+  ['腊肠炒饭', 'Chinese Sausage Fried Rice'],
+  ['蛋炒饭', 'Egg Fried Rice'],
+  ['扬州炒饭', 'Yangzhou Fried Rice'],
+  ['炒米粉', 'Fried Mee Hoon'],
+  ['福建面', 'Hokkien Mee'],
+  ['皮蛋瘦肉粥', 'Century Egg Pork Porridge'],
+  ['鸡丝粥', 'Shredded Chicken Porridge'],
+  ['咖喱鸡', 'Curry Chicken'],
+  ['酱油鸡', 'Soy Sauce Chicken'],
+  ['Sambal 鸡', 'Sambal Chicken'],
+  ['香料炸鸡', 'Spiced Fried Chicken'],
+  ['咸蛋奶油鸡', 'Salted Egg Butter Chicken'],
+  ['黑胡椒鸡扒', 'Black Pepper Chicken Chop'],
+  ['蘑菇鸡扒', 'Mushroom Chicken Chop'],
+  ['姜葱鸡', 'Ginger Onion Chicken'],
+  ['炸鸡扒', 'Fried Chicken Chop'],
+  ['Lemon Chicken', 'Lemon Chicken'],
+  ['Sweet & Sour Chicken', 'Sweet & Sour Chicken'],
+  ['Ginger Onion Chicken', 'Ginger Onion Chicken'],
+  ['南乳炸肉', 'Nam Yue Fried Pork'],
+  ['咸蛋奶油猪', 'Salted Egg Butter Pork'],
+  ['糖醋肉', 'Sweet and Sour Pork'],
+  ['咕噜肉', 'Sweet and Sour Pork'],
+  ['姜葱肉片', 'Ginger Onion Pork Slices'],
+  ['红烧肉', 'Braised Pork'],
+  ['蒜香五花肉', 'Garlic Pork Belly'],
+  ['宫保鱼片', 'Kung Pao Fish Fillet'],
+  ['咸蛋奶油鱼', 'Salted Egg Butter Fish'],
+  ['炸鱼柳', 'Fried Fish Fillet'],
+  ['Sweet Sour Fish', 'Sweet Sour Fish'],
+  ['黑椒鱼柳', 'Black Pepper Fish Fillet'],
+  ['姜葱鱼片', 'Ginger Onion Fish Fillet'],
+  ['酸辣鱼片', 'Hot and Sour Fish Fillet'],
+  ['泰式柠檬鱼', 'Thai Lemon Fish'],
+  ['香煎鱼', 'Pan-seared Fish'],
+  ['椒盐虾', 'Salt and Pepper Prawns'],
+  ['麦片虾', 'Cereal Prawns'],
+  ['咸蛋奶油虾', 'Salted Egg Butter Prawns'],
+  ['泰式豆腐', 'Thai-style Tofu'],
+  ['红烧豆腐', 'Braised Tofu'],
+  ['麻婆豆腐', 'Mapo Tofu'],
+  ['家常豆腐', 'Homestyle Tofu'],
+  ['番茄炒蛋', 'Tomato Egg'],
+  ['蒸水蛋', 'Steamed Egg'],
+  ['炒什锦菜', 'Stir-fried Mixed Vegetables'],
+  ['干煸四季豆', 'Dry-fried French Beans'],
+  ['娘惹阿杂', 'Nyonya Acar'],
+  ['蒜蓉西兰花', 'Garlic Broccoli'],
+  ['清炒小白菜', 'Stir-fried Bok Choy'],
+  ['奶油杂菜', 'Creamy Mixed Vegetables'],
+  ['蚝油生菜', 'Oyster Sauce Lettuce'],
+  ['蒜蓉菠菜', 'Garlic Spinach'],
+  ['炒高丽菜', 'Stir-fried Cabbage'],
+  ['炒青菜', 'Stir-fried Greens'],
+  ['炒时蔬', 'Seasonal Vegetables'],
+  ['清炒菜心', 'Stir-fried Choy Sum'],
+  ['荷包蛋', 'Fried Egg'],
+  ['白饭', 'Rice'],
+  ['豆腐', 'Tofu'],
+  ['主食', 'Staple'],
+  ['鸡肉类', 'Chicken'],
+  ['猪肉类', 'Pork'],
+  ['鱼类', 'Fish'],
+  ['虾类', 'Prawns'],
+  ['豆腐 / 蛋类', 'Tofu / Egg'],
+  ['蔬菜类', 'Vegetables'],
+  ['汤类', 'Soup'],
+  ['清淡餐', 'Light Meal'],
+  ['加蛋', 'Add Egg'],
+  ['加肉', 'Extra Meat'],
+  ['加汤', 'Soup'],
+  ['加菜', 'Extra Veg'],
+  ['饮料', 'Drink'],
+  ['午餐', 'Lunch'],
+  ['晚餐', 'Dinner'],
+  ['不要辣', 'No spicy'],
+  ['少辣', 'Less spicy'],
+  ['不辣', 'No spicy'],
+  ['清淡', 'Light taste'],
+  ['少油', 'Less oil'],
+  ['少盐', 'Less salt']
+].sort((a, b) => b[0].length - a[0].length);
+
+function dedupeLines(lines) {
+  const seen = new Set();
+  return lines.filter(line => {
+    const key = line.trim().toLowerCase();
+    if (!key || seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
+function autoTranslateLine(value) {
+  let line = String(value || '').trim();
+  if (!line) return '';
+  if (!/[\u3400-\u9fff]/.test(line)) return line;
+
+  AUTO_TRANSLATION_PHRASES.forEach(([source, target]) => {
+    line = line.split(source).join(target);
+  });
+
+  return line
+    .replace(/（/g, '(')
+    .replace(/）/g, ')')
+    .replace(/，/g, ', ')
+    .replace(/。/g, '.')
+    .replace(/、/g, ', ')
+    .replace(/；/g, '; ')
+    .replace(/：/g, ': ')
+    .replace(/＋/g, ' + ')
+    .replace(/\s*\+\s*/g, ' + ')
+    .replace(/\s*\/\s*/g, ' / ')
+    .replace(/\s{2,}/g, ' ')
+    .replace(/\s+\./g, '.')
+    .trim();
+}
+
+function autoTranslateText(value) {
+  const lines = String(value || '')
+    .split(/\n+/)
+    .map(autoTranslateLine)
+    .filter(Boolean);
+  return dedupeLines(lines).join('\n');
 }
 
 function defaultAdminContent() {
@@ -589,6 +871,50 @@ function loadAdminContent() {
 
 function saveEditableContent(content) {
   localStorage.setItem(ADMIN_CONTENT_KEY, JSON.stringify(normalizeAdminContent(content)));
+}
+
+function parseRemoteAdminContent(value) {
+  if (!value) return null;
+  if (typeof value === 'object') return normalizeAdminContent(value);
+
+  try {
+    return normalizeAdminContent(JSON.parse(value));
+  } catch (error) {
+    console.warn('Supabase admin content is not valid JSON', error);
+    return null;
+  }
+}
+
+async function loadAdminContentFromSupabase() {
+  if (!isSupabaseConfigured()) return false;
+
+  try {
+    const rows = await supabaseFetch(
+      `/rest/v1/site_settings?select=value&key=eq.${encodeURIComponent(ADMIN_CONTENT_SETTING_KEY)}&limit=1`,
+      { token: supabaseAnonKey() }
+    );
+    const content = parseRemoteAdminContent(rows?.[0]?.value);
+    if (!content) return false;
+    saveEditableContent(content);
+    return true;
+  } catch (error) {
+    console.warn('Supabase admin content load failed', error);
+    return false;
+  }
+}
+
+async function saveAdminContentToSupabase(content) {
+  if (!isSupabaseConfigured() || !getSupabaseSession()?.access_token) return false;
+
+  await supabaseFetch(`/rest/v1/site_settings?on_conflict=key`, {
+    method: 'POST',
+    headers: { Prefer: 'resolution=merge-duplicates,return=minimal' },
+    body: {
+      key: ADMIN_CONTENT_SETTING_KEY,
+      value: JSON.stringify(normalizeAdminContent(content))
+    }
+  });
+  return true;
 }
 
 function editableContentForLanguage() {
@@ -1193,6 +1519,36 @@ function collectOrderData() {
   };
 }
 
+function showOrderMessage(message = '', isError = false) {
+  if (!orderFormMessage) return;
+  orderFormMessage.textContent = message;
+  orderFormMessage.classList.toggle('is-error', Boolean(isError));
+}
+
+function validateOrderData(data) {
+  const missingRequired = !data.name || !data.phone || !data.package || !data.pax || !data.meal || !data.date || !data.area;
+  if (missingRequired) {
+    return currentLanguage === 'en'
+      ? 'Please fill in name, phone, package, pax, meal, start date and delivery area before opening WhatsApp.'
+      : '请先填写姓名、电话、配套、人数、餐期、开始日期和配送区域，再打开 WhatsApp。';
+  }
+
+  if (!/^[0-9+\-\s]{8,20}$/.test(data.phone)) {
+    return currentLanguage === 'en'
+      ? 'Please enter a valid phone number with 8 to 20 digits or symbols.'
+      : '请输入正确电话号码，可使用数字、空格、+ 或 -，长度 8 到 20 位。';
+  }
+
+  const pax = Number.parseInt(data.pax, 10);
+  if (!Number.isFinite(pax) || pax < 1) {
+    return currentLanguage === 'en'
+      ? 'Please enter at least 1 pax.'
+      : '人数至少需要填写 1 人。';
+  }
+
+  return '';
+}
+
 function buildOrderMessage(data) {
   if (currentLanguage === 'en') {
     return `Hi, I would like to ask about 90 PROJECT meal plan / catering service.
@@ -1242,6 +1598,100 @@ function createInquiryId() {
   return `NP90-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).slice(2, 6).toUpperCase()}`;
 }
 
+function inquiryToSupabasePayload(inquiry) {
+  const pax = Number.parseInt(inquiry.pax, 10);
+  return {
+    customer_name: inquiry.name || '-',
+    phone: inquiry.phone || '-',
+    event_date: inquiry.date || null,
+    event_location: inquiry.area || null,
+    guest_count: Number.isFinite(pax) ? pax : null,
+    service_type: [inquiry.package, inquiry.meal].filter(Boolean).join(' | ') || null,
+    budget: inquiry.referralCode ? `Referral: ${inquiry.referralCode}` : null,
+    message: buildOrderMessage(inquiry),
+    status: inquiry.status || 'new',
+    admin_notes: [
+      inquiry.addons ? `Add-ons: ${inquiry.addons}` : '',
+      inquiry.notes ? `Notes: ${inquiry.notes}` : '',
+      inquiry.language ? `Language: ${inquiry.language}` : ''
+    ].filter(Boolean).join('\n') || null
+  };
+}
+
+function supabaseRowToInquiry(row) {
+  const [packageName = row.service_type || '', meal = ''] = String(row.service_type || '').split(' | ');
+  const notes = String(row.admin_notes || '').replace(/^Add-ons:.*$/m, '').replace(/^Language:.*$/m, '').replace(/^Notes:\s*/m, '').trim();
+  const addonsMatch = String(row.admin_notes || '').match(/^Add-ons:\s*(.+)$/m);
+  return {
+    id: row.id,
+    supabaseId: row.id,
+    name: row.customer_name || '',
+    phone: row.phone || '',
+    package: packageName,
+    pax: row.guest_count ? String(row.guest_count) : '',
+    meal,
+    date: row.event_date || '',
+    area: row.event_location || '',
+    referralCode: String(row.budget || '').replace(/^Referral:\s*/i, ''),
+    addons: addonsMatch?.[1] || '',
+    notes,
+    status: row.status || 'new',
+    source: 'supabase',
+    createdAt: row.created_at || new Date().toISOString(),
+    updatedAt: row.updated_at || row.created_at || new Date().toISOString()
+  };
+}
+
+async function syncInquiryToSupabase(inquiry) {
+  if (!isSupabaseConfigured()) return;
+  try {
+    const rows = await supabaseFetch('/rest/v1/inquiries?select=id,created_at,updated_at', {
+      method: 'POST',
+      headers: { Prefer: 'return=representation' },
+      body: inquiryToSupabasePayload(inquiry)
+    });
+    const remote = rows?.[0];
+    if (!remote?.id) return;
+
+    const inquiries = loadInquiries();
+    const local = inquiries.find(item => item.id === inquiry.id);
+    if (local) {
+      local.supabaseId = remote.id;
+      local.updatedAt = remote.updated_at || local.updatedAt;
+      saveInquiries(inquiries);
+    }
+
+    refreshSupabaseInquiries();
+  } catch (error) {
+    console.warn('Supabase inquiry sync failed', error);
+  }
+}
+
+function combinedAdminInquiries() {
+  const localInquiries = loadInquiries();
+  if (!supabaseInquiriesCache.length) return localInquiries;
+
+  const remoteIds = new Set(supabaseInquiriesCache.map(item => item.supabaseId || item.id));
+  const unsyncedLocal = localInquiries.filter(item => !item.supabaseId || !remoteIds.has(item.supabaseId));
+  return [...supabaseInquiriesCache, ...unsyncedLocal]
+    .sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+}
+
+async function refreshSupabaseInquiries() {
+  if (!isSupabaseConfigured() || !getSupabaseSession()?.access_token || supabaseFetchInProgress) return;
+
+  supabaseFetchInProgress = true;
+  try {
+    const rows = await supabaseFetch('/rest/v1/inquiries?select=*&order=created_at.desc&limit=80');
+    supabaseInquiriesCache = Array.isArray(rows) ? rows.map(supabaseRowToInquiry) : [];
+  } catch (error) {
+    console.warn('Supabase inquiries fetch failed', error);
+  } finally {
+    supabaseFetchInProgress = false;
+    renderAdminInquiries(false);
+  }
+}
+
 function loadInquiries() {
   try {
     const inquiries = JSON.parse(localStorage.getItem(INQUIRIES_KEY) || '[]');
@@ -1269,6 +1719,7 @@ function saveInquiryForAdmin(orderData) {
   inquiries.unshift(inquiry);
   saveInquiries(inquiries);
   renderAdminInquiries();
+  syncInquiryToSupabase(inquiry);
   return inquiry;
 }
 
@@ -1299,15 +1750,29 @@ function statusOptions(selectedStatus) {
   )).join('');
 }
 
-function renderAdminInquiries() {
+function renderAdminInquiries(refreshRemote = true) {
   if (!adminInquiries) return;
-  const inquiries = loadInquiries();
+  if (refreshRemote) refreshSupabaseInquiries();
+
+  const inquiries = combinedAdminInquiries();
+  const localCount = loadInquiries().length;
+  const cloudCount = supabaseInquiriesCache.length;
   const t = languageText();
 
   if (adminDataStatus) {
-    adminDataStatus.textContent = currentLanguage === 'en'
-      ? `${inquiries.length} local inquiries saved in this browser. Export JSON before changing devices.`
-      : `这个浏览器目前保存 ${inquiries.length} 笔本地询问。更换电脑前建议先导出 JSON 备份。`;
+    if (isSupabaseConfigured() && getSupabaseSession()?.access_token) {
+      adminDataStatus.textContent = currentLanguage === 'en'
+        ? `Supabase connected. ${cloudCount} cloud inquiries and ${localCount} local fallback records are available.`
+        : `Supabase 已连接。目前可查看 ${cloudCount} 笔云端询问，并保留 ${localCount} 笔本地备份。`;
+    } else if (isSupabaseConfigured()) {
+      adminDataStatus.textContent = currentLanguage === 'en'
+        ? `${localCount} local inquiries saved. Log in with a Supabase admin account to read cloud inquiries.`
+        : `这个浏览器目前保存 ${localCount} 笔本地询问。使用 Supabase admin 账号登录后可读取云端询问。`;
+    } else {
+      adminDataStatus.textContent = currentLanguage === 'en'
+        ? `${localCount} local inquiries saved in this browser. Add Supabase config to enable cloud sync.`
+        : `这个浏览器目前保存 ${localCount} 笔本地询问。填入 Supabase 设定后可开启云端同步。`;
+    }
   }
 
   if (!inquiries.length) {
@@ -1346,8 +1811,29 @@ function renderAdminInquiries() {
   }).join('');
 }
 
-function setInquiryStatus(id, status) {
+async function setInquiryStatus(id, status) {
   if (!INQUIRY_STATUSES.includes(status)) return;
+  const remoteInquiry = supabaseInquiriesCache.find(item => item.id === id || item.supabaseId === id);
+  if (remoteInquiry?.supabaseId && isSupabaseConfigured() && getSupabaseSession()?.access_token) {
+    try {
+      await supabaseFetch(`/rest/v1/inquiries?id=eq.${encodeURIComponent(remoteInquiry.supabaseId)}`, {
+        method: 'PATCH',
+        headers: { Prefer: 'return=minimal' },
+        body: { status }
+      });
+      remoteInquiry.status = status;
+      remoteInquiry.updatedAt = new Date().toISOString();
+      renderAdminInquiries(false);
+      return;
+    } catch (error) {
+      console.warn('Supabase status update failed', error);
+      showAdminMessage(currentLanguage === 'en'
+        ? 'Unable to update Supabase status. Local record is unchanged.'
+        : '无法更新 Supabase 状态，本地记录未更改。', true);
+      return;
+    }
+  }
+
   const inquiries = loadInquiries();
   const inquiry = inquiries.find(item => item.id === id);
   if (!inquiry) return;
@@ -1355,6 +1841,18 @@ function setInquiryStatus(id, status) {
   inquiry.updatedAt = new Date().toISOString();
   saveInquiries(inquiries);
   renderAdminInquiries();
+
+  if (inquiry.supabaseId && isSupabaseConfigured() && getSupabaseSession()?.access_token) {
+    try {
+      await supabaseFetch(`/rest/v1/inquiries?id=eq.${encodeURIComponent(inquiry.supabaseId)}`, {
+        method: 'PATCH',
+        headers: { Prefer: 'return=minimal' },
+        body: { status }
+      });
+    } catch (error) {
+      console.warn('Supabase local status mirror failed', error);
+    }
+  }
 }
 
 function exportLocalBackup() {
@@ -1504,6 +2002,83 @@ function adminRowValue(row, selector) {
   return row.querySelector(selector)?.value?.trim() || '';
 }
 
+function markManualTranslationField(field) {
+  if (!field) return;
+  const currentAutoValue = field.dataset.autoTranslation || '';
+  field.dataset.manualTranslation = field.value.trim() && field.value !== currentAutoValue ? '1' : '0';
+}
+
+function updateTranslatedField(field, value, force = false) {
+  if (!field) return;
+  const translatedValue = autoTranslateText(value);
+  const currentAutoValue = field.dataset.autoTranslation || '';
+  const wasEditedManually = field.dataset.manualTranslation === '1' && field.value !== currentAutoValue;
+
+  if (!force && wasEditedManually && field.value.trim()) return;
+
+  field.value = translatedValue;
+  field.dataset.autoTranslation = translatedValue;
+  field.dataset.manualTranslation = '0';
+}
+
+function primeTranslatedField(field) {
+  if (!field) return;
+  field.dataset.autoTranslation = field.value || '';
+  field.dataset.manualTranslation = '0';
+}
+
+function translateAdminRow(row, force = false) {
+  if (!row) return;
+  const pairs = [
+    ['[data-field="zh-day"]', '[data-field="en-day"]'],
+    ['[data-field="zh-dish"]', '[data-field="en-dish"]'],
+    ['[data-field="zh-name"]', '[data-field="en-name"]'],
+    ['[data-field="zh-price"]', '[data-field="en-price"]']
+  ];
+
+  pairs.forEach(([sourceSelector, targetSelector]) => {
+    const source = row.querySelector(sourceSelector);
+    const target = row.querySelector(targetSelector);
+    if (source && target) updateTranslatedField(target, source.value, force);
+  });
+}
+
+function autoTranslateAdminEditor(force = false) {
+  if (weeklyNoteZh && weeklyNoteEn) {
+    updateTranslatedField(weeklyNoteEn, weeklyNoteZh.value, force);
+  }
+
+  adminWeeklyRows?.querySelectorAll('[data-weekly-row]').forEach(row => translateAdminRow(row, force));
+  adminAddonRows?.querySelectorAll('[data-addon-row]').forEach(row => translateAdminRow(row, force));
+}
+
+function primeAdminTranslationFields() {
+  primeTranslatedField(weeklyNoteEn);
+  adminWeeklyRows?.querySelectorAll('[data-field="en-day"], [data-field="en-dish"]').forEach(primeTranslatedField);
+  adminAddonRows?.querySelectorAll('[data-field="en-name"], [data-field="en-price"]').forEach(primeTranslatedField);
+}
+
+function ensureAdminTranslateHelper() {
+  if (!adminDashboard || document.getElementById('autoTranslateAdminContent')) return;
+  const heading = adminDashboard.querySelector('.member-dashboard-head');
+  if (!heading) return;
+
+  const helper = document.createElement('div');
+  helper.className = 'admin-auto-translate';
+  helper.innerHTML = `
+    <div>
+      <strong>中文自动翻译英文</strong>
+      <p>输入中文菜单、菜色、加购或价格说明时，英文栏会自动生成；英文仍可手动微调。</p>
+    </div>
+    <button type="button" id="autoTranslateAdminContent">翻译全部英文</button>
+  `;
+  heading.insertAdjacentElement('afterend', helper);
+  helper.querySelector('button')?.addEventListener('click', () => {
+    autoTranslateAdminEditor(true);
+    showAdminMessage('已根据中文内容重新生成英文。');
+  });
+}
+
 function renderAdminWeeklyRows(content) {
   if (!adminWeeklyRows) return;
   const maxRows = Math.max(content.zh.weekly.days.length, content.en.weekly.days.length, 1);
@@ -1550,10 +2125,12 @@ function renderAdminAddonRows(content) {
 
 function renderAdminEditor() {
   const content = loadAdminContent();
+  ensureAdminTranslateHelper();
   if (weeklyNoteZh) weeklyNoteZh.value = content.zh.weekly.note;
   if (weeklyNoteEn) weeklyNoteEn.value = content.en.weekly.note;
   renderAdminWeeklyRows(content);
   renderAdminAddonRows(content);
+  primeAdminTranslationFields();
 }
 
 function renderAdminState() {
@@ -1625,6 +2202,7 @@ function addWeeklyEditorRow() {
   if (weeklyNoteEn) weeklyNoteEn.value = content.en.weekly.note;
   renderAdminWeeklyRows(content);
   renderAdminAddonRows(content);
+  primeAdminTranslationFields();
 }
 
 function addAddonEditorRow() {
@@ -1635,6 +2213,7 @@ function addAddonEditorRow() {
   if (weeklyNoteEn) weeklyNoteEn.value = content.en.weekly.note;
   renderAdminWeeklyRows(content);
   renderAdminAddonRows(content);
+  primeAdminTranslationFields();
 }
 
 if (menuToggle && navLinks) {
@@ -1650,6 +2229,14 @@ window.addEventListener('scroll', () => {
 });
 
 backTop?.addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
+
+if ('IntersectionObserver' in window && form) {
+  const orderVisibilityObserver = new IntersectionObserver(entries => {
+    const isVisible = entries.some(entry => entry.isIntersecting);
+    document.body.classList.toggle('order-form-visible', isVisible);
+  }, { rootMargin: '-20% 0px -28% 0px', threshold: 0.01 });
+  orderVisibilityObserver.observe(form);
+}
 
 memberOpen?.addEventListener('click', () => {
   navLinks?.classList.remove('open');
@@ -1783,7 +2370,7 @@ copyOrderPreview?.addEventListener('click', async () => {
   }
 });
 
-adminLoginForm?.addEventListener('submit', event => {
+adminLoginForm?.addEventListener('submit', async event => {
   event.preventDefault();
   if (isAdminLocked()) {
     const minutes = Math.ceil((adminLockUntil() - Date.now()) / 60000);
@@ -1794,9 +2381,12 @@ adminLoginForm?.addEventListener('submit', event => {
   const email = adminEmail?.value?.trim().toLowerCase();
   if (email === ADMIN_EMAIL && hashLocalSecret(adminPassword?.value || '') === ADMIN_PASSWORD_HASH) {
     clearAdminLoginGuard();
+    const cloudLogin = await supabaseAdminSignIn(email, adminPassword?.value || '');
     setAdminLoggedIn(true);
     adminLoginForm.reset();
-    showAdminMessage('登录成功，可以开始编辑内容。');
+    showAdminMessage(cloudLogin.ok
+      ? '登录成功，Supabase 云端也已连接。'
+      : '登录成功，可以开始编辑内容。Supabase 尚未连接，会继续使用本地记录。');
     renderAdminState();
     return;
   }
@@ -1807,6 +2397,8 @@ adminLoginForm?.addEventListener('submit', event => {
 
 adminLogout?.addEventListener('click', () => {
   setAdminLoggedIn(false);
+  setSupabaseSession(null);
+  supabaseInquiriesCache = [];
   renderAdminState();
   showAdminMessage('');
 });
@@ -1814,10 +2406,27 @@ adminLogout?.addEventListener('click', () => {
 addWeeklyRow?.addEventListener('click', addWeeklyEditorRow);
 addAddonRow?.addEventListener('click', addAddonEditorRow);
 
+weeklyNoteZh?.addEventListener('input', () => updateTranslatedField(weeklyNoteEn, weeklyNoteZh.value));
+weeklyNoteEn?.addEventListener('input', () => markManualTranslationField(weeklyNoteEn));
+
 adminWeeklyRows?.addEventListener('click', event => {
   if (!(event.target instanceof HTMLElement) || !event.target.matches('[data-remove-weekly]')) return;
   const row = event.target.closest('[data-weekly-row]');
   row?.remove();
+});
+
+adminWeeklyRows?.addEventListener('input', event => {
+  const target = event.target;
+  if (!(target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement)) return;
+  const field = target.dataset.field || '';
+  const row = target.closest('[data-weekly-row]');
+
+  if (field.startsWith('en-')) {
+    markManualTranslationField(target);
+    return;
+  }
+
+  if (field === 'zh-day' || field === 'zh-dish') translateAdminRow(row);
 });
 
 adminAddonRows?.addEventListener('click', event => {
@@ -1826,24 +2435,56 @@ adminAddonRows?.addEventListener('click', event => {
   row?.remove();
 });
 
+adminAddonRows?.addEventListener('input', event => {
+  const target = event.target;
+  if (!(target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement)) return;
+  const field = target.dataset.field || '';
+  const row = target.closest('[data-addon-row]');
+
+  if (field.startsWith('en-')) {
+    markManualTranslationField(target);
+    return;
+  }
+
+  if (field === 'zh-name' || field === 'zh-price') translateAdminRow(row);
+});
+
 adminInquiries?.addEventListener('change', event => {
   if (!(event.target instanceof HTMLSelectElement) || !event.target.matches('[data-inquiry-status]')) return;
   const row = event.target.closest('[data-inquiry-id]');
   setInquiryStatus(row?.dataset.inquiryId || '', event.target.value);
 });
 
-saveAdminContent?.addEventListener('click', () => {
-  saveEditableContent(collectAdminContent());
+saveAdminContent?.addEventListener('click', async () => {
+  const content = collectAdminContent();
+  saveEditableContent(content);
   updateStaticLanguage();
   renderAdminEditor();
-  showAdminMessage('内容已保存，首页已更新。');
+  try {
+    const cloudSaved = await saveAdminContentToSupabase(content);
+    showAdminMessage(cloudSaved
+      ? '内容已保存，首页已更新，并已同步 Supabase。'
+      : '内容已保存，首页已更新。Supabase 尚未连接管理员权限，所以先保存在本地。');
+  } catch (error) {
+    console.warn('Supabase admin content save failed', error);
+    showAdminMessage('内容已保存到本地，但暂时无法同步 Supabase。请检查 Supabase admin 权限。', true);
+  }
 });
 
-resetAdminContent?.addEventListener('click', () => {
-  localStorage.removeItem(ADMIN_CONTENT_KEY);
+resetAdminContent?.addEventListener('click', async () => {
+  const defaults = defaultAdminContent();
+  saveEditableContent(defaults);
   updateStaticLanguage();
   renderAdminEditor();
-  showAdminMessage('已恢复默认菜单和加购内容。');
+  try {
+    const cloudSaved = await saveAdminContentToSupabase(defaults);
+    showAdminMessage(cloudSaved
+      ? '已恢复默认菜单和加购内容，并已同步 Supabase。'
+      : '已恢复默认菜单和加购内容。Supabase 尚未连接管理员权限，所以先保存在本地。');
+  } catch (error) {
+    console.warn('Supabase admin content reset failed', error);
+    showAdminMessage('已恢复本地默认内容，但暂时无法同步 Supabase。请检查 Supabase admin 权限。', true);
+  }
 });
 
 exportLocalData?.addEventListener('click', exportLocalBackup);
@@ -1877,26 +2518,47 @@ document.querySelectorAll('.choose-package').forEach(button => {
   button.addEventListener('click', () => {
     setPackageValue(button.dataset.package || '');
     renderOrderPreview();
+    showOrderMessage('');
     document.getElementById('order')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   });
 });
 
-form?.addEventListener('input', renderOrderPreview);
-form?.addEventListener('change', renderOrderPreview);
+form?.addEventListener('input', () => {
+  renderOrderPreview();
+  showOrderMessage('');
+});
+form?.addEventListener('change', () => {
+  renderOrderPreview();
+  showOrderMessage('');
+});
 
 form?.addEventListener('submit', event => {
   event.preventDefault();
   const orderData = collectOrderData();
+  const validationMessage = validateOrderData(orderData);
+  if (validationMessage) {
+    showOrderMessage(validationMessage, true);
+    form.reportValidity?.();
+    return;
+  }
+
   saveInquiryForAdmin(orderData);
   saveReferralReward(orderData);
   saveInquiryForMember(orderData);
   renderOrderPreview();
+  showOrderMessage(currentLanguage === 'en' ? 'WhatsApp is opening now.' : '正在打开 WhatsApp。');
   const url = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(buildOrderMessage(orderData))}`;
   window.open(url, '_blank', 'noopener');
 });
 
-applyReferralCodeFromUrl();
-updateStaticLanguage();
-if (shouldOpenAdminFromUrl()) {
-  openAdminModal();
+async function initializeApp() {
+  await loadSupabaseRuntimeConfig();
+  await loadAdminContentFromSupabase();
+  applyReferralCodeFromUrl();
+  updateStaticLanguage();
+  if (shouldOpenAdminFromUrl()) {
+    openAdminModal();
+  }
 }
+
+initializeApp();
