@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "next dev --hostname 127.0.0.1",
     "build": "next build",
+    "vercel-build": "node scripts/build-static-site.mjs",
     "start": "next start --hostname 127.0.0.1",
     "lint": "next lint"
   },
