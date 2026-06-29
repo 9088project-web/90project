@@ -1,4 +1,4 @@
-# 九零食刻 90 PROJECT 最终静态网站
+﻿# 九零食刻 90 PROJECT 最终静态网站
 
 这是以 `90project_final_design.zip` 为主整理出来的最终黑金品牌网站版本。网站可以本地打开测试，也可以部署到 Vercel；Supabase 属于可选云端同步层，未连接时会自动使用浏览器本地记录。
 
@@ -183,7 +183,7 @@ http://127.0.0.1:3040/#admin-login
 本地测试管理员账号：
 
 ```text
-admin@90project.local
+9088project@gmail.com
 ```
 
 本地测试密码：
@@ -215,7 +215,7 @@ Admin 后台可以导出 JSON，本地保存以下资料：
 3. 到 Supabase Authentication 创建 admin 用户：
 
 ```text
-admin@90project.local
+9088project@gmail.com
 admin123456
 ```
 
@@ -225,7 +225,7 @@ admin123456
 update public.profiles
 set role = 'admin'
 where user_id = (
-  select id from auth.users where email = 'admin@90project.local'
+  select id from auth.users where email = '9088project@gmail.com'
 );
 ```
 
