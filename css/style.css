@@ -1335,6 +1335,68 @@ details p{color:var(--muted);font-size:13px;line-height:1.55}
   font-size:13px;
   font-weight:900;
 }
+.admin-members{
+  gap:12px;
+}
+.admin-member-card{
+  border:1px solid rgba(214,168,92,.24);
+  border-radius:14px;
+  padding:14px;
+  background:rgba(255,247,232,.045);
+  display:grid;
+  grid-template-columns:minmax(0,1fr) minmax(280px,.9fr);
+  gap:14px;
+  align-items:start;
+}
+.admin-member-card strong{
+  display:block;
+  color:var(--gold2);
+  margin-bottom:6px;
+}
+.admin-member-card p{
+  margin:3px 0;
+  color:#d8c5a6;
+  font-size:13px;
+  line-height:1.5;
+}
+.admin-reward-list{
+  display:grid;
+  gap:8px;
+}
+.admin-reward-list>span{
+  border:1px dashed rgba(214,168,92,.24);
+  border-radius:12px;
+  padding:12px;
+  color:#d8c5a6;
+  font-size:13px;
+}
+.admin-reward-line{
+  display:grid;
+  grid-template-columns:1fr auto;
+  gap:10px;
+  align-items:center;
+  border:1px solid rgba(214,168,92,.2);
+  border-radius:12px;
+  padding:10px;
+  background:rgba(0,0,0,.2);
+}
+.admin-reward-line b,
+.admin-reward-line span{
+  display:block;
+}
+.admin-reward-line b{
+  color:var(--gold2);
+  font-size:13px;
+}
+.admin-reward-line span{
+  color:#d8c5a6;
+  font-size:12px;
+  margin-top:3px;
+}
+.admin-reward-line select{
+  min-width:118px;
+  padding:8px 10px;
+}
 .back-top{
   position:fixed;right:18px;bottom:18px;
   width:45px;height:45px;border-radius:50%;
@@ -1507,5 +1569,8 @@ body.order-form-visible .back-top{
   .admin-toolbar{justify-content:flex-start}
   .admin-inquiry{grid-template-columns:1fr}
   .admin-inquiry-actions{min-width:0}
+  .admin-member-card{grid-template-columns:1fr}
+  .admin-reward-line{grid-template-columns:1fr}
+  .admin-reward-line select{width:100%}
   .admin-actions .btn{width:100%}
 }

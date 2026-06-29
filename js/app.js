@@ -40,6 +40,8 @@ const saveAdminContent = document.getElementById('saveAdminContent');
 const resetAdminContent = document.getElementById('resetAdminContent');
 const adminDataStatus = document.getElementById('adminDataStatus');
 const adminInquiries = document.getElementById('adminInquiries');
+const adminMemberStatus = document.getElementById('adminMemberStatus');
+const adminMembers = document.getElementById('adminMembers');
 const exportLocalData = document.getElementById('exportLocalData');
 const importLocalData = document.getElementById('importLocalData');
 const importLocalDataInput = document.getElementById('importLocalDataInput');
@@ -62,11 +64,13 @@ const ADMIN_SESSION_KEY = 'np90_admin_session_v1';
 const ADMIN_ATTEMPTS_KEY = 'np90_admin_attempts_v1';
 const ADMIN_LOCK_KEY = 'np90_admin_lock_until_v1';
 const SUPABASE_SESSION_KEY = 'np90_supabase_session_v1';
+const SUPABASE_MEMBER_SESSION_KEY = 'np90_supabase_member_session_v1';
 const ADMIN_CONTENT_SETTING_KEY = 'admin_content';
 const ADMIN_EMAIL = 'admin@90project.local';
 const ADMIN_PASSWORD_HASH = '3b523443';
 const WHATSAPP_NUMBER = '601110977166';
 const INQUIRY_STATUSES = ['new', 'contacted', 'quoted', 'confirmed', 'completed', 'cancelled'];
+const REFERRAL_REWARD_STATUSES = ['pending', 'approved', 'redeemed', 'cancelled'];
 const REFERRAL_LEVEL_RATES = [1, 0.5, 0.3, 0.2, 0.1];
 const CATERING_MINIMUM_TOTAL = 300;
 const CATERING_SERVICE_STYLES = {
@@ -142,6 +146,9 @@ const CATERING_MENU = [
 
 let supabaseInquiriesCache = [];
 let supabaseFetchInProgress = false;
+let supabaseProfilesCache = [];
+let supabaseRewardsCache = [];
+let supabaseMembersFetchInProgress = false;
 let supabaseRuntimeConfig = { ...(window.NP90_SUPABASE || {}) };
 
 const translations = {
@@ -749,6 +756,7 @@ function setSupabaseSession(session) {
   if (session?.access_token) {
     localStorage.setItem(SUPABASE_SESSION_KEY, JSON.stringify({
       access_token: session.access_token,
+      refresh_token: session.refresh_token || null,
       user: session.user || null,
       expires_at: session.expires_at || null
     }));
@@ -756,6 +764,28 @@ function setSupabaseSession(session) {
   }
 
   localStorage.removeItem(SUPABASE_SESSION_KEY);
+}
+
+function getSupabaseMemberSession() {
+  try {
+    return JSON.parse(localStorage.getItem(SUPABASE_MEMBER_SESSION_KEY) || 'null');
+  } catch (error) {
+    return null;
+  }
+}
+
+function setSupabaseMemberSession(session) {
+  if (session?.access_token) {
+    localStorage.setItem(SUPABASE_MEMBER_SESSION_KEY, JSON.stringify({
+      access_token: session.access_token,
+      refresh_token: session.refresh_token || null,
+      user: session.user || null,
+      expires_at: session.expires_at || null
+    }));
+    return;
+  }
+
+  localStorage.removeItem(SUPABASE_MEMBER_SESSION_KEY);
 }
 
 function supabaseAuthToken() {
@@ -822,6 +852,197 @@ async function supabaseAdminSignIn(email, password) {
 
   setSupabaseSession(session);
   return { ok: true };
+}
+
+async function supabaseMemberSignUp({ name, phone, email, password, referralCode, referredByCode }) {
+  if (!isSupabaseConfigured()) return { ok: false, skipped: true };
+
+  const response = await fetch(`${supabaseUrl()}/auth/v1/signup`, {
+    method: 'POST',
+    headers: {
+      apikey: supabaseAnonKey(),
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      email,
+      password,
+      data: {
+        full_name: name,
+        phone,
+        referral_code: referralCode,
+        referred_by_code: referredByCode || null
+      }
+    })
+  });
+
+  if (!response.ok) {
+    const message = await response.text();
+    return { ok: false, message };
+  }
+
+  const payload = await response.json();
+  const session = payload?.session || payload;
+  if (session?.access_token) setSupabaseMemberSession(session);
+  return { ok: true, session: session?.access_token ? session : null, user: payload?.user || session?.user || null };
+}
+
+async function supabaseMemberSignIn(email, password) {
+  if (!isSupabaseConfigured()) return { ok: false, skipped: true };
+
+  const response = await fetch(`${supabaseUrl()}/auth/v1/token?grant_type=password`, {
+    method: 'POST',
+    headers: {
+      apikey: supabaseAnonKey(),
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ email, password })
+  });
+
+  if (!response.ok) return { ok: false };
+
+  const session = await response.json();
+  if (!session?.access_token) return { ok: false };
+  setSupabaseMemberSession(session);
+  return { ok: true, session };
+}
+
+async function loadSupabaseMemberProfile(session = getSupabaseMemberSession()) {
+  const userId = session?.user?.id;
+  if (!userId || !session?.access_token) return null;
+
+  const rows = await supabaseFetch(
+    `/rest/v1/profiles?select=*&user_id=eq.${encodeURIComponent(userId)}&limit=1`,
+    { token: session.access_token }
+  );
+  return rows?.[0] || null;
+}
+
+async function updateSupabaseMemberProfile(member, session = getSupabaseMemberSession()) {
+  const userId = session?.user?.id;
+  if (!userId || !session?.access_token || !member) return false;
+
+  await supabaseFetch(`/rest/v1/profiles?user_id=eq.${encodeURIComponent(userId)}`, {
+    method: 'PATCH',
+    token: session.access_token,
+    headers: { Prefer: 'return=minimal' },
+    body: {
+      full_name: member.name || '',
+      phone: member.phone || '',
+      referral_code: normalizeReferralCode(member.referralCode),
+      referred_by_code: normalizeReferralCode(member.referredByCode) || null
+    }
+  });
+  return true;
+}
+
+function mergeSupabaseProfileToLocalMember(profile, session, fallback = {}) {
+  const email = String(session?.user?.email || fallback.email || '').toLowerCase();
+  if (!email) return null;
+
+  const members = loadMembers();
+  let member = members.find(item => item.email === email);
+  if (!member) {
+    member = {
+      name: fallback.name || profile?.full_name || email.split('@')[0],
+      phone: fallback.phone || profile?.phone || '',
+      email,
+      password: fallback.password || '',
+      referralCode: normalizeReferralCode(profile?.referral_code) || createReferralCode(fallback.name || profile?.full_name, email),
+      referralRewards: [],
+      records: [],
+      createdAt: new Date().toISOString()
+    };
+    members.push(member);
+  }
+
+  member.name = profile?.full_name || fallback.name || member.name || '';
+  member.phone = profile?.phone || fallback.phone || member.phone || '';
+  member.referralCode = normalizeReferralCode(profile?.referral_code || member.referralCode) || createReferralCode(member.name, email);
+  member.referredByCode = normalizeReferralCode(profile?.referred_by_code || member.referredByCode || fallback.referredByCode);
+  member.supabaseUserId = session?.user?.id || member.supabaseUserId;
+  member.cloudSyncedAt = new Date().toISOString();
+  saveMembers(members);
+  setCurrentMember(email);
+  return member;
+}
+
+function cloudRewardToLocalReward(row) {
+  return {
+    cloudId: row.id,
+    createdAt: row.created_at || new Date().toISOString(),
+    referredName: row.referred_name || (currentLanguage === 'en' ? 'Friend referral inquiry' : '朋友推荐询问'),
+    package: row.package_label || '-',
+    level: row.level || 1,
+    fixedCredit: row.fixed_credit ? Number(row.fixed_credit) : 0,
+    ratePercent: row.rate_percent ? Number(row.rate_percent) : 0,
+    status: row.status || 'pending',
+    source: 'supabase'
+  };
+}
+
+function mergeUniqueById(existing, incoming, keyName) {
+  const seen = new Set();
+  return [...incoming, ...existing].filter(item => {
+    const key = item?.[keyName] || item?.id || item?.createdAt;
+    if (!key || seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
+async function refreshSupabaseMemberData() {
+  const session = getSupabaseMemberSession();
+  const userId = session?.user?.id;
+  const email = String(session?.user?.email || currentMemberEmail() || '').toLowerCase();
+  if (!isSupabaseConfigured() || !session?.access_token || !userId || !email) return;
+
+  try {
+    const [profile, inquiryRows, rewardRows] = await Promise.all([
+      loadSupabaseMemberProfile(session),
+      supabaseFetch(
+        `/rest/v1/inquiries?select=*&user_id=eq.${encodeURIComponent(userId)}&order=created_at.desc&limit=30`,
+        { token: session.access_token }
+      ),
+      supabaseFetch(
+        `/rest/v1/referral_rewards?select=*&referrer_user_id=eq.${encodeURIComponent(userId)}&order=created_at.desc&limit=40`,
+        { token: session.access_token }
+      )
+    ]);
+
+    mergeSupabaseProfileToLocalMember(profile, session, { email });
+    const members = loadMembers();
+    const member = members.find(item => item.email === email);
+    if (!member) return;
+
+    const cloudRecords = (Array.isArray(inquiryRows) ? inquiryRows : []).map(supabaseRowToInquiry);
+    member.records = mergeUniqueById(member.records || [], cloudRecords, 'supabaseId').slice(0, 30);
+    const cloudRewards = (Array.isArray(rewardRows) ? rewardRows : []).map(cloudRewardToLocalReward);
+    member.referralRewards = mergeUniqueById(member.referralRewards || [], cloudRewards, 'cloudId').slice(0, 40);
+    member.cloudSyncedAt = new Date().toISOString();
+    saveMembers(members);
+    renderMemberState();
+  } catch (error) {
+    console.warn('Supabase member refresh failed', error);
+  }
+}
+
+async function createSupabaseReferralRewards(inquiryId, referralCode, token) {
+  const code = normalizeReferralCode(referralCode);
+  if (!inquiryId || !code || !token) return;
+
+  try {
+    await supabaseFetch('/rest/v1/rpc/create_referral_rewards_for_inquiry', {
+      method: 'POST',
+      token,
+      headers: { Prefer: 'return=minimal' },
+      body: {
+        p_inquiry_id: inquiryId,
+        p_referral_code: code
+      }
+    });
+  } catch (error) {
+    console.warn('Supabase referral reward creation failed', error);
+  }
 }
 
 function cloneData(data) {
@@ -1399,7 +1620,10 @@ function updateStaticLanguage() {
   updateLanguageButtons();
   updateMemberButton();
   renderMemberState();
-  if (isAdminLoggedIn()) renderAdminInquiries();
+  if (isAdminLoggedIn()) {
+    renderAdminInquiries();
+    renderAdminMembers(false);
+  }
 }
 
 function escapeHtml(value) {
@@ -1778,9 +2002,9 @@ function createInquiryId() {
   return `NP90-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).slice(2, 6).toUpperCase()}`;
 }
 
-function inquiryToSupabasePayload(inquiry) {
+function inquiryToSupabasePayload(inquiry, userId = null) {
   const pax = Number.parseInt(inquiry.pax, 10);
-  return {
+  const payload = {
     customer_name: inquiry.name || '-',
     phone: inquiry.phone || '-',
     event_date: inquiry.date || null,
@@ -1796,6 +2020,8 @@ function inquiryToSupabasePayload(inquiry) {
       inquiry.language ? `Language: ${inquiry.language}` : ''
     ].filter(Boolean).join('\n') || null
   };
+  if (userId) payload.user_id = userId;
+  return payload;
 }
 
 function supabaseRowToInquiry(row) {
@@ -1825,10 +2051,14 @@ function supabaseRowToInquiry(row) {
 async function syncInquiryToSupabase(inquiry) {
   if (!isSupabaseConfigured()) return;
   try {
+    const memberSession = getSupabaseMemberSession();
+    const memberUserId = memberSession?.user?.id || null;
+    const memberToken = memberSession?.access_token || null;
     const rows = await supabaseFetch('/rest/v1/inquiries?select=id,created_at,updated_at', {
       method: 'POST',
+      token: memberToken || undefined,
       headers: { Prefer: 'return=representation' },
-      body: inquiryToSupabasePayload(inquiry)
+      body: inquiryToSupabasePayload(inquiry, memberUserId)
     });
     const remote = rows?.[0];
     if (!remote?.id) return;
@@ -1839,6 +2069,11 @@ async function syncInquiryToSupabase(inquiry) {
       local.supabaseId = remote.id;
       local.updatedAt = remote.updated_at || local.updatedAt;
       saveInquiries(inquiries);
+    }
+
+    if (memberToken && inquiry.referralCode) {
+      await createSupabaseReferralRewards(remote.id, inquiry.referralCode, memberToken);
+      refreshSupabaseMemberData();
     }
 
     refreshSupabaseInquiries();
@@ -2035,6 +2270,199 @@ async function setInquiryStatus(id, status) {
   }
 }
 
+function referralRewardStatusLabel(status) {
+  const normalized = status === '待确认' ? 'pending' : status;
+  const labels = currentLanguage === 'en'
+    ? {
+        pending: 'Pending',
+        approved: 'Approved',
+        redeemed: 'Redeemed',
+        cancelled: 'Cancelled'
+      }
+    : {
+        pending: '待确认',
+        approved: '已批准',
+        redeemed: '已抵扣',
+        cancelled: '已取消'
+      };
+  return labels[normalized] || labels.pending;
+}
+
+function rewardStatusOptions(selectedStatus) {
+  const normalized = selectedStatus === '待确认' ? 'pending' : selectedStatus;
+  return REFERRAL_REWARD_STATUSES.map(status => (
+    `<option value="${status}" ${status === normalized ? 'selected' : ''}>${referralRewardStatusLabel(status)}</option>`
+  )).join('');
+}
+
+function profileToAdminMember(profile) {
+  return {
+    source: 'supabase',
+    name: profile.full_name || profile.user_id || '-',
+    phone: profile.phone || '-',
+    email: profile.email || '',
+    referralCode: normalizeReferralCode(profile.referral_code),
+    referredByCode: normalizeReferralCode(profile.referred_by_code),
+    role: profile.role || 'member',
+    status: profile.status || 'active',
+    supabaseUserId: profile.user_id,
+    records: [],
+    referralRewards: [],
+    createdAt: profile.created_at || ''
+  };
+}
+
+function combinedAdminMembers() {
+  const localMembers = loadMembers().map(member => ({ ...member, source: 'local' }));
+  const localEmails = new Set(localMembers.map(member => String(member.email || '').toLowerCase()).filter(Boolean));
+  const localUserIds = new Set(localMembers.map(member => member.supabaseUserId).filter(Boolean));
+  const cloudMembers = supabaseProfilesCache
+    .map(profileToAdminMember)
+    .filter(member => !localEmails.has(String(member.email || '').toLowerCase()) && !localUserIds.has(member.supabaseUserId));
+  return [...localMembers, ...cloudMembers];
+}
+
+async function refreshSupabaseMembers() {
+  if (!isSupabaseConfigured() || !getSupabaseSession()?.access_token || supabaseMembersFetchInProgress) return;
+
+  supabaseMembersFetchInProgress = true;
+  try {
+    const [profiles, rewards] = await Promise.all([
+      supabaseFetch('/rest/v1/profiles?select=*&order=created_at.desc&limit=120'),
+      supabaseFetch('/rest/v1/referral_rewards?select=*&order=created_at.desc&limit=160')
+    ]);
+    supabaseProfilesCache = Array.isArray(profiles) ? profiles : [];
+    supabaseRewardsCache = Array.isArray(rewards) ? rewards : [];
+  } catch (error) {
+    console.warn('Supabase members fetch failed', error);
+  } finally {
+    supabaseMembersFetchInProgress = false;
+    renderAdminMembers(false);
+  }
+}
+
+function renderRewardLine(reward, memberEmail, index) {
+  const date = reward.createdAt || reward.created_at
+    ? new Date(reward.createdAt || reward.created_at).toLocaleString('zh-MY', {
+        year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit'
+      })
+    : '-';
+  const isCloud = Boolean(reward.id || reward.cloudId);
+  const idAttribute = isCloud
+    ? `data-cloud-reward-id="${escapeHtml(reward.id || reward.cloudId)}"`
+    : `data-member-email="${escapeHtml(memberEmail)}" data-reward-index="${index}"`;
+  const status = reward.status || 'pending';
+
+  return `
+    <div class="admin-reward-line">
+      <div>
+        <b>${escapeHtml(reward.referred_name || reward.referredName || (currentLanguage === 'en' ? 'Referral reward' : '推荐奖励'))}</b>
+        <span>${escapeHtml(date)} · L${escapeHtml(reward.level || 1)} · RM${escapeHtml(reward.fixed_credit ?? reward.fixedCredit ?? 0)} + ${escapeHtml(reward.rate_percent ?? reward.ratePercent ?? 0)}%</span>
+      </div>
+      <select data-reward-status ${idAttribute}>${rewardStatusOptions(status)}</select>
+    </div>
+  `;
+}
+
+function renderAdminMembers(refreshRemote = true) {
+  if (!adminMembers) return;
+  if (refreshRemote) refreshSupabaseMembers();
+
+  const members = combinedAdminMembers();
+  const localRewards = loadMembers().reduce((count, member) => count + (member.referralRewards?.length || 0), 0);
+  const cloudRewards = supabaseRewardsCache.length;
+
+  if (adminMemberStatus) {
+    if (isSupabaseConfigured() && getSupabaseSession()?.access_token) {
+      adminMemberStatus.textContent = currentLanguage === 'en'
+        ? `${members.length} members shown. ${cloudRewards} cloud reward records and ${localRewards} local reward records are available.`
+        : `目前显示 ${members.length} 位会员；云端奖励 ${cloudRewards} 笔，本地奖励 ${localRewards} 笔。`;
+    } else if (isSupabaseConfigured()) {
+      adminMemberStatus.textContent = currentLanguage === 'en'
+        ? `${members.length} local members shown. Log in with Supabase admin to read cloud members.`
+        : `目前显示 ${members.length} 位本地会员。使用 Supabase admin 登录后可读取云端会员。`;
+    } else {
+      adminMemberStatus.textContent = currentLanguage === 'en'
+        ? `${members.length} local members shown. Supabase is not configured yet.`
+        : `目前显示 ${members.length} 位本地会员。Supabase 尚未设定。`;
+    }
+  }
+
+  if (!members.length && !supabaseRewardsCache.length) {
+    adminMembers.innerHTML = `<div class="member-empty">${currentLanguage === 'en' ? 'No members or rewards yet.' : '目前还没有会员或推荐奖励记录。'}</div>`;
+    return;
+  }
+
+  const memberCards = members.map(member => {
+    const memberEmail = String(member.email || '').toLowerCase();
+    const rewards = member.referralRewards || [];
+    return `
+      <article class="admin-member-card">
+        <div>
+          <strong>${escapeHtml(member.name || member.email || (currentLanguage === 'en' ? 'Member' : '会员'))}</strong>
+          <p>${currentLanguage === 'en' ? 'Phone' : '电话'}：${escapeHtml(member.phone || '-')}</p>
+          <p>Email：${escapeHtml(member.email || '-')}</p>
+          <p>${currentLanguage === 'en' ? 'Referral code' : '推荐码'}：${escapeHtml(normalizeReferralCode(member.referralCode) || '-')}</p>
+          <p>${currentLanguage === 'en' ? 'Referred by' : '上级推荐'}：${escapeHtml(normalizeReferralCode(member.referredByCode) || '-')}</p>
+          <p>${currentLanguage === 'en' ? 'Records / Rewards' : '询问 / 奖励'}：${escapeHtml(member.records?.length || 0)} / ${escapeHtml(rewards.length || 0)}</p>
+          <p>${currentLanguage === 'en' ? 'Source' : '来源'}：${escapeHtml(member.source === 'supabase' ? 'Supabase' : 'Local')}</p>
+        </div>
+        <div class="admin-reward-list">
+          ${rewards.length ? rewards.map((reward, index) => renderRewardLine(reward, memberEmail, index)).join('') : `<span>${currentLanguage === 'en' ? 'No local rewards.' : '暂无本地奖励。'}</span>`}
+        </div>
+      </article>
+    `;
+  }).join('');
+
+  const cloudOnlyRewards = supabaseRewardsCache
+    .filter(reward => !members.some(member => member.supabaseUserId === reward.referrer_user_id))
+    .map(reward => renderRewardLine(reward, '', 0))
+    .join('');
+
+  adminMembers.innerHTML = `
+    ${memberCards}
+    ${cloudOnlyRewards ? `<article class="admin-member-card admin-cloud-rewards"><strong>${currentLanguage === 'en' ? 'Cloud reward records' : '云端奖励记录'}</strong><div class="admin-reward-list">${cloudOnlyRewards}</div></article>` : ''}
+  `;
+}
+
+async function setReferralRewardStatus(memberEmail, rewardIndex, status) {
+  if (!REFERRAL_REWARD_STATUSES.includes(status)) return;
+  const members = loadMembers();
+  const member = members.find(item => String(item.email || '').toLowerCase() === String(memberEmail || '').toLowerCase());
+  const reward = member?.referralRewards?.[Number(rewardIndex)];
+  if (!reward) return;
+
+  reward.status = status;
+  reward.updatedAt = new Date().toISOString();
+  saveMembers(members);
+  renderAdminMembers(false);
+  renderMemberState();
+}
+
+async function setCloudReferralRewardStatus(rewardId, status) {
+  if (!rewardId || !REFERRAL_REWARD_STATUSES.includes(status)) return;
+  if (!isSupabaseConfigured() || !getSupabaseSession()?.access_token) {
+    showAdminMessage(currentLanguage === 'en' ? 'Supabase admin is not connected.' : 'Supabase admin 尚未连接。', true);
+    return;
+  }
+
+  try {
+    await supabaseFetch(`/rest/v1/referral_rewards?id=eq.${encodeURIComponent(rewardId)}`, {
+      method: 'PATCH',
+      headers: { Prefer: 'return=minimal' },
+      body: { status }
+    });
+    const reward = supabaseRewardsCache.find(item => item.id === rewardId);
+    if (reward) reward.status = status;
+    renderAdminMembers(false);
+  } catch (error) {
+    console.warn('Supabase referral reward status update failed', error);
+    showAdminMessage(currentLanguage === 'en'
+      ? 'Unable to update cloud reward status. Check Supabase schema and admin permission.'
+      : '无法更新云端奖励状态，请检查 Supabase schema 和 admin 权限。', true);
+  }
+}
+
 function exportLocalBackup() {
   const data = {
     exportedAt: new Date().toISOString(),
@@ -2068,6 +2496,7 @@ function importLocalBackup(file) {
       updateStaticLanguage();
       renderAdminEditor();
       renderAdminInquiries();
+      renderAdminMembers();
       renderMemberState();
       showAdminMessage(currentLanguage === 'en' ? 'Local backup imported.' : '本地备份已导入。');
     } catch (error) {
@@ -2096,6 +2525,7 @@ function saveInquiryForMember(orderData) {
   member.records = member.records.slice(0, 30);
   saveMembers(members);
   renderMemberState();
+  if (isAdminLoggedIn()) renderAdminMembers(false);
 }
 
 function saveReferralReward(orderData) {
@@ -2142,6 +2572,8 @@ function saveReferralReward(orderData) {
   });
 
   saveMembers(members);
+  renderMemberState();
+  if (isAdminLoggedIn()) renderAdminMembers(false);
 }
 
 function setPackageValue(value) {
@@ -2344,6 +2776,7 @@ function renderAdminState() {
   if (loggedIn) {
     renderAdminEditor();
     renderAdminInquiries();
+    renderAdminMembers();
   }
 }
 
@@ -2465,13 +2898,14 @@ document.querySelectorAll('[data-member-tab]').forEach(button => {
   button.addEventListener('click', () => setMemberTab(button.dataset.memberTab));
 });
 
-memberRegisterForm?.addEventListener('submit', event => {
+memberRegisterForm?.addEventListener('submit', async event => {
   event.preventDefault();
   const t = languageText();
   const name = fieldValue('registerName');
   const phone = fieldValue('registerPhone');
   const email = fieldValue('registerEmail').toLowerCase();
   const password = fieldValue('registerPassword');
+  const referredByCode = normalizeReferralCode(fieldValue('referralCode') || new URLSearchParams(window.location.search).get('ref'));
 
   if (!name || !phone || !email || password.length < 6) {
     showMemberMessage(t.member.messages.required, true);
@@ -2485,29 +2919,92 @@ memberRegisterForm?.addEventListener('submit', event => {
     return;
   }
 
-  members.push({
+  const referralCode = createReferralCode(name, email);
+  const localMember = {
     name,
     phone,
     email,
     password: encodePassword(password),
-    referralCode: createReferralCode(name, email),
+    referralCode,
+    referredByCode,
     referralRewards: [],
     records: [],
     createdAt: new Date().toISOString()
-  });
+  };
+  members.push(localMember);
   saveMembers(members);
   setCurrentMember(email);
   memberRegisterForm.reset();
   showMemberMessage(t.member.messages.registerSuccess);
   renderMemberState();
+
+  try {
+    const cloud = await supabaseMemberSignUp({
+      name,
+      phone,
+      email,
+      password,
+      referralCode,
+      referredByCode
+    });
+    if (cloud.ok && cloud.session) {
+      const profile = await loadSupabaseMemberProfile(cloud.session);
+      mergeSupabaseProfileToLocalMember(profile, cloud.session, { name, phone, email, password: encodePassword(password), referredByCode });
+      await updateSupabaseMemberProfile(getCurrentMember(), cloud.session);
+      showMemberMessage(currentLanguage === 'en'
+        ? 'Member created and synced to Supabase.'
+        : '会员已创建，并已同步 Supabase。');
+      refreshSupabaseMemberData();
+    } else if (cloud.ok) {
+      showMemberMessage(currentLanguage === 'en'
+        ? 'Member created locally. Supabase may require email confirmation before cloud login.'
+        : '会员已建立在本地；Supabase 可能需要 Email 确认后才可云端登录。');
+    }
+  } catch (error) {
+    console.warn('Supabase member signup failed', error);
+    showMemberMessage(currentLanguage === 'en'
+      ? 'Member created locally. Cloud sync will be retried after Supabase is ready.'
+      : '会员已建立在本地。Supabase 设置完成后可再登录同步。');
+  }
 });
 
-memberLoginForm?.addEventListener('submit', event => {
+memberLoginForm?.addEventListener('submit', async event => {
   event.preventDefault();
   const t = languageText();
   const email = fieldValue('loginEmail').toLowerCase();
   const password = fieldValue('loginPassword');
-  const member = loadMembers().find(item => item.email === email && item.password === encodePassword(password));
+  let member = loadMembers().find(item => item.email === email && item.password === encodePassword(password));
+
+  if (!member) {
+    try {
+      const cloud = await supabaseMemberSignIn(email, password);
+      if (cloud.ok && cloud.session) {
+        const profile = await loadSupabaseMemberProfile(cloud.session);
+        member = mergeSupabaseProfileToLocalMember(profile, cloud.session, { email, password: encodePassword(password) });
+        await refreshSupabaseMemberData();
+      }
+    } catch (error) {
+      console.warn('Supabase member login failed', error);
+    }
+  } else {
+    try {
+      const cloud = await supabaseMemberSignIn(email, password);
+      if (cloud.ok && cloud.session) {
+        const profile = await loadSupabaseMemberProfile(cloud.session);
+        member = mergeSupabaseProfileToLocalMember(profile, cloud.session, {
+          name: member.name,
+          phone: member.phone,
+          email,
+          password: member.password,
+          referredByCode: member.referredByCode
+        });
+        await updateSupabaseMemberProfile(member, cloud.session);
+        refreshSupabaseMemberData();
+      }
+    } catch (error) {
+      console.warn('Supabase member login sync failed', error);
+    }
+  }
 
   if (!member) {
     showMemberMessage(t.member.messages.loginError, true);
@@ -2522,6 +3019,7 @@ memberLoginForm?.addEventListener('submit', event => {
 
 memberLogout?.addEventListener('click', () => {
   setCurrentMember('');
+  setSupabaseMemberSession(null);
   renderMemberState();
   setMemberTab('login');
 });
@@ -2602,6 +3100,8 @@ adminLogout?.addEventListener('click', () => {
   setAdminLoggedIn(false);
   setSupabaseSession(null);
   supabaseInquiriesCache = [];
+  supabaseProfilesCache = [];
+  supabaseRewardsCache = [];
   renderAdminState();
   showAdminMessage('');
 });
@@ -2656,6 +3156,16 @@ adminInquiries?.addEventListener('change', event => {
   if (!(event.target instanceof HTMLSelectElement) || !event.target.matches('[data-inquiry-status]')) return;
   const row = event.target.closest('[data-inquiry-id]');
   setInquiryStatus(row?.dataset.inquiryId || '', event.target.value);
+});
+
+adminMembers?.addEventListener('change', event => {
+  if (!(event.target instanceof HTMLSelectElement) || !event.target.matches('[data-reward-status]')) return;
+  const rewardId = event.target.dataset.cloudRewardId;
+  if (rewardId) {
+    setCloudReferralRewardStatus(rewardId, event.target.value);
+    return;
+  }
+  setReferralRewardStatus(event.target.dataset.memberEmail || '', event.target.dataset.rewardIndex || '', event.target.value);
 });
 
 saveAdminContent?.addEventListener('click', async () => {
@@ -2769,6 +3279,7 @@ async function initializeApp() {
   renderCateringEstimate();
   applyReferralCodeFromUrl();
   updateStaticLanguage();
+  refreshSupabaseMemberData();
   if (shouldOpenAdminFromUrl()) {
     openAdminModal();
   }

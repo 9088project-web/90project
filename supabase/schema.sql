@@ -22,10 +22,15 @@ create table if not exists public.profiles (
   city text,
   role text not null default 'member' check (role in ('member', 'admin', 'super_admin')),
   status text not null default 'active' check (status in ('active', 'inactive')),
+  referral_code text,
+  referred_by_code text,
   notes text,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
+
+alter table public.profiles add column if not exists referral_code text;
+alter table public.profiles add column if not exists referred_by_code text;
 
 create table if not exists public.services (
   id uuid primary key default gen_random_uuid(),
@@ -122,17 +127,42 @@ create table if not exists public.site_settings (
   updated_at timestamptz not null default now()
 );
 
+create table if not exists public.referral_rewards (
+  id uuid primary key default gen_random_uuid(),
+  referrer_user_id uuid not null references auth.users(id) on delete cascade,
+  referred_user_id uuid references auth.users(id) on delete set null,
+  inquiry_id uuid references public.inquiries(id) on delete set null,
+  referred_name text,
+  referred_phone text,
+  package_label text,
+  level int not null default 1 check (level between 1 and 10),
+  fixed_credit numeric(12,2) not null default 0,
+  rate_percent numeric(5,2) not null default 0,
+  estimated_amount numeric(12,2),
+  status text not null default 'pending' check (status in ('pending', 'approved', 'redeemed', 'cancelled')),
+  source text not null default 'website',
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
 create index if not exists profiles_user_id_idx on public.profiles(user_id);
+create unique index if not exists profiles_referral_code_uidx on public.profiles(referral_code) where referral_code is not null;
+create index if not exists profiles_referred_by_code_idx on public.profiles(referred_by_code);
 create index if not exists inquiries_user_id_idx on public.inquiries(user_id);
 create index if not exists inquiries_status_idx on public.inquiries(status);
 create index if not exists quotations_user_id_idx on public.quotations(user_id);
 create index if not exists bookings_user_id_idx on public.bookings(user_id);
+create index if not exists referral_rewards_referrer_idx on public.referral_rewards(referrer_user_id);
+create index if not exists referral_rewards_inquiry_idx on public.referral_rewards(inquiry_id);
+create index if not exists referral_rewards_status_idx on public.referral_rewards(status);
+create unique index if not exists referral_rewards_unique_chain_idx on public.referral_rewards(inquiry_id, referrer_user_id, level) where inquiry_id is not null;
 
 create or replace trigger profiles_updated_at before update on public.profiles for each row execute function public.set_updated_at();
 create or replace trigger inquiries_updated_at before update on public.inquiries for each row execute function public.set_updated_at();
 create or replace trigger quotations_updated_at before update on public.quotations for each row execute function public.set_updated_at();
 create or replace trigger bookings_updated_at before update on public.bookings for each row execute function public.set_updated_at();
 create or replace trigger site_settings_updated_at before update on public.site_settings for each row execute function public.set_updated_at();
+create or replace trigger referral_rewards_updated_at before update on public.referral_rewards for each row execute function public.set_updated_at();
 
 create or replace function public.current_user_role()
 returns text
@@ -196,13 +226,18 @@ security definer
 set search_path = public
 as $$
 begin
-  insert into public.profiles (user_id, full_name, phone, role, status)
+  insert into public.profiles (user_id, full_name, phone, role, status, referral_code, referred_by_code)
   values (
     new.id,
     coalesce(new.raw_user_meta_data->>'full_name', ''),
     coalesce(new.raw_user_meta_data->>'phone', ''),
     'member',
-    'active'
+    'active',
+    coalesce(
+      nullif(upper(new.raw_user_meta_data->>'referral_code'), ''),
+      upper('NP90-' || substr(replace(new.id::text, '-', ''), 1, 8))
+    ),
+    nullif(upper(new.raw_user_meta_data->>'referred_by_code'), '')
   )
   on conflict (user_id) do nothing;
   return new;
@@ -214,6 +249,99 @@ create trigger on_auth_user_created
 after insert on auth.users
 for each row execute function public.handle_new_user();
 
+update public.profiles
+set referral_code = upper('NP90-' || substr(replace(user_id::text, '-', ''), 1, 8))
+where referral_code is null or referral_code = '';
+
+create or replace function public.create_referral_rewards_for_inquiry(
+  p_inquiry_id uuid,
+  p_referral_code text
+)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_inquiry public.inquiries%rowtype;
+  v_referrer public.profiles%rowtype;
+  v_current_code text := nullif(upper(trim(p_referral_code)), '');
+  v_rates numeric[] := array[1.00, 0.50, 0.30, 0.20, 0.10];
+  v_level int := 1;
+  v_visited uuid[] := array[]::uuid[];
+begin
+  if v_current_code is null then
+    return;
+  end if;
+
+  select *
+  into v_inquiry
+  from public.inquiries
+  where id = p_inquiry_id
+    and (user_id = auth.uid() or public.is_admin());
+
+  if not found then
+    return;
+  end if;
+
+  while v_level <= array_length(v_rates, 1) loop
+    select *
+    into v_referrer
+    from public.profiles
+    where referral_code = v_current_code
+      and status = 'active'
+    limit 1;
+
+    if not found then
+      exit;
+    end if;
+
+    if v_referrer.user_id = auth.uid() or v_referrer.user_id = any(v_visited) then
+      exit;
+    end if;
+
+    v_visited := array_append(v_visited, v_referrer.user_id);
+
+    insert into public.referral_rewards (
+      referrer_user_id,
+      referred_user_id,
+      inquiry_id,
+      referred_name,
+      referred_phone,
+      package_label,
+      level,
+      fixed_credit,
+      rate_percent,
+      status,
+      source
+    )
+    values (
+      v_referrer.user_id,
+      v_inquiry.user_id,
+      v_inquiry.id,
+      v_inquiry.customer_name,
+      v_inquiry.phone,
+      v_inquiry.service_type,
+      v_level,
+      case when v_level = 1 then 20 else 0 end,
+      v_rates[v_level],
+      'pending',
+      'website_order'
+    )
+    on conflict do nothing;
+
+    v_current_code := nullif(upper(trim(v_referrer.referred_by_code)), '');
+    if v_current_code is null then
+      exit;
+    end if;
+
+    v_level := v_level + 1;
+  end loop;
+end;
+$$;
+
+grant execute on function public.create_referral_rewards_for_inquiry(uuid, text) to authenticated;
+
 alter table public.profiles enable row level security;
 alter table public.services enable row level security;
 alter table public.packages enable row level security;
@@ -223,6 +351,7 @@ alter table public.bookings enable row level security;
 alter table public.gallery enable row level security;
 alter table public.faqs enable row level security;
 alter table public.site_settings enable row level security;
+alter table public.referral_rewards enable row level security;
 
 -- Drop policies before recreating them so this file can be rerun during setup.
 drop policy if exists "profiles select own or admin" on public.profiles;
@@ -239,6 +368,8 @@ drop policy if exists "faqs public active read" on public.faqs;
 drop policy if exists "faqs admin all" on public.faqs;
 drop policy if exists "site settings public read" on public.site_settings;
 drop policy if exists "site settings admin all" on public.site_settings;
+drop policy if exists "referral rewards select own or admin" on public.referral_rewards;
+drop policy if exists "referral rewards admin all" on public.referral_rewards;
 drop policy if exists "inquiries insert public or own" on public.inquiries;
 drop policy if exists "inquiries select own or admin" on public.inquiries;
 drop policy if exists "inquiries admin all" on public.inquiries;
@@ -271,6 +402,10 @@ create policy "faqs admin all" on public.faqs for all using (public.is_admin()) 
 
 create policy "site settings public read" on public.site_settings for select using (true);
 create policy "site settings admin all" on public.site_settings for all using (public.is_admin()) with check (public.is_admin());
+
+-- Referral rewards
+create policy "referral rewards select own or admin" on public.referral_rewards for select using (referrer_user_id = auth.uid() or public.is_admin());
+create policy "referral rewards admin all" on public.referral_rewards for all using (public.is_admin()) with check (public.is_admin());
 
 -- Inquiries
 create policy "inquiries insert public or own" on public.inquiries for insert with check (user_id is null or user_id = auth.uid() or public.is_admin());

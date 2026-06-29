@@ -135,9 +135,9 @@ JavaScript 使用 `encodeURIComponent` 处理中文内容。
 - 会员中心
 - WhatsApp 询问内容
 
-## 本地会员与推荐奖励
+## 会员与推荐奖励
 
-当前会员系统是 offline 本地测试版，资料保存在浏览器 `localStorage`，没有连接云端数据库。
+会员系统现在是「本地可用 + Supabase cloud-ready」版本。Supabase 还没完成 SQL 设置时，资料会继续保存在浏览器 `localStorage`；Supabase 设置好后，会员注册 / 登录会尝试同步到 Supabase Auth 与 `profiles`，会员询问会同步到 `inquiries`，推荐奖励会写入 `referral_rewards` 供 admin 审核。
 
 已加入：
 
@@ -147,8 +147,9 @@ JavaScript 使用 `encodeURIComponent` 处理中文内容。
 - WhatsApp 分享推荐码
 - 朋友下单填写推荐码
 - 推荐人可记录 RM20 下次服务抵扣
-- 推荐人可记录一级推荐 1% 与上级推荐链多层待确认回馈
+- 推荐人可记录直接推荐 1% 与上级推荐链多层待确认回馈
 - 会员可查看本机订单询问与推荐奖励记录
+- Supabase 设置完成后，会员可读取云端自己的询问与奖励记录
 
 推荐奖励开放多层记录，但仍需以管理员审核、付款记录与 WhatsApp 确认为准；真实上线后建议改成后端数据库和管理员审核结算。
 
@@ -163,6 +164,8 @@ JavaScript 使用 `encodeURIComponent` 处理中文内容。
 - 中文与英文内容
 - 顾客 WhatsApp 询问记录
 - 询问状态：new / contacted / quoted / confirmed / completed / cancelled
+- 会员与推荐奖励
+- 推荐奖励状态：pending / approved / redeemed / cancelled
 - 本地资料 JSON 导出 / 导入
 
 后台不会显示在主页顶部。管理员使用隐藏入口进入：
@@ -205,7 +208,7 @@ Admin 后台可以导出 JSON，本地保存以下资料：
 
 ## Supabase 连接
 
-网站现在支持可选 Supabase 云端同步。没有填写 Supabase 资料时，网站会继续使用本地 `localStorage`；连接后，WhatsApp 表单询问会同步到 Supabase，后台 admin 登录后可以读取云端询问、更新状态，并把每周菜单与 Add-ons 内容同步到云端。
+网站现在支持可选 Supabase 云端同步。没有填写 Supabase 资料时，网站会继续使用本地 `localStorage`；连接后，WhatsApp 表单询问会同步到 Supabase，后台 admin 登录后可以读取云端询问、更新状态，并把每周菜单、Add-ons、会员与推荐奖励资料同步到云端。
 
 1. 在 Supabase 新建项目。
 2. 打开 Supabase SQL Editor，执行 `supabase/schema.sql`。
@@ -246,6 +249,8 @@ SUPABASE_ANON_KEY=你的 anon public key
 ```
 
 上线时，`api/supabase-config.js` 会从 Vercel 环境变量读取这些资料；没有设置时，网站会继续使用本地模式。
+
+如果线上显示已连接 Supabase 但会员、询问或奖励无法读取，通常是 `supabase/schema.sql` 还没有在 Supabase SQL Editor 执行，或 admin 用户还没在 `profiles` 里设成 `admin`。前端不能用 anon key 自动创建资料表，这是 Supabase 的安全限制。
 
 ## 图片优化
 
