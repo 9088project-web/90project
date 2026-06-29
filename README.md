@@ -86,6 +86,7 @@ Event:
 - `robots.txt`、`sitemap.xml`、`site.webmanifest` 与 favicon
 - WebP 图片优化，JPG 自动后备
 - 外餐 Catering
+- 外餐自由搭配菜单与初步价格计算器
 - 活动布置 Styling
 - FAQ
 - Footer CTA

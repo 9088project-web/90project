@@ -44,6 +44,14 @@ const exportLocalData = document.getElementById('exportLocalData');
 const importLocalData = document.getElementById('importLocalData');
 const importLocalDataInput = document.getElementById('importLocalDataInput');
 const clearAdminInquiries = document.getElementById('clearAdminInquiries');
+const cateringMenuGrid = document.getElementById('cateringMenuGrid');
+const cateringPax = document.getElementById('cateringPax');
+const cateringServiceStyle = document.getElementById('cateringServiceStyle');
+const calculateCateringPrice = document.getElementById('calculateCateringPrice');
+const cateringEstimateTotal = document.getElementById('cateringEstimateTotal');
+const cateringEstimateMeta = document.getElementById('cateringEstimateMeta');
+const selectedCateringSummary = document.getElementById('selectedCateringSummary');
+const cateringWhatsApp = document.getElementById('cateringWhatsApp');
 
 const MEMBERS_KEY = 'np90_members_v1';
 const INQUIRIES_KEY = 'np90_inquiries_v1';
@@ -60,6 +68,77 @@ const ADMIN_PASSWORD_HASH = '3b523443';
 const WHATSAPP_NUMBER = '601110977166';
 const INQUIRY_STATUSES = ['new', 'contacted', 'quoted', 'confirmed', 'completed', 'cancelled'];
 const REFERRAL_LEVEL_RATES = [1, 0.5, 0.3, 0.2, 0.1];
+const CATERING_MINIMUM_TOTAL = 300;
+const CATERING_SERVICE_STYLES = {
+  packed: { label: '餐盒 / Packed Meal', multiplier: 1 },
+  buffet: { label: '小型 Buffet / Setup', multiplier: 1.12 },
+  event: { label: '活动餐饮 / Event Catering', multiplier: 1.18 }
+};
+const CATERING_MENU = [
+  {
+    id: 'staple',
+    title: '主食',
+    label: 'Staple',
+    rate: 3,
+    items: ['腊肠炒饭', '蛋炒饭', '福建面', '炒米粉', '扬州炒饭', '干炒河粉', '白饭']
+  },
+  {
+    id: 'porridge',
+    title: '汤类 / 粥类',
+    label: 'Soup / Porridge',
+    rate: 4,
+    items: ['皮蛋瘦肉粥', '鸡丝粥']
+  },
+  {
+    id: 'vegetable',
+    title: '蔬菜类',
+    label: 'Vegetables',
+    rate: 4.5,
+    items: ['炒什锦菜', '干煸四季豆', 'Salad', '娘惹阿杂', '蒜蓉西兰花', '清炒小白菜', '奶油杂菜', '蚝油生菜', '蒜蓉菠菜', '炒高丽菜']
+  },
+  {
+    id: 'chicken',
+    title: '鸡肉类',
+    label: 'Chicken',
+    rate: 7,
+    items: ['咖喱鸡', 'Sambal 鸡', '香料炸鸡', '咸蛋奶油鸡', '黑胡椒鸡扒', '蘑菇鸡扒', 'Lemon Chicken', 'Sweet & Sour Chicken', 'Ginger Onion Chicken']
+  },
+  {
+    id: 'pork',
+    title: '猪肉类',
+    label: 'Pork',
+    rate: 7.5,
+    items: ['南乳炸肉', '咸蛋奶油猪', '糖醋肉', '咕噜肉', '姜葱肉片', '红烧肉', '蒜香五花肉']
+  },
+  {
+    id: 'fish',
+    title: '鱼类',
+    label: 'Fish',
+    rate: 9,
+    items: ['宫保鱼片', '咸蛋奶油鱼', '香煎三文鱼配 Tartar Sauce', '炸鱼柳', 'Sweet Sour Fish', '黑椒鱼柳', '姜葱鱼片', '酸辣鱼片', '香煎鳕鱼', '泰式柠檬鱼']
+  },
+  {
+    id: 'prawn',
+    title: '虾类',
+    label: 'Prawn',
+    rate: 11,
+    items: ['椒盐虾', '麦片虾', '咸蛋奶油虾']
+  },
+  {
+    id: 'tofu',
+    title: '豆腐类',
+    label: 'Tofu',
+    rate: 4.5,
+    items: ['泰式豆腐', '红烧豆腐', '麻婆豆腐', '家常豆腐']
+  },
+  {
+    id: 'flavour',
+    title: '风味搭配（鸡 / 猪 / 鱼 / 虾）',
+    label: 'Sauce Style',
+    rate: 0,
+    items: ['咖喱 Curry', 'Sambal', '咸蛋奶油 Salted Egg Butter', '宫保 Kung Pao', '泰式酸辣 Thai Style', 'Sweet & Sour', '姜葱 Ginger Onion', '麦片 Cereal', '椒盐 Salt & Pepper']
+  }
+];
 
 let supabaseInquiriesCache = [];
 let supabaseFetchInProgress = false;
@@ -213,6 +292,7 @@ const translations = {
         label: 'CATERING SERVICE',
         title: '外餐 Catering 服务',
         items: ['生日聚会 Birthday', '公司聚餐 Company Meal', '家庭聚会 Family Gathering', '开张活动 Grand Opening', '佛教会 / 社团活动', '小型 Buffet / Custom Catering'],
+        menuButton: '菜单选择 / 计算价格',
         button: 'WhatsApp 询问活动餐饮'
       },
       styling: {
@@ -424,6 +504,7 @@ const translations = {
         label: 'CATERING SERVICE',
         title: 'Catering Service',
         items: ['Birthday Party', 'Company Meal', 'Family Gathering', 'Grand Opening', 'Association Event', 'Small Buffet / Custom Catering'],
+        menuButton: 'Menu & Price Calculator',
         button: 'Ask About Catering'
       },
       styling: {
@@ -502,6 +583,119 @@ function fieldValue(id) {
 
 function displayValue(value) {
   return value && value.trim ? value.trim() : value || '-';
+}
+
+function formatCurrency(value) {
+  return `RM${Number(value || 0).toLocaleString('en-MY', {
+    minimumFractionDigits: Number(value || 0) % 1 === 0 ? 0 : 2,
+    maximumFractionDigits: 2
+  })}`;
+}
+
+function renderCateringMenu() {
+  if (!cateringMenuGrid) return;
+
+  cateringMenuGrid.innerHTML = CATERING_MENU.map(category => `
+    <article class="menu-category" data-catering-category="${escapeHtml(category.id)}">
+      <div class="menu-category-head">
+        <div>
+          <span>${escapeHtml(category.label)}</span>
+          <h3>${escapeHtml(category.title)}</h3>
+        </div>
+        <b>${category.rate ? `${formatCurrency(category.rate)} / pax` : '搭配'}</b>
+      </div>
+      <div class="menu-options">
+        ${category.items.map(item => `
+          <label class="menu-option">
+            <input type="checkbox" data-menu-category="${escapeHtml(category.id)}" data-menu-title="${escapeHtml(category.title)}" data-menu-rate="${category.rate}" value="${escapeHtml(item)}">
+            <span>${escapeHtml(item)}</span>
+          </label>
+        `).join('')}
+      </div>
+    </article>
+  `).join('');
+}
+
+function selectedCateringItems() {
+  return Array.from(cateringMenuGrid?.querySelectorAll('input[type="checkbox"]:checked') || []).map(input => ({
+    name: input.value,
+    categoryId: input.dataset.menuCategory || '',
+    categoryTitle: input.dataset.menuTitle || '',
+    rate: Number.parseFloat(input.dataset.menuRate || '0') || 0
+  }));
+}
+
+function groupedCateringItems(items) {
+  return items.reduce((groups, item) => {
+    if (!groups[item.categoryTitle]) groups[item.categoryTitle] = [];
+    groups[item.categoryTitle].push(item);
+    return groups;
+  }, {});
+}
+
+function calculateCateringEstimate() {
+  const pax = Math.max(Number.parseInt(cateringPax?.value || '0', 10) || 0, 0);
+  const service = CATERING_SERVICE_STYLES[cateringServiceStyle?.value] || CATERING_SERVICE_STYLES.packed;
+  const items = selectedCateringItems();
+  const pricedItems = items.filter(item => item.rate > 0);
+  const perPax = pricedItems.reduce((sum, item) => sum + item.rate, 0);
+  const subtotal = pax && perPax ? pax * perPax * service.multiplier : 0;
+  const total = subtotal ? Math.max(subtotal, CATERING_MINIMUM_TOTAL) : 0;
+
+  return {
+    pax,
+    service,
+    items,
+    pricedItems,
+    perPax,
+    subtotal,
+    total
+  };
+}
+
+function buildCateringMessage(estimate) {
+  const grouped = groupedCateringItems(estimate.items);
+  const menuLines = Object.entries(grouped).map(([category, items]) => (
+    `${category}：${items.map(item => item.name).join('、')}`
+  )).join('\n') || '还没有选择菜式';
+
+  return `你好，我想询问九零食刻 90 PROJECT 外餐菜单。
+
+【人数】
+${estimate.pax || '-'} pax
+
+【服务形式】
+${estimate.service.label}
+
+【选择菜单】
+${menuLines}
+
+【系统初步预算】
+每人约：${formatCurrency(estimate.perPax)}
+总预算约：${estimate.total ? formatCurrency(estimate.total) : '-'}
+
+请帮我确认实际报价、配送、餐具和现场服务安排。`;
+}
+
+function renderCateringEstimate() {
+  if (!cateringEstimateTotal || !cateringEstimateMeta || !selectedCateringSummary || !cateringWhatsApp) return;
+
+  const estimate = calculateCateringEstimate();
+  cateringEstimateTotal.textContent = estimate.total ? formatCurrency(estimate.total) : 'RM0';
+  cateringEstimateMeta.textContent = estimate.total
+    ? `${estimate.pax} pax · 每人约 ${formatCurrency(estimate.perPax)} · ${estimate.service.label}`
+    : '请选择菜式开始计算。';
+
+  if (!estimate.items.length) {
+    selectedCateringSummary.textContent = '还没有选择菜式。';
+  } else {
+    const grouped = groupedCateringItems(estimate.items);
+    selectedCateringSummary.innerHTML = Object.entries(grouped).map(([category, items]) => (
+      `<p><b>${escapeHtml(category)}</b>：${items.map(item => escapeHtml(item.name)).join('、')}</p>`
+    )).join('');
+  }
+
+  cateringWhatsApp.href = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(buildCateringMessage(estimate))}`;
 }
 
 function supabaseUrl() {
@@ -1046,6 +1240,13 @@ function updateFeatureCard(selector, feature) {
   const list = card.querySelector('ul');
   if (list && feature.items) {
     list.innerHTML = feature.items.map(item => `<li>${escapeHtml(item)}</li>`).join('');
+  }
+
+  const actionButtons = card.querySelectorAll('.feature-actions .btn');
+  if (actionButtons.length && feature.menuButton) {
+    actionButtons[0].textContent = feature.menuButton;
+    if (actionButtons[1]) actionButtons[1].textContent = feature.button;
+    return;
   }
 
   const button = card.querySelector('.btn');
@@ -2525,6 +2726,14 @@ document.querySelectorAll('.choose-package').forEach(button => {
   });
 });
 
+cateringMenuGrid?.addEventListener('change', renderCateringEstimate);
+cateringPax?.addEventListener('input', renderCateringEstimate);
+cateringServiceStyle?.addEventListener('change', renderCateringEstimate);
+calculateCateringPrice?.addEventListener('click', () => {
+  renderCateringEstimate();
+  document.querySelector('.estimate-box')?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+});
+
 form?.addEventListener('input', () => {
   renderOrderPreview();
   showOrderMessage('');
@@ -2556,6 +2765,8 @@ form?.addEventListener('submit', event => {
 async function initializeApp() {
   await loadSupabaseRuntimeConfig();
   await loadAdminContentFromSupabase();
+  renderCateringMenu();
+  renderCateringEstimate();
   applyReferralCodeFromUrl();
   updateStaticLanguage();
   if (shouldOpenAdminFromUrl()) {
