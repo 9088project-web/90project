@@ -97,6 +97,7 @@ Event:
 - `ads/video-ad-15s.html`：9:16 本地预览稿，可用于手机广告画面确认或屏幕录制。
 - `ads/video-ad-brief.md`：投放目标、15 秒脚本、广告文案、Headline 和受众建议。
 - `ads/DESIGN.md`：视频广告黑金视觉规范。
+- `ads/media/your-video.mp4`：预留给自拍视频的位置；放入这个文件名后，广告预览会自动载入。
 
 本地查看：
 

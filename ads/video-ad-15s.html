@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>90 PROJECT 15s Video Ad Preview</title>
+  <title>90 PROJECT Self-shot Video Ad Template</title>
   <style>
     :root{
       --black:#0e0b08;
@@ -12,6 +12,7 @@
       --gold2:#ffdf9a;
       --cream:#fff7e8;
       --muted:#ead7b8;
+      --line:rgba(214,168,92,.36);
       --shadow:0 30px 90px rgba(0,0,0,.48);
     }
     *{box-sizing:border-box}
@@ -22,8 +23,8 @@
       place-items:center;
       padding:28px;
       background:
-        radial-gradient(circle at 20% 0,rgba(214,168,92,.24),rgba(214,168,92,0) 34%),
-        radial-gradient(circle at 90% 20%,rgba(255,223,154,.1),rgba(255,223,154,0) 28%),
+        radial-gradient(circle at 18% 0,rgba(214,168,92,.24),rgba(214,168,92,0) 34%),
+        radial-gradient(circle at 88% 20%,rgba(255,223,154,.1),rgba(255,223,154,0) 30%),
         var(--black);
       color:var(--cream);
       font-family:Arial,"Microsoft YaHei","Noto Sans SC",sans-serif;
@@ -50,192 +51,186 @@
       content:"";
       position:absolute;
       inset:0;
-      z-index:7;
+      z-index:4;
       pointer-events:none;
       background:
-        linear-gradient(180deg,rgba(255,247,232,.08),rgba(255,247,232,0) 18%),
-        radial-gradient(circle at 12% 18%,rgba(255,223,154,.18),rgba(255,223,154,0) 28%);
-      mix-blend-mode:screen;
-      animation:warmPulse 15s ease-in-out infinite;
+        linear-gradient(180deg,rgba(0,0,0,.36),rgba(0,0,0,0) 30%,rgba(0,0,0,.64)),
+        radial-gradient(circle at 18% 13%,rgba(255,223,154,.18),rgba(255,223,154,0) 26%);
+      mix-blend-mode:normal;
     }
-    .scene{
+    .ad-top,
+    .ad-bottom{
       position:absolute;
-      inset:0;
+      left:0;
+      right:0;
+      z-index:8;
+      padding:26px 26px 0;
+    }
+    .ad-top{
+      top:0;
       display:flex;
-      flex-direction:column;
+      align-items:center;
       justify-content:space-between;
-      padding:42px 34px;
-      opacity:0;
+      gap:14px;
     }
-    .scene img.bg{
+    .brand-lockup{
+      display:flex;
+      align-items:center;
+      gap:12px;
+      min-width:0;
+    }
+    .brand-lockup img{
+      width:52px;
+      height:52px;
+      border-radius:50%;
+      border:1px solid rgba(255,223,154,.5);
+      object-fit:cover;
+      box-shadow:0 10px 30px rgba(0,0,0,.4);
+    }
+    .brand-lockup strong,
+    .brand-lockup span{
+      display:block;
+      white-space:nowrap;
+    }
+    .brand-lockup strong{
+      color:var(--gold2);
+      font-size:21px;
+      line-height:1;
+      font-weight:900;
+      text-shadow:0 8px 24px rgba(0,0,0,.45);
+    }
+    .brand-lockup span{
+      margin-top:5px;
+      color:var(--gold);
+      font-size:12px;
+      font-weight:900;
+      letter-spacing:4px;
+    }
+    .top-pill{
+      border:1px solid rgba(255,223,154,.36);
+      border-radius:999px;
+      padding:8px 10px;
+      background:rgba(0,0,0,.44);
+      color:var(--cream);
+      font-size:12px;
+      font-weight:900;
+      box-shadow:0 12px 30px rgba(0,0,0,.35);
+    }
+    .video-slot{
       position:absolute;
-      inset:0;
+      inset:96px 22px 188px;
+      z-index:2;
+      display:grid;
+      place-items:center;
+      overflow:hidden;
+      border:1px dashed rgba(255,223,154,.58);
+      border-radius:24px;
+      background:
+        radial-gradient(circle at 50% 0,rgba(255,223,154,.12),rgba(255,223,154,0) 32%),
+        linear-gradient(180deg,rgba(23,18,13,.92),rgba(8,7,6,.92));
+      box-shadow:inset 0 1px 0 rgba(255,247,232,.12),0 22px 70px rgba(0,0,0,.36);
+    }
+    .video-slot video{
       width:100%;
       height:100%;
       object-fit:cover;
-      z-index:-2;
-      filter:saturate(1.04) contrast(1.08);
-      transform:scale(1.06);
-      animation:slowPush 15s ease-in-out infinite;
+      display:none;
+      background:#000;
     }
-    .scene::after{
-      content:"";
-      position:absolute;
-      inset:0;
-      z-index:-1;
+    .video-slot.has-video video{
+      display:block;
+    }
+    .video-placeholder{
+      width:100%;
+      height:100%;
+      display:grid;
+      place-items:center;
+      padding:28px;
+      text-align:center;
       background:
-        linear-gradient(180deg,rgba(0,0,0,.48),rgba(0,0,0,.14) 38%,rgba(0,0,0,.84)),
-        linear-gradient(90deg,rgba(0,0,0,.72),rgba(0,0,0,.12));
+        linear-gradient(180deg,rgba(0,0,0,.18),rgba(0,0,0,.58)),
+        url("../assets/images/brand/hero-banquet.jpg") center/cover;
     }
-    .logo-row{
-      display:flex;
-      align-items:center;
-      gap:13px;
-      min-height:58px;
+    .video-slot.has-video .video-placeholder{
+      display:none;
     }
-    .logo-row img{
-      width:54px;
-      height:54px;
-      border-radius:50%;
-      border:1px solid rgba(255,223,154,.38);
-      object-fit:cover;
+    .video-placeholder div{
+      width:100%;
+      border:1px solid rgba(255,223,154,.32);
+      border-radius:22px;
+      padding:24px 18px;
+      background:rgba(0,0,0,.56);
+      box-shadow:0 20px 60px rgba(0,0,0,.36);
     }
-    .logo-row span{
+    .video-placeholder b{
       display:block;
       color:var(--gold2);
-      font-size:11px;
+      font-size:28px;
+      line-height:1.15;
       font-weight:900;
-      letter-spacing:3.8px;
     }
-    .headline{
-      margin:0;
-      color:var(--gold2);
-      font-size:54px;
-      line-height:.98;
-      font-weight:900;
-      letter-spacing:.01em;
-      text-shadow:0 12px 34px rgba(0,0,0,.55),0 0 28px rgba(214,168,92,.22);
-    }
-    .headline.small{
-      font-size:42px;
-      line-height:1.05;
-    }
-    .sub{
-      margin:14px 0 0;
-      color:var(--cream);
-      font-size:22px;
-      line-height:1.35;
-      font-weight:800;
-      text-shadow:0 8px 24px rgba(0,0,0,.48);
-    }
-    .micro{
+    .video-placeholder span{
+      display:block;
+      margin-top:12px;
       color:var(--muted);
       font-size:15px;
-      line-height:1.55;
-      font-weight:700;
+      line-height:1.5;
+      font-weight:800;
     }
-    .pill-row{
-      display:flex;
-      flex-wrap:wrap;
-      gap:8px;
-      margin-top:18px;
+    .ad-bottom{
+      bottom:0;
+      padding:0 22px 24px;
     }
-    .pill{
-      display:inline-flex;
-      align-items:center;
-      min-height:31px;
+    .offer-card{
       border:1px solid rgba(255,223,154,.34);
-      border-radius:999px;
-      padding:7px 11px;
+      border-radius:26px;
+      padding:18px 18px 16px;
+      background:linear-gradient(180deg,rgba(8,7,6,.82),rgba(8,7,6,.94));
+      box-shadow:0 22px 60px rgba(0,0,0,.42), inset 0 1px 0 rgba(255,223,154,.1);
+    }
+    .offer-card h1{
+      margin:0;
+      color:var(--gold2);
+      font-size:34px;
+      line-height:1.05;
+      font-weight:900;
+      text-shadow:0 10px 26px rgba(0,0,0,.45);
+    }
+    .offer-card p{
+      margin:8px 0 0;
       color:var(--cream);
-      background:rgba(0,0,0,.4);
-      font-size:13px;
-      font-weight:900;
-    }
-    .price-card{
-      margin-top:auto;
-      border:1px solid rgba(255,223,154,.36);
-      border-radius:23px;
-      padding:20px;
-      background:linear-gradient(180deg,rgba(255,247,232,.94),rgba(251,225,177,.88));
-      color:#1a120b;
-      box-shadow:0 16px 44px rgba(0,0,0,.34);
-    }
-    .price-card small{
-      display:block;
-      color:#76572c;
-      font-size:14px;
-      font-weight:900;
-      letter-spacing:2.4px;
-    }
-    .price-card strong{
-      display:block;
-      margin-top:4px;
-      font-size:46px;
-      line-height:1;
-      font-weight:900;
-      font-variant-numeric:tabular-nums;
-    }
-    .price-card p{
-      margin:10px 0 0;
-      font-size:18px;
+      font-size:17px;
       line-height:1.35;
       font-weight:900;
     }
-    .service-list{
+    .cta-row{
       display:grid;
-      gap:11px;
-      margin-top:22px;
+      grid-template-columns:1fr;
+      gap:8px;
+      margin-top:13px;
     }
-    .service-list div{
-      border:1px solid rgba(255,223,154,.35);
-      border-radius:17px;
-      padding:13px 14px;
-      background:rgba(0,0,0,.42);
-      color:var(--cream);
+    .cta-button{
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      min-height:50px;
+      border-radius:999px;
+      background:linear-gradient(135deg,#ffdf9a,#d6a85c);
+      color:#15100a;
       font-size:18px;
       font-weight:900;
-      box-shadow:0 14px 35px rgba(0,0,0,.28);
+      text-decoration:none;
+      box-shadow:0 16px 42px rgba(214,168,92,.26);
     }
-    .cta-card{
-      margin-top:auto;
-      border-radius:28px;
-      padding:24px 22px;
-      background:linear-gradient(135deg,#ffdf9a,#d6a85c);
-      color:#130e08;
+    .phone{
+      display:block;
+      color:var(--gold2);
+      font-size:14px;
+      font-weight:900;
       text-align:center;
-      box-shadow:0 20px 60px rgba(214,168,92,.32);
-    }
-    .cta-card strong{
-      display:block;
-      font-size:28px;
-      font-weight:900;
       font-variant-numeric:tabular-nums;
+      letter-spacing:1px;
     }
-    .cta-card span{
-      display:block;
-      margin-top:6px;
-      font-size:16px;
-      font-weight:900;
-    }
-    .s1{animation:sceneOne 15s linear infinite}
-    .s2{animation:sceneTwo 15s linear infinite}
-    .s3{animation:sceneThree 15s linear infinite}
-    .s4{animation:sceneFour 15s linear infinite}
-    .s5{animation:sceneFive 15s linear infinite}
-    .scene > *:not(.bg){animation:riseIn 15s ease both infinite}
-    .s1 .logo-row{animation-delay:.15s}
-    .s1 .copy{animation-delay:.35s}
-    .s1 .pill-row{animation-delay:.7s}
-    .s2 .copy{animation-delay:3.18s}
-    .s2 .price-card{animation-delay:3.55s}
-    .s3 .copy{animation-delay:6.25s}
-    .s3 .price-card{animation-delay:6.62s}
-    .s4 .copy{animation-delay:9.35s}
-    .s4 .service-list{animation-delay:9.72s}
-    .s5 .logo-row{animation-delay:12.18s}
-    .s5 .copy{animation-delay:12.45s}
-    .s5 .cta-card{animation-delay:12.82s}
     .ad-panel{
       border:1px solid rgba(214,168,92,.32);
       border-radius:22px;
@@ -254,19 +249,21 @@
       line-height:1.75;
       font-size:16px;
     }
-    .ad-panel ol{
-      margin:16px 0 0;
-      padding-left:22px;
-      color:var(--cream);
-      line-height:1.75;
-      font-weight:800;
+    .upload-box{
+      display:grid;
+      gap:12px;
+      margin-top:18px;
+      border:1px solid rgba(255,223,154,.22);
+      border-radius:18px;
+      padding:16px;
+      background:rgba(0,0,0,.2);
     }
-    .ad-panel a,.ad-panel button{
+    .upload-box label,
+    .ad-panel a{
       display:inline-flex;
       align-items:center;
       justify-content:center;
       min-height:46px;
-      margin:16px 10px 0 0;
       border-radius:999px;
       border:1px solid rgba(255,223,154,.5);
       padding:0 18px;
@@ -276,141 +273,140 @@
       text-decoration:none;
       cursor:pointer;
     }
-    .ad-panel button.secondary{
-      background:transparent;
+    .upload-box input{
+      display:none;
+    }
+    .upload-box small{
+      color:var(--muted);
+      line-height:1.55;
+      font-size:13px;
+    }
+    .shot-list{
+      margin:18px 0 0;
+      padding-left:20px;
+      color:var(--cream);
+      line-height:1.75;
+      font-weight:800;
+    }
+    .status{
       color:var(--gold2);
-    }
-    @keyframes sceneOne{0%,20%{opacity:1} 24%,100%{opacity:0}}
-    @keyframes sceneTwo{0%,19%{opacity:0} 23%,42%{opacity:1} 46%,100%{opacity:0}}
-    @keyframes sceneThree{0%,40%{opacity:0} 44%,62%{opacity:1} 66%,100%{opacity:0}}
-    @keyframes sceneFour{0%,60%{opacity:0} 64%,80%{opacity:1} 84%,100%{opacity:0}}
-    @keyframes sceneFive{0%,78%{opacity:0} 82%,100%{opacity:1}}
-    @keyframes riseIn{
-      0%,3%{opacity:0;transform:translateY(26px) scale(.98)}
-      6%,100%{opacity:1;transform:translateY(0) scale(1)}
-    }
-    @keyframes slowPush{
-      0%{transform:scale(1.06)}
-      100%{transform:scale(1.14)}
-    }
-    @keyframes warmPulse{
-      0%,100%{opacity:.7}
-      50%{opacity:1}
+      font-size:13px;
+      font-weight:900;
+      min-height:18px;
     }
     @media(max-width:860px){
       body{padding:16px}
       .ad-workspace{grid-template-columns:1fr;justify-items:center}
       .ad-panel{width:min(420px,100%)}
-      .headline{font-size:48px}
+      .brand-lockup strong{font-size:19px}
+      .offer-card h1{font-size:30px}
     }
   </style>
 </head>
 <body>
   <main class="ad-workspace">
-    <section class="ad-stage is-playing" id="adStage" aria-label="90 PROJECT 15 second vertical video ad preview">
-      <article class="scene s1">
-        <img class="bg" src="../assets/images/brand/hero-banquet.jpg" alt="" />
-        <div class="logo-row">
+    <section class="ad-stage" aria-label="90 PROJECT self-shot video advertisement template">
+      <div class="ad-top">
+        <div class="brand-lockup">
           <img src="../assets/images/logo/logo-icon-dark.jpg" alt="90 PROJECT logo" />
-          <span>FOOD · CATERING · EVENT</span>
+          <div>
+            <strong>九零食刻</strong>
+            <span>90 PROJECT</span>
+          </div>
         </div>
-        <div class="copy">
-          <h2 class="headline">九零食刻</h2>
-          <p class="sub">每一刻，都是美好食刻</p>
-          <p class="micro">Premium catering style, affordable daily meals.</p>
-        </div>
-        <div class="pill-row">
-          <span class="pill">包伙食</span>
-          <span class="pill">外餐</span>
-          <span class="pill">活动餐饮</span>
-        </div>
-      </article>
+        <div class="top-pill">自拍视频位</div>
+      </div>
 
-      <article class="scene s2">
-        <img class="bg" src="../assets/images/meal/meal-standard.jpg" alt="" />
-        <div class="copy">
-          <h2 class="headline small">每天吃什么？</h2>
-          <p class="sub">交给九零食刻安排</p>
+      <div class="video-slot" id="videoSlot">
+        <video id="userVideo" data-default-src="media/your-video.mp4" poster="../assets/images/brand/hero-banquet.jpg" muted playsinline loop controls></video>
+        <div class="video-placeholder" id="videoPlaceholder">
+          <div>
+            <b>这里放你拍的视频</b>
+            <span>建议 9:16 竖版，10-15 秒。拍饭盒、出餐、送餐、活动现场都可以。</span>
+          </div>
         </div>
-        <div class="price-card">
-          <small>MEAL PLAN</small>
-          <strong>RM300/月</strong>
+      </div>
+
+      <div class="ad-bottom">
+        <div class="offer-card">
+          <h1>包伙食 RM300/月</h1>
           <p>20 餐 · 平均 RM15 / 餐</p>
+          <div class="cta-row">
+            <a class="cta-button" href="https://wa.me/601110977166" target="_blank" rel="noopener">WhatsApp 立即询问</a>
+            <span class="phone">011-1097 7166</span>
+          </div>
         </div>
-      </article>
-
-      <article class="scene s3">
-        <img class="bg" src="../assets/images/meal/meal-rich.jpg" alt="" />
-        <div class="copy">
-          <h2 class="headline small">日常价格</h2>
-          <p class="sub">吃出高级餐饮感</p>
-        </div>
-        <div class="price-card">
-          <small>DAILY MEALS</small>
-          <strong>1 主菜 + 配菜</strong>
-          <p>适合上班族 · 学生 · 家庭订餐</p>
-        </div>
-      </article>
-
-      <article class="scene s4">
-        <img class="bg" src="../assets/images/event/catering-event.jpg" alt="" />
-        <div class="copy">
-          <h2 class="headline small">不只包伙食</h2>
-          <p class="sub">活动餐饮也能安排</p>
-        </div>
-        <div class="service-list">
-          <div>生日聚会 · Birthday</div>
-          <div>公司聚餐 · Company Meal</div>
-          <div>小型 Buffet · Custom Catering</div>
-        </div>
-      </article>
-
-      <article class="scene s5">
-        <img class="bg" src="../assets/images/brand/hero-banquet.jpg" alt="" />
-        <div class="logo-row">
-          <img src="../assets/images/logo/logo-icon-dark.jpg" alt="90 PROJECT logo" />
-          <span>90 PROJECT</span>
-        </div>
-        <div class="copy">
-          <h2 class="headline small">准备订餐？</h2>
-          <p class="sub">WhatsApp 我们获取报价</p>
-        </div>
-        <div class="cta-card">
-          <strong>011-1097 7166</strong>
-          <span>WhatsApp 立即询问</span>
-        </div>
-      </article>
+      </div>
     </section>
 
     <aside class="ad-panel">
-      <h1>15 秒竖版广告稿</h1>
-      <p>主推包伙食，适合 Facebook Reels、Instagram Reels、TikTok 和 WhatsApp Status。画面节奏按 5 个镜头整理，直接把观众带去 WhatsApp 询问。</p>
-      <ol>
-        <li>开场 3 秒：品牌和情绪。</li>
-        <li>3-6 秒：RM300/月、20 餐。</li>
-        <li>6-9 秒：日常餐价值感。</li>
-        <li>9-12 秒：外餐和活动场景。</li>
-        <li>12-15 秒：WhatsApp CTA。</li>
+      <h1>自拍视频投放模板</h1>
+      <p>我已经把中间空间留出来给你放自己拍的视频。这个页面不会上传到服务器；选择文件只是本地预览。正式放线上时，把视频放到 `ads/media/your-video.mp4`。</p>
+
+      <div class="upload-box">
+        <label for="localVideo">选择本地视频预览</label>
+        <input id="localVideo" type="file" accept="video/mp4,video/webm,video/quicktime,video/*" />
+        <div class="status" id="videoStatus">等待你选择自拍视频。</div>
+        <small>建议：手机竖拍、光线暖一点、镜头稳定，画面中保留饭盒/菜色/出餐动作。</small>
+      </div>
+
+      <ol class="shot-list">
+        <li>0-3 秒：打开餐盒或摆盘近景。</li>
+        <li>3-7 秒：展示主菜、配菜、白饭。</li>
+        <li>7-11 秒：打包、出餐或送餐动作。</li>
+        <li>11-15 秒：镜头停在餐盒，给 CTA 留空间。</li>
       </ol>
-      <button class="secondary" type="button" id="replayAd">重新播放</button>
+
       <a href="video-ad-brief.md">查看投放文案</a>
     </aside>
   </main>
 
   <script>
-    const replay = document.getElementById('replayAd');
-    const stage = document.getElementById('adStage');
-    replay?.addEventListener('click', () => {
-      stage.style.animation = 'none';
-      stage.querySelectorAll('.scene, .scene > *:not(.bg), .scene img.bg').forEach(item => {
-        item.style.animation = 'none';
-      });
-      stage.offsetHeight;
-      stage.querySelectorAll('.scene, .scene > *:not(.bg), .scene img.bg').forEach(item => {
-        item.style.animation = '';
-      });
-      stage.style.animation = '';
+    const input = document.getElementById('localVideo');
+    const video = document.getElementById('userVideo');
+    const slot = document.getElementById('videoSlot');
+    const statusText = document.getElementById('videoStatus');
+
+    function markVideoReady(message) {
+      slot.classList.add('has-video');
+      statusText.textContent = message;
+    }
+
+    video.addEventListener('loadeddata', () => {
+      markVideoReady('已载入 ads/media/your-video.mp4。');
     });
+
+    video.addEventListener('error', () => {
+      slot.classList.remove('has-video');
+    });
+
+    async function loadDefaultVideoIfAvailable() {
+      const src = video.dataset.defaultSrc;
+      if (!src) return;
+
+      try {
+        const response = await fetch(src, { method: 'HEAD', cache: 'no-store' });
+        if (!response.ok) return;
+        video.src = src;
+      } catch (error) {
+        slot.classList.remove('has-video');
+      }
+    }
+
+    input.addEventListener('change', event => {
+      const file = event.target.files && event.target.files[0];
+      if (!file) return;
+
+      const url = URL.createObjectURL(file);
+      video.src = url;
+      video.muted = true;
+      video.loop = true;
+      video.controls = true;
+      video.play().catch(() => {});
+      markVideoReady(`正在预览：${file.name}`);
+    });
+
+    loadDefaultVideoIfAvailable();
   </script>
 </body>
 </html>
