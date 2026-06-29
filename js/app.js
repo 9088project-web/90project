@@ -59,6 +59,21 @@ const cateringEstimateMeta = document.getElementById('cateringEstimateMeta');
 const selectedCateringSummary = document.getElementById('selectedCateringSummary');
 const cateringWhatsApp = document.getElementById('cateringWhatsApp');
 const cateringMenuBuilder = document.getElementById('cateringMenuBuilder');
+const cateringComboPresets = document.getElementById('cateringComboPresets');
+const stylingCasesSection = document.getElementById('styling-cases');
+const stylingCaseCards = Array.from(document.querySelectorAll('[data-case-card]'));
+const caseShowcaseMedia = document.querySelector('[data-case-lightbox-open]');
+const caseFeaturedImage = document.querySelector('[data-case-featured]');
+const caseCounter = document.querySelector('[data-case-counter]');
+const caseLabel = document.querySelector('[data-case-label]');
+const caseTitle = document.querySelector('[data-case-title]');
+const caseDesc = document.querySelector('[data-case-desc]');
+const caseProgress = document.querySelector('[data-case-progress]');
+const casePlayToggle = document.querySelector('[data-case-play]');
+const caseLightbox = document.getElementById('caseLightbox');
+const caseLightboxImg = document.querySelector('[data-case-lightbox-img]');
+const caseLightboxLabel = document.querySelector('[data-case-lightbox-label]');
+const caseLightboxTitle = document.querySelector('[data-case-lightbox-title]');
 
 const MEMBERS_KEY = 'np90_members_v1';
 const INQUIRIES_KEY = 'np90_inquiries_v1';
@@ -78,6 +93,12 @@ const INQUIRY_STATUSES = ['new', 'contacted', 'quoted', 'confirmed', 'completed'
 const REFERRAL_REWARD_STATUSES = ['pending', 'approved', 'redeemed', 'cancelled'];
 const REFERRAL_LEVEL_RATES = [1, 0.5, 0.3, 0.2, 0.1];
 const CATERING_MINIMUM_TOTAL = 300;
+const STYLING_CASE_DELAY = 5200;
+const prefersReducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches || false;
+let activeStylingCase = 0;
+let stylingCaseTimer = null;
+let stylingCaseProgressFrame = null;
+let stylingCasePlaying = !prefersReducedMotion;
 const CATERING_SERVICE_STYLES = {
   packed: { label: '餐盒 / Packed Meal', multiplier: 1 },
   buffet: { label: '小型 Buffet / Setup', multiplier: 1.12 },
@@ -146,6 +167,36 @@ const CATERING_MENU = [
     label: 'Sauce Style',
     rate: 0,
     items: ['咖喱 Curry', 'Sambal', '咸蛋奶油 Salted Egg Butter', '宫保 Kung Pao', '泰式酸辣 Thai Style', 'Sweet & Sour', '姜葱 Ginger Onion', '麦片 Cereal', '椒盐 Salt & Pepper']
+  }
+];
+
+const CATERING_COMBOS = [
+  {
+    id: 'birthday',
+    title: '生日聚会组合',
+    label: 'Birthday Party',
+    desc: '适合 20-40 人轻松聚会，有主食、鸡肉、蔬菜、豆腐和鱼类。',
+    pax: 30,
+    service: 'event',
+    items: ['扬州炒饭', '咖喱鸡', '蒜蓉西兰花', '泰式豆腐', 'Sweet Sour Fish']
+  },
+  {
+    id: 'company',
+    title: '公司午餐组合',
+    label: 'Company Meal',
+    desc: '适合办公室午餐或员工餐，口味稳定、份量清楚、方便配送。',
+    pax: 50,
+    service: 'packed',
+    items: ['白饭', 'Ginger Onion Chicken', '炒高丽菜', '红烧豆腐', '咸蛋奶油猪']
+  },
+  {
+    id: 'buffet',
+    title: '小型 Buffet 组合',
+    label: 'Small Buffet',
+    desc: '适合开张、社团、家庭聚会，菜式更丰富，也适合现场摆台。',
+    pax: 60,
+    service: 'buffet',
+    items: ['炒米粉', '香料炸鸡', '麦片虾', '娘惹阿杂', '宫保鱼片', '椒盐 Salt & Pepper']
   }
 ];
 
@@ -318,19 +369,19 @@ const translations = {
       }
     ],
     referral: {
-      title: '推荐朋友奖励',
-      desc: '分享九零食刻给朋友，朋友下单时填入你的推荐码，完成消费后即可获得会员回馈。',
+      title: '会员推荐奖励',
+      desc: '分享九零食刻给朋友，朋友下单时填入你的推荐码，完成消费并经后台确认后即可记录会员回馈。',
       cards: [
         { title: 'TnG RM20 / 下次抵扣', desc: '朋友首次成功购买服务后，推荐人可获得 RM20 奖励，可作为下次购买服务抵扣。' },
-        { title: '多层推荐回馈', desc: '一级推荐记录 1% 会员回馈；如形成上级推荐链，可按活动规则继续记录多层待确认回馈。' },
+        { title: '多层推荐回馈', desc: '多层回馈只作为活动记录与下次服务抵扣，所有层级、比例与状态都需后台审核确认。' },
         { title: '会员推荐码', desc: '登录会员中心即可查看自己的推荐码。朋友 WhatsApp 下单时填入推荐码，我们会协助登记。' }
       ],
       noteStrong: '透明规则：',
-      note: '推荐奖励开放多层记录，奖励属于下次服务抵扣，不可兑换现金或转让；各层回馈只按已确认实付消费额计算。',
+      note: '推荐奖励属于下次服务抵扣，不可兑换现金或转让；多层记录、比例与有效期以后台审核和活动设定为准。',
       terms: [
         '朋友首次成功消费后，RM20 会记录为下次服务抵扣。',
-        '一级推荐按已确认实付消费额记录 1% 回馈；上级推荐链可按活动规则记录多层回馈。',
-        '最终以管理员审核、付款记录与 WhatsApp 确认为准；九零食刻保留调整活动条款的权利。'
+        '多层推荐回馈只按已确认实付订单记录，需由管理员审核后才可使用。',
+        '最终以付款记录、后台状态与 WhatsApp 确认为准；九零食刻保留调整活动条款的权利。'
       ]
     },
     weekly: {
@@ -410,7 +461,7 @@ const translations = {
         label: 'EVENT & STYLING',
         title: '活动布置 / Styling',
         items: ['餐桌布置', '背景布置', '简单花艺', '餐饮展示台', '拍照氛围', 'Mocktail / Beverage Bar'],
-        button: '查看布置案例'
+        button: '查看动态作品集'
       }
     },
     cateringTool: {
@@ -419,7 +470,7 @@ const translations = {
       desc: '把外餐菜单与预算计算收在一个专属工具里。需要时再展开选择菜式、人数和服务形式，页面更干净，也更像高级餐饮品牌。',
       points: ['自选菜式', '预算估算', 'WhatsApp 发送'],
       button: '开始选择菜单',
-      builderLabel: 'PRICE CALCULATOR',
+      builderLabel: 'MENU SELECTION',
       builderTitle: '菜单选择与预算',
       builderDesc: '选择菜式后，系统会先给你活动餐饮的初步预算。',
       close: '收起'
@@ -457,9 +508,9 @@ const translations = {
       benefits: [
         ['询问记录', '自动保存本机订单询问'],
         ['推荐 RM20', '朋友成功消费后可得下次抵扣'],
-        ['多层回馈', '上级推荐链待确认奖励']
+        ['多层回馈', '后台审核后记录抵扣']
       ],
-      referralIntro: '把推荐码发给朋友。朋友下单时填入推荐码，完成消费后你可获得 RM20 抵扣与多层会员回馈记录。',
+      referralIntro: '把推荐码发给朋友。朋友下单时填入推荐码，完成消费并经后台确认后，可记录 RM20 抵扣与多层会员回馈。',
       copyCode: '复制推荐码',
       shareCode: 'WhatsApp 分享',
       rewardsTitle: '我的推荐奖励',
@@ -541,19 +592,19 @@ const translations = {
       }
     ],
     referral: {
-      title: 'Refer A Friend Rewards',
-      desc: 'Share 90 PROJECT with friends. When they order with your referral code, your member reward will be recorded after their purchase is confirmed.',
+      title: 'Member Referral Rewards',
+      desc: 'Share 90 PROJECT with friends. When they order with your referral code, rewards are recorded after purchase and admin confirmation.',
       cards: [
         { title: 'TnG RM20 / next-order credit', desc: 'After your friend completes their first purchase, you can receive RM20 credit for your next service order.' },
-        { title: 'Multi-level referral reward', desc: 'Level 1 records 1% member reward. If an upline referral chain exists, upper levels may also record pending campaign rewards.' },
+        { title: 'Multi-level referral reward', desc: 'Multi-level rewards are campaign records for next-order service credit only. Levels, rates and status require admin approval.' },
         { title: 'Member referral code', desc: 'Log in to your member centre to view your referral code. Your friend can enter it when ordering through WhatsApp.' }
       ],
       noteStrong: 'Clear rule:',
-      note: 'Multi-level referral records are available as next-order service credits only. Rewards are not cash or transferable balance.',
+      note: 'Referral rewards are next-order service credits only. They are not cash, transferable balance or guaranteed payout. Multi-level records, rates and validity follow admin approval and campaign settings.',
       terms: [
         'RM20 is recorded as next-order credit after the friend completes a first purchase.',
-        'Level 1 referral records 1% from confirmed paid spending. Upper referral levels may be recorded according to campaign rules.',
-        'Final approval depends on admin review, payment records and WhatsApp confirmation. 90 PROJECT may adjust campaign terms when needed.'
+        'Multi-level referral rewards are recorded only from confirmed paid orders and require admin approval before use.',
+        'Final eligibility depends on payment records, admin status and WhatsApp confirmation. 90 PROJECT may adjust campaign terms when needed.'
       ]
     },
     weekly: {
@@ -633,7 +684,7 @@ const translations = {
         label: 'EVENT & STYLING',
         title: 'Event Styling',
         items: ['Table styling', 'Backdrop setup', 'Simple floral styling', 'Food display table', 'Photo-friendly ambience', 'Mocktail / Beverage Bar'],
-        button: 'View Styling Options'
+        button: 'View Dynamic Portfolio'
       }
     },
     cateringTool: {
@@ -642,7 +693,7 @@ const translations = {
       desc: 'The full catering menu and budget calculator are kept inside one focused tool. Open it only when you want to choose dishes, pax and service style.',
       points: ['Choose dishes', 'Estimate budget', 'Send WhatsApp'],
       button: 'Start Menu Selection',
-      builderLabel: 'PRICE CALCULATOR',
+      builderLabel: 'MENU SELECTION',
       builderTitle: 'Menu Selection & Budget',
       builderDesc: 'Choose dishes and the system will estimate an initial event catering budget.',
       close: 'Collapse'
@@ -680,9 +731,9 @@ const translations = {
       benefits: [
         ['Inquiry Records', 'Save order inquiries on this device'],
         ['RM20 Referral', 'Credit after your friend completes a purchase'],
-        ['Multi-level Reward', 'Pending rewards from referral chain spending']
+        ['Multi-level Reward', 'Admin-approved credit records']
       ],
-      referralIntro: 'Share your referral code with friends. When they order with your code, you may receive RM20 credit and multi-level member reward records.',
+      referralIntro: 'Share your referral code with friends. When they order with your code, RM20 credit and multi-level reward records may be added after purchase and admin confirmation.',
       copyCode: 'Copy Code',
       shareCode: 'Share on WhatsApp',
       rewardsTitle: 'My Referral Rewards',
@@ -748,6 +799,35 @@ function renderCateringMenu() {
       </div>
     </article>
   `).join('');
+}
+
+function renderCateringCombos() {
+  if (!cateringComboPresets) return;
+  cateringComboPresets.innerHTML = CATERING_COMBOS.map(combo => `
+    <button class="combo-preset-card" type="button" data-catering-combo="${escapeHtml(combo.id)}">
+      <span>${escapeHtml(combo.label)}</span>
+      <strong>${escapeHtml(combo.title)}</strong>
+      <small>${escapeHtml(combo.desc)}</small>
+    </button>
+  `).join('');
+}
+
+function applyCateringCombo(comboId) {
+  const combo = CATERING_COMBOS.find(item => item.id === comboId);
+  if (!combo || !cateringMenuGrid) return;
+
+  const wanted = new Set(combo.items);
+  cateringMenuGrid.querySelectorAll('input[type="checkbox"]').forEach(input => {
+    input.checked = wanted.has(input.value);
+  });
+  if (cateringPax) cateringPax.value = String(combo.pax);
+  if (cateringServiceStyle) cateringServiceStyle.value = combo.service;
+
+  cateringComboPresets?.querySelectorAll('[data-catering-combo]').forEach(button => {
+    button.classList.toggle('is-active', button.dataset.cateringCombo === combo.id);
+  });
+  renderCateringEstimate();
+  document.querySelector('.calculator-panel')?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 }
 
 function selectedCateringItems() {
@@ -837,6 +917,7 @@ function renderCateringEstimate() {
 
 function openCateringMenuBuilder(scroll = true) {
   if (!cateringMenuBuilder) return;
+  document.getElementById('catering-menu')?.removeAttribute('hidden');
   cateringMenuBuilder.hidden = false;
   window.requestAnimationFrame(() => {
     cateringMenuBuilder.classList.add('is-open');
@@ -850,9 +931,148 @@ function closeCateringMenuBuilder() {
   window.setTimeout(() => {
     if (!cateringMenuBuilder.classList.contains('is-open')) {
       cateringMenuBuilder.hidden = true;
+      document.getElementById('catering-menu')?.setAttribute('hidden', '');
     }
   }, 260);
-  document.getElementById('catering-menu')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  document.getElementById('catering')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function getStylingCaseItem(card) {
+  const image = card.querySelector('img');
+  return {
+    image: image?.getAttribute('src') || '',
+    alt: image?.getAttribute('alt') || '',
+    label: card.querySelector('span')?.textContent?.trim() || '',
+    title: card.querySelector('h3')?.textContent?.trim() || '',
+    desc: card.querySelector('p')?.textContent?.trim() || ''
+  };
+}
+
+function getStylingCaseItems() {
+  return stylingCaseCards.map(getStylingCaseItem).filter(item => item.image);
+}
+
+function updateStylingCasePlayButton() {
+  if (!casePlayToggle) return;
+  const text = stylingCasePlaying
+    ? (currentLanguage === 'en' ? 'Pause autoplay' : '暂停轮播')
+    : (currentLanguage === 'en' ? 'Play showcase' : '继续轮播');
+  casePlayToggle.textContent = text;
+  casePlayToggle.setAttribute('aria-pressed', String(stylingCasePlaying));
+}
+
+function stopStylingCaseAutoplay() {
+  window.clearTimeout(stylingCaseTimer);
+  stylingCaseTimer = null;
+  if (stylingCaseProgressFrame) {
+    window.cancelAnimationFrame(stylingCaseProgressFrame);
+    stylingCaseProgressFrame = null;
+  }
+}
+
+function animateStylingCaseProgress() {
+  if (!caseProgress || !stylingCasePlaying || prefersReducedMotion) return;
+  const startedAt = performance.now();
+  const draw = now => {
+    if (!stylingCasePlaying) return;
+    const progress = Math.min(100, ((now - startedAt) / STYLING_CASE_DELAY) * 100);
+    caseProgress.style.width = `${progress}%`;
+    if (progress < 100) {
+      stylingCaseProgressFrame = window.requestAnimationFrame(draw);
+    }
+  };
+  caseProgress.style.width = '0%';
+  stylingCaseProgressFrame = window.requestAnimationFrame(draw);
+}
+
+function scheduleStylingCaseAutoplay() {
+  stopStylingCaseAutoplay();
+  updateStylingCasePlayButton();
+  if (!stylingCasePlaying || prefersReducedMotion || stylingCaseCards.length < 2) return;
+  animateStylingCaseProgress();
+  stylingCaseTimer = window.setTimeout(() => {
+    setStylingCase(activeStylingCase + 1);
+    scheduleStylingCaseAutoplay();
+  }, STYLING_CASE_DELAY);
+}
+
+function updateCaseLightbox(item) {
+  if (!(caseLightboxImg instanceof HTMLImageElement)) return;
+  caseLightboxImg.src = item.image;
+  caseLightboxImg.alt = item.alt;
+  if (caseLightboxLabel) caseLightboxLabel.textContent = item.label;
+  if (caseLightboxTitle) caseLightboxTitle.textContent = item.title;
+}
+
+function setStylingCase(index) {
+  const items = getStylingCaseItems();
+  if (!items.length) return;
+  activeStylingCase = (index + items.length) % items.length;
+  const item = items[activeStylingCase];
+
+  caseShowcaseMedia?.classList.add('is-switching');
+  window.setTimeout(() => caseShowcaseMedia?.classList.remove('is-switching'), 240);
+
+  if (caseFeaturedImage instanceof HTMLImageElement) {
+    caseFeaturedImage.src = item.image;
+    caseFeaturedImage.alt = item.alt;
+  }
+  if (caseCounter) caseCounter.textContent = `${String(activeStylingCase + 1).padStart(2, '0')} / ${String(items.length).padStart(2, '0')}`;
+  if (caseLabel) caseLabel.textContent = item.label;
+  if (caseTitle) caseTitle.textContent = item.title;
+  if (caseDesc) caseDesc.textContent = item.desc;
+  if (caseProgress && !stylingCasePlaying) caseProgress.style.width = '0%';
+  stylingCaseCards.forEach((card, cardIndex) => {
+    const active = cardIndex === activeStylingCase;
+    card.classList.toggle('is-active', active);
+    card.setAttribute('aria-current', active ? 'true' : 'false');
+  });
+  updateCaseLightbox(item);
+}
+
+function moveStylingCase(direction) {
+  setStylingCase(activeStylingCase + direction);
+  scheduleStylingCaseAutoplay();
+}
+
+function openCaseLightbox() {
+  const items = getStylingCaseItems();
+  if (!caseLightbox || !items.length) return;
+  updateCaseLightbox(items[activeStylingCase]);
+  caseLightbox.hidden = false;
+  caseLightbox.setAttribute('aria-hidden', 'false');
+  document.body.classList.add('case-lightbox-open');
+}
+
+function closeCaseLightbox() {
+  if (!caseLightbox) return;
+  caseLightbox.hidden = true;
+  caseLightbox.setAttribute('aria-hidden', 'true');
+  document.body.classList.remove('case-lightbox-open');
+}
+
+function openStylingCases(scroll = true) {
+  if (!stylingCasesSection) return;
+  stylingCasesSection.hidden = false;
+  setStylingCase(activeStylingCase);
+  scheduleStylingCaseAutoplay();
+  window.requestAnimationFrame(() => {
+    stylingCasesSection.classList.add('is-open');
+    if (scroll) stylingCasesSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
+}
+
+function closeStylingCases() {
+  if (!stylingCasesSection) return;
+  stopStylingCaseAutoplay();
+  closeCaseLightbox();
+  stylingCasesSection.classList.remove('is-open');
+  window.setTimeout(() => {
+    if (!stylingCasesSection.classList.contains('is-open')) {
+      stylingCasesSection.hidden = true;
+    }
+  }, 260);
+  document.getElementById('styling')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
 function supabaseUrl() {
@@ -1753,6 +1973,7 @@ function updateStaticLanguage() {
   setText('.mobile-wa', t.nav.mobileWhatsApp);
   menuToggle?.setAttribute('aria-label', t.nav.menu);
   backTop?.setAttribute('aria-label', t.nav.backTop);
+  updateStylingCasePlayButton();
 
   setText('.hero h1', t.hero.title);
   setText('.hero-en', t.hero.eyebrow);
@@ -3084,12 +3305,23 @@ function renderAdminEditor() {
   primeAdminTranslationFields();
 }
 
+function setAdminPanel(panel = 'site') {
+  document.querySelectorAll('[data-admin-panel-tab]').forEach(button => {
+    button.classList.toggle('active', button.dataset.adminPanelTab === panel);
+  });
+  document.querySelectorAll('[data-admin-panel]').forEach(section => {
+    section.hidden = section.dataset.adminPanel !== panel;
+  });
+}
+
 function renderAdminState() {
   if (!adminAuthPanel || !adminDashboard) return;
   const loggedIn = isAdminLoggedIn();
   adminAuthPanel.hidden = loggedIn;
   adminDashboard.hidden = !loggedIn;
   if (loggedIn) {
+    const activePanel = document.querySelector('[data-admin-panel-tab].active')?.dataset.adminPanelTab || 'site';
+    setAdminPanel(activePanel);
     renderAdminEditor();
     renderAdminInquiries();
     renderAdminMembers();
@@ -3472,6 +3704,10 @@ adminLogout?.addEventListener('click', () => {
   showAdminMessage('');
 });
 
+document.querySelectorAll('[data-admin-panel-tab]').forEach(button => {
+  button.addEventListener('click', () => setAdminPanel(button.dataset.adminPanelTab || 'site'));
+});
+
 addWeeklyRow?.addEventListener('click', addWeeklyEditorRow);
 addAddonRow?.addEventListener('click', addAddonEditorRow);
 addCateringRow?.addEventListener('click', addCateringEditorRow);
@@ -3648,6 +3884,74 @@ document.querySelectorAll('[data-close-catering-menu]').forEach(button => {
   button.addEventListener('click', closeCateringMenuBuilder);
 });
 
+cateringComboPresets?.addEventListener('click', event => {
+  const button = event.target instanceof HTMLElement ? event.target.closest('[data-catering-combo]') : null;
+  if (!(button instanceof HTMLElement)) return;
+  applyCateringCombo(button.dataset.cateringCombo || '');
+});
+
+document.querySelectorAll('[data-open-styling-cases]').forEach(button => {
+  button.addEventListener('click', event => {
+    event.preventDefault();
+    openStylingCases(true);
+  });
+});
+
+document.querySelectorAll('[data-close-styling-cases]').forEach(button => {
+  button.addEventListener('click', closeStylingCases);
+});
+
+document.querySelectorAll('[data-case-prev]').forEach(button => {
+  button.addEventListener('click', () => moveStylingCase(-1));
+});
+
+document.querySelectorAll('[data-case-next]').forEach(button => {
+  button.addEventListener('click', () => moveStylingCase(1));
+});
+
+stylingCaseCards.forEach((card, index) => {
+  card.addEventListener('click', () => {
+    setStylingCase(index);
+    scheduleStylingCaseAutoplay();
+  });
+  card.addEventListener('keydown', event => {
+    if (event.key !== 'Enter' && event.key !== ' ') return;
+    event.preventDefault();
+    setStylingCase(index);
+    scheduleStylingCaseAutoplay();
+  });
+});
+
+casePlayToggle?.addEventListener('click', () => {
+  stylingCasePlaying = !stylingCasePlaying;
+  scheduleStylingCaseAutoplay();
+});
+
+caseShowcaseMedia?.addEventListener('click', openCaseLightbox);
+
+document.querySelectorAll('[data-case-lightbox-close]').forEach(button => {
+  button.addEventListener('click', closeCaseLightbox);
+});
+
+document.querySelectorAll('[data-case-lightbox-prev]').forEach(button => {
+  button.addEventListener('click', () => moveStylingCase(-1));
+});
+
+document.querySelectorAll('[data-case-lightbox-next]').forEach(button => {
+  button.addEventListener('click', () => moveStylingCase(1));
+});
+
+caseLightbox?.addEventListener('click', event => {
+  if (event.target === caseLightbox) closeCaseLightbox();
+});
+
+document.addEventListener('keydown', event => {
+  if (!caseLightbox || caseLightbox.hidden) return;
+  if (event.key === 'Escape') closeCaseLightbox();
+  if (event.key === 'ArrowLeft') moveStylingCase(-1);
+  if (event.key === 'ArrowRight') moveStylingCase(1);
+});
+
 cateringMenuGrid?.addEventListener('change', renderCateringEstimate);
 cateringPax?.addEventListener('input', renderCateringEstimate);
 cateringServiceStyle?.addEventListener('change', renderCateringEstimate);
@@ -3687,11 +3991,17 @@ form?.addEventListener('submit', event => {
 async function initializeApp() {
   await loadSupabaseRuntimeConfig();
   await loadAdminContentFromSupabase();
+  renderCateringCombos();
   renderCateringMenu();
   renderCateringEstimate();
+  setStylingCase(0);
+  updateStylingCasePlayButton();
   applyReferralCodeFromUrl();
   updateStaticLanguage();
   refreshSupabaseMemberData();
+  if (window.location.hash === '#styling-cases') {
+    openStylingCases(true);
+  }
   if (shouldOpenAdminFromUrl()) {
     openAdminModal();
   }
