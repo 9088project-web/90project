@@ -90,6 +90,20 @@ Event:
 - FAQ
 - Footer CTA
 
+## 视频投放素材
+
+已新增一套 15 秒竖版广告投放稿：
+
+- `ads/video-ad-15s.html`：9:16 本地预览稿，可用于手机广告画面确认或屏幕录制。
+- `ads/video-ad-brief.md`：投放目标、15 秒脚本、广告文案、Headline 和受众建议。
+- `ads/DESIGN.md`：视频广告黑金视觉规范。
+
+本地查看：
+
+```text
+http://127.0.0.1:3040/ads/video-ad-15s.html
+```
+
 ## WhatsApp 下单
 
 按钮会打开：
