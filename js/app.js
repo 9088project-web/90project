@@ -59,6 +59,7 @@ const ADMIN_EMAIL = 'admin@90project.local';
 const ADMIN_PASSWORD_HASH = '3b523443';
 const WHATSAPP_NUMBER = '601110977166';
 const INQUIRY_STATUSES = ['new', 'contacted', 'quoted', 'confirmed', 'completed', 'cancelled'];
+const REFERRAL_LEVEL_RATES = [1, 0.5, 0.3, 0.2, 0.1];
 
 let supabaseInquiriesCache = [];
 let supabaseFetchInProgress = false;
@@ -132,14 +133,14 @@ const translations = {
       desc: '分享九零食刻给朋友，朋友下单时填入你的推荐码，完成消费后即可获得会员回馈。',
       cards: [
         { title: 'TnG RM20 / 下次抵扣', desc: '朋友首次成功购买服务后，推荐人可获得 RM20 奖励，可作为下次购买服务抵扣。' },
-        { title: '直接推荐 1% 回馈', desc: '推荐朋友消费后，推荐人可获得该笔实际消费额 1% 的会员回馈，完成报价确认后记录。' },
+        { title: '多层推荐回馈', desc: '一级推荐记录 1% 会员回馈；如形成上级推荐链，可按活动规则继续记录多层待确认回馈。' },
         { title: '会员推荐码', desc: '登录会员中心即可查看自己的推荐码。朋友 WhatsApp 下单时填入推荐码，我们会协助登记。' }
       ],
       noteStrong: '透明规则：',
-      note: '奖励属于下次服务抵扣，不可兑换现金或转让；1% 只按直接推荐的已确认实付消费额计算，不做多层累计。',
+      note: '推荐奖励开放多层记录，奖励属于下次服务抵扣，不可兑换现金或转让；各层回馈只按已确认实付消费额计算。',
       terms: [
         '朋友首次成功消费后，RM20 会记录为下次服务抵扣。',
-        '1% 只按直接推荐的已确认实付消费额计算，不做多层累计，不属于投资或现金返利计划。',
+        '一级推荐按已确认实付消费额记录 1% 回馈；上级推荐链可按活动规则记录多层回馈。',
         '最终以管理员审核、付款记录与 WhatsApp 确认为准；九零食刻保留调整活动条款的权利。'
       ]
     },
@@ -262,9 +263,9 @@ const translations = {
       benefits: [
         ['询问记录', '自动保存本机订单询问'],
         ['推荐 RM20', '朋友成功消费后可得下次抵扣'],
-        ['1% 回馈', '直接推荐消费额待确认奖励']
+        ['多层回馈', '上级推荐链待确认奖励']
       ],
-      referralIntro: '把推荐码发给朋友。朋友下单时填入推荐码，完成消费后你可获得 RM20 抵扣与 1% 会员回馈。',
+      referralIntro: '把推荐码发给朋友。朋友下单时填入推荐码，完成消费后你可获得 RM20 抵扣与多层会员回馈记录。',
       copyCode: '复制推荐码',
       shareCode: 'WhatsApp 分享',
       rewardsTitle: '我的推荐奖励',
@@ -351,14 +352,14 @@ const translations = {
       desc: 'Share 90 PROJECT with friends. When they order with your referral code, your member reward will be recorded after their purchase is confirmed.',
       cards: [
         { title: 'TnG RM20 / next-order credit', desc: 'After your friend completes their first purchase, you can receive RM20 credit for your next service order.' },
-        { title: '1% direct referral reward', desc: 'Receive 1% member reward based on the confirmed spending amount from your direct referral.' },
+        { title: 'Multi-level referral reward', desc: 'Level 1 records 1% member reward. If an upline referral chain exists, upper levels may also record pending campaign rewards.' },
         { title: 'Member referral code', desc: 'Log in to your member centre to view your referral code. Your friend can enter it when ordering through WhatsApp.' }
       ],
       noteStrong: 'Clear rule:',
-      note: 'Rewards are next-order service credits only. They are not cash, transferable balance or a multi-level commission plan.',
+      note: 'Multi-level referral records are available as next-order service credits only. Rewards are not cash or transferable balance.',
       terms: [
         'RM20 is recorded as next-order credit after the friend completes a first purchase.',
-        'The 1% reward is calculated only from confirmed paid spending by direct referrals, with no multi-level accumulation.',
+        'Level 1 referral records 1% from confirmed paid spending. Upper referral levels may be recorded according to campaign rules.',
         'Final approval depends on admin review, payment records and WhatsApp confirmation. 90 PROJECT may adjust campaign terms when needed.'
       ]
     },
@@ -481,9 +482,9 @@ const translations = {
       benefits: [
         ['Inquiry Records', 'Save order inquiries on this device'],
         ['RM20 Referral', 'Credit after your friend completes a purchase'],
-        ['1% Reward', 'Pending reward from direct referral spending']
+        ['Multi-level Reward', 'Pending rewards from referral chain spending']
       ],
-      referralIntro: 'Share your referral code with friends. When they order with your code, you may receive RM20 credit and a 1% member reward.',
+      referralIntro: 'Share your referral code with friends. When they order with your code, you may receive RM20 credit and multi-level member reward records.',
       copyCode: 'Copy Code',
       shareCode: 'Share on WhatsApp',
       rewardsTitle: 'My Referral Rewards',
@@ -1408,8 +1409,9 @@ function renderReferralRewards(member) {
         <strong>${escapeHtml(reward.referredName || (currentLanguage === 'en' ? 'Friend referral inquiry' : '朋友推荐询问'))}</strong>
         <p>${currentLanguage === 'en' ? 'Date' : '日期'}：${date}</p>
         <p>${currentLanguage === 'en' ? 'Package' : '配套'}：${escapeHtml(reward.package || '-')}</p>
-        <p>${currentLanguage === 'en' ? 'Fixed reward' : '固定奖励'}：RM20 ${currentLanguage === 'en' ? 'next-order credit' : '下次服务抵扣'}</p>
-        <p>${currentLanguage === 'en' ? 'Spending reward' : '消费额回馈'}：${currentLanguage === 'en' ? '1% of confirmed spending, pending WhatsApp confirmation' : '实际消费额 1%（待 WhatsApp 确认订单金额）'}</p>
+        <p>${currentLanguage === 'en' ? 'Referral level' : '推荐层级'}：${escapeHtml(reward.level ? `L${reward.level}` : 'L1')}</p>
+        ${reward.fixedCredit ? `<p>${currentLanguage === 'en' ? 'Fixed reward' : '固定奖励'}：RM${escapeHtml(reward.fixedCredit)} ${currentLanguage === 'en' ? 'next-order credit' : '下次服务抵扣'}</p>` : ''}
+        <p>${currentLanguage === 'en' ? 'Spending reward' : '消费额回馈'}：${escapeHtml(reward.ratePercent || 1)}% ${currentLanguage === 'en' ? 'of confirmed spending, pending WhatsApp confirmation' : '实际消费额回馈（待 WhatsApp 确认订单金额）'}</p>
         <p>${currentLanguage === 'en' ? 'Status' : '状态'}：${escapeHtml(currentLanguage === 'en' && reward.status === '待确认' ? 'Pending' : (reward.status || '待确认'))}</p>
       </article>
     `;
@@ -1924,20 +1926,43 @@ function saveReferralReward(orderData) {
 
   const members = loadMembers();
   const currentEmail = currentMemberEmail();
-  const referrer = members.find(member => normalizeReferralCode(member.referralCode) === code);
+  const currentMember = members.find(member => member.email === currentEmail);
+  const directReferrer = members.find(member => normalizeReferralCode(member.referralCode) === code);
 
-  if (!referrer || referrer.email === currentEmail) return;
+  if (!directReferrer || directReferrer.email === currentEmail) return;
 
-  referrer.referralRewards = referrer.referralRewards || [];
-  referrer.referralRewards.unshift({
+  if (currentMember && !currentMember.referredByCode) {
+    currentMember.referredByCode = code;
+  }
+
+  const rewardBase = {
     createdAt: new Date().toISOString(),
     referredName: orderData.name || (currentLanguage === 'en' ? 'New customer' : '新顾客'),
     package: orderData.package || (currentLanguage === 'en' ? 'Meal plan / catering inquiry' : '包伙食 / 外餐询问'),
-    fixedCredit: 20,
-    ratePercent: 1,
     status: '待确认'
+  };
+  const visited = new Set([currentEmail].filter(Boolean));
+  let referrer = directReferrer;
+
+  REFERRAL_LEVEL_RATES.forEach((ratePercent, index) => {
+    if (!referrer || visited.has(referrer.email)) return;
+    visited.add(referrer.email);
+
+    referrer.referralRewards = referrer.referralRewards || [];
+    referrer.referralRewards.unshift({
+      ...rewardBase,
+      level: index + 1,
+      fixedCredit: index === 0 ? 20 : 0,
+      ratePercent
+    });
+    referrer.referralRewards = referrer.referralRewards.slice(0, 30);
+
+    const parentCode = normalizeReferralCode(referrer.referredByCode);
+    referrer = parentCode
+      ? members.find(member => normalizeReferralCode(member.referralCode) === parentCode)
+      : null;
   });
-  referrer.referralRewards = referrer.referralRewards.slice(0, 30);
+
   saveMembers(members);
 }
 
