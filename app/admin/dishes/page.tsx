@@ -1,0 +1,3 @@
+﻿import Image from "next/image";
+import { dishes } from "@/lib/meal-data";
+export default function DishesPage() { return <div><h1 className="mb-6 text-3xl font-black text-ink">菜品管理</h1><div className="grid gap-4 md:grid-cols-3">{dishes.slice(0, 18).map((dish) => <article key={dish.id} className="overflow-hidden rounded-card border border-ink/10 bg-warm"><Image src={dish.image} alt={dish.name} width={1200} height={900} className="aspect-[4/3] w-full object-cover" /><div className="p-4"><p className="text-xs font-black text-wine">{dish.category}</p><h2 className="font-black">{dish.name}</h2></div></article>)}</div></div>; }

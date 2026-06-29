@@ -1,0 +1,3 @@
+﻿export default function AdminLayout({ children }: { children: React.ReactNode }) {
+  return <section className="section-pad bg-cream"><div className="container-page grid gap-6 md:grid-cols-[240px_1fr]"><aside className="rounded-card border border-ink/10 bg-blackgold p-4 text-cream"><p className="mb-3 text-xs font-black uppercase text-goldLight">Local Admin</p><nav className="grid gap-2 text-sm font-black"><a href="/admin/dashboard">后台首页</a><a href="/admin/plan-types">包伙食类型</a><a href="/admin/categories">菜品分类</a><a href="/admin/dishes">菜品管理</a><a href="/admin/inquiries">顾客询问</a></nav></aside><div>{children}</div></div></section>;
+}

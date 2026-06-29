@@ -1,0 +1,5 @@
+﻿import Link from "next/link";
+
+export default function MealPlanPage() {
+  return <section className="section-pad"><div className="container-page max-w-4xl"><p className="mb-2 text-xs font-black uppercase text-wine">Meal Plan</p><h1 className="mb-4 text-4xl font-black text-ink">包伙食介绍</h1><p className="mb-6 text-ink/65">九零食刻 90 PROJECT 包伙食适合个人、家庭、公司员工餐和长者清淡餐。顾客可以选择餐期、周期、人数、主食偏好、口味偏好，以及喜欢或避免的菜式。</p><div className="grid gap-4 md:grid-cols-2"><div className="rounded-card border border-ink/10 bg-warm p-5"><h2 className="font-black">怎么操作</h2><ol className="mt-3 grid gap-2 text-sm text-ink/65"><li>1. 填写顾客资料</li><li>2. 选择包伙食类型和周期</li><li>3. 对菜式按喜欢 / 避免</li><li>4. 复制或发送 WhatsApp 确认</li></ol></div><div className="rounded-card border border-ink/10 bg-warm p-5"><h2 className="font-black">下一步本地功能</h2><p className="mt-3 text-sm text-ink/65">Prisma SQLite、本地登录、会员历史记录、后台菜品管理和图片上传。</p></div></div><Link href="/meal-builder" className="mt-6 inline-flex rounded-card bg-blackgold px-6 py-3 font-black text-goldLight">开始选择菜式</Link></div></section>;
+}

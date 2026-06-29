@@ -1,0 +1,2 @@
+﻿import AdminStatCard from "@/components/AdminStatCard";
+export default function AdminDashboardPage() { return <div><p className="mb-2 text-xs font-black uppercase text-wine">Offline Admin</p><h1 className="mb-6 text-3xl font-black text-ink">本地后台总览</h1><div className="grid gap-4 md:grid-cols-4"><AdminStatCard label="包伙食类型" value="4" /><AdminStatCard label="菜品分类" value="9" /><AdminStatCard label="菜品" value="52" /><AdminStatCard label="新询问" value="2" /></div></div>; }
