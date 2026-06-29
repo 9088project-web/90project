@@ -280,7 +280,7 @@
               <li>小型 Buffet / Custom Catering</li>
             </ul>
             <div class="feature-actions">
-              <a href="#catering-menu" class="btn btn-small">菜单选择 / 计算价格</a>
+              <a href="#catering-menu" class="btn btn-small" data-open-catering-menu>菜单选择 / 计算价格</a>
               <a href="#order" class="btn btn-small btn-soft">WhatsApp 询问</a>
             </div>
           </div>
@@ -310,42 +310,60 @@
 
     <section class="section catering-menu-section" id="catering-menu">
       <div class="section-frame">
-        <div class="section-title">
-          <span>MIX & MATCH MENU</span>
-          <h2>自由搭配菜单 · 价格计算</h2>
-          <p>选择菜式、填写人数，先获得活动餐饮初步预算，再 WhatsApp 给我们确认实际报价。</p>
+        <div class="catering-menu-teaser">
+          <div class="teaser-copy">
+            <span>MIX & MATCH MENU</span>
+            <h2>自由搭配菜单 · 价格计算</h2>
+            <p>把外餐菜单与预算计算收在一个专属工具里。需要时再展开选择菜式、人数和服务形式，页面更干净，也更像高级餐饮品牌。</p>
+          </div>
+          <div class="teaser-points" aria-label="外餐菜单重点">
+            <span>自选菜式</span>
+            <span>预算估算</span>
+            <span>WhatsApp 发送</span>
+          </div>
+          <button class="btn btn-gold" type="button" data-open-catering-menu>开始选择菜单</button>
         </div>
 
-        <div class="menu-builder">
-          <aside class="calculator-panel">
-            <div class="calc-head">
+        <div class="menu-builder-wrap" id="cateringMenuBuilder" hidden>
+          <div class="menu-builder-head">
+            <div>
               <span>PRICE CALCULATOR</span>
-              <h3>菜单预算</h3>
+              <h3>菜单选择与预算</h3>
+              <p>选择菜式后，系统会先给你活动餐饮的初步预算。</p>
             </div>
-            <label>活动人数 Pax
-              <input id="cateringPax" type="number" min="1" value="30" inputmode="numeric">
-            </label>
-            <label>服务形式 Service
-              <select id="cateringServiceStyle">
-                <option value="packed">餐盒 / Packed Meal</option>
-                <option value="buffet">小型 Buffet / Setup</option>
-                <option value="event">活动餐饮 / Event Catering</option>
-              </select>
-            </label>
-            <button class="btn btn-gold btn-wide" id="calculateCateringPrice" type="button">计算价格</button>
+            <button type="button" data-close-catering-menu>收起</button>
+          </div>
+          <div class="menu-builder">
+            <aside class="calculator-panel">
+              <div class="calc-head">
+                <span>PRICE CALCULATOR</span>
+                <h3>菜单预算</h3>
+              </div>
+              <label>活动人数 Pax
+                <input id="cateringPax" type="number" min="1" value="30" inputmode="numeric">
+              </label>
+              <label>服务形式 Service
+                <select id="cateringServiceStyle">
+                  <option value="packed">餐盒 / Packed Meal</option>
+                  <option value="buffet">小型 Buffet / Setup</option>
+                  <option value="event">活动餐饮 / Event Catering</option>
+                </select>
+              </label>
+              <button class="btn btn-gold btn-wide" id="calculateCateringPrice" type="button">计算价格</button>
 
-            <div class="estimate-box">
-              <small>初步预算</small>
-              <strong id="cateringEstimateTotal">RM0</strong>
-              <p id="cateringEstimateMeta">请选择菜式开始计算。</p>
-            </div>
+              <div class="estimate-box">
+                <small>初步预算</small>
+                <strong id="cateringEstimateTotal">RM0</strong>
+                <p id="cateringEstimateMeta">请选择菜式开始计算。</p>
+              </div>
 
-            <div class="selected-menu-summary" id="selectedCateringSummary">还没有选择菜式。</div>
-            <a class="btn btn-outline btn-wide" id="cateringWhatsApp" href="https://wa.me/601110977166" target="_blank" rel="noopener">WhatsApp 发送菜单</a>
-            <p class="calc-note">价格为系统初步估算，最低预算可在后台调整。实际价格会根据人数、地点、份量、运输、餐具和现场服务调整。</p>
-          </aside>
+              <div class="selected-menu-summary" id="selectedCateringSummary">还没有选择菜式。</div>
+              <a class="btn btn-outline btn-wide" id="cateringWhatsApp" href="https://wa.me/601110977166" target="_blank" rel="noopener">WhatsApp 发送菜单</a>
+              <p class="calc-note">价格为系统初步估算，最低预算可在后台调整。实际价格会根据人数、地点、份量、运输、餐具和现场服务调整。</p>
+            </aside>
 
-          <div class="catering-menu-grid" id="cateringMenuGrid" aria-label="外餐自由搭配菜单"></div>
+            <div class="catering-menu-grid" id="cateringMenuGrid" aria-label="外餐自由搭配菜单"></div>
+          </div>
         </div>
       </div>
     </section>
@@ -620,6 +638,6 @@
 
   <a class="mobile-wa" href="#order">☏ WhatsApp 下单</a>
   <button class="back-top" id="backTop" aria-label="返回顶部">↑</button>
-  <script src="js/app.js?v=20260629-full-admin-settings"></script>
+  <script src="js/app.js?v=20260629-compact-catering-menu"></script>
 </body>
 </html>

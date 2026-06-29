@@ -58,6 +58,7 @@ const cateringEstimateTotal = document.getElementById('cateringEstimateTotal');
 const cateringEstimateMeta = document.getElementById('cateringEstimateMeta');
 const selectedCateringSummary = document.getElementById('selectedCateringSummary');
 const cateringWhatsApp = document.getElementById('cateringWhatsApp');
+const cateringMenuBuilder = document.getElementById('cateringMenuBuilder');
 
 const MEMBERS_KEY = 'np90_members_v1';
 const INQUIRIES_KEY = 'np90_inquiries_v1';
@@ -219,6 +220,15 @@ const SITE_CONTENT_FIELDS = [
   { path: 'features.styling.title', label: '布置区标题' },
   ...[0, 1, 2, 3, 4, 5].map(index => ({ path: `features.styling.items.${index}`, label: `布置服务项目 ${index + 1}` })),
   { path: 'features.styling.button', label: '布置按钮' },
+  { path: 'cateringTool.label', label: '外餐计算卡小标' },
+  { path: 'cateringTool.title', label: '外餐计算卡标题' },
+  { path: 'cateringTool.desc', label: '外餐计算卡说明', multiline: true },
+  ...[0, 1, 2].map(index => ({ path: `cateringTool.points.${index}`, label: `外餐计算卡重点 ${index + 1}` })),
+  { path: 'cateringTool.button', label: '外餐计算卡按钮' },
+  { path: 'cateringTool.builderLabel', label: '展开区小标' },
+  { path: 'cateringTool.builderTitle', label: '展开区标题' },
+  { path: 'cateringTool.builderDesc', label: '展开区说明', multiline: true },
+  { path: 'cateringTool.close', label: '展开区收起按钮' },
   { path: 'referral.title', label: '推荐奖励标题' },
   { path: 'referral.desc', label: '推荐奖励说明', multiline: true },
   ...[0, 1, 2].flatMap(index => [
@@ -402,6 +412,17 @@ const translations = {
         items: ['餐桌布置', '背景布置', '简单花艺', '餐饮展示台', '拍照氛围', 'Mocktail / Beverage Bar'],
         button: '查看布置案例'
       }
+    },
+    cateringTool: {
+      label: 'MIX & MATCH MENU',
+      title: '自由搭配菜单 · 价格计算',
+      desc: '把外餐菜单与预算计算收在一个专属工具里。需要时再展开选择菜式、人数和服务形式，页面更干净，也更像高级餐饮品牌。',
+      points: ['自选菜式', '预算估算', 'WhatsApp 发送'],
+      button: '开始选择菜单',
+      builderLabel: 'PRICE CALCULATOR',
+      builderTitle: '菜单选择与预算',
+      builderDesc: '选择菜式后，系统会先给你活动餐饮的初步预算。',
+      close: '收起'
     },
     faq: {
       title: '常见问题 FAQ',
@@ -615,6 +636,17 @@ const translations = {
         button: 'View Styling Options'
       }
     },
+    cateringTool: {
+      label: 'MIX & MATCH MENU',
+      title: 'Mix & Match Menu · Price Calculator',
+      desc: 'The full catering menu and budget calculator are kept inside one focused tool. Open it only when you want to choose dishes, pax and service style.',
+      points: ['Choose dishes', 'Estimate budget', 'Send WhatsApp'],
+      button: 'Start Menu Selection',
+      builderLabel: 'PRICE CALCULATOR',
+      builderTitle: 'Menu Selection & Budget',
+      builderDesc: 'Choose dishes and the system will estimate an initial event catering budget.',
+      close: 'Collapse'
+    },
     faq: {
       title: 'FAQ',
       items: [
@@ -801,6 +833,26 @@ function renderCateringEstimate() {
   }
 
   cateringWhatsApp.href = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(buildCateringMessage(estimate))}`;
+}
+
+function openCateringMenuBuilder(scroll = true) {
+  if (!cateringMenuBuilder) return;
+  cateringMenuBuilder.hidden = false;
+  window.requestAnimationFrame(() => {
+    cateringMenuBuilder.classList.add('is-open');
+    if (scroll) cateringMenuBuilder.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
+}
+
+function closeCateringMenuBuilder() {
+  if (!cateringMenuBuilder) return;
+  cateringMenuBuilder.classList.remove('is-open');
+  window.setTimeout(() => {
+    if (!cateringMenuBuilder.classList.contains('is-open')) {
+      cateringMenuBuilder.hidden = true;
+    }
+  }, 260);
+  document.getElementById('catering-menu')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
 function supabaseUrl() {
@@ -1778,6 +1830,17 @@ function updateStaticLanguage() {
 
   updateFeatureCard('#catering', t.features.catering);
   updateFeatureCard('#styling', t.features.styling);
+  setText('.teaser-copy span', t.cateringTool.label);
+  setText('.teaser-copy h2', t.cateringTool.title);
+  setText('.teaser-copy p', t.cateringTool.desc);
+  document.querySelectorAll('.teaser-points span').forEach((item, index) => {
+    item.textContent = t.cateringTool.points[index] || item.textContent;
+  });
+  setText('.catering-menu-teaser .btn', t.cateringTool.button);
+  setText('.menu-builder-head span', t.cateringTool.builderLabel);
+  setText('.menu-builder-head h3', t.cateringTool.builderTitle);
+  setText('.menu-builder-head p', t.cateringTool.builderDesc);
+  setText('[data-close-catering-menu]', t.cateringTool.close);
   updateFaq(t);
 
   setText('.footer-brand h2', t.cta.title);
@@ -3572,6 +3635,17 @@ document.querySelectorAll('.choose-package').forEach(button => {
     showOrderMessage('');
     document.getElementById('order')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   });
+});
+
+document.querySelectorAll('[data-open-catering-menu]').forEach(button => {
+  button.addEventListener('click', event => {
+    event.preventDefault();
+    openCateringMenuBuilder(true);
+  });
+});
+
+document.querySelectorAll('[data-close-catering-menu]').forEach(button => {
+  button.addEventListener('click', closeCateringMenuBuilder);
 });
 
 cateringMenuGrid?.addEventListener('change', renderCateringEstimate);
