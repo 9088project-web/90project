@@ -4,6 +4,20 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="description" content="九零食刻 90 PROJECT - 包伙食、外餐、活动餐饮、布置设计。高级餐饮品牌服务，日常价格享受。" />
+  <meta name="keywords" content="九零食刻, 90 PROJECT, 包伙食, 外餐, 活动餐饮, catering, meal plan, event styling, Malaysia catering" />
+  <meta name="robots" content="index, follow" />
+  <meta name="theme-color" content="#0e0b08" />
+  <link rel="canonical" href="https://9088project-web.github.io/90project/" />
+  <meta property="og:type" content="website" />
+  <meta property="og:locale" content="zh_MY" />
+  <meta property="og:site_name" content="九零食刻 90 PROJECT" />
+  <meta property="og:title" content="九零食刻 90 PROJECT｜包伙食 · 外餐 · 活动餐饮 · 布置设计" />
+  <meta property="og:description" content="九零食刻 90 PROJECT - 包伙食、外餐、活动餐饮、布置设计。高级餐饮品牌服务，日常价格享受。" />
+  <meta property="og:image" content="assets/images/brand/hero-banquet.jpg" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="九零食刻 90 PROJECT｜包伙食 · 外餐 · 活动餐饮 · 布置设计" />
+  <meta name="twitter:description" content="九零食刻 90 PROJECT - 包伙食、外餐、活动餐饮、布置设计。高级餐饮品牌服务，日常价格享受。" />
+  <meta name="twitter:image" content="assets/images/brand/hero-banquet.jpg" />
   <title>九零食刻 90 PROJECT｜包伙食 · 外餐 · 活动餐饮 · 布置设计</title>
   <link rel="stylesheet" href="css/style.css" />
 </head>
@@ -27,7 +41,14 @@
         <a href="#packaging">包装展示</a>
         <a href="#styling">活动布置</a>
         <a href="#faq">FAQ</a>
+        <a href="#referral">推荐奖励</a>
+        <button class="member-nav" id="memberOpen" type="button">会员登录</button>
       </nav>
+
+      <div class="language-switch" aria-label="Language switch">
+        <button class="active" type="button" data-language-switch="zh" aria-pressed="true">中文</button>
+        <button type="button" data-language-switch="en" aria-pressed="false">EN</button>
+      </div>
 
       <a class="nav-whatsapp" href="https://wa.me/601110977166?text=%E4%BD%A0%E5%A5%BD%EF%BC%8C%E6%88%91%E6%83%B3%E8%AF%A2%E9%97%AE%E4%B9%9D%E9%9B%B6%E9%A3%9F%E5%88%BB%2090%20PROJECT%E3%80%82" target="_blank" rel="noopener">
         <span>☏</span> WhatsApp 询问
@@ -38,7 +59,10 @@
   <main>
     <section class="hero" id="home">
       <div class="hero-media" aria-hidden="true">
-        <img src="assets/images/brand/hero-banquet.jpg" alt="" />
+        <picture>
+          <source srcset="assets/images/brand/hero-banquet.webp" type="image/webp" />
+          <img src="assets/images/brand/hero-banquet.jpg" width="1672" height="941" alt="" fetchpriority="high" decoding="async" />
+        </picture>
       </div>
       <div class="hero-overlay"></div>
 
@@ -103,7 +127,10 @@
         <div class="pricing-grid">
           <article class="price-card featured">
             <div class="price-image">
-              <img src="assets/images/meal/meal-standard.jpg" alt="标准包伙食鸡饭餐盒" />
+              <picture>
+                <source srcset="assets/images/meal/meal-standard.webp" type="image/webp" />
+                <img src="assets/images/meal/meal-standard.jpg" width="1254" height="1254" alt="标准包伙食鸡饭餐盒" loading="lazy" decoding="async" />
+              </picture>
             </div>
             <div class="price-body">
               <span class="badge">A</span>
@@ -118,7 +145,10 @@
 
           <article class="price-card">
             <div class="price-image">
-              <img src="assets/images/meal/meal-rich.jpg" alt="丰富包伙食多菜式餐盒" />
+              <picture>
+                <source srcset="assets/images/meal/meal-rich.webp" type="image/webp" />
+                <img src="assets/images/meal/meal-rich.jpg" width="1254" height="1254" alt="丰富包伙食多菜式餐盒" loading="lazy" decoding="async" />
+              </picture>
             </div>
             <div class="price-body">
               <span class="badge">B</span>
@@ -133,7 +163,10 @@
 
           <article class="price-card">
             <div class="price-image">
-              <img src="assets/images/meal/meal-family.jpg" alt="家庭包伙食多份餐点" />
+              <picture>
+                <source srcset="assets/images/meal/meal-family.webp" type="image/webp" />
+                <img src="assets/images/meal/meal-family.jpg" width="1254" height="1254" alt="家庭包伙食多份餐点" loading="lazy" decoding="async" />
+              </picture>
             </div>
             <div class="price-body">
               <span class="badge">C</span>
@@ -207,6 +240,7 @@
               <label>开始日期 Start Date<input id="date" type="date"></label>
             </div>
             <label>配送区域 Delivery Area<input id="area" type="text" placeholder="请输入配送地区"></label>
+            <label>推荐码 Referral Code<input id="referralCode" type="text" placeholder="朋友推荐可填写，例如 NP90-XXXX"></label>
             <fieldset>
               <legend>加购 Add-ons</legend>
               <label><input type="checkbox" value="加蛋 Add Egg"> 加蛋</label>
@@ -216,6 +250,13 @@
               <label><input type="checkbox" value="饮料 Drink"> 饮料</label>
             </fieldset>
             <label>备注 Notes<textarea id="notes" rows="3" placeholder="其他要求 / 不要辣 / 不要某种食材"></textarea></label>
+            <div class="order-preview" aria-live="polite">
+              <div class="order-preview-head">
+                <span>WHATSAPP PREVIEW</span>
+                <button type="button" id="copyOrderPreview">复制内容</button>
+              </div>
+              <pre id="orderPreviewText">填写资料后，这里会显示即将发送到 WhatsApp 的订单内容。</pre>
+            </div>
             <button type="submit" class="btn btn-gold btn-wide">WhatsApp 确认订单</button>
           </form>
         </article>
@@ -225,7 +266,10 @@
     <section class="section bottom-cards">
       <div class="section-frame triple-feature">
         <article class="feature-card image-card" id="packaging">
-          <img src="assets/images/brand/packaging-full.jpg" alt="九零食刻黑金包装系统" />
+          <picture>
+            <source srcset="assets/images/brand/packaging-full.webp" type="image/webp" />
+            <img src="assets/images/brand/packaging-full.jpg" width="1448" height="1086" alt="九零食刻黑金包装系统" loading="lazy" decoding="async" />
+          </picture>
           <div>
             <span>BRANDING PACKAGING</span>
             <h2>品牌级餐饮包装</h2>
@@ -244,7 +288,10 @@
         </article>
 
         <article class="feature-card image-card" id="catering">
-          <img src="assets/images/event/catering-event.jpg" alt="活动外餐 buffet catering" />
+          <picture>
+            <source srcset="assets/images/event/catering-event.webp" type="image/webp" />
+            <img src="assets/images/event/catering-event.jpg" width="1672" height="941" alt="活动外餐 buffet catering" loading="lazy" decoding="async" />
+          </picture>
           <div>
             <span>CATERING SERVICE</span>
             <h2>外餐 Catering 服务</h2>
@@ -261,7 +308,10 @@
         </article>
 
         <article class="feature-card image-card" id="styling">
-          <img src="assets/images/event/styling-bar.jpg" alt="活动布置和饮料吧" />
+          <picture>
+            <source srcset="assets/images/event/styling-bar.webp" type="image/webp" />
+            <img src="assets/images/event/styling-bar.jpg" width="1672" height="941" alt="活动布置和饮料吧" loading="lazy" decoding="async" />
+          </picture>
           <div>
             <span>EVENT & STYLING</span>
             <h2>活动布置 / Styling</h2>
@@ -293,6 +343,44 @@
       </div>
     </section>
 
+    <section class="section referral-section" id="referral">
+      <div class="section-frame referral-inner">
+        <div class="section-title">
+          <span>MEMBER REFERRAL</span>
+          <h2>推荐朋友奖励</h2>
+          <p>分享九零食刻给朋友，朋友下单时填入你的推荐码，完成消费后即可获得会员回馈。</p>
+        </div>
+
+        <div class="referral-grid">
+          <article>
+            <span>01</span>
+            <h3>TnG RM20 / 下次抵扣</h3>
+            <p>朋友首次成功购买服务后，推荐人可获得 RM20 奖励，可作为下次购买服务抵扣。</p>
+          </article>
+          <article>
+            <span>02</span>
+            <h3>直接推荐 1% 回馈</h3>
+            <p>推荐朋友消费后，推荐人可获得该笔实际消费额 1% 的会员回馈，完成报价确认后记录。</p>
+          </article>
+          <article>
+            <span>03</span>
+            <h3>会员推荐码</h3>
+            <p>登录会员中心即可查看自己的推荐码。朋友 WhatsApp 下单时填入推荐码，我们会协助登记。</p>
+          </article>
+        </div>
+
+        <div class="referral-note">
+          <strong>透明规则：</strong>
+          <span>奖励只按直接推荐计算，不做层级累计；所有奖励以实际订单、付款与 WhatsApp 确认为准。</span>
+        </div>
+        <ul class="referral-terms">
+          <li>朋友首次成功消费后，RM20 会记录为下次服务抵扣。</li>
+          <li>1% 回馈只按直接推荐的已确认消费额计算。</li>
+          <li>奖励不能兑换现金，最终以 WhatsApp 与管理员确认记录为准。</li>
+        </ul>
+      </div>
+    </section>
+
     <section class="final-cta">
       <div class="section-frame cta-inner">
         <div class="footer-brand">
@@ -304,7 +392,10 @@
           </div>
         </div>
         <a class="btn btn-gold big" href="#order">WhatsApp 立即询问</a>
-        <img class="cta-food" src="assets/images/meal/meal-rich.jpg" alt="九零食刻餐饮">
+        <picture class="cta-food">
+          <source srcset="assets/images/meal/meal-rich.webp" type="image/webp" />
+          <img src="assets/images/meal/meal-rich.jpg" width="1254" height="1254" alt="九零食刻餐饮" loading="lazy" decoding="async">
+        </picture>
       </div>
     </section>
   </main>
@@ -314,6 +405,163 @@
     <span>WhatsApp: 011-1097 7166</span>
     <span>© 2026 九零食刻 90 PROJECT. All Rights Reserved.</span>
   </footer>
+
+  <section class="member-modal" id="memberModal" aria-hidden="true">
+    <div class="member-backdrop" data-member-close></div>
+    <div class="member-dialog" role="dialog" aria-modal="true" aria-labelledby="memberTitle">
+      <button class="member-close" type="button" aria-label="关闭会员中心" data-member-close>×</button>
+
+      <div class="member-panel member-auth" id="memberAuthPanel">
+        <div class="member-intro">
+          <span>MEMBER CLUB</span>
+          <h2 id="memberTitle">九零食刻会员中心</h2>
+          <p>登录后，下单询问会自动保存到本机会员记录，方便你之后查看包伙食配套、日期和备注。</p>
+        </div>
+
+        <div class="member-tabs" role="tablist" aria-label="会员登录注册">
+          <button class="active" type="button" data-member-tab="login">会员登录</button>
+          <button type="button" data-member-tab="register">注册会员</button>
+        </div>
+
+        <form class="member-form active" id="memberLoginForm">
+          <label>Email<input id="loginEmail" type="email" autocomplete="email" placeholder="member@example.com" required></label>
+          <label>密码 Password<input id="loginPassword" type="password" autocomplete="current-password" placeholder="请输入密码" required></label>
+          <button class="btn btn-gold btn-wide" type="submit">登录会员</button>
+        </form>
+
+        <form class="member-form" id="memberRegisterForm">
+          <label>姓名 Name<input id="registerName" type="text" autocomplete="name" placeholder="例如：陈小姐" required></label>
+          <label>电话 Phone<input id="registerPhone" type="tel" autocomplete="tel" placeholder="例如：011-1234 5678" required></label>
+          <label>Email<input id="registerEmail" type="email" autocomplete="email" placeholder="member@example.com" required></label>
+          <label>密码 Password<input id="registerPassword" type="password" autocomplete="new-password" placeholder="至少 6 个字符" required></label>
+          <button class="btn btn-gold btn-wide" type="submit">创建会员</button>
+        </form>
+
+        <p class="member-message" id="memberMessage"></p>
+      </div>
+
+      <div class="member-panel member-dashboard" id="memberDashboard" hidden>
+        <div class="member-dashboard-head">
+          <div>
+            <span>MEMBER DASHBOARD</span>
+            <h2>会员中心</h2>
+            <p id="memberProfileText">-</p>
+          </div>
+          <button class="btn btn-outline" id="memberLogout" type="button">退出</button>
+        </div>
+
+        <div class="member-benefits">
+          <article><b>询问记录</b><span>自动保存本机订单询问</span></article>
+          <article><b>推荐 RM20</b><span>朋友成功消费后可得下次抵扣</span></article>
+          <article><b>1% 回馈</b><span>直接推荐消费额待确认奖励</span></article>
+        </div>
+
+        <div class="member-referral-panel">
+          <div>
+            <span>MY REFERRAL CODE</span>
+            <strong id="memberReferralCode">-</strong>
+            <p>把推荐码发给朋友。朋友下单时填入推荐码，完成消费后你可获得 RM20 抵扣与 1% 会员回馈。</p>
+          </div>
+          <div class="member-referral-actions">
+            <button class="btn btn-gold" id="copyReferralCode" type="button">复制推荐码</button>
+            <a class="btn btn-outline" id="shareReferralWhatsApp" href="#" target="_blank" rel="noopener">WhatsApp 分享</a>
+          </div>
+        </div>
+
+        <div class="member-records-head member-rewards-head">
+          <h3>我的推荐奖励</h3>
+          <button type="button" id="clearReferralRewards">清空奖励</button>
+        </div>
+        <div class="member-records" id="memberReferralRewards"></div>
+
+        <div class="member-records-head">
+          <h3>我的包伙食询问</h3>
+          <button type="button" id="clearMemberRecords">清空记录</button>
+        </div>
+        <div class="member-records" id="memberRecords"></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="member-modal admin-modal" id="adminModal" aria-hidden="true">
+    <div class="member-backdrop" data-admin-close></div>
+    <div class="member-dialog admin-dialog" role="dialog" aria-modal="true" aria-labelledby="adminTitle">
+      <button class="member-close" type="button" aria-label="关闭后台" data-admin-close>×</button>
+
+      <div class="member-panel" id="adminAuthPanel">
+        <div class="member-intro">
+          <span>LOCAL ADMIN</span>
+          <h2 id="adminTitle">内容管理后台</h2>
+          <p>本地离线编辑每周菜单和自由加购内容。保存后会马上更新首页，并储存在这个浏览器。</p>
+        </div>
+
+        <form class="admin-login" id="adminLoginForm">
+          <label>管理员 Email Admin Email<input id="adminEmail" type="email" autocomplete="username" placeholder="admin@90project.local" required></label>
+          <label>管理员密码 Admin Password<input id="adminPassword" type="password" autocomplete="current-password" placeholder="请输入管理员密码" required></label>
+          <button class="btn btn-gold btn-wide" type="submit">进入后台</button>
+        </form>
+        <p class="member-message" id="adminMessage"></p>
+      </div>
+
+      <div class="member-panel admin-dashboard" id="adminDashboard" hidden>
+        <div class="member-dashboard-head">
+          <div>
+            <span>CONTENT ADMIN</span>
+            <h2>内容管理后台</h2>
+            <p>编辑中文和英文内容，适合每天更新菜单、加购项目和价格说明。</p>
+          </div>
+          <button class="btn btn-outline" id="adminLogout" type="button">退出后台</button>
+        </div>
+
+        <div class="admin-section">
+          <div class="admin-section-head">
+            <div>
+              <h3>每周菜单示例</h3>
+              <p>可修改日期、菜色和底部说明。</p>
+            </div>
+            <button type="button" id="addWeeklyRow">新增菜单行</button>
+          </div>
+          <div class="admin-note-grid">
+            <label>中文说明<textarea id="weeklyNoteZh" rows="2"></textarea></label>
+            <label>English Note<textarea id="weeklyNoteEn" rows="2"></textarea></label>
+          </div>
+          <div class="admin-rows" id="adminWeeklyRows"></div>
+        </div>
+
+        <div class="admin-section">
+          <div class="admin-section-head">
+            <div>
+              <h3>自由加购 Add-ons</h3>
+              <p>可修改名称、英文、价格说明，也可以新增或删除项目。</p>
+            </div>
+            <button type="button" id="addAddonRow">新增加购</button>
+          </div>
+          <div class="admin-rows" id="adminAddonRows"></div>
+        </div>
+
+        <div class="admin-section">
+          <div class="admin-section-head">
+            <div>
+              <h3>顾客询问记录</h3>
+              <p id="adminDataStatus">本地浏览器保存的 WhatsApp 询问，可更改状态、导出备份或导入恢复。</p>
+            </div>
+            <div class="admin-toolbar">
+              <button type="button" id="exportLocalData">导出资料</button>
+              <button type="button" id="importLocalData">导入资料</button>
+              <button type="button" id="clearAdminInquiries">清空询问</button>
+              <input id="importLocalDataInput" type="file" accept="application/json" hidden>
+            </div>
+          </div>
+          <div class="admin-rows admin-inquiries" id="adminInquiries"></div>
+        </div>
+
+        <div class="admin-actions">
+          <button class="btn btn-gold" id="saveAdminContent" type="button">保存内容</button>
+          <button class="btn btn-outline" id="resetAdminContent" type="button">恢复默认内容</button>
+        </div>
+      </div>
+    </div>
+  </section>
 
   <a class="mobile-wa" href="#order">☏ WhatsApp 下单</a>
   <button class="back-top" id="backTop" aria-label="返回顶部">↑</button>
