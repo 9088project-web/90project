@@ -157,10 +157,15 @@ JavaScript 使用 `encodeURIComponent` 处理中文内容。
 
 当前已加入本地离线 Admin 后台，可修改：
 
+- 全站主要文案设定
+- SEO 标题与描述
+- 首页 Hero、导航、服务卡、包伙食配套、推荐奖励、外餐、活动布置、FAQ、最终 CTA
+- WhatsApp 下单表单字段、提示文字和配套选项
 - 每周菜单示例
 - 每周菜单说明
 - 自由加购 Add-ons
 - 加购价格说明
+- 外餐自由搭配菜单分类、每人价格、菜式列表和最低预算
 - 中文与英文内容
 - 顾客 WhatsApp 询问记录
 - 询问状态：new / contacted / quoted / confirmed / completed / cancelled

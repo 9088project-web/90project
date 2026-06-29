@@ -42,6 +42,10 @@ const adminDataStatus = document.getElementById('adminDataStatus');
 const adminInquiries = document.getElementById('adminInquiries');
 const adminMemberStatus = document.getElementById('adminMemberStatus');
 const adminMembers = document.getElementById('adminMembers');
+const adminSiteRows = document.getElementById('adminSiteRows');
+const adminCateringMinimum = document.getElementById('adminCateringMinimum');
+const adminCateringRows = document.getElementById('adminCateringRows');
+const addCateringRow = document.getElementById('addCateringRow');
 const exportLocalData = document.getElementById('exportLocalData');
 const importLocalData = document.getElementById('importLocalData');
 const importLocalDataInput = document.getElementById('importLocalDataInput');
@@ -142,6 +146,96 @@ const CATERING_MENU = [
     rate: 0,
     items: ['咖喱 Curry', 'Sambal', '咸蛋奶油 Salted Egg Butter', '宫保 Kung Pao', '泰式酸辣 Thai Style', 'Sweet & Sour', '姜葱 Ginger Onion', '麦片 Cereal', '椒盐 Salt & Pepper']
   }
+];
+
+const SITE_CONTENT_FIELDS = [
+  { path: 'title', label: 'SEO 标题 / Browser Title' },
+  { path: 'description', label: 'SEO 描述 / Meta Description', multiline: true },
+  { path: 'nav.home', label: '导航：首页' },
+  { path: 'nav.meal', label: '导航：包伙食' },
+  { path: 'nav.catering', label: '导航：外餐服务' },
+  { path: 'nav.styling', label: '导航：活动布置' },
+  { path: 'nav.faq', label: '导航：FAQ' },
+  { path: 'nav.referral', label: '导航：推荐奖励' },
+  { path: 'nav.whatsapp', label: '导航：WhatsApp 按钮' },
+  { path: 'nav.mobileWhatsApp', label: '手机底部 WhatsApp 按钮' },
+  { path: 'hero.title', label: 'Hero 主标题' },
+  { path: 'hero.eyebrow', label: 'Hero 英文/副标' },
+  { path: 'hero.tags', label: 'Hero 服务标签' },
+  { path: 'hero.slogan', label: 'Hero Slogan' },
+  { path: 'hero.sub', label: 'Hero 说明', multiline: true },
+  { path: 'hero.primary', label: 'Hero 主按钮' },
+  { path: 'hero.secondary', label: 'Hero WhatsApp 按钮' },
+  { path: 'mealPlan.title', label: '包伙食区标题' },
+  { path: 'mealPlan.desc', label: '包伙食区说明', multiline: true },
+  ...[0, 1, 2].flatMap(index => [
+    { path: `prices.${index}.title`, label: `配套 ${index + 1} 标题` },
+    { path: `prices.${index}.priceHtml`, label: `配套 ${index + 1} 价格显示`, multiline: true },
+    { path: `prices.${index}.muted`, label: `配套 ${index + 1} 小资料` },
+    { path: `prices.${index}.line`, label: `配套 ${index + 1} 内容`, multiline: true },
+    { path: `prices.${index}.small`, label: `配套 ${index + 1} 适合对象`, multiline: true },
+    { path: `prices.${index}.button`, label: `配套 ${index + 1} 按钮` },
+    { path: `order.packageOptions.${index}.label`, label: `配套 ${index + 1} 表单显示` },
+    { path: `order.packageOptions.${index}.value`, label: `配套 ${index + 1} WhatsApp 内容` }
+  ]),
+  ...[0, 1, 2, 3].flatMap(index => [
+    { path: `services.${index}.title`, label: `服务卡 ${index + 1} 标题` },
+    { path: `services.${index}.label`, label: `服务卡 ${index + 1} 英文小标` },
+    { path: `services.${index}.desc`, label: `服务卡 ${index + 1} 说明`, multiline: true }
+  ]),
+  { path: 'order.title', label: '下单表单标题' },
+  { path: 'order.label', label: '下单表单小标' },
+  { path: 'order.submit', label: '下单按钮' },
+  { path: 'order.fields.name', label: '表单字段：姓名' },
+  { path: 'order.fields.phone', label: '表单字段：电话' },
+  { path: 'order.fields.package', label: '表单字段：配套' },
+  { path: 'order.fields.pax', label: '表单字段：人数' },
+  { path: 'order.fields.meal', label: '表单字段：餐期' },
+  { path: 'order.fields.date', label: '表单字段：开始日期' },
+  { path: 'order.fields.area', label: '表单字段：配送区域' },
+  { path: 'order.fields.referralCode', label: '表单字段：推荐码' },
+  { path: 'order.fields.addons', label: '表单字段：加购' },
+  { path: 'order.fields.notes', label: '表单字段：备注' },
+  { path: 'order.placeholders.name', label: '表单提示：姓名' },
+  { path: 'order.placeholders.phone', label: '表单提示：电话' },
+  { path: 'order.placeholders.pax', label: '表单提示：人数' },
+  { path: 'order.placeholders.area', label: '表单提示：配送地区' },
+  { path: 'order.placeholders.referralCode', label: '表单提示：推荐码' },
+  { path: 'order.placeholders.notes', label: '表单提示：备注', multiline: true },
+  ...[0, 1, 2].map(index => ({ path: `order.mealOptions.${index}.label`, label: `餐期选项 ${index + 1} 显示` })),
+  ...[0, 1, 2].map(index => ({ path: `order.mealOptions.${index}.value`, label: `餐期选项 ${index + 1} WhatsApp 内容` })),
+  { path: 'order.packageOptions.3.label', label: '配套 4 表单显示' },
+  { path: 'order.packageOptions.3.value', label: '配套 4 WhatsApp 内容' },
+  { path: 'order.previewLabel', label: 'WhatsApp 预览小标' },
+  { path: 'order.previewEmpty', label: 'WhatsApp 预览空状态', multiline: true },
+  { path: 'order.copyPreview', label: '复制内容按钮' },
+  { path: 'order.copiedPreview', label: '复制成功提示' },
+  { path: 'features.catering.label', label: '外餐区小标' },
+  { path: 'features.catering.title', label: '外餐区标题' },
+  ...[0, 1, 2, 3, 4, 5].map(index => ({ path: `features.catering.items.${index}`, label: `外餐服务项目 ${index + 1}` })),
+  { path: 'features.catering.menuButton', label: '外餐菜单按钮' },
+  { path: 'features.catering.button', label: '外餐 WhatsApp 按钮' },
+  { path: 'features.styling.label', label: '布置区小标' },
+  { path: 'features.styling.title', label: '布置区标题' },
+  ...[0, 1, 2, 3, 4, 5].map(index => ({ path: `features.styling.items.${index}`, label: `布置服务项目 ${index + 1}` })),
+  { path: 'features.styling.button', label: '布置按钮' },
+  { path: 'referral.title', label: '推荐奖励标题' },
+  { path: 'referral.desc', label: '推荐奖励说明', multiline: true },
+  ...[0, 1, 2].flatMap(index => [
+    { path: `referral.cards.${index}.title`, label: `推荐卡 ${index + 1} 标题` },
+    { path: `referral.cards.${index}.desc`, label: `推荐卡 ${index + 1} 说明`, multiline: true }
+  ]),
+  { path: 'referral.noteStrong', label: '推荐规则开头' },
+  { path: 'referral.note', label: '推荐规则说明', multiline: true },
+  ...[0, 1, 2].map(index => ({ path: `referral.terms.${index}`, label: `推荐条款 ${index + 1}`, multiline: true })),
+  { path: 'faq.title', label: 'FAQ 标题' },
+  ...[0, 1, 2, 3, 4, 5].flatMap(index => [
+    { path: `faq.items.${index}.0`, label: `FAQ ${index + 1} 问题` },
+    { path: `faq.items.${index}.1`, label: `FAQ ${index + 1} 答案`, multiline: true }
+  ]),
+  { path: 'cta.title', label: '最终 CTA 标题' },
+  { path: 'cta.slogan', label: '最终 CTA Slogan' },
+  { path: 'cta.button', label: '最终 CTA 按钮' }
 ];
 
 let supabaseInquiriesCache = [];
@@ -601,8 +695,9 @@ function formatCurrency(value) {
 
 function renderCateringMenu() {
   if (!cateringMenuGrid) return;
+  const cateringMenu = editableCateringConfig().menu;
 
-  cateringMenuGrid.innerHTML = CATERING_MENU.map(category => `
+  cateringMenuGrid.innerHTML = cateringMenu.map(category => `
     <article class="menu-category" data-catering-category="${escapeHtml(category.id)}">
       <div class="menu-category-head">
         <div>
@@ -647,7 +742,8 @@ function calculateCateringEstimate() {
   const pricedItems = items.filter(item => item.rate > 0);
   const perPax = pricedItems.reduce((sum, item) => sum + item.rate, 0);
   const subtotal = pax && perPax ? pax * perPax * service.multiplier : 0;
-  const total = subtotal ? Math.max(subtotal, CATERING_MINIMUM_TOTAL) : 0;
+  const minimumTotal = editableCateringConfig().minimumTotal || CATERING_MINIMUM_TOTAL;
+  const total = subtotal ? Math.max(subtotal, minimumTotal) : 0;
 
   return {
     pax,
@@ -656,7 +752,8 @@ function calculateCateringEstimate() {
     pricedItems,
     perPax,
     subtotal,
-    total
+    total,
+    minimumTotal
   };
 }
 
@@ -680,6 +777,7 @@ ${menuLines}
 【系统初步预算】
 每人约：${formatCurrency(estimate.perPax)}
 总预算约：${estimate.total ? formatCurrency(estimate.total) : '-'}
+最低预算：${formatCurrency(estimate.minimumTotal)}
 
 请帮我确认实际报价、配送、餐具和现场服务安排。`;
 }
@@ -1049,6 +1147,78 @@ function cloneData(data) {
   return JSON.parse(JSON.stringify(data));
 }
 
+function getPathValue(source, path) {
+  return String(path || '').split('.').reduce((current, key) => {
+    if (current == null) return undefined;
+    return current[key];
+  }, source);
+}
+
+function setPathValue(target, path, value) {
+  const keys = String(path || '').split('.');
+  let current = target;
+  keys.forEach((key, index) => {
+    const isLast = index === keys.length - 1;
+    const nextKey = keys[index + 1];
+    const shouldBeArray = /^\d+$/.test(nextKey || '');
+
+    if (isLast) {
+      current[key] = value;
+      return;
+    }
+
+    if (current[key] == null) current[key] = shouldBeArray ? [] : {};
+    current = current[key];
+  });
+}
+
+function deepMerge(base, override) {
+  if (Array.isArray(base)) {
+    const source = Array.isArray(override) ? override : [];
+    return base.map((item, index) => deepMerge(item, source[index]));
+  }
+
+  if (base && typeof base === 'object') {
+    const result = { ...base };
+    Object.keys(override || {}).forEach(key => {
+      if (override[key] === undefined || override[key] === null) return;
+      result[key] = deepMerge(base[key], override[key]);
+    });
+    return result;
+  }
+
+  return override === undefined || override === null || override === '' ? base : override;
+}
+
+function siteContentDefaults(language) {
+  const source = translations[language] || translations.zh;
+  const site = {};
+  SITE_CONTENT_FIELDS.forEach(field => {
+    setPathValue(site, field.path, getPathValue(source, field.path) ?? '');
+  });
+  return site;
+}
+
+function normalizeCateringMenu(menu) {
+  const source = Array.isArray(menu) && menu.length ? menu : CATERING_MENU;
+  return source.map((category, index) => ({
+    id: String(category?.id || `category-${index + 1}`).trim(),
+    title: String(category?.title || '').trim(),
+    label: String(category?.label || '').trim(),
+    rate: Number.parseFloat(category?.rate || 0) || 0,
+    items: Array.isArray(category?.items)
+      ? category.items.map(item => String(item || '').trim()).filter(Boolean)
+      : String(category?.items || '').split(/\n+/).map(item => item.trim()).filter(Boolean)
+  })).filter(category => category.title || category.label || category.items.length);
+}
+
+function defaultCateringContent() {
+  return {
+    minimumTotal: CATERING_MINIMUM_TOTAL,
+    menu: normalizeCateringMenu(CATERING_MENU)
+  };
+}
+
 function htmlToPlainText(value) {
   return String(value || '').replace(/<br\s*\/?>/gi, '\n').replace(/<[^>]+>/g, '').trim();
 }
@@ -1209,6 +1379,7 @@ function autoTranslateText(value) {
 function defaultAdminContent() {
   return {
     zh: {
+      site: siteContentDefaults('zh'),
       weekly: {
         days: translations.zh.weekly.days.map(([day, dish]) => ({ day, dish })),
         note: htmlToPlainText(translations.zh.weekly.note)
@@ -1220,6 +1391,7 @@ function defaultAdminContent() {
       }))
     },
     en: {
+      site: siteContentDefaults('en'),
       weekly: {
         days: translations.en.weekly.days.map(([day, dish]) => ({ day, dish })),
         note: htmlToPlainText(translations.en.weekly.note)
@@ -1229,7 +1401,8 @@ function defaultAdminContent() {
         sub: '',
         price: htmlToPlainText(translations.en.addons.priceHtml)
       }))
-    }
+    },
+    catering: defaultCateringContent()
   };
 }
 
@@ -1239,6 +1412,14 @@ function normalizeAdminContent(content) {
 
   ['zh', 'en'].forEach(language => {
     const source = content?.[language] || {};
+    const siteSource = source.site || {};
+    SITE_CONTENT_FIELDS.forEach(field => {
+      const value = getPathValue(siteSource, field.path);
+      if (value !== undefined && value !== null) {
+        setPathValue(normalized[language].site, field.path, String(value));
+      }
+    });
+
     const weeklyDays = Array.isArray(source.weekly?.days) ? source.weekly.days : normalized[language].weekly.days;
     normalized[language].weekly.days = weeklyDays
       .map(item => ({
@@ -1257,6 +1438,12 @@ function normalizeAdminContent(content) {
       }))
       .filter(item => item.name || item.sub || item.price);
   });
+
+  const cateringSource = content?.catering || {};
+  normalized.catering = {
+    minimumTotal: Math.max(Number.parseFloat(cateringSource.minimumTotal || normalized.catering.minimumTotal) || CATERING_MINIMUM_TOTAL, 0),
+    menu: normalizeCateringMenu(cateringSource.menu || normalized.catering.menu)
+  };
 
   return normalized;
 }
@@ -1321,8 +1508,15 @@ function editableContentForLanguage() {
   return loadAdminContent()[currentLanguage] || loadAdminContent().zh;
 }
 
+function editableCateringConfig() {
+  return loadAdminContent().catering || defaultCateringContent();
+}
+
 function languageText() {
-  return translations[currentLanguage] || translations.zh;
+  const language = currentLanguage === 'en' ? 'en' : 'zh';
+  const base = cloneData(translations[language] || translations.zh);
+  const site = loadAdminContent()[language]?.site || {};
+  return deepMerge(base, site);
 }
 
 function setText(selector, value) {
@@ -2494,6 +2688,8 @@ function importLocalBackup(file) {
       if (Array.isArray(data.inquiries)) saveInquiries(data.inquiries);
       if (Array.isArray(data.members)) saveMembers(data.members);
       updateStaticLanguage();
+      renderCateringMenu();
+      renderCateringEstimate();
       renderAdminEditor();
       renderAdminInquiries();
       renderAdminMembers();
@@ -2665,6 +2861,7 @@ function primeTranslatedField(field) {
 function translateAdminRow(row, force = false) {
   if (!row) return;
   const pairs = [
+    ['[data-field="zh-site"]', '[data-field="en-site"]'],
     ['[data-field="zh-day"]', '[data-field="en-day"]'],
     ['[data-field="zh-dish"]', '[data-field="en-dish"]'],
     ['[data-field="zh-name"]', '[data-field="en-name"]'],
@@ -2683,12 +2880,14 @@ function autoTranslateAdminEditor(force = false) {
     updateTranslatedField(weeklyNoteEn, weeklyNoteZh.value, force);
   }
 
+  adminSiteRows?.querySelectorAll('[data-site-row]').forEach(row => translateAdminRow(row, force));
   adminWeeklyRows?.querySelectorAll('[data-weekly-row]').forEach(row => translateAdminRow(row, force));
   adminAddonRows?.querySelectorAll('[data-addon-row]').forEach(row => translateAdminRow(row, force));
 }
 
 function primeAdminTranslationFields() {
   primeTranslatedField(weeklyNoteEn);
+  adminSiteRows?.querySelectorAll('[data-field="en-site"]').forEach(primeTranslatedField);
   adminWeeklyRows?.querySelectorAll('[data-field="en-day"], [data-field="en-dish"]').forEach(primeTranslatedField);
   adminAddonRows?.querySelectorAll('[data-field="en-name"], [data-field="en-price"]').forEach(primeTranslatedField);
 }
@@ -2703,7 +2902,7 @@ function ensureAdminTranslateHelper() {
   helper.innerHTML = `
     <div>
       <strong>中文自动翻译英文</strong>
-      <p>输入中文菜单、菜色、加购或价格说明时，英文栏会自动生成；英文仍可手动微调。</p>
+      <p>输入中文全站文案、菜单、菜色、加购或价格说明时，英文栏会自动生成；英文仍可手动微调。</p>
     </div>
     <button type="button" id="autoTranslateAdminContent">翻译全部英文</button>
   `;
@@ -2712,6 +2911,33 @@ function ensureAdminTranslateHelper() {
     autoTranslateAdminEditor(true);
     showAdminMessage('已根据中文内容重新生成英文。');
   });
+}
+
+function renderAdminSiteRows(content) {
+  if (!adminSiteRows) return;
+
+  adminSiteRows.innerHTML = SITE_CONTENT_FIELDS.map(field => {
+    const zhValue = getPathValue(content.zh.site, field.path) ?? '';
+    const enValue = getPathValue(content.en.site, field.path) ?? '';
+    const inputTag = field.multiline ? 'textarea' : 'input';
+    const zhField = field.multiline
+      ? `<textarea data-field="zh-site" rows="3">${escapeHtml(zhValue)}</textarea>`
+      : `<input data-field="zh-site" value="${escapeHtml(zhValue)}">`;
+    const enField = field.multiline
+      ? `<textarea data-field="en-site" rows="3">${escapeHtml(enValue)}</textarea>`
+      : `<input data-field="en-site" value="${escapeHtml(enValue)}">`;
+
+    return `
+      <div class="admin-site-row ${inputTag === 'textarea' ? 'is-tall' : ''}" data-site-row data-site-path="${escapeHtml(field.path)}">
+        <div class="admin-site-label">
+          <strong>${escapeHtml(field.label)}</strong>
+          <small>${escapeHtml(field.path)}</small>
+        </div>
+        <label>中文${zhField}</label>
+        <label>English${enField}</label>
+      </div>
+    `;
+  }).join('');
 }
 
 function renderAdminWeeklyRows(content) {
@@ -2758,13 +2984,40 @@ function renderAdminAddonRows(content) {
   adminAddonRows.innerHTML = rows.join('');
 }
 
+function renderAdminCateringRows(content) {
+  if (adminCateringMinimum) {
+    adminCateringMinimum.value = String(content.catering?.minimumTotal ?? CATERING_MINIMUM_TOTAL);
+  }
+
+  if (!adminCateringRows) return;
+  const menu = normalizeCateringMenu(content.catering?.menu || CATERING_MENU);
+  adminCateringRows.innerHTML = menu.map((category, index) => `
+    <div class="admin-catering-row" data-catering-row>
+      <div class="admin-catering-head">
+        <strong>分类 ${index + 1}</strong>
+        <span>${escapeHtml(category.label || category.id)}</span>
+      </div>
+      <label>分类 ID<input data-field="category-id" value="${escapeHtml(category.id)}" placeholder="chicken"></label>
+      <label>中文分类<input data-field="category-title" value="${escapeHtml(category.title)}" placeholder="鸡肉类"></label>
+      <label>English Label<input data-field="category-label" value="${escapeHtml(category.label)}" placeholder="Chicken"></label>
+      <label>每人价格 RM<input data-field="category-rate" type="number" min="0" step="0.5" value="${escapeHtml(category.rate)}"></label>
+      <label class="admin-catering-items">菜式列表（一行一个）
+        <textarea data-field="category-items" rows="5">${escapeHtml(category.items.join('\n'))}</textarea>
+      </label>
+      <button type="button" data-remove-catering>删除分类</button>
+    </div>
+  `).join('');
+}
+
 function renderAdminEditor() {
   const content = loadAdminContent();
   ensureAdminTranslateHelper();
+  renderAdminSiteRows(content);
   if (weeklyNoteZh) weeklyNoteZh.value = content.zh.weekly.note;
   if (weeklyNoteEn) weeklyNoteEn.value = content.en.weekly.note;
   renderAdminWeeklyRows(content);
   renderAdminAddonRows(content);
+  renderAdminCateringRows(content);
   primeAdminTranslationFields();
 }
 
@@ -2802,12 +3055,24 @@ function closeAdminModal() {
 
 function collectAdminContent() {
   const content = defaultAdminContent();
+  content.zh.site = siteContentDefaults('zh');
+  content.en.site = siteContentDefaults('en');
   content.zh.weekly.note = weeklyNoteZh?.value?.trim() || '';
   content.en.weekly.note = weeklyNoteEn?.value?.trim() || '';
   content.zh.weekly.days = [];
   content.en.weekly.days = [];
   content.zh.addons = [];
   content.en.addons = [];
+
+  adminSiteRows?.querySelectorAll('[data-site-row]').forEach(row => {
+    const path = row.dataset.sitePath || '';
+    const zhValue = adminRowValue(row, '[data-field="zh-site"]');
+    const enValue = adminRowValue(row, '[data-field="en-site"]');
+    if (path) {
+      setPathValue(content.zh.site, path, zhValue);
+      setPathValue(content.en.site, path, enValue);
+    }
+  });
 
   adminWeeklyRows?.querySelectorAll('[data-weekly-row]').forEach(row => {
     const zhDay = adminRowValue(row, '[data-field="zh-day"]');
@@ -2827,6 +3092,24 @@ function collectAdminContent() {
     if (enName || zhName || enPrice) content.en.addons.push({ name: enName || zhName, sub: '', price: enPrice || zhPrice });
   });
 
+  const minimumTotal = Number.parseFloat(adminCateringMinimum?.value || '');
+  content.catering = {
+    minimumTotal: Number.isFinite(minimumTotal) ? Math.max(minimumTotal, 0) : CATERING_MINIMUM_TOTAL,
+    menu: []
+  };
+
+  adminCateringRows?.querySelectorAll('[data-catering-row]').forEach((row, index) => {
+    const id = adminRowValue(row, '[data-field="category-id"]') || `category-${index + 1}`;
+    const title = adminRowValue(row, '[data-field="category-title"]');
+    const label = adminRowValue(row, '[data-field="category-label"]');
+    const rate = Number.parseFloat(adminRowValue(row, '[data-field="category-rate"]')) || 0;
+    const items = adminRowValue(row, '[data-field="category-items"]')
+      .split(/\n+/)
+      .map(item => item.trim())
+      .filter(Boolean);
+    if (title || label || items.length) content.catering.menu.push({ id, title, label, rate, items });
+  });
+
   return normalizeAdminContent(content);
 }
 
@@ -2838,6 +3121,7 @@ function addWeeklyEditorRow() {
   if (weeklyNoteEn) weeklyNoteEn.value = content.en.weekly.note;
   renderAdminWeeklyRows(content);
   renderAdminAddonRows(content);
+  renderAdminCateringRows(content);
   primeAdminTranslationFields();
 }
 
@@ -2849,6 +3133,25 @@ function addAddonEditorRow() {
   if (weeklyNoteEn) weeklyNoteEn.value = content.en.weekly.note;
   renderAdminWeeklyRows(content);
   renderAdminAddonRows(content);
+  renderAdminCateringRows(content);
+  primeAdminTranslationFields();
+}
+
+function addCateringEditorRow() {
+  const content = collectAdminContent();
+  content.catering.menu.push({
+    id: `custom-${content.catering.menu.length + 1}`,
+    title: '',
+    label: '',
+    rate: 0,
+    items: []
+  });
+  renderAdminSiteRows(content);
+  if (weeklyNoteZh) weeklyNoteZh.value = content.zh.weekly.note;
+  if (weeklyNoteEn) weeklyNoteEn.value = content.en.weekly.note;
+  renderAdminWeeklyRows(content);
+  renderAdminAddonRows(content);
+  renderAdminCateringRows(content);
   primeAdminTranslationFields();
 }
 
@@ -3108,9 +3411,40 @@ adminLogout?.addEventListener('click', () => {
 
 addWeeklyRow?.addEventListener('click', addWeeklyEditorRow);
 addAddonRow?.addEventListener('click', addAddonEditorRow);
+addCateringRow?.addEventListener('click', addCateringEditorRow);
 
 weeklyNoteZh?.addEventListener('input', () => updateTranslatedField(weeklyNoteEn, weeklyNoteZh.value));
 weeklyNoteEn?.addEventListener('input', () => markManualTranslationField(weeklyNoteEn));
+
+adminSiteRows?.addEventListener('input', event => {
+  const target = event.target;
+  if (!(target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement)) return;
+  const field = target.dataset.field || '';
+  const row = target.closest('[data-site-row]');
+
+  if (field === 'en-site') {
+    markManualTranslationField(target);
+    return;
+  }
+
+  if (field === 'zh-site') translateAdminRow(row);
+});
+
+adminCateringMinimum?.addEventListener('input', () => {
+  renderCateringMenu();
+  renderCateringEstimate();
+});
+
+adminCateringRows?.addEventListener('input', () => {
+  renderCateringMenu();
+  renderCateringEstimate();
+});
+
+adminCateringRows?.addEventListener('click', event => {
+  if (!(event.target instanceof HTMLElement) || !event.target.matches('[data-remove-catering]')) return;
+  const row = event.target.closest('[data-catering-row]');
+  row?.remove();
+});
 
 adminWeeklyRows?.addEventListener('click', event => {
   if (!(event.target instanceof HTMLElement) || !event.target.matches('[data-remove-weekly]')) return;
@@ -3172,6 +3506,8 @@ saveAdminContent?.addEventListener('click', async () => {
   const content = collectAdminContent();
   saveEditableContent(content);
   updateStaticLanguage();
+  renderCateringMenu();
+  renderCateringEstimate();
   renderAdminEditor();
   try {
     const cloudSaved = await saveAdminContentToSupabase(content);
@@ -3188,6 +3524,8 @@ resetAdminContent?.addEventListener('click', async () => {
   const defaults = defaultAdminContent();
   saveEditableContent(defaults);
   updateStaticLanguage();
+  renderCateringMenu();
+  renderCateringEstimate();
   renderAdminEditor();
   try {
     const cloudSaved = await saveAdminContentToSupabase(defaults);

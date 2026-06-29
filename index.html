@@ -342,7 +342,7 @@
 
             <div class="selected-menu-summary" id="selectedCateringSummary">还没有选择菜式。</div>
             <a class="btn btn-outline btn-wide" id="cateringWhatsApp" href="https://wa.me/601110977166" target="_blank" rel="noopener">WhatsApp 发送菜单</a>
-            <p class="calc-note">价格为系统初步估算，最低预算 RM300。实际价格会根据人数、地点、份量、运输、餐具和现场服务调整。</p>
+            <p class="calc-note">价格为系统初步估算，最低预算可在后台调整。实际价格会根据人数、地点、份量、运输、餐具和现场服务调整。</p>
           </aside>
 
           <div class="catering-menu-grid" id="cateringMenuGrid" aria-label="外餐自由搭配菜单"></div>
@@ -529,9 +529,19 @@
           <div>
             <span>CONTENT ADMIN</span>
             <h2>内容管理后台</h2>
-            <p>编辑中文和英文内容，适合每天更新菜单、加购项目和价格说明。</p>
+            <p>编辑全站文案、菜单、加购、外餐计算、顾客询问、会员和推荐奖励。</p>
           </div>
           <button class="btn btn-outline" id="adminLogout" type="button">退出后台</button>
+        </div>
+
+        <div class="admin-section">
+          <div class="admin-section-head">
+            <div>
+              <h3>全站内容设定</h3>
+              <p>可修改首页 Hero、SEO、导航、服务卡、配套、推荐奖励、外餐、活动布置、FAQ 与最终 CTA。</p>
+            </div>
+          </div>
+          <div class="admin-site-rows" id="adminSiteRows"></div>
         </div>
 
         <div class="admin-section">
@@ -558,6 +568,20 @@
             <button type="button" id="addAddonRow">新增加购</button>
           </div>
           <div class="admin-rows" id="adminAddonRows"></div>
+        </div>
+
+        <div class="admin-section">
+          <div class="admin-section-head">
+            <div>
+              <h3>外餐菜单与价格计算</h3>
+              <p>可修改自由搭配菜单分类、每人价格和菜式列表；最低预算会影响前台估算。</p>
+            </div>
+            <button type="button" id="addCateringRow">新增分类</button>
+          </div>
+          <div class="admin-note-grid">
+            <label>最低预算 RM<input id="adminCateringMinimum" type="number" min="0" step="1"></label>
+          </div>
+          <div class="admin-rows" id="adminCateringRows"></div>
         </div>
 
         <div class="admin-section">
@@ -596,6 +620,6 @@
 
   <a class="mobile-wa" href="#order">☏ WhatsApp 下单</a>
   <button class="back-top" id="backTop" aria-label="返回顶部">↑</button>
-  <script src="js/app.js?v=20260629-admin-email"></script>
+  <script src="js/app.js?v=20260629-full-admin-settings"></script>
 </body>
 </html>

@@ -1262,6 +1262,49 @@ details p{color:var(--muted);font-size:13px;line-height:1.55}
   display:grid;
   gap:12px;
 }
+.admin-site-rows{
+  display:grid;
+  gap:10px;
+  max-height:520px;
+  overflow:auto;
+  padding-right:4px;
+}
+.admin-site-row{
+  display:grid;
+  grid-template-columns:minmax(160px,.7fr) minmax(0,1fr) minmax(0,1fr);
+  gap:10px;
+  align-items:end;
+  border:1px solid rgba(214,168,92,.22);
+  border-radius:14px;
+  padding:12px;
+  background:rgba(255,247,232,.045);
+}
+.admin-site-row.is-tall{
+  align-items:start;
+}
+.admin-site-label strong,
+.admin-site-label small{
+  display:block;
+}
+.admin-site-label strong{
+  color:var(--gold2);
+  line-height:1.35;
+}
+.admin-site-label small{
+  color:#a99473;
+  font-size:11px;
+  margin-top:4px;
+  word-break:break-all;
+}
+.admin-site-row label{
+  color:#f4ddba;
+}
+.admin-site-row input,
+.admin-site-row textarea{
+  width:100%;
+  margin-top:6px;
+  background:#fffaf1;
+}
 .admin-row{
   display:grid;
   grid-template-columns:repeat(4,1fr) auto;
@@ -1281,8 +1324,40 @@ details p{color:var(--muted);font-size:13px;line-height:1.55}
 }
 .admin-row input,
 .admin-row textarea,
-.admin-note-grid textarea{
+.admin-note-grid textarea,
+.admin-note-grid input{
   background:#fffaf1;
+}
+.admin-catering-row{
+  display:grid;
+  grid-template-columns:1fr 1fr 1fr 140px auto;
+  gap:10px;
+  align-items:end;
+  border:1px solid rgba(214,168,92,.22);
+  border-radius:14px;
+  padding:12px;
+  background:rgba(255,247,232,.045);
+}
+.admin-catering-head{
+  grid-column:1/-1;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  color:#d8c5a6;
+}
+.admin-catering-head strong{
+  color:var(--gold2);
+}
+.admin-catering-row label{
+  color:#f4ddba;
+}
+.admin-catering-row input,
+.admin-catering-row textarea{
+  background:#fffaf1;
+}
+.admin-catering-items{
+  grid-column:1/5;
 }
 .admin-actions{
   display:flex;
@@ -1566,6 +1641,10 @@ body.order-form-visible .back-top{
   }
   .admin-auto-translate button{width:100%}
   .admin-note-grid,.admin-row,.admin-row.two-line{grid-template-columns:1fr}
+  .admin-site-rows{max-height:none}
+  .admin-site-row{grid-template-columns:1fr}
+  .admin-catering-row{grid-template-columns:1fr}
+  .admin-catering-items{grid-column:auto}
   .admin-toolbar{justify-content:flex-start}
   .admin-inquiry{grid-template-columns:1fr}
   .admin-inquiry-actions{min-width:0}
