@@ -1,6 +1,9 @@
 const menuToggle = document.getElementById('menuToggle');
 const navLinks = document.getElementById('navLinks');
 const backTop = document.getElementById('backTop');
+const scrollProgress = document.getElementById('scrollProgress');
+const siteHeader = document.querySelector('.site-header');
+const heroImage = document.querySelector('.hero-media img');
 const form = document.getElementById('orderForm');
 const orderPreviewText = document.getElementById('orderPreviewText');
 const copyOrderPreview = document.getElementById('copyOrderPreview');
@@ -1056,6 +1059,7 @@ function openStylingCases(scroll = true) {
   stylingCasesSection.hidden = false;
   setStylingCase(activeStylingCase);
   scheduleStylingCaseAutoplay();
+  stylingCasesSection.querySelectorAll('[data-motion]').forEach(element => element.classList.add('is-visible'));
   window.requestAnimationFrame(() => {
     stylingCasesSection.classList.add('is-open');
     if (scroll) stylingCasesSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -3450,6 +3454,76 @@ function addCateringEditorRow() {
   primeAdminTranslationFields();
 }
 
+function initMotionReveal() {
+  const motionElements = Array.from(document.querySelectorAll([
+    'main .section-title',
+    'main .service-card',
+    'main .price-card',
+    'main .light-panel',
+    'main .order-panel',
+    'main .feature-card',
+    'main .faq-grid details',
+    'main .referral-card',
+    'main .referral-note',
+    'main .referral-terms li',
+    'main .catering-menu-teaser',
+    'main .combo-preset-card',
+    'main .case-showcase',
+    'main .case-card',
+    'main .final-cta .section-frame'
+  ].join(',')));
+
+  motionElements.forEach((element, index) => {
+    if (!(element instanceof HTMLElement)) return;
+    element.dataset.motion = element.matches('.price-card,.case-showcase,.feature-card') ? 'fade-scale' : 'fade-up';
+    element.style.setProperty('--motion-delay', `${Math.min((index % 6) * 65, 325)}ms`);
+  });
+
+  document.body.classList.add('motion-ready');
+
+  if (!('IntersectionObserver' in window) || prefersReducedMotion) {
+    motionElements.forEach(element => element.classList.add('is-visible'));
+    return;
+  }
+
+  const observer = new IntersectionObserver(entries => {
+    entries.forEach(entry => {
+      if (!entry.isIntersecting) return;
+      entry.target.classList.add('is-visible');
+      observer.unobserve(entry.target);
+    });
+  }, { rootMargin: '0px 0px -12% 0px', threshold: 0.12 });
+
+  motionElements.forEach(element => observer.observe(element));
+}
+
+function initDynamicSurfaces() {
+  if (prefersReducedMotion) return;
+  const surfaces = Array.from(document.querySelectorAll([
+    '.service-card',
+    '.price-card',
+    '.light-panel',
+    '.order-panel',
+    '.feature-card',
+    '.faq-grid details',
+    '.referral-card',
+    '.combo-preset-card',
+    '.catering-menu-teaser'
+  ].join(',')));
+
+  surfaces.forEach(surface => {
+    if (!(surface instanceof HTMLElement)) return;
+    surface.classList.add('dynamic-surface');
+    surface.addEventListener('pointermove', event => {
+      const rect = surface.getBoundingClientRect();
+      const x = ((event.clientX - rect.left) / rect.width) * 100;
+      const y = ((event.clientY - rect.top) / rect.height) * 100;
+      surface.style.setProperty('--pointer-x', `${x}%`);
+      surface.style.setProperty('--pointer-y', `${y}%`);
+    });
+  });
+}
+
 if (menuToggle && navLinks) {
   menuToggle.addEventListener('click', () => navLinks.classList.toggle('open'));
   navLinks.querySelectorAll('a').forEach(anchor => {
@@ -3457,9 +3531,59 @@ if (menuToggle && navLinks) {
   });
 }
 
-window.addEventListener('scroll', () => {
-  if (!backTop) return;
-  backTop.style.display = window.scrollY > 500 ? 'grid' : 'none';
+const scrollSections = ['home', 'meal-plan', 'order', 'catering', 'styling', 'faq', 'referral']
+  .map(id => document.getElementById(id))
+  .filter(Boolean);
+const navAnchors = Array.from(document.querySelectorAll('.nav-links a[href^="#"]'));
+let scrollMotionPending = false;
+
+function updateScrollProgress() {
+  const maxScroll = Math.max(1, document.documentElement.scrollHeight - window.innerHeight);
+  const progress = Math.min(1, Math.max(0, window.scrollY / maxScroll));
+  if (scrollProgress) scrollProgress.style.transform = `scaleX(${progress})`;
+}
+
+function updateHeaderState() {
+  document.body.classList.toggle('is-scrolled', window.scrollY > 18);
+  if (backTop) backTop.style.display = window.scrollY > 500 ? 'grid' : 'none';
+}
+
+function updateHeroParallax() {
+  if (!(heroImage instanceof HTMLImageElement) || prefersReducedMotion) return;
+  const lift = Math.min(88, Math.max(0, window.scrollY * 0.12));
+  heroImage.style.setProperty('--hero-lift', `${lift}px`);
+}
+
+function updateActiveNavigation() {
+  if (!scrollSections.length || !navAnchors.length) return;
+  const marker = window.scrollY + Math.min(window.innerHeight * 0.38, 320);
+  let activeId = scrollSections[0].id;
+  scrollSections.forEach(section => {
+    if (section.offsetTop <= marker) activeId = section.id;
+  });
+  navAnchors.forEach(anchor => {
+    anchor.classList.toggle('active', anchor.getAttribute('href') === `#${activeId}`);
+  });
+}
+
+function updateScrollMotion() {
+  scrollMotionPending = false;
+  updateScrollProgress();
+  updateHeaderState();
+  updateHeroParallax();
+  updateActiveNavigation();
+}
+
+function requestScrollMotion() {
+  if (scrollMotionPending) return;
+  scrollMotionPending = true;
+  window.requestAnimationFrame(updateScrollMotion);
+}
+
+window.addEventListener('scroll', requestScrollMotion, { passive: true });
+window.addEventListener('resize', requestScrollMotion);
+window.addEventListener('hashchange', () => {
+  window.setTimeout(updateScrollMotion, 80);
 });
 
 backTop?.addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
@@ -3996,6 +4120,12 @@ async function initializeApp() {
   renderCateringEstimate();
   setStylingCase(0);
   updateStylingCasePlayButton();
+  initMotionReveal();
+  initDynamicSurfaces();
+  updateScrollMotion();
+  document.body.classList.add('is-loaded');
+  window.setTimeout(updateScrollMotion, 120);
+  window.setTimeout(updateScrollMotion, 600);
   applyReferralCodeFromUrl();
   updateStaticLanguage();
   refreshSupabaseMemberData();
