@@ -23,7 +23,7 @@ body{
 img{max-width:100%;display:block}
 a{text-decoration:none;color:inherit}
 button,input,select,textarea{font:inherit}
-#home,#meal-plan,#order,#packaging,#catering,#styling,#faq,#referral{scroll-margin-top:96px}
+#home,#meal-plan,#order,#catering,#styling,#faq,#referral{scroll-margin-top:96px}
 
 .site-header{
   position:sticky;
@@ -698,7 +698,7 @@ fieldset input{accent-color:var(--gold)}
 .bottom-cards{background:#070605}
 .triple-feature{
   display:grid;
-  grid-template-columns:repeat(3,1fr);
+  grid-template-columns:repeat(2,1fr);
   gap:18px;
 }
 .feature-card{
@@ -732,21 +732,6 @@ fieldset input{accent-color:var(--gold)}
 .feature-card h2{margin:5px 0 10px;font-size:28px;color:#fff}
 .feature-card p,.feature-card li{color:#ecd9b8;line-height:1.65}
 .feature-card ul{padding-left:18px;margin:0 0 16px}
-.packaging-tags{
-  display:flex;
-  flex-wrap:wrap;
-  gap:8px;
-  margin:14px 0 18px;
-}
-.packaging-tags b{
-  border:1px solid rgba(255,223,154,.34);
-  border-radius:999px;
-  padding:6px 10px;
-  color:#ffdf9a;
-  background:rgba(255,247,232,.08);
-  font-size:12px;
-}
-
 .faq-section{background:#0a0806;padding-top:20px}
 .faq-title{
   text-align:center;

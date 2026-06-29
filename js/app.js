@@ -74,7 +74,6 @@ const translations = {
       home: '首页',
       meal: '包伙食',
       catering: '外餐服务',
-      packaging: '包装展示',
       styling: '活动布置',
       faq: 'FAQ',
       referral: '推荐奖励',
@@ -210,13 +209,6 @@ const translations = {
       copiedPreview: '已复制'
     },
     features: {
-      packaging: {
-        label: 'BRANDING PACKAGING',
-        title: '品牌级餐饮包装',
-        desc: '不只是送餐，也让顾客收到一份有仪式感的餐饮体验。',
-        tags: ['黑金纸袋', '白色餐盒', '黑金圆碗', '纸杯', '菜单卡', '贴纸', '名片'],
-        button: '查看包装展示'
-      },
       catering: {
         label: 'CATERING SERVICE',
         title: '外餐 Catering 服务',
@@ -293,7 +285,6 @@ const translations = {
       home: 'Home',
       meal: 'Meal Plans',
       catering: 'Catering',
-      packaging: 'Packaging',
       styling: 'Event Styling',
       faq: 'FAQ',
       referral: 'Referral',
@@ -429,13 +420,6 @@ const translations = {
       copiedPreview: 'Copied'
     },
     features: {
-      packaging: {
-        label: 'BRANDING PACKAGING',
-        title: 'Branding-ready Catering Packaging',
-        desc: 'It is not just food delivery. It is a thoughtful dining experience your customers can feel when they receive it.',
-        tags: ['Black-gold paper bag', 'White meal box', 'Black-gold bowl', 'Paper cup', 'Menu card', 'Sticker', 'Name card'],
-        button: 'View Packaging'
-      },
       catering: {
         label: 'CATERING SERVICE',
         title: 'Catering Service',
@@ -1064,11 +1048,6 @@ function updateFeatureCard(selector, feature) {
     list.innerHTML = feature.items.map(item => `<li>${escapeHtml(item)}</li>`).join('');
   }
 
-  const tags = card.querySelector('.packaging-tags');
-  if (tags && feature.tags) {
-    tags.innerHTML = feature.tags.map(item => `<b>${escapeHtml(item)}</b>`).join('');
-  }
-
   const button = card.querySelector('.btn');
   if (button) button.textContent = feature.button;
 }
@@ -1094,7 +1073,6 @@ function updateStaticLanguage() {
   setText('#navLinks a[href="#home"]', t.nav.home);
   setText('#navLinks a[href="#meal-plan"]', t.nav.meal);
   setText('#navLinks a[href="#catering"]', t.nav.catering);
-  setText('#navLinks a[href="#packaging"]', t.nav.packaging);
   setText('#navLinks a[href="#styling"]', t.nav.styling);
   setText('#navLinks a[href="#faq"]', t.nav.faq);
   setText('#navLinks a[href="#referral"]', t.nav.referral);
@@ -1182,7 +1160,6 @@ function updateStaticLanguage() {
   setText('#copyOrderPreview', t.order.copyPreview);
   renderOrderPreview();
 
-  updateFeatureCard('#packaging', t.features.packaging);
   updateFeatureCard('#catering', t.features.catering);
   updateFeatureCard('#styling', t.features.styling);
   updateFaq(t);

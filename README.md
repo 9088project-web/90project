@@ -55,8 +55,6 @@ Logo:
 Brand:
 
 - `assets/images/brand/hero-banquet.jpg`
-- `assets/images/brand/packaging-full.jpg`
-- `assets/images/brand/packaging-kit.jpg`
 - `assets/images/brand/reference-approved-layout.jpg`
 
 Meal:
@@ -87,7 +85,6 @@ Event:
 - SEO / Open Graph 分享资料
 - `robots.txt`、`sitemap.xml`、`site.webmanifest` 与 favicon
 - WebP 图片优化，JPG 自动后备
-- 品牌级餐饮包装
 - 外餐 Catering
 - 活动布置 Styling
 - FAQ
