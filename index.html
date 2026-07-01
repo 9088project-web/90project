@@ -585,6 +585,7 @@
           <label>电话 Phone<input id="registerPhone" type="tel" autocomplete="tel" placeholder="例如：011-1234 5678" required></label>
           <label>Email<input id="registerEmail" type="email" autocomplete="email" placeholder="member@example.com" required></label>
           <label>密码 Password<input id="registerPassword" type="password" autocomplete="new-password" placeholder="至少 6 个字符" required></label>
+          <label>推荐码 Referral Code<input id="registerReferralCode" type="text" autocomplete="off" placeholder="朋友推荐可填写"></label>
           <button class="btn btn-gold btn-wide" type="submit">创建会员</button>
         </form>
 
@@ -607,14 +608,54 @@
           <article><b>多层回馈</b><span>上级推荐链待确认奖励</span></article>
         </div>
 
+        <div class="member-overview-grid">
+          <article class="member-tier-card">
+            <span>MEMBER LEVEL</span>
+            <strong id="memberTierBadge">Classic Member</strong>
+            <p id="memberTierProgress">完成更多询问后可升级会员等级。</p>
+          </article>
+          <article class="member-tier-card">
+            <span>REWARD SUMMARY</span>
+            <strong id="memberRewardSummary">RM0 pending</strong>
+            <p>奖励以后台确认、付款记录与 WhatsApp 对话为准。</p>
+          </article>
+          <article class="member-tier-card">
+            <span>NEXT STEP</span>
+            <strong id="memberNextAction">填写下单表单</strong>
+            <p>系统会自动保存你的包伙食与外餐询问。</p>
+          </article>
+        </div>
+
+        <form class="member-profile-form" id="memberProfileForm">
+          <div class="member-records-head">
+            <h3>我的资料</h3>
+            <button type="submit">保存资料</button>
+          </div>
+          <div class="member-profile-grid">
+            <label>姓名 Name<input id="profileName" type="text" autocomplete="name"></label>
+            <label>电话 Phone<input id="profilePhone" type="tel" autocomplete="tel"></label>
+            <label>默认地区 Area<input id="profileArea" type="text" autocomplete="address-level2" placeholder="例如：Kuala Lumpur"></label>
+            <label>常选配套 Package<select id="profileDefaultPackage">
+              <option value="">暂不设定</option>
+              <option value="标准包伙食 RM300/月">标准包伙食 RM300/月</option>
+              <option value="丰富包伙食 RM380/月">丰富包伙食 RM380/月</option>
+              <option value="家庭配套 WhatsApp 询问">家庭配套 WhatsApp 询问</option>
+            </select></label>
+            <label class="member-profile-wide">口味备注 Preference<textarea id="profilePreference" rows="3" placeholder="例如：少辣、不要葱、喜欢清淡"></textarea></label>
+          </div>
+        </form>
+
         <div class="member-referral-panel">
           <div>
             <span>MY REFERRAL CODE</span>
             <strong id="memberReferralCode">-</strong>
             <p>把推荐码发给朋友。朋友下单时填入推荐码，完成消费并经后台确认后，可记录 RM20 抵扣与多层会员回馈。</p>
+            <small id="memberReferralLink">-</small>
           </div>
+          <div class="member-referral-qr" id="memberReferralQr" aria-label="推荐链接视觉码"></div>
           <div class="member-referral-actions">
             <button class="btn btn-gold" id="copyReferralCode" type="button">复制推荐码</button>
+            <button class="btn btn-outline" id="copyReferralLink" type="button">复制推荐链接</button>
             <a class="btn btn-outline" id="shareReferralWhatsApp" href="#" target="_blank" rel="noopener">WhatsApp 分享</a>
           </div>
         </div>

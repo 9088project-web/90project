@@ -1,5 +1,11 @@
 ﻿# Changelog
 
+## 0.1.1
+
+- Upgraded the live static member centre with editable profile fields, member level cards, reward summary, referral link copy and a referral visual-code panel.
+- Added admin-side member status, tier and note controls for local member follow-up.
+- Synced admin inquiry status changes back to member inquiry records so members can see follow-up progress.
+
 ## 0.1.0
 
 - Created a complete Next.js App Router project for 九零食刻 90 PROJECT.

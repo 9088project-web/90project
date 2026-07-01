@@ -21,10 +21,23 @@ const memberRecords = document.getElementById('memberRecords');
 const memberLogout = document.getElementById('memberLogout');
 const clearMemberRecords = document.getElementById('clearMemberRecords');
 const memberReferralCode = document.getElementById('memberReferralCode');
+const memberReferralLink = document.getElementById('memberReferralLink');
+const memberReferralQr = document.getElementById('memberReferralQr');
 const copyReferralCode = document.getElementById('copyReferralCode');
+const copyReferralLink = document.getElementById('copyReferralLink');
 const shareReferralWhatsApp = document.getElementById('shareReferralWhatsApp');
 const memberReferralRewards = document.getElementById('memberReferralRewards');
 const clearReferralRewards = document.getElementById('clearReferralRewards');
+const memberTierBadge = document.getElementById('memberTierBadge');
+const memberTierProgress = document.getElementById('memberTierProgress');
+const memberRewardSummary = document.getElementById('memberRewardSummary');
+const memberNextAction = document.getElementById('memberNextAction');
+const memberProfileForm = document.getElementById('memberProfileForm');
+const profileName = document.getElementById('profileName');
+const profilePhone = document.getElementById('profilePhone');
+const profileArea = document.getElementById('profileArea');
+const profileDefaultPackage = document.getElementById('profileDefaultPackage');
+const profilePreference = document.getElementById('profilePreference');
 const adminModal = document.getElementById('adminModal');
 const adminAuthPanel = document.getElementById('adminAuthPanel');
 const adminDashboard = document.getElementById('adminDashboard');
@@ -94,6 +107,8 @@ const ADMIN_PASSWORD_HASH = '3b523443';
 const WHATSAPP_NUMBER = '601110977166';
 const INQUIRY_STATUSES = ['new', 'contacted', 'quoted', 'confirmed', 'completed', 'cancelled'];
 const REFERRAL_REWARD_STATUSES = ['pending', 'approved', 'redeemed', 'cancelled'];
+const MEMBER_STATUSES = ['active', 'vip', 'blocked'];
+const MEMBER_TIERS = ['Classic', 'Gold', 'Black Gold'];
 const REFERRAL_LEVEL_RATES = [1, 0.5, 0.3, 0.2, 0.1];
 const CATERING_MINIMUM_TOTAL = 300;
 const STYLING_CASE_DELAY = 5200;
@@ -506,6 +521,7 @@ const translations = {
       createSubmit: '创建会员',
       name: '姓名 Name',
       phone: '电话 Phone',
+      referralCode: '推荐码 Referral Code',
       logout: '退出',
       dashboardTitle: '会员中心',
       benefits: [
@@ -520,6 +536,17 @@ const translations = {
       clearRewards: '清空奖励',
       recordsTitle: '我的包伙食询问',
       clearRecords: '清空记录',
+      profileTitle: '我的资料',
+      saveProfile: '保存资料',
+      profileArea: '默认地区 Area',
+      profilePackage: '常选配套 Package',
+      profilePreference: '口味备注 Preference',
+      copyLink: '复制推荐链接',
+      levelLabel: 'MEMBER LEVEL',
+      rewardLabel: 'REWARD SUMMARY',
+      nextLabel: 'NEXT STEP',
+      profileSaved: '会员资料已保存。',
+      linkCopied: '推荐链接已复制，可以直接发给朋友。',
       emptyRecords: '还没有询问记录。登录后提交 WhatsApp 订单，记录会保存在这里。',
       emptyRewards: '还没有推荐奖励记录。朋友下单时填写你的推荐码后，会先记录为待确认奖励。',
       messages: {
@@ -729,6 +756,7 @@ const translations = {
       createSubmit: 'Create Member',
       name: 'Name',
       phone: 'Phone',
+      referralCode: 'Referral Code',
       logout: 'Logout',
       dashboardTitle: 'Member Centre',
       benefits: [
@@ -743,6 +771,17 @@ const translations = {
       clearRewards: 'Clear Rewards',
       recordsTitle: 'My Meal Plan Inquiries',
       clearRecords: 'Clear Records',
+      profileTitle: 'My Profile',
+      saveProfile: 'Save Profile',
+      profileArea: 'Default Area',
+      profilePackage: 'Usual Package',
+      profilePreference: 'Taste Preference',
+      copyLink: 'Copy Referral Link',
+      levelLabel: 'MEMBER LEVEL',
+      rewardLabel: 'REWARD SUMMARY',
+      nextLabel: 'NEXT STEP',
+      profileSaved: 'Member profile saved.',
+      linkCopied: 'Referral link copied. You can send it to your friend.',
       emptyRecords: 'No inquiry records yet. Submit a WhatsApp order after login and it will be saved here.',
       emptyRewards: 'No referral rewards yet. When a friend orders with your code, the reward will be recorded as pending.',
       messages: {
@@ -2081,6 +2120,7 @@ function updateStaticLanguage() {
   setFieldLabel('registerName', t.member.name);
   setFieldLabel('registerPhone', t.member.phone);
   setFieldLabel('registerPassword', t.member.password);
+  setFieldLabel('registerReferralCode', t.member.referralCode);
   setText('#memberLoginForm .btn-wide', t.member.loginSubmit);
   setText('#memberRegisterForm .btn-wide', t.member.createSubmit);
   setText('#memberLogout', t.member.logout);
@@ -2094,6 +2134,17 @@ function updateStaticLanguage() {
   setText('.member-referral-panel p', t.member.referralIntro);
   setText('#copyReferralCode', t.member.copyCode);
   setText('#shareReferralWhatsApp', t.member.shareCode);
+  setText('#copyReferralLink', t.member.copyLink);
+  setText('#memberProfileForm .member-records-head h3', t.member.profileTitle);
+  setText('#memberProfileForm .member-records-head button', t.member.saveProfile);
+  setFieldLabel('profileName', t.member.name);
+  setFieldLabel('profilePhone', t.member.phone);
+  setFieldLabel('profileArea', t.member.profileArea);
+  setFieldLabel('profileDefaultPackage', t.member.profilePackage);
+  setFieldLabel('profilePreference', t.member.profilePreference);
+  document.querySelectorAll('.member-tier-card span').forEach((label, index) => {
+    label.textContent = [t.member.levelLabel, t.member.rewardLabel, t.member.nextLabel][index] || label.textContent;
+  });
   setText('.member-rewards-head h3', t.member.rewardsTitle);
   setText('#clearReferralRewards', t.member.clearRewards);
   setText('.member-records-head:not(.member-rewards-head) h3', t.member.recordsTitle);
@@ -2188,9 +2239,114 @@ function ensureMemberReferralData(members) {
     }
 
     usedCodes.add(code);
+
+    if (!MEMBER_STATUSES.includes(member.status)) {
+      member.status = 'active';
+      changed = true;
+    }
+
+    if (!MEMBER_TIERS.includes(member.tier)) {
+      member.tier = 'Classic';
+      changed = true;
+    }
+
+    if (!member.profile || typeof member.profile !== 'object') {
+      member.profile = {};
+      changed = true;
+    }
+
+    if (typeof member.adminNote !== 'string') {
+      member.adminNote = '';
+      changed = true;
+    }
   });
 
   return changed;
+}
+
+function memberStatusLabel(status) {
+  const labels = currentLanguage === 'en'
+    ? { active: 'Active', vip: 'VIP', blocked: 'Blocked' }
+    : { active: '正常会员', vip: 'VIP 会员', blocked: '暂停会员' };
+  return labels[status] || labels.active;
+}
+
+function calculateRewardSummary(rewards = []) {
+  return rewards.reduce((summary, reward) => {
+    const status = reward.status === '待确认' ? 'pending' : (reward.status || 'pending');
+    const fixedCredit = Number.parseFloat(reward.fixedCredit ?? reward.fixed_credit ?? 0) || 0;
+    summary[status] = (summary[status] || 0) + fixedCredit;
+    summary.totalRecords += 1;
+    if (status === 'approved') summary.approvedRecords += 1;
+    if (status === 'pending') summary.pendingRecords += 1;
+    return summary;
+  }, { pending: 0, approved: 0, redeemed: 0, cancelled: 0, totalRecords: 0, approvedRecords: 0, pendingRecords: 0 });
+}
+
+function calculateMemberTier(member) {
+  const recordCount = member?.records?.length || 0;
+  const rewardSummary = calculateRewardSummary(member?.referralRewards || []);
+  const approvedValue = rewardSummary.approved + rewardSummary.redeemed;
+
+  if (member?.tier === 'Black Gold' || recordCount >= 8 || approvedValue >= 100) {
+    return {
+      tier: 'Black Gold',
+      title: currentLanguage === 'en' ? 'Black Gold Member' : '黑金会员',
+      progress: currentLanguage === 'en'
+        ? 'Top member level. Prioritize follow-up, catering and styling opportunities.'
+        : '最高会员等级。适合重点跟进包伙食、外餐和布置需求。'
+    };
+  }
+
+  if (member?.tier === 'Gold' || member?.status === 'vip' || recordCount >= 3 || approvedValue >= 40) {
+    const remaining = Math.max(0, 8 - recordCount);
+    return {
+      tier: 'Gold',
+      title: currentLanguage === 'en' ? 'Gold Member' : '黄金会员',
+      progress: currentLanguage === 'en'
+        ? `${remaining} more inquiry records to reach Black Gold.`
+        : `再完成 ${remaining} 笔询问记录可升级黑金会员。`
+    };
+  }
+
+  const remaining = Math.max(0, 3 - recordCount);
+  return {
+    tier: 'Classic',
+    title: currentLanguage === 'en' ? 'Classic Member' : '经典会员',
+    progress: currentLanguage === 'en'
+      ? `${remaining} more inquiry records to reach Gold.`
+      : `再完成 ${remaining} 笔询问记录可升级黄金会员。`
+  };
+}
+
+function renderReferralQr(link = '') {
+  if (!memberReferralQr) return;
+  const seed = Array.from(link || 'NP90').reduce((total, char) => total + char.charCodeAt(0), 0);
+  const cells = Array.from({ length: 49 }, (_, index) => {
+    const active = index < 7 || index > 41 || index % 7 === 0 || index % 7 === 6 || ((seed + index * 17) % 5 < 2);
+    return `<i class="${active ? 'active' : ''}"></i>`;
+  }).join('');
+  memberReferralQr.innerHTML = `<div>${cells}</div><span>${currentLanguage === 'en' ? 'Referral link visual code' : '推荐链接视觉码'}</span>`;
+}
+
+function renderMemberProfileForm(member) {
+  if (!member) return;
+  if (profileName) profileName.value = member.name || '';
+  if (profilePhone) profilePhone.value = member.phone || '';
+  if (profileArea) profileArea.value = member.profile?.area || '';
+  if (profileDefaultPackage) profileDefaultPackage.value = member.profile?.defaultPackage || '';
+  if (profilePreference) profilePreference.value = member.profile?.preference || '';
+}
+
+function applyMemberProfileToOrder(member) {
+  if (!member || !form) return;
+  const areaInput = getById('area');
+  const notesInput = getById('notes');
+  const preferredPackage = member.profile?.defaultPackage || '';
+  if (areaInput && !areaInput.value && member.profile?.area) areaInput.value = member.profile.area;
+  if (preferredPackage) setPackageValue(preferredPackage);
+  if (notesInput && !notesInput.value && member.profile?.preference) notesInput.value = member.profile.preference;
+  renderOrderPreview();
 }
 
 function loadMembers() {
@@ -2265,6 +2421,7 @@ function renderMemberRecords(member) {
       <article class="member-record">
         <strong>${escapeHtml(record.package || (currentLanguage === 'en' ? 'Meal Plan Inquiry' : '包伙食询问'))}</strong>
         <p>${currentLanguage === 'en' ? 'Date' : '日期'}：${date}</p>
+        <p>${currentLanguage === 'en' ? 'Status' : '状态'}：${escapeHtml(inquiryStatusLabel(record.status || 'new'))}</p>
         <p>${currentLanguage === 'en' ? 'Pax' : '人数'}：${escapeHtml(record.pax || '-')} ｜ ${currentLanguage === 'en' ? 'Meal' : '餐期'}：${escapeHtml(record.meal || '-')}</p>
         <p>${currentLanguage === 'en' ? 'Start date' : '开始日期'}：${escapeHtml(record.date || '-')} ｜ ${currentLanguage === 'en' ? 'Area' : '区域'}：${escapeHtml(record.area || '-')}</p>
         <p>${currentLanguage === 'en' ? 'Referral code' : '推荐码'}：${escapeHtml(record.referralCode || t.order.none)}</p>
@@ -2288,6 +2445,7 @@ function renderReferralRewards(member) {
     const date = new Date(reward.createdAt).toLocaleString('zh-MY', {
       year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit'
     });
+    const normalizedStatus = reward.status === '待确认' ? 'pending' : (reward.status || 'pending');
     return `
       <article class="member-record">
         <strong>${escapeHtml(reward.referredName || (currentLanguage === 'en' ? 'Friend referral inquiry' : '朋友推荐询问'))}</strong>
@@ -2296,7 +2454,7 @@ function renderReferralRewards(member) {
         <p>${currentLanguage === 'en' ? 'Referral level' : '推荐层级'}：${escapeHtml(reward.level ? `L${reward.level}` : 'L1')}</p>
         ${reward.fixedCredit ? `<p>${currentLanguage === 'en' ? 'Fixed reward' : '固定奖励'}：RM${escapeHtml(reward.fixedCredit)} ${currentLanguage === 'en' ? 'next-order credit' : '下次服务抵扣'}</p>` : ''}
         <p>${currentLanguage === 'en' ? 'Spending reward' : '消费额回馈'}：${escapeHtml(reward.ratePercent || 1)}% ${currentLanguage === 'en' ? 'of confirmed spending, pending WhatsApp confirmation' : '实际消费额回馈（待 WhatsApp 确认订单金额）'}</p>
-        <p>${currentLanguage === 'en' ? 'Status' : '状态'}：${escapeHtml(currentLanguage === 'en' && reward.status === '待确认' ? 'Pending' : (reward.status || '待确认'))}</p>
+        <p>${currentLanguage === 'en' ? 'Status' : '状态'}：${escapeHtml(referralRewardStatusLabel(normalizedStatus))}</p>
       </article>
     `;
   }).join('');
@@ -2325,19 +2483,48 @@ ${referralShareLink(member)}`;
 ${referralShareLink(member)}`;
 }
 
+function renderMemberOverview(member) {
+  const tierInfo = calculateMemberTier(member);
+  const rewardSummary = calculateRewardSummary(member?.referralRewards || []);
+  const records = member?.records || [];
+  const latestRecord = records[0];
+
+  if (memberTierBadge) memberTierBadge.textContent = `${tierInfo.title} · ${memberStatusLabel(member?.status || 'active')}`;
+  if (memberTierProgress) memberTierProgress.textContent = tierInfo.progress;
+  if (memberRewardSummary) {
+    memberRewardSummary.textContent = currentLanguage === 'en'
+      ? `RM${rewardSummary.approved} approved · RM${rewardSummary.pending} pending`
+      : `RM${rewardSummary.approved} 已批准 · RM${rewardSummary.pending} 待确认`;
+  }
+  if (memberNextAction) {
+    if (!records.length) {
+      memberNextAction.textContent = currentLanguage === 'en' ? 'Submit your first inquiry' : '提交第一笔询问';
+    } else {
+      memberNextAction.textContent = currentLanguage === 'en'
+        ? `Latest: ${inquiryStatusLabel(latestRecord.status || 'new')}`
+        : `最近状态：${inquiryStatusLabel(latestRecord.status || 'new')}`;
+    }
+  }
+}
+
 function renderReferralPanel(member) {
   if (!member) {
     if (memberReferralCode) memberReferralCode.textContent = '-';
+    if (memberReferralLink) memberReferralLink.textContent = '-';
     if (shareReferralWhatsApp) shareReferralWhatsApp.href = '#';
+    renderReferralQr('');
     renderReferralRewards(null);
     return;
   }
 
   const code = normalizeReferralCode(member.referralCode);
+  const link = referralShareLink(member);
   if (memberReferralCode) memberReferralCode.textContent = code;
+  if (memberReferralLink) memberReferralLink.textContent = link;
   if (shareReferralWhatsApp) {
     shareReferralWhatsApp.href = `https://wa.me/?text=${encodeURIComponent(referralShareMessage(member))}`;
   }
+  renderReferralQr(link);
   renderReferralRewards(member);
 }
 
@@ -2349,11 +2536,14 @@ function renderMemberState() {
     memberAuthPanel.hidden = true;
     memberDashboard.hidden = false;
     if (memberProfileText) {
-      memberProfileText.textContent = `${member.name} · ${member.phone} · ${member.email}`;
+      memberProfileText.textContent = `${member.name} · ${member.phone} · ${member.email} · ${memberStatusLabel(member.status || 'active')}`;
     }
+    renderMemberOverview(member);
+    renderMemberProfileForm(member);
     renderReferralPanel(member);
     renderMemberRecords(member);
     fillMemberToOrder(member);
+    applyMemberProfileToOrder(member);
   } else {
     memberAuthPanel.hidden = false;
     memberDashboard.hidden = true;
@@ -2720,6 +2910,7 @@ async function setInquiryStatus(id, status) {
       });
       remoteInquiry.status = status;
       remoteInquiry.updatedAt = new Date().toISOString();
+      syncMemberInquiryStatus(id, status);
       renderAdminInquiries(false);
       return;
     } catch (error) {
@@ -2737,6 +2928,7 @@ async function setInquiryStatus(id, status) {
   inquiry.status = status;
   inquiry.updatedAt = new Date().toISOString();
   saveInquiries(inquiries);
+  syncMemberInquiryStatus(id, status);
   renderAdminInquiries();
 
   if (inquiry.supabaseId && isSupabaseConfigured() && getSupabaseSession()?.access_token) {
@@ -2750,6 +2942,24 @@ async function setInquiryStatus(id, status) {
       console.warn('Supabase local status mirror failed', error);
     }
   }
+}
+
+function syncMemberInquiryStatus(id, status) {
+  const members = loadMembers();
+  let changed = false;
+  members.forEach(member => {
+    (member.records || []).forEach(record => {
+      if (record.id === id || record.supabaseId === id) {
+        record.status = status;
+        record.updatedAt = new Date().toISOString();
+        changed = true;
+      }
+    });
+  });
+  if (!changed) return;
+  saveMembers(members);
+  renderMemberState();
+  if (isAdminLoggedIn()) renderAdminMembers(false);
 }
 
 function referralRewardStatusLabel(status) {
@@ -2846,6 +3056,23 @@ function renderRewardLine(reward, memberEmail, index) {
   `;
 }
 
+function memberStatusOptions(selectedStatus) {
+  const normalized = MEMBER_STATUSES.includes(selectedStatus) ? selectedStatus : 'active';
+  return MEMBER_STATUSES.map(status => (
+    `<option value="${status}" ${status === normalized ? 'selected' : ''}>${memberStatusLabel(status)}</option>`
+  )).join('');
+}
+
+function memberTierOptions(selectedTier) {
+  const normalized = MEMBER_TIERS.includes(selectedTier) ? selectedTier : 'Classic';
+  const labels = currentLanguage === 'en'
+    ? { Classic: 'Classic', Gold: 'Gold', 'Black Gold': 'Black Gold' }
+    : { Classic: '经典会员', Gold: '黄金会员', 'Black Gold': '黑金会员' };
+  return MEMBER_TIERS.map(tier => (
+    `<option value="${tier}" ${tier === normalized ? 'selected' : ''}>${labels[tier] || tier}</option>`
+  )).join('');
+}
+
 function renderAdminMembers(refreshRemote = true) {
   if (!adminMembers) return;
   if (refreshRemote) refreshSupabaseMembers();
@@ -2887,9 +3114,19 @@ function renderAdminMembers(refreshRemote = true) {
           <p>${currentLanguage === 'en' ? 'Referral code' : '推荐码'}：${escapeHtml(normalizeReferralCode(member.referralCode) || '-')}</p>
           <p>${currentLanguage === 'en' ? 'Referred by' : '上级推荐'}：${escapeHtml(normalizeReferralCode(member.referredByCode) || '-')}</p>
           <p>${currentLanguage === 'en' ? 'Records / Rewards' : '询问 / 奖励'}：${escapeHtml(member.records?.length || 0)} / ${escapeHtml(rewards.length || 0)}</p>
+          <p>${currentLanguage === 'en' ? 'Area / Package' : '地区 / 配套'}：${escapeHtml(member.profile?.area || '-')} / ${escapeHtml(member.profile?.defaultPackage || '-')}</p>
           <p>${currentLanguage === 'en' ? 'Source' : '来源'}：${escapeHtml(member.source === 'supabase' ? 'Supabase' : 'Local')}</p>
         </div>
         <div class="admin-reward-list">
+          <label>${currentLanguage === 'en' ? 'Member status' : '会员状态'}
+            <select data-member-admin-field="status" data-member-email="${escapeHtml(memberEmail)}">${memberStatusOptions(member.status)}</select>
+          </label>
+          <label>${currentLanguage === 'en' ? 'Member tier' : '会员等级'}
+            <select data-member-admin-field="tier" data-member-email="${escapeHtml(memberEmail)}">${memberTierOptions(member.tier)}</select>
+          </label>
+          <label>${currentLanguage === 'en' ? 'Admin note' : '后台备注'}
+            <textarea data-member-admin-field="adminNote" data-member-email="${escapeHtml(memberEmail)}" rows="3" placeholder="${currentLanguage === 'en' ? 'Follow-up notes' : '例如：已联系、偏好清淡、VIP 客户'}">${escapeHtml(member.adminNote || '')}</textarea>
+          </label>
           ${rewards.length ? rewards.map((reward, index) => renderRewardLine(reward, memberEmail, index)).join('') : `<span>${currentLanguage === 'en' ? 'No local rewards.' : '暂无本地奖励。'}</span>`}
         </div>
       </article>
@@ -2919,6 +3156,28 @@ async function setReferralRewardStatus(memberEmail, rewardIndex, status) {
   saveMembers(members);
   renderAdminMembers(false);
   renderMemberState();
+}
+
+function setMemberAdminField(memberEmail, field, value) {
+  const members = loadMembers();
+  const member = members.find(item => String(item.email || '').toLowerCase() === String(memberEmail || '').toLowerCase());
+  if (!member) return;
+
+  if (field === 'status' && MEMBER_STATUSES.includes(value)) {
+    member.status = value;
+  } else if (field === 'tier' && MEMBER_TIERS.includes(value)) {
+    member.tier = value;
+  } else if (field === 'adminNote') {
+    member.adminNote = value;
+  } else {
+    return;
+  }
+
+  member.updatedAt = new Date().toISOString();
+  saveMembers(members);
+  renderAdminMembers(false);
+  renderMemberState();
+  showAdminMessage(currentLanguage === 'en' ? 'Member setting saved.' : '会员设定已保存。');
 }
 
 async function setCloudReferralRewardStatus(rewardId, status) {
@@ -3002,9 +3261,10 @@ function saveInquiryForMember(orderData) {
 
   member.records = member.records || [];
   member.records.unshift({
+    id: orderData.id || createInquiryId(),
     ...orderData,
     createdAt: new Date().toISOString(),
-    status: 'whatsapp_created'
+    status: orderData.status || 'new'
   });
   member.records = member.records.slice(0, 30);
   saveMembers(members);
@@ -3093,10 +3353,12 @@ async function copyText(text) {
 
 function applyReferralCodeFromUrl() {
   const referralInput = getById('referralCode');
-  if (!referralInput) return;
+  const registerReferralInput = getById('registerReferralCode');
   const params = new URLSearchParams(window.location.search);
   const code = normalizeReferralCode(params.get('ref'));
-  if (code) referralInput.value = code;
+  if (!code) return;
+  if (referralInput) referralInput.value = code;
+  if (registerReferralInput) registerReferralInput.value = code;
 }
 
 function isAdminLoggedIn() {
@@ -3627,7 +3889,7 @@ memberRegisterForm?.addEventListener('submit', async event => {
   const phone = fieldValue('registerPhone');
   const email = fieldValue('registerEmail').toLowerCase();
   const password = fieldValue('registerPassword');
-  const referredByCode = normalizeReferralCode(fieldValue('referralCode') || new URLSearchParams(window.location.search).get('ref'));
+  const referredByCode = normalizeReferralCode(fieldValue('registerReferralCode') || new URLSearchParams(window.location.search).get('ref'));
 
   if (!name || !phone || !email || password.length < 6) {
     showMemberMessage(t.member.messages.required, true);
@@ -3651,6 +3913,10 @@ memberRegisterForm?.addEventListener('submit', async event => {
     referredByCode,
     referralRewards: [],
     records: [],
+    status: 'active',
+    tier: 'Classic',
+    profile: {},
+    adminNote: '',
     createdAt: new Date().toISOString()
   };
   members.push(localMember);
@@ -3768,6 +4034,31 @@ clearReferralRewards?.addEventListener('click', () => {
   renderMemberState();
 });
 
+memberProfileForm?.addEventListener('submit', event => {
+  event.preventDefault();
+  const email = currentMemberEmail();
+  if (!email) return;
+  const members = loadMembers();
+  const member = members.find(item => item.email === email);
+  if (!member) return;
+
+  member.name = profileName?.value?.trim() || member.name;
+  member.phone = profilePhone?.value?.trim() || member.phone;
+  member.profile = {
+    ...(member.profile || {}),
+    area: profileArea?.value?.trim() || '',
+    defaultPackage: profileDefaultPackage?.value || '',
+    preference: profilePreference?.value?.trim() || ''
+  };
+  member.updatedAt = new Date().toISOString();
+  saveMembers(members);
+  fillMemberToOrder(member);
+  applyMemberProfileToOrder(member);
+  renderMemberState();
+  showMemberMessage(languageText().member.profileSaved);
+  if (isAdminLoggedIn()) renderAdminMembers(false);
+});
+
 copyReferralCode?.addEventListener('click', async () => {
   const member = getCurrentMember();
   const t = languageText();
@@ -3777,6 +4068,17 @@ copyReferralCode?.addEventListener('click', async () => {
     showMemberMessage(t.member.messages.copied);
   } catch (error) {
     showMemberMessage(t.member.messages.copyFail, true);
+  }
+});
+
+copyReferralLink?.addEventListener('click', async () => {
+  const member = getCurrentMember();
+  if (!member) return;
+  try {
+    await copyText(referralShareLink(member));
+    showMemberMessage(languageText().member.linkCopied);
+  } catch (error) {
+    showMemberMessage(languageText().member.copyFail, true);
   }
 });
 
@@ -3916,6 +4218,16 @@ adminInquiries?.addEventListener('change', event => {
 });
 
 adminMembers?.addEventListener('change', event => {
+  if (event.target instanceof HTMLSelectElement && event.target.matches('[data-member-admin-field]')) {
+    setMemberAdminField(event.target.dataset.memberEmail || '', event.target.dataset.memberAdminField || '', event.target.value);
+    return;
+  }
+
+  if (event.target instanceof HTMLTextAreaElement && event.target.matches('[data-member-admin-field]')) {
+    setMemberAdminField(event.target.dataset.memberEmail || '', event.target.dataset.memberAdminField || '', event.target.value);
+    return;
+  }
+
   if (!(event.target instanceof HTMLSelectElement) || !event.target.matches('[data-reward-status]')) return;
   const rewardId = event.target.dataset.cloudRewardId;
   if (rewardId) {
@@ -4103,9 +4415,17 @@ form?.addEventListener('submit', event => {
     return;
   }
 
-  saveInquiryForAdmin(orderData);
+  const currentMember = getCurrentMember();
+  if (currentMember?.status === 'blocked') {
+    showOrderMessage(currentLanguage === 'en'
+      ? 'This member account is currently paused. Please contact us on WhatsApp for assistance.'
+      : '这个会员账号目前已暂停，请直接 WhatsApp 联系我们协助处理。', true);
+    return;
+  }
+
+  const inquiry = saveInquiryForAdmin(orderData);
   saveReferralReward(orderData);
-  saveInquiryForMember(orderData);
+  saveInquiryForMember({ ...orderData, id: inquiry.id, status: inquiry.status });
   renderOrderPreview();
   showOrderMessage(currentLanguage === 'en' ? 'WhatsApp is opening now.' : '正在打开 WhatsApp。');
   const url = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(buildOrderMessage(orderData))}`;
