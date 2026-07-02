@@ -1,31 +1,13 @@
 {
-  "name": "90-project-fullstack",
+  "name": "90-project-website",
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev --hostname 127.0.0.1",
-    "build": "next build",
+    "dev": "node scripts/serve-static-site.mjs",
+    "build": "node scripts/build-static-site.mjs",
     "vercel-build": "node scripts/build-static-site.mjs",
-    "start": "next start --hostname 127.0.0.1",
-    "lint": "next lint"
+    "start": "node scripts/serve-static-site.mjs"
   },
-  "dependencies": {
-    "@prisma/client": "^7.8.0",
-    "clsx": "^2.1.1",
-    "next": "^14.2.18",
-    "prisma": "^7.8.0",
-    "react": "^18.3.1",
-    "react-dom": "^18.3.1"
-  },
-  "devDependencies": {
-    "@types/node": "^22.10.2",
-    "@types/react": "^18.3.12",
-    "@types/react-dom": "^18.3.1",
-    "autoprefixer": "^10.4.20",
-    "eslint": "^8.57.1",
-    "eslint-config-next": "^14.2.18",
-    "postcss": "^8.4.49",
-    "tailwindcss": "^3.4.17",
-    "typescript": "^5.7.2"
-  }
+  "dependencies": {},
+  "devDependencies": {}
 }

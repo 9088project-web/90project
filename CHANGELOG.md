@@ -1,4 +1,14 @@
-﻿# Changelog
+# Changelog
+
+## 0.1.2
+
+- Organized the project into one final static website entry and archived old static/Next.js work under `archive/`.
+- Added editable admin media settings for styling case images and homepage video ad space.
+- Added WhatsApp conversion source tracking for header, hero, package cards, catering calculator, styling, referral and footer CTAs.
+- Added Supabase-ready fields for member preferences, inquiry lead source and `conversion_events`.
+- Expanded referral reward terms with clearer multi-level, next-service credit and non-cash redemption rules.
+- Optimized uploaded styling/case PNG artwork into WebP and AVIF assets and switched the website to WebP defaults.
+- Added `vercel.json` and static build scripts so Vercel publishes the `public/` output instead of detecting the old Next.js archive.
 
 ## 0.1.1
 

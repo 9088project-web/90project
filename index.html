@@ -54,7 +54,7 @@
         <button type="button" data-language-switch="en" aria-pressed="false">EN</button>
       </div>
 
-      <a class="nav-whatsapp" href="https://wa.me/601110977166?text=%E4%BD%A0%E5%A5%BD%EF%BC%8C%E6%88%91%E6%83%B3%E8%AF%A2%E9%97%AE%E4%B9%9D%E9%9B%B6%E9%A3%9F%E5%88%BB%2090%20PROJECT%E3%80%82" target="_blank" rel="noopener">
+      <a class="nav-whatsapp" href="https://wa.me/601110977166?text=%E4%BD%A0%E5%A5%BD%EF%BC%8C%E6%88%91%E6%83%B3%E8%AF%A2%E9%97%AE%E4%B9%9D%E9%9B%B6%E9%A3%9F%E5%88%BB%2090%20PROJECT%E3%80%82" target="_blank" rel="noopener" data-wa-source="header_whatsapp">
         <span>☏</span> WhatsApp 询问
       </a>
     </div>
@@ -85,7 +85,28 @@
 
           <div class="hero-actions">
             <a href="#meal-plan" class="btn btn-gold">查看包伙食配套</a>
-            <a href="#order" class="btn btn-outline">WhatsApp 立即询问</a>
+            <a href="#order" class="btn btn-outline" data-wa-source="hero_whatsapp">WhatsApp 立即询问</a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section video-spot-section" id="video-spot">
+      <div class="section-frame video-spot">
+        <div class="video-spot-copy">
+          <span data-video-label>VIDEO AD SPACE</span>
+          <h2 data-video-title>视频投放素材区</h2>
+          <p data-video-desc>这里预留给你自己拍摄的品牌短视频，可用于 Facebook、Instagram、TikTok 和 WhatsApp 分享。</p>
+          <a class="btn btn-gold" href="#order" data-video-cta data-wa-source="video_ad_space">用这个视频引导下单</a>
+        </div>
+        <div class="video-spot-media">
+          <video id="brandVideo" controls playsinline preload="metadata" poster="assets/images/brand/hero-banquet.jpg">
+            <source src="ads/media/your-video.mp4" type="video/mp4">
+          </video>
+          <div class="video-placeholder" id="videoPlaceholder">
+            <span>9:16 / 4:5</span>
+            <strong>上传你的品牌短视频</strong>
+            <p>把视频命名为 <b>your-video.mp4</b> 放进 <b>ads/media/</b>，这里会自动显示。</p>
           </div>
         </div>
       </div>
@@ -296,7 +317,7 @@
             </ul>
             <div class="feature-actions">
               <a href="#catering-menu" class="btn btn-small" data-open-catering-menu>菜单选择 / 计算价格</a>
-              <a href="#order" class="btn btn-small btn-soft">WhatsApp 询问</a>
+              <a href="#order" class="btn btn-small btn-soft" data-wa-source="catering_service">WhatsApp 询问</a>
             </div>
           </div>
         </article>
@@ -337,7 +358,7 @@
         <div class="case-showcase" data-case-showcase aria-live="polite">
           <button class="case-nav case-nav-prev" type="button" data-case-prev aria-label="上一张案例">‹</button>
           <button class="case-showcase-media" type="button" data-case-lightbox-open aria-label="放大查看案例">
-            <img src="assets/images/event/styling-backdrop.png" width="1448" height="1086" alt="九零食刻黑金活动背景布置展示图" data-case-featured loading="lazy" decoding="async" />
+            <img src="assets/images/event/styling-backdrop.webp" width="1448" height="1086" alt="九零食刻黑金活动背景布置展示图" data-case-featured loading="lazy" decoding="async" />
             <span data-case-counter>01 / 06</span>
           </button>
           <div class="case-showcase-copy">
@@ -346,7 +367,7 @@
             <p data-case-desc>黑金主视觉、灯光、花艺与品牌 Logo 统一呈现，适合开张、晚宴与活动入口拍照区。</p>
             <div class="case-showcase-actions">
               <button type="button" data-case-play>暂停轮播</button>
-              <a href="#order">WhatsApp 询问布置</a>
+              <a href="#order" data-wa-source="styling_service">WhatsApp 询问布置</a>
             </div>
             <div class="case-progress" aria-hidden="true"><span data-case-progress></span></div>
           </div>
@@ -355,7 +376,7 @@
 
         <div class="case-gallery">
           <article class="case-card case-wide is-active" data-case-card tabindex="0">
-            <img src="assets/images/event/styling-backdrop.png" width="1448" height="1086" alt="九零食刻黑金活动背景布置展示图" loading="lazy" decoding="async" />
+            <img src="assets/images/event/styling-backdrop.webp" width="1448" height="1086" alt="九零食刻黑金活动背景布置展示图" loading="lazy" decoding="async" />
             <div>
               <span>BRAND BACKDROP</span>
               <h3>品牌背景布置</h3>
@@ -364,7 +385,7 @@
           </article>
 
           <article class="case-card" data-case-card tabindex="0">
-            <img src="assets/images/event/styling-floral-table.png" width="1448" height="1086" alt="黑金餐桌花艺与餐桌布置展示图" loading="lazy" decoding="async" />
+            <img src="assets/images/event/styling-floral-table.webp" width="1448" height="1086" alt="黑金餐桌花艺与餐桌布置展示图" loading="lazy" decoding="async" />
             <div>
               <span>TABLE STYLING</span>
               <h3>餐桌花艺布置</h3>
@@ -373,7 +394,7 @@
           </article>
 
           <article class="case-card" data-case-card tabindex="0">
-            <img src="assets/images/event/catering-display-case.png" width="1448" height="1086" alt="九零食刻外餐餐饮展示台与 Buffet 摆设" loading="lazy" decoding="async" />
+            <img src="assets/images/event/catering-display-case.webp" width="1448" height="1086" alt="九零食刻外餐餐饮展示台与 Buffet 摆设" loading="lazy" decoding="async" />
             <div>
               <span>FOOD DISPLAY</span>
               <h3>餐饮展示台</h3>
@@ -382,7 +403,7 @@
           </article>
 
           <article class="case-card" data-case-card tabindex="0">
-            <img src="assets/images/event/styling-photo-lounge.png" width="1448" height="1086" alt="黑金活动拍照区和气球布置展示图" loading="lazy" decoding="async" />
+            <img src="assets/images/event/styling-photo-lounge.webp" width="1448" height="1086" alt="黑金活动拍照区和气球布置展示图" loading="lazy" decoding="async" />
             <div>
               <span>PHOTO LOUNGE</span>
               <h3>拍照区与氛围设计</h3>
@@ -391,7 +412,7 @@
           </article>
 
           <article class="case-card" data-case-card tabindex="0">
-            <img src="assets/images/event/mocktail-bar-case.png" width="1448" height="1086" alt="Mocktail 饮料吧和无酒精特调展示图" loading="lazy" decoding="async" />
+            <img src="assets/images/event/mocktail-bar-case.webp" width="1448" height="1086" alt="Mocktail 饮料吧和无酒精特调展示图" loading="lazy" decoding="async" />
             <div>
               <span>MOCKTAIL BAR</span>
               <h3>Mocktail / Beverage Bar</h3>
@@ -400,7 +421,7 @@
           </article>
 
           <article class="case-card" data-case-card tabindex="0">
-            <img src="assets/images/event/table-menu-detail.png" width="1448" height="1086" alt="黑金餐桌菜单卡与餐具细节展示图" loading="lazy" decoding="async" />
+            <img src="assets/images/event/table-menu-detail.webp" width="1448" height="1086" alt="黑金餐桌菜单卡与餐具细节展示图" loading="lazy" decoding="async" />
             <div>
               <span>MENU DETAIL</span>
               <h3>菜单卡与餐桌细节</h3>
@@ -411,14 +432,14 @@
 
         <div class="case-cta">
           <p>想要类似活动效果？WhatsApp 提供日期、地点、人数与主题，我们可以先帮你建议方向。</p>
-          <a class="btn btn-gold" href="#order">WhatsApp 询问布置</a>
+          <a class="btn btn-gold" href="#order" data-wa-source="styling_cases">WhatsApp 询问布置</a>
         </div>
       </div>
 
       <div class="case-lightbox" id="caseLightbox" hidden aria-hidden="true">
         <button class="case-lightbox-close" type="button" data-case-lightbox-close aria-label="关闭预览">×</button>
         <button class="case-lightbox-nav case-lightbox-prev" type="button" data-case-lightbox-prev aria-label="上一张案例">‹</button>
-        <img src="assets/images/event/styling-backdrop.png" width="1448" height="1086" alt="九零食刻黑金活动背景布置展示图" data-case-lightbox-img />
+        <img src="assets/images/event/styling-backdrop.webp" width="1448" height="1086" alt="九零食刻黑金活动背景布置展示图" data-case-lightbox-img />
         <div class="case-lightbox-caption">
           <span data-case-lightbox-label>BRAND BACKDROP</span>
           <strong data-case-lightbox-title>品牌背景布置</strong>
@@ -472,7 +493,7 @@
               </div>
 
               <div class="selected-menu-summary" id="selectedCateringSummary">还没有选择菜式。</div>
-              <a class="btn btn-outline btn-wide" id="cateringWhatsApp" href="https://wa.me/601110977166" target="_blank" rel="noopener">WhatsApp 发送菜单</a>
+              <a class="btn btn-outline btn-wide" id="cateringWhatsApp" href="https://wa.me/601110977166" target="_blank" rel="noopener" data-wa-source="catering_calculator">WhatsApp 发送菜单</a>
               <p class="calc-note">价格为系统初步估算，最低预算可在后台调整。实际价格会根据人数、地点、份量、运输、餐具和现场服务调整。</p>
             </aside>
           </div>
@@ -525,8 +546,11 @@
           <span>推荐奖励属于下次服务抵扣，不可兑换现金或转让；多层记录、比例与有效期以后台审核和活动设定为准。</span>
         </div>
         <ul class="referral-terms">
-          <li>朋友首次成功消费后，RM20 会记录为下次服务抵扣。</li>
-          <li>多层推荐回馈只按已确认实付订单记录，需由管理员审核后才可使用。</li>
+          <li>朋友首次成功消费并完成付款后，RM20 会记录为推荐人的下次服务抵扣。</li>
+          <li>多层推荐回馈开放记录，比例、层级、有效期和结算方式以后台活动设定为准。</li>
+          <li>所有奖励只可用于九零食刻下次服务抵扣，不可兑换现金、不可转让、不可要求提现。</li>
+          <li>奖励需等订单状态确认、顾客实付金额核对和管理员审核后才可使用。</li>
+          <li>退款、取消、未完成付款或恶意重复注册的订单，不会计算推荐奖励。</li>
           <li>最终以付款记录、后台状态与 WhatsApp 确认为准；九零食刻保留调整活动条款的权利。</li>
         </ul>
       </div>
@@ -542,7 +566,7 @@
             <small>FOOD · CATERING · EVENT · STYLING</small>
           </div>
         </div>
-        <a class="btn btn-gold big" href="#order">WhatsApp 立即询问</a>
+        <a class="btn btn-gold big" href="#order" data-wa-source="footer_cta">WhatsApp 立即询问</a>
         <picture class="cta-food">
           <source srcset="assets/images/meal/meal-rich.webp" type="image/webp" />
           <img src="assets/images/meal/meal-rich.jpg" width="1254" height="1254" alt="九零食刻餐饮" loading="lazy" decoding="async">
@@ -709,8 +733,10 @@
           <button type="button" class="active" data-admin-panel-tab="site">全站内容</button>
           <button type="button" data-admin-panel-tab="meal">包伙食菜单</button>
           <button type="button" data-admin-panel-tab="catering">外餐菜单</button>
+          <button type="button" data-admin-panel-tab="media">媒体案例</button>
           <button type="button" data-admin-panel-tab="inquiries">顾客询问</button>
           <button type="button" data-admin-panel-tab="members">会员奖励</button>
+          <button type="button" data-admin-panel-tab="tracking">转化追踪</button>
         </div>
 
         <div class="admin-section" data-admin-panel="site">
@@ -763,6 +789,25 @@
           <div class="admin-rows" id="adminCateringRows"></div>
         </div>
 
+        <div class="admin-section" data-admin-panel="media" hidden>
+          <div class="admin-section-head">
+            <div>
+              <h3>媒体、案例与视频</h3>
+              <p>可修改活动布置案例图片、标题、说明，也可设置自拍视频路径和海报图。</p>
+            </div>
+            <button type="button" id="addCaseRow">新增案例</button>
+          </div>
+          <div class="admin-note-grid">
+            <label>视频标题<input id="adminVideoTitle" type="text"></label>
+            <label>视频小标<input id="adminVideoLabel" type="text"></label>
+            <label>视频文件路径<input id="adminVideoSrc" type="text" placeholder="ads/media/your-video.mp4"></label>
+            <label>视频海报图<input id="adminVideoPoster" type="text" placeholder="assets/images/brand/hero-banquet.jpg"></label>
+            <label>视频说明<textarea id="adminVideoDesc" rows="3"></textarea></label>
+            <label>视频按钮文字<input id="adminVideoCta" type="text"></label>
+          </div>
+          <div class="admin-rows" id="adminCaseRows"></div>
+        </div>
+
         <div class="admin-section" data-admin-panel="inquiries" hidden>
           <div class="admin-section-head">
             <div>
@@ -789,6 +834,17 @@
           <div class="admin-rows admin-members" id="adminMembers"></div>
         </div>
 
+        <div class="admin-section" data-admin-panel="tracking" hidden>
+          <div class="admin-section-head">
+            <div>
+              <h3>WhatsApp 转化追踪</h3>
+              <p id="adminConversionStatus">查看不同按钮、配套和菜单工具带来的 WhatsApp 点击与询问来源。</p>
+            </div>
+            <button type="button" id="clearConversionEvents">清空追踪记录</button>
+          </div>
+          <div class="admin-rows" id="adminConversions"></div>
+        </div>
+
         <div class="admin-actions">
           <button class="btn btn-gold" id="saveAdminContent" type="button">保存内容</button>
           <button class="btn btn-outline" id="resetAdminContent" type="button">恢复默认内容</button>
@@ -797,7 +853,7 @@
     </div>
   </section>
 
-  <a class="mobile-wa" href="#order">☏ WhatsApp 下单</a>
+  <a class="mobile-wa" href="#order" data-wa-source="mobile_bottom_bar">☏ WhatsApp 下单</a>
   <button class="back-top" id="backTop" aria-label="返回顶部">↑</button>
   <script src="js/app.js?v=20260630-full-image-cards"></script>
 </body>

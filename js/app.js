@@ -62,6 +62,17 @@ const adminSiteRows = document.getElementById('adminSiteRows');
 const adminCateringMinimum = document.getElementById('adminCateringMinimum');
 const adminCateringRows = document.getElementById('adminCateringRows');
 const addCateringRow = document.getElementById('addCateringRow');
+const adminCaseRows = document.getElementById('adminCaseRows');
+const addCaseRow = document.getElementById('addCaseRow');
+const adminVideoTitle = document.getElementById('adminVideoTitle');
+const adminVideoLabel = document.getElementById('adminVideoLabel');
+const adminVideoSrc = document.getElementById('adminVideoSrc');
+const adminVideoPoster = document.getElementById('adminVideoPoster');
+const adminVideoDesc = document.getElementById('adminVideoDesc');
+const adminVideoCta = document.getElementById('adminVideoCta');
+const adminConversions = document.getElementById('adminConversions');
+const adminConversionStatus = document.getElementById('adminConversionStatus');
+const clearConversionEvents = document.getElementById('clearConversionEvents');
 const exportLocalData = document.getElementById('exportLocalData');
 const importLocalData = document.getElementById('importLocalData');
 const importLocalDataInput = document.getElementById('importLocalDataInput');
@@ -90,6 +101,8 @@ const caseLightbox = document.getElementById('caseLightbox');
 const caseLightboxImg = document.querySelector('[data-case-lightbox-img]');
 const caseLightboxLabel = document.querySelector('[data-case-lightbox-label]');
 const caseLightboxTitle = document.querySelector('[data-case-lightbox-title]');
+const brandVideo = document.getElementById('brandVideo');
+const videoPlaceholder = document.getElementById('videoPlaceholder');
 
 const MEMBERS_KEY = 'np90_members_v1';
 const INQUIRIES_KEY = 'np90_inquiries_v1';
@@ -101,6 +114,8 @@ const ADMIN_ATTEMPTS_KEY = 'np90_admin_attempts_v1';
 const ADMIN_LOCK_KEY = 'np90_admin_lock_until_v1';
 const SUPABASE_SESSION_KEY = 'np90_supabase_session_v1';
 const SUPABASE_MEMBER_SESSION_KEY = 'np90_supabase_member_session_v1';
+const CONVERSION_EVENTS_KEY = 'np90_conversion_events_v1';
+const LEAD_SOURCE_KEY = 'np90_lead_source_v1';
 const ADMIN_CONTENT_SETTING_KEY = 'admin_content';
 const ADMIN_EMAIL = '9088project@gmail.com';
 const ADMIN_PASSWORD_HASH = '3b523443';
@@ -218,6 +233,60 @@ const CATERING_COMBOS = [
   }
 ];
 
+const DEFAULT_STYLING_CASES = [
+  {
+    label: 'BRAND BACKDROP',
+    title: '品牌背景布置',
+    desc: '黑金主视觉、灯光、花艺与品牌 Logo 统一呈现，适合开张、晚宴与活动入口拍照区。',
+    image: 'assets/images/event/styling-backdrop.webp',
+    alt: '九零食刻黑金活动背景布置展示图'
+  },
+  {
+    label: 'TABLE STYLING',
+    title: '餐桌花艺布置',
+    desc: '花艺、烛光、餐具与菜单卡搭配，提升生日、私人聚会和小型宴会的仪式感。',
+    image: 'assets/images/event/styling-floral-table.webp',
+    alt: '黑金餐桌花艺与餐桌布置展示图'
+  },
+  {
+    label: 'FOOD DISPLAY',
+    title: '餐饮展示台',
+    desc: '适合生日、公司活动、开张仪式、小型 Buffet 与社团聚会，菜色与品牌摆设一起呈现。',
+    image: 'assets/images/event/catering-display-case.webp',
+    alt: '九零食刻外餐餐饮展示台与 Buffet 摆设'
+  },
+  {
+    label: 'PHOTO LOUNGE',
+    title: '拍照区与氛围设计',
+    desc: '沙发区、气球、灯光与背景板整合，给来宾一个自然打卡和拍照的位置。',
+    image: 'assets/images/event/styling-photo-lounge.webp',
+    alt: '黑金活动拍照区和气球布置展示图'
+  },
+  {
+    label: 'MOCKTAIL BAR',
+    title: 'Mocktail / Beverage Bar',
+    desc: '主推无酒精特调、迎宾饮料与水果饮品，适合家庭活动、公司活动和品牌聚会。',
+    image: 'assets/images/event/mocktail-bar-case.webp',
+    alt: 'Mocktail 饮料吧和无酒精特调展示图'
+  },
+  {
+    label: 'MENU DETAIL',
+    title: '菜单卡与餐桌细节',
+    desc: '菜单卡、桌牌、餐具与小物统一视觉，让餐饮服务更像完整品牌体验。',
+    image: 'assets/images/event/table-menu-detail.webp',
+    alt: '黑金餐桌菜单卡与餐具细节展示图'
+  }
+];
+
+const DEFAULT_VIDEO_CONTENT = {
+  label: 'VIDEO AD SPACE',
+  title: '视频投放素材区',
+  desc: '这里预留给你自己拍摄的品牌短视频，可用于 Facebook、Instagram、TikTok 和 WhatsApp 分享。',
+  cta: '用这个视频引导下单',
+  src: 'ads/media/your-video.mp4',
+  poster: 'assets/images/brand/hero-banquet.jpg'
+};
+
 const SITE_CONTENT_FIELDS = [
   { path: 'title', label: 'SEO 标题 / Browser Title' },
   { path: 'description', label: 'SEO 描述 / Meta Description', multiline: true },
@@ -306,7 +375,7 @@ const SITE_CONTENT_FIELDS = [
   ]),
   { path: 'referral.noteStrong', label: '推荐规则开头' },
   { path: 'referral.note', label: '推荐规则说明', multiline: true },
-  ...[0, 1, 2].map(index => ({ path: `referral.terms.${index}`, label: `推荐条款 ${index + 1}`, multiline: true })),
+  ...[0, 1, 2, 3, 4, 5].map(index => ({ path: `referral.terms.${index}`, label: `推荐条款 ${index + 1}`, multiline: true })),
   { path: 'faq.title', label: 'FAQ 标题' },
   ...[0, 1, 2, 3, 4, 5].flatMap(index => [
     { path: `faq.items.${index}.0`, label: `FAQ ${index + 1} 问题` },
@@ -322,6 +391,8 @@ let supabaseFetchInProgress = false;
 let supabaseProfilesCache = [];
 let supabaseRewardsCache = [];
 let supabaseMembersFetchInProgress = false;
+let supabaseConversionsCache = [];
+let supabaseConversionsFetchInProgress = false;
 let supabaseRuntimeConfig = { ...(window.NP90_SUPABASE || {}) };
 
 const translations = {
@@ -397,8 +468,11 @@ const translations = {
       noteStrong: '透明规则：',
       note: '推荐奖励属于下次服务抵扣，不可兑换现金或转让；多层记录、比例与有效期以后台审核和活动设定为准。',
       terms: [
-        '朋友首次成功消费后，RM20 会记录为下次服务抵扣。',
-        '多层推荐回馈只按已确认实付订单记录，需由管理员审核后才可使用。',
+        '朋友首次成功消费并完成付款后，RM20 会记录为推荐人的下次服务抵扣。',
+        '多层推荐回馈开放记录，比例、层级、有效期和结算方式以后台活动设定为准。',
+        '所有奖励只可用于九零食刻下次服务抵扣，不可兑换现金、不可转让、不可要求提现。',
+        '奖励需等订单状态确认、顾客实付金额核对和管理员审核后才可使用。',
+        '退款、取消、未完成付款或恶意重复注册的订单，不会计算推荐奖励。',
         '最终以付款记录、后台状态与 WhatsApp 确认为准；九零食刻保留调整活动条款的权利。'
       ]
     },
@@ -632,9 +706,12 @@ const translations = {
       noteStrong: 'Clear rule:',
       note: 'Referral rewards are next-order service credits only. They are not cash, transferable balance or guaranteed payout. Multi-level records, rates and validity follow admin approval and campaign settings.',
       terms: [
-        'RM20 is recorded as next-order credit after the friend completes a first purchase.',
-        'Multi-level referral rewards are recorded only from confirmed paid orders and require admin approval before use.',
-        'Final eligibility depends on payment records, admin status and WhatsApp confirmation. 90 PROJECT may adjust campaign terms when needed.'
+        'RM20 is recorded as next-order service credit after the referred friend completes the first paid purchase.',
+        'Multi-level referral rewards are open for tracking. Rates, levels, validity and settlement follow the active admin campaign settings.',
+        'Rewards can only be used as 90 PROJECT next-service credits. They are not cash, transferable balance or withdrawal payouts.',
+        'Rewards become usable only after the order status, paid amount and admin approval are confirmed.',
+        'Refunded, cancelled, unpaid or abusive duplicate registrations will not qualify for referral rewards.',
+        'Final validity follows payment records, admin status and WhatsApp confirmation. 90 PROJECT may adjust campaign terms when needed.'
       ]
     },
     weekly: {
@@ -1093,6 +1170,65 @@ function closeCaseLightbox() {
   document.body.classList.remove('case-lightbox-open');
 }
 
+function renderVideoSpot(videoContent = DEFAULT_VIDEO_CONTENT) {
+  const video = normalizeVideoContent(videoContent);
+  setText('[data-video-label]', video.label);
+  setText('[data-video-title]', video.title);
+  setText('[data-video-desc]', video.desc);
+
+  const videoCta = document.querySelector('[data-video-cta]');
+  if (videoCta) videoCta.textContent = video.cta;
+
+  if (brandVideo instanceof HTMLVideoElement) {
+    if (video.poster) brandVideo.poster = video.poster;
+    const source = brandVideo.querySelector('source');
+    if (source && source.getAttribute('src') !== video.src) {
+      source.setAttribute('src', video.src);
+      brandVideo.load();
+    }
+    syncVideoFallback();
+  }
+}
+
+function syncVideoFallback(hasError = false) {
+  if (!videoPlaceholder || !(brandVideo instanceof HTMLVideoElement)) return;
+  const source = brandVideo.querySelector('source')?.getAttribute('src') || '';
+  const waitingForUpload = !source || /your-video\.mp4$/i.test(source);
+  const showPlaceholder = hasError || waitingForUpload;
+  videoPlaceholder.hidden = !showPlaceholder;
+  brandVideo.classList.toggle('has-video', !showPlaceholder);
+}
+
+function renderStylingCaseCards(cases = DEFAULT_STYLING_CASES) {
+  const items = normalizeCaseItems(cases);
+  stylingCaseCards.forEach((card, index) => {
+    const item = items[index];
+    card.hidden = !item;
+    if (!item) return;
+
+    const image = card.querySelector('img');
+    if (image instanceof HTMLImageElement) {
+      image.src = item.image;
+      image.alt = item.alt || item.title;
+    }
+    const label = card.querySelector('span');
+    const title = card.querySelector('h3');
+    const desc = card.querySelector('p');
+    if (label) label.textContent = item.label;
+    if (title) title.textContent = item.title;
+    if (desc) desc.textContent = item.desc;
+  });
+
+  setStylingCase(Math.min(activeStylingCase, Math.max(items.length - 1, 0)));
+  updateStylingCasePlayButton();
+}
+
+function renderMediaContent(content = loadAdminContent()) {
+  const media = normalizeAdminContent(content).media;
+  renderVideoSpot(media.video);
+  renderStylingCaseCards(media.cases);
+}
+
 function openStylingCases(scroll = true) {
   if (!stylingCasesSection) return;
   stylingCasesSection.hidden = false;
@@ -1341,8 +1477,14 @@ async function updateSupabaseMemberProfile(member, session = getSupabaseMemberSe
     body: {
       full_name: member.name || '',
       phone: member.phone || '',
+      address: member.profile?.area || '',
+      city: member.profile?.area || '',
       referral_code: normalizeReferralCode(member.referralCode),
-      referred_by_code: normalizeReferralCode(member.referredByCode) || null
+      referred_by_code: normalizeReferralCode(member.referredByCode) || null,
+      member_tier: member.tier || 'Classic',
+      default_area: member.profile?.area || null,
+      default_package: member.profile?.defaultPackage || null,
+      taste_preference: member.profile?.preference || null
     }
   });
   return true;
@@ -1372,6 +1514,13 @@ function mergeSupabaseProfileToLocalMember(profile, session, fallback = {}) {
   member.phone = profile?.phone || fallback.phone || member.phone || '';
   member.referralCode = normalizeReferralCode(profile?.referral_code || member.referralCode) || createReferralCode(member.name, email);
   member.referredByCode = normalizeReferralCode(profile?.referred_by_code || member.referredByCode || fallback.referredByCode);
+  member.tier = profile?.member_tier || member.tier || 'Classic';
+  member.profile = {
+    ...(member.profile || {}),
+    area: profile?.default_area || profile?.address || member.profile?.area || '',
+    defaultPackage: profile?.default_package || member.profile?.defaultPackage || '',
+    preference: profile?.taste_preference || member.profile?.preference || ''
+  };
   member.supabaseUserId = session?.user?.id || member.supabaseUserId;
   member.cloudSyncedAt = new Date().toISOString();
   saveMembers(members);
@@ -1531,6 +1680,35 @@ function defaultCateringContent() {
   return {
     minimumTotal: CATERING_MINIMUM_TOTAL,
     menu: normalizeCateringMenu(CATERING_MENU)
+  };
+}
+
+function normalizeCaseItems(cases) {
+  const source = Array.isArray(cases) && cases.length ? cases : DEFAULT_STYLING_CASES;
+  return source.map((item, index) => ({
+    label: String(item?.label || DEFAULT_STYLING_CASES[index]?.label || '').trim(),
+    title: String(item?.title || DEFAULT_STYLING_CASES[index]?.title || '').trim(),
+    desc: String(item?.desc || DEFAULT_STYLING_CASES[index]?.desc || '').trim(),
+    image: String(item?.image || DEFAULT_STYLING_CASES[index]?.image || '').trim(),
+    alt: String(item?.alt || item?.title || DEFAULT_STYLING_CASES[index]?.alt || '').trim()
+  })).filter(item => item.image || item.title || item.desc);
+}
+
+function normalizeVideoContent(video = {}) {
+  return {
+    label: String(video.label || DEFAULT_VIDEO_CONTENT.label),
+    title: String(video.title || DEFAULT_VIDEO_CONTENT.title),
+    desc: String(video.desc || DEFAULT_VIDEO_CONTENT.desc),
+    cta: String(video.cta || DEFAULT_VIDEO_CONTENT.cta),
+    src: String(video.src || DEFAULT_VIDEO_CONTENT.src),
+    poster: String(video.poster || DEFAULT_VIDEO_CONTENT.poster)
+  };
+}
+
+function defaultMediaContent() {
+  return {
+    cases: normalizeCaseItems(DEFAULT_STYLING_CASES),
+    video: normalizeVideoContent(DEFAULT_VIDEO_CONTENT)
   };
 }
 
@@ -1717,7 +1895,8 @@ function defaultAdminContent() {
         price: htmlToPlainText(translations.en.addons.priceHtml)
       }))
     },
-    catering: defaultCateringContent()
+    catering: defaultCateringContent(),
+    media: defaultMediaContent()
   };
 }
 
@@ -1758,6 +1937,12 @@ function normalizeAdminContent(content) {
   normalized.catering = {
     minimumTotal: Math.max(Number.parseFloat(cateringSource.minimumTotal || normalized.catering.minimumTotal) || CATERING_MINIMUM_TOTAL, 0),
     menu: normalizeCateringMenu(cateringSource.menu || normalized.catering.menu)
+  };
+
+  const mediaSource = content?.media || {};
+  normalized.media = {
+    cases: normalizeCaseItems(mediaSource.cases || normalized.media.cases),
+    video: normalizeVideoContent(mediaSource.video || normalized.media.video)
   };
 
   return normalized;
@@ -2094,6 +2279,7 @@ function updateStaticLanguage() {
 
   updateFeatureCard('#catering', t.features.catering);
   updateFeatureCard('#styling', t.features.styling);
+  renderMediaContent();
   setText('.teaser-copy span', t.cateringTool.label);
   setText('.teaser-copy h2', t.cateringTool.title);
   setText('.teaser-copy p', t.cateringTool.desc);
@@ -2591,7 +2777,8 @@ function collectOrderData() {
     area: fieldValue('area'),
     referralCode: normalizeReferralCode(fieldValue('referralCode')),
     addons,
-    notes: fieldValue('notes')
+    notes: fieldValue('notes'),
+    leadSource: currentLeadSource()
   };
 }
 
@@ -2683,12 +2870,14 @@ function inquiryToSupabasePayload(inquiry, userId = null) {
     event_location: inquiry.area || null,
     guest_count: Number.isFinite(pax) ? pax : null,
     service_type: [inquiry.package, inquiry.meal].filter(Boolean).join(' | ') || null,
+    lead_source: inquiry.leadSource || inquiry.source || null,
     budget: inquiry.referralCode ? `Referral: ${inquiry.referralCode}` : null,
     message: buildOrderMessage(inquiry),
     status: inquiry.status || 'new',
     admin_notes: [
       inquiry.addons ? `Add-ons: ${inquiry.addons}` : '',
       inquiry.notes ? `Notes: ${inquiry.notes}` : '',
+      inquiry.leadSource ? `Lead source: ${inquiry.leadSource}` : '',
       inquiry.language ? `Language: ${inquiry.language}` : ''
     ].filter(Boolean).join('\n') || null
   };
@@ -2698,8 +2887,9 @@ function inquiryToSupabasePayload(inquiry, userId = null) {
 
 function supabaseRowToInquiry(row) {
   const [packageName = row.service_type || '', meal = ''] = String(row.service_type || '').split(' | ');
-  const notes = String(row.admin_notes || '').replace(/^Add-ons:.*$/m, '').replace(/^Language:.*$/m, '').replace(/^Notes:\s*/m, '').trim();
+  const notes = String(row.admin_notes || '').replace(/^Add-ons:.*$/m, '').replace(/^Lead source:.*$/m, '').replace(/^Language:.*$/m, '').replace(/^Notes:\s*/m, '').trim();
   const addonsMatch = String(row.admin_notes || '').match(/^Add-ons:\s*(.+)$/m);
+  const leadSourceMatch = String(row.admin_notes || '').match(/^Lead source:\s*(.+)$/m);
   return {
     id: row.id,
     supabaseId: row.id,
@@ -2715,6 +2905,7 @@ function supabaseRowToInquiry(row) {
     notes,
     status: row.status || 'new',
     source: 'supabase',
+    leadSource: row.lead_source || leadSourceMatch?.[1] || 'supabase',
     createdAt: row.created_at || new Date().toISOString(),
     updatedAt: row.updated_at || row.created_at || new Date().toISOString()
   };
@@ -2800,6 +2991,7 @@ function saveInquiryForAdmin(orderData) {
     language: currentLanguage,
     status: 'new',
     source: 'whatsapp_form',
+    leadSource: orderData.leadSource || currentLeadSource(),
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString()
   };
@@ -2886,6 +3078,7 @@ function renderAdminInquiries(refreshRemote = true) {
           <p>${currentLanguage === 'en' ? 'Date / Area' : '日期 / 地区'}：${escapeHtml(inquiry.date || t.order.none)} · ${escapeHtml(inquiry.area || t.order.none)}</p>
           <p>${currentLanguage === 'en' ? 'Add-ons' : '加购'}：${escapeHtml(inquiry.addons || t.order.none)}</p>
           <p>${currentLanguage === 'en' ? 'Referral' : '推荐码'}：${escapeHtml(inquiry.referralCode || t.order.none)}</p>
+          <p>${currentLanguage === 'en' ? 'Lead source' : '来源'}：${escapeHtml(inquiry.leadSource || inquiry.source || 'direct')}</p>
           <p>${currentLanguage === 'en' ? 'Notes' : '备注'}：${escapeHtml(inquiry.notes || t.order.none)}</p>
           <p>${currentLanguage === 'en' ? 'Created' : '建立时间'}：${escapeHtml(createdAt)}</p>
         </div>
@@ -3111,6 +3304,8 @@ function renderAdminMembers(refreshRemote = true) {
           <strong>${escapeHtml(member.name || member.email || (currentLanguage === 'en' ? 'Member' : '会员'))}</strong>
           <p>${currentLanguage === 'en' ? 'Phone' : '电话'}：${escapeHtml(member.phone || '-')}</p>
           <p>Email：${escapeHtml(member.email || '-')}</p>
+          <p>${currentLanguage === 'en' ? 'Tier' : '会员等级'}：${escapeHtml(member.tier || 'Classic')}</p>
+          <p>${currentLanguage === 'en' ? 'Area / Package' : '地区 / 常选配套'}：${escapeHtml(member.profile?.area || '-')} / ${escapeHtml(member.profile?.defaultPackage || '-')}</p>
           <p>${currentLanguage === 'en' ? 'Referral code' : '推荐码'}：${escapeHtml(normalizeReferralCode(member.referralCode) || '-')}</p>
           <p>${currentLanguage === 'en' ? 'Referred by' : '上级推荐'}：${escapeHtml(normalizeReferralCode(member.referredByCode) || '-')}</p>
           <p>${currentLanguage === 'en' ? 'Records / Rewards' : '询问 / 奖励'}：${escapeHtml(member.records?.length || 0)} / ${escapeHtml(rewards.length || 0)}</p>
@@ -3211,7 +3406,8 @@ function exportLocalBackup() {
     version: 1,
     adminContent: loadAdminContent(),
     inquiries: loadInquiries(),
-    members: loadMembers()
+    members: loadMembers(),
+    conversions: loadConversionEvents()
   };
   const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
@@ -3234,12 +3430,15 @@ function importLocalBackup(file) {
       if (data.adminContent) saveEditableContent(data.adminContent);
       if (Array.isArray(data.inquiries)) saveInquiries(data.inquiries);
       if (Array.isArray(data.members)) saveMembers(data.members);
+      if (Array.isArray(data.conversions)) saveConversionEvents(data.conversions);
       updateStaticLanguage();
       renderCateringMenu();
       renderCateringEstimate();
+      renderMediaContent();
       renderAdminEditor();
       renderAdminInquiries();
       renderAdminMembers();
+      renderAdminConversions();
       renderMemberState();
       showAdminMessage(currentLanguage === 'en' ? 'Local backup imported.' : '本地备份已导入。');
     } catch (error) {
@@ -3559,6 +3758,192 @@ function renderAdminCateringRows(content) {
   `).join('');
 }
 
+function renderAdminMediaRows(content) {
+  const media = normalizeAdminContent(content).media;
+  const video = media.video;
+
+  if (adminVideoTitle) adminVideoTitle.value = video.title;
+  if (adminVideoLabel) adminVideoLabel.value = video.label;
+  if (adminVideoSrc) adminVideoSrc.value = video.src;
+  if (adminVideoPoster) adminVideoPoster.value = video.poster;
+  if (adminVideoDesc) adminVideoDesc.value = video.desc;
+  if (adminVideoCta) adminVideoCta.value = video.cta;
+
+  if (!adminCaseRows) return;
+  adminCaseRows.innerHTML = normalizeCaseItems(media.cases).map((item, index) => `
+    <div class="admin-case-row" data-case-row>
+      <div class="admin-catering-head">
+        <strong>案例 ${index + 1}</strong>
+        <span>${escapeHtml(item.label || item.title || item.image)}</span>
+      </div>
+      <label>小标 / Label<input data-field="case-label" value="${escapeHtml(item.label)}" placeholder="BRAND BACKDROP"></label>
+      <label>标题 Title<input data-field="case-title" value="${escapeHtml(item.title)}" placeholder="品牌背景布置"></label>
+      <label>图片路径 Image<input data-field="case-image" value="${escapeHtml(item.image)}" placeholder="assets/images/event/styling-backdrop.webp"></label>
+      <label>Alt 文字<input data-field="case-alt" value="${escapeHtml(item.alt)}" placeholder="图片说明"></label>
+      <label class="admin-catering-items">说明 Description
+        <textarea data-field="case-desc" rows="3">${escapeHtml(item.desc)}</textarea>
+      </label>
+      <button type="button" data-remove-case>删除案例</button>
+    </div>
+  `).join('');
+}
+
+function loadConversionEvents() {
+  try {
+    return JSON.parse(localStorage.getItem(CONVERSION_EVENTS_KEY) || '[]');
+  } catch (error) {
+    return [];
+  }
+}
+
+function saveConversionEvents(events) {
+  localStorage.setItem(CONVERSION_EVENTS_KEY, JSON.stringify(events.slice(0, 200)));
+}
+
+function setLeadSource(source = '') {
+  const cleanSource = String(source || '').trim();
+  if (cleanSource) localStorage.setItem(LEAD_SOURCE_KEY, cleanSource);
+  return cleanSource;
+}
+
+function currentLeadSource() {
+  return localStorage.getItem(LEAD_SOURCE_KEY) || 'direct';
+}
+
+function sourceFromElement(element) {
+  if (!element) return '';
+  const explicit = element.dataset?.waSource || element.closest?.('[data-wa-source]')?.dataset?.waSource;
+  if (explicit) return explicit;
+  const href = element.getAttribute?.('href') || '';
+  const text = element.textContent?.replace(/\s+/g, ' ').trim() || '';
+  if (href.includes('#meal-plan')) return 'nav_meal_plan';
+  if (href.includes('#catering-menu')) return 'catering_menu';
+  if (href.includes('#catering')) return 'catering_service';
+  if (href.includes('#referral')) return 'referral_section';
+  if (href.includes('#order')) return 'order_form';
+  if (/配套|package/i.test(text)) return 'package_card';
+  if (/外餐|catering/i.test(text)) return 'catering_service';
+  if (/推荐|referral/i.test(text)) return 'referral_section';
+  if (/whatsapp|下单|询问/i.test(text)) return 'whatsapp_cta';
+  return '';
+}
+
+function trackConversion(type, source, detail = {}) {
+  const event = {
+    id: `cv-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+    type,
+    source: source || currentLeadSource(),
+    label: detail.label || '',
+    page: `${location.pathname}${location.search}${location.hash}`,
+    createdAt: new Date().toISOString()
+  };
+  const events = loadConversionEvents();
+  events.unshift(event);
+  saveConversionEvents(events);
+  syncConversionToSupabase(event);
+  renderAdminConversions();
+  return event;
+}
+
+async function syncConversionToSupabase(event) {
+  if (!isSupabaseConfigured() || !event) return;
+  try {
+    const session = getSupabaseMemberSession();
+    await supabaseFetch('/rest/v1/conversion_events', {
+      method: 'POST',
+      headers: { Prefer: 'return=minimal' },
+      token: session?.access_token || undefined,
+      body: {
+        user_id: session?.user?.id || null,
+        event_type: event.type || 'whatsapp_click',
+        lead_source: event.source || null,
+        label: event.label || null,
+        page_path: event.page || null,
+        metadata: {
+          local_id: event.id,
+          created_at: event.createdAt
+        }
+      }
+    });
+  } catch (error) {
+    console.warn('Supabase conversion sync failed', error);
+  }
+}
+
+function supabaseConversionRowToEvent(row) {
+  return {
+    id: row.id,
+    type: row.event_type || 'whatsapp_click',
+    source: row.lead_source || 'direct',
+    label: row.label || '',
+    page: row.page_path || '',
+    createdAt: row.created_at || new Date().toISOString()
+  };
+}
+
+async function refreshSupabaseConversions() {
+  if (supabaseConversionsFetchInProgress || !isSupabaseConfigured() || !getSupabaseSession()?.access_token) return;
+  supabaseConversionsFetchInProgress = true;
+  try {
+    const rows = await supabaseFetch('/rest/v1/conversion_events?select=*&order=created_at.desc&limit=80');
+    supabaseConversionsCache = Array.isArray(rows) ? rows.map(supabaseConversionRowToEvent) : [];
+    renderAdminConversions(false);
+  } catch (error) {
+    console.warn('Supabase conversion fetch failed', error);
+  } finally {
+    supabaseConversionsFetchInProgress = false;
+  }
+}
+
+function combinedConversionEvents() {
+  const seen = new Set();
+  return [...supabaseConversionsCache, ...loadConversionEvents()]
+    .filter(event => {
+      const key = event.id || `${event.createdAt}-${event.source}-${event.label}`;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    })
+    .sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+}
+
+function renderAdminConversions(refreshRemote = true) {
+  if (!adminConversions) return;
+  if (refreshRemote) refreshSupabaseConversions();
+  const events = combinedConversionEvents();
+  if (adminConversionStatus) {
+    adminConversionStatus.textContent = events.length
+      ? `目前记录 ${events.length} 次 WhatsApp / 下单转化来源（云端 ${supabaseConversionsCache.length}，本地 ${loadConversionEvents().length}）。`
+      : '还没有转化记录。顾客点击 WhatsApp 后会自动记录来源。';
+  }
+
+  if (!events.length) {
+    adminConversions.innerHTML = '<div class="member-empty">目前还没有 WhatsApp 来源记录。</div>';
+    return;
+  }
+
+  adminConversions.innerHTML = events.slice(0, 60).map(event => {
+    const createdAt = new Date(event.createdAt || Date.now()).toLocaleString('zh-MY', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+    return `
+      <article class="admin-conversion">
+        <div>
+          <strong>${escapeHtml(event.type || 'whatsapp_click')}</strong>
+          <p>来源：${escapeHtml(event.source || '-')}</p>
+          <p>按钮：${escapeHtml(event.label || '-')}</p>
+          <p>时间：${escapeHtml(createdAt)}</p>
+        </div>
+        <small>${escapeHtml(event.page || location.pathname)}</small>
+      </article>
+    `;
+  }).join('');
+}
+
 function renderAdminEditor() {
   const content = loadAdminContent();
   ensureAdminTranslateHelper();
@@ -3568,6 +3953,8 @@ function renderAdminEditor() {
   renderAdminWeeklyRows(content);
   renderAdminAddonRows(content);
   renderAdminCateringRows(content);
+  renderAdminMediaRows(content);
+  renderAdminConversions();
   primeAdminTranslationFields();
 }
 
@@ -3671,6 +4058,35 @@ function collectAdminContent() {
     if (title || label || items.length) content.catering.menu.push({ id, title, label, rate, items });
   });
 
+  content.media = {
+    video: {
+      title: adminVideoTitle?.value?.trim() || DEFAULT_VIDEO_CONTENT.title,
+      label: adminVideoLabel?.value?.trim() || DEFAULT_VIDEO_CONTENT.label,
+      src: adminVideoSrc?.value?.trim() || DEFAULT_VIDEO_CONTENT.src,
+      poster: adminVideoPoster?.value?.trim() || DEFAULT_VIDEO_CONTENT.poster,
+      desc: adminVideoDesc?.value?.trim() || DEFAULT_VIDEO_CONTENT.desc,
+      cta: adminVideoCta?.value?.trim() || DEFAULT_VIDEO_CONTENT.cta
+    },
+    cases: []
+  };
+
+  adminCaseRows?.querySelectorAll('[data-case-row]').forEach((row, index) => {
+    const label = adminRowValue(row, '[data-field="case-label"]');
+    const title = adminRowValue(row, '[data-field="case-title"]');
+    const image = adminRowValue(row, '[data-field="case-image"]');
+    const alt = adminRowValue(row, '[data-field="case-alt"]');
+    const desc = adminRowValue(row, '[data-field="case-desc"]');
+    if (label || title || image || desc) {
+      content.media.cases.push({
+        label,
+        title,
+        image: image || DEFAULT_STYLING_CASES[index]?.image || '',
+        alt: alt || title,
+        desc
+      });
+    }
+  });
+
   return normalizeAdminContent(content);
 }
 
@@ -3714,6 +4130,19 @@ function addCateringEditorRow() {
   renderAdminAddonRows(content);
   renderAdminCateringRows(content);
   primeAdminTranslationFields();
+}
+
+function addCaseEditorRow() {
+  const content = collectAdminContent();
+  content.media.cases.push({
+    label: 'NEW CASE',
+    title: '',
+    desc: '',
+    image: 'assets/images/event/styling-backdrop.webp',
+    alt: ''
+  });
+  renderAdminMediaRows(content);
+  renderMediaContent(content);
 }
 
 function initMotionReveal() {
@@ -4137,6 +4566,7 @@ document.querySelectorAll('[data-admin-panel-tab]').forEach(button => {
 addWeeklyRow?.addEventListener('click', addWeeklyEditorRow);
 addAddonRow?.addEventListener('click', addAddonEditorRow);
 addCateringRow?.addEventListener('click', addCateringEditorRow);
+addCaseRow?.addEventListener('click', addCaseEditorRow);
 
 weeklyNoteZh?.addEventListener('input', () => updateTranslatedField(weeklyNoteEn, weeklyNoteZh.value));
 weeklyNoteEn?.addEventListener('input', () => markManualTranslationField(weeklyNoteEn));
@@ -4169,6 +4599,21 @@ adminCateringRows?.addEventListener('click', event => {
   if (!(event.target instanceof HTMLElement) || !event.target.matches('[data-remove-catering]')) return;
   const row = event.target.closest('[data-catering-row]');
   row?.remove();
+});
+
+const renderMediaFromAdminInputs = () => {
+  renderMediaContent(collectAdminContent());
+};
+
+[adminVideoTitle, adminVideoLabel, adminVideoSrc, adminVideoPoster, adminVideoDesc, adminVideoCta]
+  .forEach(input => input?.addEventListener('input', renderMediaFromAdminInputs));
+
+adminCaseRows?.addEventListener('input', renderMediaFromAdminInputs);
+
+adminCaseRows?.addEventListener('click', event => {
+  if (!(event.target instanceof HTMLElement) || !event.target.matches('[data-remove-case]')) return;
+  event.target.closest('[data-case-row]')?.remove();
+  renderMediaFromAdminInputs();
 });
 
 adminWeeklyRows?.addEventListener('click', event => {
@@ -4243,6 +4688,7 @@ saveAdminContent?.addEventListener('click', async () => {
   updateStaticLanguage();
   renderCateringMenu();
   renderCateringEstimate();
+  renderMediaContent(content);
   renderAdminEditor();
   try {
     const cloudSaved = await saveAdminContentToSupabase(content);
@@ -4261,6 +4707,7 @@ resetAdminContent?.addEventListener('click', async () => {
   updateStaticLanguage();
   renderCateringMenu();
   renderCateringEstimate();
+  renderMediaContent(defaults);
   renderAdminEditor();
   try {
     const cloudSaved = await saveAdminContentToSupabase(defaults);
@@ -4292,6 +4739,14 @@ clearAdminInquiries?.addEventListener('click', () => {
   showAdminMessage(currentLanguage === 'en' ? 'Local inquiries cleared.' : '本地询问记录已清空。');
 });
 
+clearConversionEvents?.addEventListener('click', () => {
+  const confirmed = window.confirm(currentLanguage === 'en' ? 'Clear all conversion tracking records?' : '确定清空所有 WhatsApp 转化来源记录吗？');
+  if (!confirmed) return;
+  saveConversionEvents([]);
+  renderAdminConversions();
+  showAdminMessage(currentLanguage === 'en' ? 'Conversion records cleared.' : '转化来源记录已清空。');
+});
+
 document.querySelectorAll('[data-language-switch]').forEach(button => {
   button.addEventListener('click', () => {
     currentLanguage = button.dataset.languageSwitch === 'en' ? 'en' : 'zh';
@@ -4302,6 +4757,7 @@ document.querySelectorAll('[data-language-switch]').forEach(button => {
 
 document.querySelectorAll('.choose-package').forEach(button => {
   button.addEventListener('click', () => {
+    setLeadSource('package_card');
     setPackageValue(button.dataset.package || '');
     renderOrderPreview();
     showOrderMessage('');
@@ -4312,6 +4768,7 @@ document.querySelectorAll('.choose-package').forEach(button => {
 document.querySelectorAll('[data-open-catering-menu]').forEach(button => {
   button.addEventListener('click', event => {
     event.preventDefault();
+    setLeadSource('catering_menu');
     openCateringMenuBuilder(true);
   });
 });
@@ -4388,6 +4845,26 @@ document.addEventListener('keydown', event => {
   if (event.key === 'ArrowRight') moveStylingCase(1);
 });
 
+brandVideo?.addEventListener('error', () => syncVideoFallback(true), true);
+brandVideo?.addEventListener('loadedmetadata', () => syncVideoFallback(false));
+
+document.addEventListener('click', event => {
+  const target = event.target instanceof HTMLElement ? event.target.closest('a,button') : null;
+  if (!(target instanceof HTMLElement)) return;
+  if (target.closest('#adminModal, #memberModal, #orderForm')) return;
+
+  const source = sourceFromElement(target);
+  if (source) setLeadSource(source);
+
+  const link = target instanceof HTMLAnchorElement ? target : target.closest('a');
+  const href = link?.getAttribute('href') || '';
+  if (href.includes('wa.me')) {
+    trackConversion('whatsapp_click', source || currentLeadSource(), {
+      label: target.textContent?.replace(/\s+/g, ' ').trim() || href
+    });
+  }
+});
+
 cateringMenuGrid?.addEventListener('change', renderCateringEstimate);
 cateringPax?.addEventListener('input', renderCateringEstimate);
 cateringServiceStyle?.addEventListener('change', renderCateringEstimate);
@@ -4423,6 +4900,9 @@ form?.addEventListener('submit', event => {
     return;
   }
 
+  trackConversion('order_submit', orderData.leadSource || currentLeadSource(), {
+    label: `${orderData.package || 'package'} / ${orderData.meal || 'meal'}`
+  });
   const inquiry = saveInquiryForAdmin(orderData);
   saveReferralReward(orderData);
   saveInquiryForMember({ ...orderData, id: inquiry.id, status: inquiry.status });
@@ -4438,8 +4918,10 @@ async function initializeApp() {
   renderCateringCombos();
   renderCateringMenu();
   renderCateringEstimate();
+  renderMediaContent();
   setStylingCase(0);
   updateStylingCasePlayButton();
+  renderAdminConversions();
   initMotionReveal();
   initDynamicSurfaces();
   updateScrollMotion();

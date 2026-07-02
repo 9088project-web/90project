@@ -31,6 +31,10 @@ create table if not exists public.profiles (
 
 alter table public.profiles add column if not exists referral_code text;
 alter table public.profiles add column if not exists referred_by_code text;
+alter table public.profiles add column if not exists member_tier text not null default 'Classic';
+alter table public.profiles add column if not exists default_area text;
+alter table public.profiles add column if not exists default_package text;
+alter table public.profiles add column if not exists taste_preference text;
 
 create table if not exists public.services (
   id uuid primary key default gen_random_uuid(),
@@ -70,6 +74,8 @@ create table if not exists public.inquiries (
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
+
+alter table public.inquiries add column if not exists lead_source text;
 
 create table if not exists public.quotations (
   id uuid primary key default gen_random_uuid(),
@@ -145,6 +151,17 @@ create table if not exists public.referral_rewards (
   updated_at timestamptz not null default now()
 );
 
+create table if not exists public.conversion_events (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid references auth.users(id) on delete set null,
+  event_type text not null default 'whatsapp_click',
+  lead_source text,
+  label text,
+  page_path text,
+  metadata jsonb not null default '{}'::jsonb,
+  created_at timestamptz not null default now()
+);
+
 create index if not exists profiles_user_id_idx on public.profiles(user_id);
 create unique index if not exists profiles_referral_code_uidx on public.profiles(referral_code) where referral_code is not null;
 create index if not exists profiles_referred_by_code_idx on public.profiles(referred_by_code);
@@ -156,6 +173,8 @@ create index if not exists referral_rewards_referrer_idx on public.referral_rewa
 create index if not exists referral_rewards_inquiry_idx on public.referral_rewards(inquiry_id);
 create index if not exists referral_rewards_status_idx on public.referral_rewards(status);
 create unique index if not exists referral_rewards_unique_chain_idx on public.referral_rewards(inquiry_id, referrer_user_id, level) where inquiry_id is not null;
+create index if not exists conversion_events_source_idx on public.conversion_events(lead_source);
+create index if not exists conversion_events_created_at_idx on public.conversion_events(created_at desc);
 
 create or replace trigger profiles_updated_at before update on public.profiles for each row execute function public.set_updated_at();
 create or replace trigger inquiries_updated_at before update on public.inquiries for each row execute function public.set_updated_at();
@@ -352,6 +371,7 @@ alter table public.gallery enable row level security;
 alter table public.faqs enable row level security;
 alter table public.site_settings enable row level security;
 alter table public.referral_rewards enable row level security;
+alter table public.conversion_events enable row level security;
 
 -- Drop policies before recreating them so this file can be rerun during setup.
 drop policy if exists "profiles select own or admin" on public.profiles;
@@ -370,6 +390,9 @@ drop policy if exists "site settings public read" on public.site_settings;
 drop policy if exists "site settings admin all" on public.site_settings;
 drop policy if exists "referral rewards select own or admin" on public.referral_rewards;
 drop policy if exists "referral rewards admin all" on public.referral_rewards;
+drop policy if exists "conversion events public insert" on public.conversion_events;
+drop policy if exists "conversion events admin read" on public.conversion_events;
+drop policy if exists "conversion events admin all" on public.conversion_events;
 drop policy if exists "inquiries insert public or own" on public.inquiries;
 drop policy if exists "inquiries select own or admin" on public.inquiries;
 drop policy if exists "inquiries admin all" on public.inquiries;
@@ -406,6 +429,11 @@ create policy "site settings admin all" on public.site_settings for all using (p
 -- Referral rewards
 create policy "referral rewards select own or admin" on public.referral_rewards for select using (referrer_user_id = auth.uid() or public.is_admin());
 create policy "referral rewards admin all" on public.referral_rewards for all using (public.is_admin()) with check (public.is_admin());
+
+-- Conversion events
+create policy "conversion events public insert" on public.conversion_events for insert with check (true);
+create policy "conversion events admin read" on public.conversion_events for select using (public.is_admin());
+create policy "conversion events admin all" on public.conversion_events for all using (public.is_admin()) with check (public.is_admin());
 
 -- Inquiries
 create policy "inquiries insert public or own" on public.inquiries for insert with check (user_id is null or user_id = auth.uid() or public.is_admin());
