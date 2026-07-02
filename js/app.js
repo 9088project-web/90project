@@ -101,6 +101,7 @@ const caseLightbox = document.getElementById('caseLightbox');
 const caseLightboxImg = document.querySelector('[data-case-lightbox-img]');
 const caseLightboxLabel = document.querySelector('[data-case-lightbox-label]');
 const caseLightboxTitle = document.querySelector('[data-case-lightbox-title]');
+const videoSpotSection = document.getElementById('video-spot');
 const brandVideo = document.getElementById('brandVideo');
 const videoPlaceholder = document.getElementById('videoPlaceholder');
 
@@ -1170,8 +1171,23 @@ function closeCaseLightbox() {
   document.body.classList.remove('case-lightbox-open');
 }
 
+function isDefaultVideoSource(source = '') {
+  const value = String(source || '').trim();
+  return !value || /(^|\/)your-video\.mp4$/i.test(value);
+}
+
 function renderVideoSpot(videoContent = DEFAULT_VIDEO_CONTENT) {
   const video = normalizeVideoContent(videoContent);
+  const hasPublicVideo = !isDefaultVideoSource(video.src);
+
+  if (videoSpotSection) videoSpotSection.hidden = !hasPublicVideo;
+  if (videoPlaceholder) videoPlaceholder.hidden = true;
+
+  if (!hasPublicVideo) {
+    brandVideo?.classList.remove('has-video');
+    return;
+  }
+
   setText('[data-video-label]', video.label);
   setText('[data-video-title]', video.title);
   setText('[data-video-desc]', video.desc);
@@ -1193,10 +1209,11 @@ function renderVideoSpot(videoContent = DEFAULT_VIDEO_CONTENT) {
 function syncVideoFallback(hasError = false) {
   if (!videoPlaceholder || !(brandVideo instanceof HTMLVideoElement)) return;
   const source = brandVideo.querySelector('source')?.getAttribute('src') || '';
-  const waitingForUpload = !source || /your-video\.mp4$/i.test(source);
-  const showPlaceholder = hasError || waitingForUpload;
-  videoPlaceholder.hidden = !showPlaceholder;
-  brandVideo.classList.toggle('has-video', !showPlaceholder);
+  const waitingForUpload = isDefaultVideoSource(source);
+  const shouldHidePublicVideo = hasError || waitingForUpload;
+  if (videoSpotSection) videoSpotSection.hidden = shouldHidePublicVideo;
+  videoPlaceholder.hidden = true;
+  brandVideo.classList.toggle('has-video', !shouldHidePublicVideo);
 }
 
 function renderStylingCaseCards(cases = DEFAULT_STYLING_CASES) {
