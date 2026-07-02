@@ -4166,7 +4166,13 @@ function initMotionReveal() {
 
   motionElements.forEach((element, index) => {
     if (!(element instanceof HTMLElement)) return;
-    element.dataset.motion = element.matches('.price-card,.case-showcase,.feature-card') ? 'fade-scale' : 'fade-up';
+    if (element.matches('.price-card,.case-showcase,.feature-card')) {
+      element.dataset.motion = 'fade-scale';
+    } else if (element.matches('.service-card,.light-panel,.order-panel,.referral-card,.catering-menu-teaser,.combo-preset-card,.case-card')) {
+      element.dataset.motion = 'menu-card';
+    } else {
+      element.dataset.motion = 'fade-up';
+    }
     element.style.setProperty('--motion-delay', `${Math.min((index % 6) * 65, 325)}ms`);
   });
 
@@ -4215,12 +4221,54 @@ function initDynamicSurfaces() {
   });
 }
 
-if (menuToggle && navLinks) {
-  menuToggle.addEventListener('click', () => navLinks.classList.toggle('open'));
-  navLinks.querySelectorAll('a').forEach(anchor => {
-    anchor.addEventListener('click', () => navLinks.classList.remove('open'));
+function initPremiumPressFeedback() {
+  if (prefersReducedMotion) return;
+  const pressTargets = Array.from(document.querySelectorAll([
+    '.btn',
+    '.menu-toggle',
+    '.language-switch button',
+    '.case-nav',
+    '.case-lightbox-close',
+    '.case-lightbox-nav',
+    '[data-open-catering-menu]',
+    '[data-open-styling-cases]'
+  ].join(',')));
+
+  pressTargets.forEach(target => {
+    if (!(target instanceof HTMLElement)) return;
+    target.addEventListener('pointerdown', () => {
+      target.classList.remove('press-glow');
+      void target.offsetWidth;
+      target.classList.add('press-glow');
+    });
+    target.addEventListener('animationend', event => {
+      if (event.animationName === 'luxePress') target.classList.remove('press-glow');
+    });
   });
 }
+
+function setMobileMenu(open) {
+  if (!menuToggle || !navLinks) return;
+  navLinks.classList.toggle('open', open);
+  document.body.classList.toggle('nav-open', open);
+  menuToggle.setAttribute('aria-expanded', String(open));
+  menuToggle.textContent = open ? '×' : '☰';
+}
+
+if (menuToggle && navLinks) {
+  menuToggle.setAttribute('aria-expanded', 'false');
+  menuToggle.addEventListener('click', () => setMobileMenu(!navLinks.classList.contains('open')));
+  navLinks.querySelectorAll('a').forEach(anchor => {
+    anchor.addEventListener('click', () => setMobileMenu(false));
+  });
+}
+
+document.addEventListener('click', event => {
+  if (!document.body.classList.contains('nav-open')) return;
+  const navShell = document.querySelector('.nav-shell');
+  if (navShell?.contains(event.target)) return;
+  setMobileMenu(false);
+});
 
 const scrollSections = ['home', 'meal-plan', 'order', 'catering', 'styling', 'faq', 'referral']
   .map(id => document.getElementById(id))
@@ -4273,6 +4321,9 @@ function requestScrollMotion() {
 
 window.addEventListener('scroll', requestScrollMotion, { passive: true });
 window.addEventListener('resize', requestScrollMotion);
+window.addEventListener('resize', () => {
+  if (window.innerWidth > 980) setMobileMenu(false);
+});
 window.addEventListener('hashchange', () => {
   window.setTimeout(updateScrollMotion, 80);
 });
@@ -4288,7 +4339,7 @@ if ('IntersectionObserver' in window && form) {
 }
 
 memberOpen?.addEventListener('click', () => {
-  navLinks?.classList.remove('open');
+  setMobileMenu(false);
   openMemberModal();
 });
 
@@ -4302,6 +4353,7 @@ document.querySelectorAll('[data-admin-close]').forEach(element => {
 
 document.addEventListener('keydown', event => {
   if (event.key === 'Escape') {
+    setMobileMenu(false);
     closeMemberModal();
     closeAdminModal();
   }
@@ -4924,6 +4976,7 @@ async function initializeApp() {
   renderAdminConversions();
   initMotionReveal();
   initDynamicSurfaces();
+  initPremiumPressFeedback();
   updateScrollMotion();
   document.body.classList.add('is-loaded');
   window.setTimeout(updateScrollMotion, 120);
