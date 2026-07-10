@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="zh-Hans">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="robots" content="noindex, nofollow" />
+  <title>内容管理后台｜九零食刻 90 PROJECT</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/remixicon@4.6.0/fonts/remixicon.css" />
+  <link rel="stylesheet" href="css/style.css?v=20260702-admin-video-only" />
+  <link rel="stylesheet" href="css/admin.css?v=20260710-content-admin" />
+</head>
+<body class="admin-page">
+  <header class="admin-topbar">
+    <a class="brand-lockup" href="index.html#top" aria-label="返回九零食刻首页">
+      <img src="assets/images/logo/logo-icon-dark.jpg" alt="九零食刻 90 PROJECT logo" />
+      <span><strong>九零食刻</strong><small>90 PROJECT</small></span>
+    </a>
+    <div class="admin-topbar-actions">
+      <a class="btn btn-outline" href="index.html#top"><i class="ri-external-link-line" aria-hidden="true"></i>查看网站</a>
+      <span class="admin-status-dot"><i class="ri-shield-check-line" aria-hidden="true"></i> 本地内容后台</span>
+    </div>
+  </header>
+
+  <main class="admin-shell">
+    <section class="member-panel admin-login-card" id="adminAuthPanel">
+      <div class="member-intro">
+        <span>LOCAL ADMIN</span>
+        <h1>内容管理后台</h1>
+        <p>登录后可修改首页文案、菜单、套餐算法、全部展示图片、活动餐饮页、场地布置页和鸡尾酒页。保存后会立即更新当前浏览器里的网站。</p>
+      </div>
+      <form class="admin-login" id="adminLoginForm">
+        <label>管理员 Email<input id="adminEmail" type="email" autocomplete="username" placeholder="9088project@gmail.com" required></label>
+        <label>管理员密码<input id="adminPassword" type="password" autocomplete="current-password" placeholder="请输入管理员密码" required></label>
+        <button class="btn btn-gold btn-wide" type="submit"><i class="ri-login-box-line" aria-hidden="true"></i>进入后台</button>
+      </form>
+      <p class="member-message" id="adminMessage" aria-live="polite"></p>
+    </section>
+
+    <section class="admin-dashboard admin-panel-card" id="adminDashboard" hidden>
+      <div class="member-dashboard-head">
+        <div>
+          <span>CONTENT ADMIN</span>
+          <h1>全站内容控制中心</h1>
+          <p>所有修改先保存在本机；如果项目已配置 Supabase，登录成功后也会尝试同步云端。</p>
+        </div>
+        <button class="btn btn-outline" id="adminLogout" type="button"><i class="ri-logout-box-r-line" aria-hidden="true"></i>退出后台</button>
+      </div>
+
+      <div class="admin-nav" aria-label="后台分类">
+        <button type="button" class="active" data-admin-panel-tab="site">全站文字</button>
+        <button type="button" data-admin-panel-tab="meal">包伙食菜单</button>
+        <button type="button" data-admin-panel-tab="catering">外餐算法</button>
+        <button type="button" data-admin-panel-tab="media">首页媒体</button>
+        <button type="button" data-admin-panel-tab="pages">独立服务页</button>
+        <button type="button" data-admin-panel-tab="inquiries">顾客询问</button>
+        <button type="button" data-admin-panel-tab="members">会员资料</button>
+        <button type="button" data-admin-panel-tab="tracking">转化追踪</button>
+      </div>
+
+      <section class="admin-section" data-admin-panel="site">
+        <div class="admin-section-head"><div><h2>全站文字与联系方式</h2><p>首页导航、Hero、套餐、服务卡、表单、FAQ、CTA、电话号码和页脚都可以编辑。</p></div></div>
+        <div class="admin-site-rows" id="adminSiteRows"></div>
+      </section>
+
+      <section class="admin-section" data-admin-panel="meal" hidden>
+        <div class="admin-section-head"><div><h2>每周菜单（星期一至星期日）</h2><p>后台固定编辑星期一至星期日。每一行可以选择 30 组菜单预设，自动带入三道菜和对应图片，也可以手动修改。</p></div></div>
+        <div class="admin-note-grid">
+          <label>中文说明<textarea id="weeklyNoteZh" rows="2"></textarea></label>
+          <label>English Note<textarea id="weeklyNoteEn" rows="2"></textarea></label>
+        </div>
+        <div class="admin-rows" id="adminWeeklyRows"></div>
+        <div class="admin-section-head admin-subhead"><div><h3>加购项目</h3></div><button type="button" id="addAddonRow">新增加购</button></div>
+        <div class="admin-rows" id="adminAddonRows"></div>
+      </section>
+
+      <section class="admin-section" data-admin-panel="catering" hidden>
+        <div class="admin-section-head"><div><h2>外餐菜单与价格算法</h2><p>修改每个分类、每人价格和菜式列表，前台计算器会实时读取这里的内容。</p></div><button type="button" id="addCateringRow">新增分类</button></div>
+        <div class="admin-note-grid"><label>最低预算 RM<input id="adminCateringMinimum" type="number" min="0" step="1"></label></div>
+        <div class="admin-rows" id="adminCateringRows"></div>
+      </section>
+
+      <section class="admin-section" data-admin-panel="media" hidden>
+        <div class="admin-section-head"><div><h2>首页媒体与案例</h2><p>可以替换首页主图、菜单照片、四张服务照片和联系图片区；图片填写项目内相对路径。</p></div><button type="button" id="addCaseRow">新增案例</button></div>
+        <div class="admin-media-block"><h3>首页图片</h3><p>菜单图片在“包伙食菜单”分类中随每一行一起编辑。</p><div class="admin-rows" id="adminHomepageRows"></div></div>
+        <div class="admin-media-block"><h3>视频投放区</h3>
+          <div class="admin-note-grid">
+            <label>视频标题<input id="adminVideoTitle" type="text"></label>
+            <label>视频小标<input id="adminVideoLabel" type="text"></label>
+            <label>视频文件路径<input id="adminVideoSrc" type="text" placeholder="ads/media/your-video.mp4"></label>
+            <label>视频海报图<input id="adminVideoPoster" type="text" placeholder="assets/images/brand/hero-banquet.jpg"></label>
+            <label>视频说明<textarea id="adminVideoDesc" rows="3"></textarea></label>
+            <label>视频按钮文字<input id="adminVideoCta" type="text"></label>
+          </div>
+        </div>
+        <div class="admin-media-block"><h3>活动案例</h3><div class="admin-rows" id="adminCaseRows"></div></div>
+      </section>
+
+      <section class="admin-section" data-admin-panel="pages" hidden>
+        <div class="admin-section-head"><div><h2>独立服务页</h2><p>这里的内容会更新 `catering.html`、`styling.html` 和 `cocktail.html`，包括 Hero、介绍、联系卡和全部展示图。</p></div></div>
+        <div class="admin-rows" id="adminDetailRows"></div>
+      </section>
+
+      <section class="admin-section" data-admin-panel="inquiries" hidden>
+        <div class="admin-section-head"><div><h2>顾客询问记录</h2><p id="adminDataStatus">本地浏览器保存的 WhatsApp 询问。</p></div><div class="admin-toolbar"><button type="button" id="exportLocalData">导出资料</button><button type="button" id="importLocalData">导入资料</button><button type="button" id="clearAdminInquiries">清空询问</button><input id="importLocalDataInput" type="file" accept="application/json" hidden></div></div>
+        <div class="admin-rows admin-inquiries" id="adminInquiries"></div>
+      </section>
+
+      <section class="admin-section" data-admin-panel="members" hidden>
+        <div class="admin-section-head"><div><h2>会员资料</h2><p id="adminMemberStatus">查看会员、询问记录与后台备注。</p></div></div>
+        <div class="admin-rows admin-members" id="adminMembers"></div>
+      </section>
+
+      <section class="admin-section" data-admin-panel="tracking" hidden>
+        <div class="admin-section-head"><div><h2>WhatsApp 转化追踪</h2><p id="adminConversionStatus">查看不同按钮和菜单工具带来的点击与询问来源。</p></div><button type="button" id="clearConversionEvents">清空追踪记录</button></div>
+        <div class="admin-rows" id="adminConversions"></div>
+      </section>
+
+      <div class="admin-actions">
+        <button class="btn btn-gold" id="saveAdminContent" type="button"><i class="ri-save-3-line" aria-hidden="true"></i>保存全部内容</button>
+        <button class="btn btn-outline" id="resetAdminContent" type="button"><i class="ri-refresh-line" aria-hidden="true"></i>恢复默认内容</button>
+      </div>
+      <p class="member-message admin-bottom-message" id="adminMessageBottom" aria-live="polite"></p>
+    </section>
+  </main>
+
+  <script src="js/app.js?v=20260710-content-admin"></script>
+</body>
+</html>

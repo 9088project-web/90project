@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="zh-Hans">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>活动餐饮与套餐计算｜九零食刻 90 PROJECT</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/remixicon@4.6.0/fonts/remixicon.css" />
+  <link rel="stylesheet" href="css/style.css?v=20260702-admin-video-only" />
+  <link rel="stylesheet" href="css/detail-pages.css?v=20260710-detail-pages" />
+</head>
+<body class="detail-page-body" data-detail-page="catering">
+  <header class="site-header detail-header">
+    <div class="nav-shell">
+      <a class="brand-lockup" href="index.html#top" aria-label="九零食刻首页">
+        <img src="assets/images/logo/logo-icon-dark.jpg" alt="九零食刻 90 PROJECT logo" />
+        <span><strong>九零食刻</strong><small>90 PROJECT</small></span>
+      </a>
+      <button class="menu-toggle" id="menuToggle" type="button" aria-label="打开菜单"><i class="ri-menu-line" aria-hidden="true"></i></button>
+      <nav class="nav-links" id="navLinks">
+        <a href="index.html#top">首页</a>
+        <a href="index.html#meal-plan">包伙食服务</a>
+        <a href="catering.html" class="active">活动餐饮</a>
+        <a href="styling.html">场地布置</a>
+        <a href="cocktail.html">鸡尾酒服务</a>
+        <a href="index.html#contact">联系我们</a>
+      </nav>
+      <a class="detail-back" href="index.html#catering">返回首页</a>
+    </div>
+  </header>
+
+  <main class="detail-page">
+    <section class="detail-hero">
+      <div class="detail-hero-media" aria-hidden="true"><img src="assets/images/reference-series/service-catering.png" alt="活动餐饮自助餐台" /></div>
+      <div class="detail-hero-copy">
+        <span>EVENT CATERING · MENU CALCULATOR</span>
+        <h1>活动餐饮，先把菜单和预算理清楚。</h1>
+        <p>从人数、菜式到服务形式，使用套餐算法快速做出一份清晰的初步预算，再交给我们确认现场细节。</p>
+      </div>
+    </section>
+
+    <section class="detail-wrap">
+      <div class="detail-intro">
+        <div>
+          <span class="detail-kicker">A CLEARER CATERING PLAN</span>
+          <h2>把选择留在这里，沟通更快。</h2>
+          <p>适合公司活动、开幕典礼、学校活动、庆功宴和小型 Buffet。勾选菜式、输入人数，系统会先给你一个活动餐饮的参考预算。</p>
+        </div>
+        <div class="detail-contact-card">
+          <strong>需要我们帮你配？</strong>
+          <p>把日期、地点和人数发给我们。</p>
+          <a href="https://wa.me/601110977166" target="_blank" rel="noopener">WhatsApp 011-1097 7166</a>
+        </div>
+      </div>
+
+      <section class="detail-panel" id="catering-menu" aria-labelledby="cateringMenuTitle">
+        <h2 id="cateringMenuTitle">菜单选择与预算</h2>
+        <p>先用推荐组合开始，也可以自由搭配菜式。系统价格为初步估算，实际报价会按地点、份量、运输、餐具和现场服务确认。</p>
+        <div class="menu-builder-wrap" id="cateringMenuBuilder">
+          <div class="menu-builder-head">
+            <div>
+              <span>MENU SELECTION</span>
+              <h3>选择菜式，算出参考预算</h3>
+              <p>选好之后可直接发送菜单到 WhatsApp。</p>
+            </div>
+          </div>
+          <div class="combo-presets" aria-label="推荐外餐组合">
+            <div class="combo-presets-head"><span>RECOMMENDED SETS</span><strong>推荐组合，一键套用</strong></div>
+            <div class="combo-preset-grid" id="cateringComboPresets"></div>
+          </div>
+          <div class="menu-builder">
+            <div class="catering-menu-grid" id="cateringMenuGrid" aria-label="外餐自由搭配菜单"></div>
+            <aside class="calculator-panel">
+              <div class="calc-head"><span>PRICE CALCULATOR</span><h3>菜单预算</h3></div>
+              <label>活动人数 Pax<input id="cateringPax" type="number" min="1" value="30" inputmode="numeric"></label>
+              <label>服务形式 Service<select id="cateringServiceStyle"><option value="packed">餐盒 / Packed Meal</option><option value="buffet">小型 Buffet / Setup</option><option value="event">活动餐饮 / Event Catering</option></select></label>
+              <button class="btn btn-gold btn-wide" id="calculateCateringPrice" type="button">计算价格</button>
+              <div class="estimate-box"><small>初步预算</small><strong id="cateringEstimateTotal">RM0</strong><p id="cateringEstimateMeta">请选择菜式开始计算。</p></div>
+              <div class="selected-menu-summary" id="selectedCateringSummary">还没有选择菜式。</div>
+              <a class="btn btn-outline btn-wide" id="cateringWhatsApp" href="https://wa.me/601110977166" target="_blank" rel="noopener">WhatsApp 发送菜单</a>
+            </aside>
+          </div>
+        </div>
+      </section>
+
+      <div class="detail-gallery">
+        <figure><img src="assets/images/reference-series/service-catering.png" alt="自助餐台与活动用餐场景" /><figcaption>自助餐台与活动现场，可以按人数和服务形式安排。</figcaption></figure>
+        <figure><img src="assets/images/reference-series/contact-table.png" alt="餐桌与烛光布置" /><figcaption>菜单确定后，再细化餐桌、餐具与现场动线。</figcaption></figure>
+        <figure><img src="assets/images/reference-series/service-corporate.png" alt="公司员工餐盒" /><figcaption>公司员工餐也可以独立规划份量与配送方式。</figcaption></figure>
+      </div>
+    </section>
+  </main>
+
+  <footer class="detail-footer"><span>© 2026 九零食刻 90 PROJECT</span><a href="index.html#contact">联系九零食刻</a></footer>
+  <script src="js/app.js?v=20260710-detail-pages"></script>
+</body>
+</html>

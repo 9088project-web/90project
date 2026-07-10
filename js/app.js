@@ -4,6 +4,7 @@ const backTop = document.getElementById('backTop');
 const scrollProgress = document.getElementById('scrollProgress');
 const siteHeader = document.querySelector('.site-header');
 const heroImage = document.querySelector('.hero-media img');
+const serviceStrip = document.querySelector('.service-strip');
 const form = document.getElementById('orderForm');
 const orderPreviewText = document.getElementById('orderPreviewText');
 const copyOrderPreview = document.getElementById('copyOrderPreview');
@@ -70,6 +71,8 @@ const adminVideoSrc = document.getElementById('adminVideoSrc');
 const adminVideoPoster = document.getElementById('adminVideoPoster');
 const adminVideoDesc = document.getElementById('adminVideoDesc');
 const adminVideoCta = document.getElementById('adminVideoCta');
+const adminHomepageRows = document.getElementById('adminHomepageRows');
+const adminDetailRows = document.getElementById('adminDetailRows');
 const adminConversions = document.getElementById('adminConversions');
 const adminConversionStatus = document.getElementById('adminConversionStatus');
 const clearConversionEvents = document.getElementById('clearConversionEvents');
@@ -104,6 +107,11 @@ const caseLightboxTitle = document.querySelector('[data-case-lightbox-title]');
 const videoSpotSection = document.getElementById('video-spot');
 const brandVideo = document.getElementById('brandVideo');
 const videoPlaceholder = document.getElementById('videoPlaceholder');
+
+const heroSection = heroImage?.closest('.hero');
+if (serviceStrip && heroSection) {
+  heroSection.before(serviceStrip);
+}
 
 const MEMBERS_KEY = 'np90_members_v1';
 const INQUIRIES_KEY = 'np90_inquiries_v1';
@@ -288,6 +296,132 @@ const DEFAULT_VIDEO_CONTENT = {
   poster: 'assets/images/brand/hero-banquet.jpg'
 };
 
+const DEFAULT_WEEKDAYS = [
+  { zh: '星期一', en: 'Monday' },
+  { zh: '星期二', en: 'Tuesday' },
+  { zh: '星期三', en: 'Wednesday' },
+  { zh: '星期四', en: 'Thursday' },
+  { zh: '星期五', en: 'Friday' },
+  { zh: '星期六', en: 'Saturday' },
+  { zh: '星期日', en: 'Sunday' }
+];
+
+const DEFAULT_WEEKLY_MENU = [
+  { day: 'Day 1', zh: '宫保鸡丁\n菜脯煎蛋\n蒜蓉小白菜', en: 'Kung Pao Chicken\nPreserved Radish Omelet\nGarlic Bok Choy', image: 'assets/images/reference-series/weekly-menu/day-01.png', alt: 'Day 1 宫保鸡丁、菜脯煎蛋与蒜蓉小白菜餐盘' },
+  { day: 'Day 2', zh: '韩式辣猪肉\n香煎鱼柳\n清炒西兰花红萝卜', en: 'Korean Spicy Pork\nPan-seared Fish Fillet\nBroccoli & Carrot', image: 'assets/images/reference-series/weekly-menu/day-02.png', alt: 'Day 2 韩式辣猪肉、香煎鱼柳与西兰花红萝卜餐盘' },
+  { day: 'Day 3', zh: '黑椒鸡扒\n奶油蘑菇意大利面\n蒜蓉菜心', en: 'Black Pepper Chicken Chop\nCreamy Mushroom Spaghetti\nGarlic Choy Sum', image: 'assets/images/reference-series/weekly-menu/day-03.png', alt: 'Day 3 黑椒鸡扒、奶油蘑菇意大利面与蒜蓉菜心餐盘' },
+  { day: 'Day 4', zh: '蒜香奶油虾\n日本豆腐\n奶油玉米青豆', en: 'Garlic Butter Prawns\nJapanese Tofu\nCreamy Corn & Peas', image: 'assets/images/reference-series/weekly-menu/day-04.png', alt: 'Day 4 蒜香奶油虾、日本豆腐与奶油玉米青豆餐盘' },
+  { day: 'Day 5', zh: '姜葱鸡\n卤肉豆干\n蚝油奶白菜', en: 'Ginger Scallion Chicken\nBraised Pork & Dried Tofu\nOyster Sauce Napa Cabbage', image: 'assets/images/reference-series/weekly-menu/day-05.png', alt: 'Day 5 姜葱鸡、卤肉豆干与蚝油奶白菜餐盘' },
+  { day: 'Day 6', zh: '糖醋排骨\n炸鱼饼\n清炒包菜木耳', en: 'Sweet & Sour Pork Ribs\nFried Fish Cake\nCabbage & Wood Ear Mushrooms', image: 'assets/images/reference-series/weekly-menu/day-06.png', alt: 'Day 6 糖醋排骨、炸鱼饼与包菜木耳餐盘' },
+  { day: 'Day 7', zh: '韩式炸鸡\n韩式泡菜豆腐\n韩式炒豆芽', en: 'Korean Fried Chicken\nKimchi Tofu\nKorean Bean Sprouts', image: 'assets/images/reference-series/weekly-menu/day-07.png', alt: 'Day 7 韩式炸鸡、泡菜豆腐与炒豆芽餐盘' },
+  { day: 'Day 8', zh: '香煎柠檬鱼柳\n香蒜意大利面\n蒜蓉菠菜', en: 'Pan-seared Lemon Fish\nGarlic Spaghetti\nGarlic Spinach', image: 'assets/images/reference-series/weekly-menu/day-08.png', alt: 'Day 8 香煎柠檬鱼柳、香蒜意大利面与蒜蓉菠菜餐盘' },
+  { day: 'Day 9', zh: 'Marmite鸡\n马铃薯焖肉碎\n清炒四季豆', en: 'Marmite Chicken\nBraised Minced Pork & Potato\nStir-fried Long Beans', image: 'assets/images/reference-series/weekly-menu/day-09.png', alt: 'Day 9 Marmite鸡、马铃薯焖肉碎与四季豆餐盘' },
+  { day: 'Day 10', zh: '日式照烧猪肉\n玉子烧\n蒜香西兰花', en: 'Japanese Teriyaki Pork\nTamagoyaki\nGarlic Broccoli', image: 'assets/images/reference-series/weekly-menu/day-10.png', alt: 'Day 10 日式照烧猪肉、玉子烧与蒜香西兰花餐盘' },
+  { day: 'Day 11', zh: '麦片虾\n日本咖喱薯仔\n清炒高丽菜', en: 'Oat Cereal Prawns\nJapanese Curry Potato\nStir-fried Cabbage', image: 'assets/images/reference-series/weekly-menu/day-11.png', alt: 'Day 11 麦片虾、日本咖喱薯仔与高丽菜餐盘' },
+  { day: 'Day 12', zh: '香菇滑鸡\n香煎豆腐\n蒜蓉苋菜', en: 'Mushroom Chicken\nPan-seared Tofu\nGarlic Amaranth', image: 'assets/images/reference-series/weekly-menu/day-12.png', alt: 'Day 12 香菇滑鸡、香煎豆腐与蒜蓉苋菜餐盘' },
+  { day: 'Day 13', zh: '咸蛋排骨\n番茄炒蛋\n豆角炒萝卜丝', en: 'Salted Egg Pork Ribs\nTomato Scrambled Eggs\nLong Bean & Carrot', image: 'assets/images/reference-series/weekly-menu/day-13.png', alt: 'Day 13 咸蛋排骨、番茄炒蛋与豆角萝卜丝餐盘' },
+  { day: 'Day 14', zh: '韩式辣鱼柳\n韩式杂菜\n韩式泡菜炒包菜', en: 'Korean Spicy Fish\nKorean Mixed Vegetables\nKimchi Cabbage', image: 'assets/images/reference-series/weekly-menu/day-14.png', alt: 'Day 14 韩式辣鱼柳、韩式杂菜与泡菜炒包菜餐盘' },
+  { day: 'Day 15', zh: '黑椒鸡扒\n番茄肉酱意大利面\n清炒上海青', en: 'Black Pepper Chicken Chop\nTomato Meat Sauce Spaghetti\nShanghai Bok Choy', image: 'assets/images/reference-series/weekly-menu/day-15.png', alt: 'Day 15 黑椒鸡扒、番茄肉酱意大利面与上海青餐盘' },
+  { day: 'Day 16', zh: '南乳炸排骨\n菜脯煎蛋\n蒜蓉油麦菜', en: 'Red Fermented Bean Curd Ribs\nPreserved Radish Omelet\nGarlic Lettuce Greens', image: 'assets/images/reference-series/weekly-menu/day-16.png', alt: 'Day 16 南乳炸排骨、菜脯煎蛋与蒜蓉油麦菜餐盘' },
+  { day: 'Day 17', zh: '香草鸡扒\n青酱意大利面\n奶油杂菜（玉米、青豆、红萝卜）', en: 'Herb Chicken Chop\nBasil Pesto Spaghetti\nCreamy Mixed Vegetables', image: 'assets/images/reference-series/weekly-menu/day-17.png', alt: 'Day 17 香草鸡扒、青酱意大利面与奶油杂菜餐盘' },
+  { day: 'Day 18', zh: '咸蛋虾\n日本豆腐\n蒜蓉芥兰', en: 'Salted Egg Prawns\nJapanese Tofu\nGarlic Chinese Kale', image: 'assets/images/reference-series/weekly-menu/day-18.png', alt: 'Day 18 咸蛋虾、日本豆腐与蒜蓉芥兰餐盘' },
+  { day: 'Day 19', zh: '沙姜鸡\n虾仁滑蛋\n清炒白菜仔', en: 'Sand Ginger Chicken\nShrimp Scrambled Eggs\nStir-fried Baby Napa Cabbage', image: 'assets/images/reference-series/weekly-menu/day-19.png', alt: 'Day 19 沙姜鸡、虾仁滑蛋与白菜仔餐盘' },
+  { day: 'Day 20', zh: '韩式BBQ猪肉\n韩式泡菜豆腐\n韩式凉拌黄豆芽', en: 'Korean BBQ Pork\nKimchi Tofu\nChilled Soybean Sprouts', image: 'assets/images/reference-series/weekly-menu/day-20.png', alt: 'Day 20 韩式BBQ猪肉、泡菜豆腐与凉拌黄豆芽餐盘' },
+  { day: 'Day 21', zh: '香煎鱼柳\n奶油培根意大利面\n蒜蓉西兰花花椰菜', en: 'Pan-seared Fish Fillet\nCreamy Bacon Spaghetti\nGarlic Broccoli & Cauliflower', image: 'assets/images/reference-series/weekly-menu/day-21.png', alt: 'Day 21 香煎鱼柳、奶油培根意大利面与西兰花花椰菜餐盘' },
+  { day: 'Day 22', zh: '柠檬鸡扒\n炒蘑菇\n清炒羊角豆', en: 'Lemon Chicken Chop\nStir-fried Mushrooms\nStir-fried Okra', image: 'assets/images/reference-series/weekly-menu/day-22.png', alt: 'Day 22 柠檬鸡扒、炒蘑菇与羊角豆餐盘' },
+  { day: 'Day 23', zh: '黑椒排骨\n豆卜焖菜\n蒜蓉A菜', en: 'Black Pepper Pork Ribs\nBraised Tofu Puffs & Vegetables\nGarlic A-choy', image: 'assets/images/reference-series/weekly-menu/day-23.png', alt: 'Day 23 黑椒排骨、豆卜焖菜与蒜蓉A菜餐盘' },
+  { day: 'Day 24', zh: '香蒜奶油虾\n炒蛋\n三色时蔬（西兰花、花椰菜、红萝卜）', en: 'Garlic Butter Prawns\nScrambled Eggs\nThree-color Vegetables', image: 'assets/images/reference-series/weekly-menu/day-24.png', alt: 'Day 24 香蒜奶油虾、炒蛋与三色时蔬餐盘' },
+  { day: 'Day 25', zh: '蜜汁鸡扒\n香肠炒蛋\n清炒豆苗', en: 'Honey Chicken Chop\nSausage Scrambled Eggs\nStir-fried Pea Shoots', image: 'assets/images/reference-series/weekly-menu/day-25.png', alt: 'Day 25 蜜汁鸡扒、香肠炒蛋与豆苗餐盘' },
+  { day: 'Day 26', zh: '韩式辣鸡\n韩式鱼饼\n蒜蓉皇帝菜', en: 'Korean Spicy Chicken\nKorean Fish Cake\nGarlic Emperor Greens', image: 'assets/images/reference-series/weekly-menu/day-26.png', alt: 'Day 26 韩式辣鸡、韩式鱼饼与蒜蓉皇帝菜餐盘' },
+  { day: 'Day 27', zh: '黑椒猪扒\n奶油鸡肉意大利面\n清炒长豆', en: 'Black Pepper Pork Chop\nCreamy Chicken Spaghetti\nStir-fried Yard-long Beans', image: 'assets/images/reference-series/weekly-menu/day-27.png', alt: 'Day 27 黑椒猪扒、奶油鸡肉意大利面与长豆餐盘' },
+  { day: 'Day 28', zh: '香煎香草鱼柳\n日式玉子豆腐\n蒜蓉生菜', en: 'Pan-seared Herb Fish\nJapanese Tamago Tofu\nGarlic Lettuce', image: 'assets/images/reference-series/weekly-menu/day-28.png', alt: 'Day 28 香煎香草鱼柳、日式玉子豆腐与蒜蓉生菜餐盘' },
+  { day: 'Day 29', zh: '娘惹鸡\n虾仁豆腐\n娘惹炒高丽菜', en: 'Nyonya Chicken\nShrimp Tofu\nNyonya Fried Cabbage', image: 'assets/images/reference-series/weekly-menu/day-29.png', alt: 'Day 29 娘惹鸡、虾仁豆腐与娘惹炒高丽菜餐盘' },
+  { day: 'Day 30', zh: 'BBQ鸡扒\n番茄海鲜意大利面\n时蔬杂炒（西兰花、玉米笋、红萝卜）', en: 'BBQ Chicken Chop\nTomato Seafood Spaghetti\nMixed Stir-fried Vegetables', image: 'assets/images/reference-series/weekly-menu/day-30.png', alt: 'Day 30 BBQ鸡扒、番茄海鲜意大利面与时蔬杂炒餐盘' }
+];
+
+const DEFAULT_HOMEPAGE_MEDIA = {
+  hero: {
+    image: 'assets/images/brand/hero-banquet.jpg',
+    alt: '九零食刻 90 PROJECT 黑金宴会与餐桌场景'
+  },
+  contact: {
+    image: 'assets/images/reference-series/contact-table.png',
+    alt: '九零食刻餐桌与酒杯布置'
+  },
+  services: [
+    { image: 'assets/images/reference-series/service-catering.png', alt: '活动餐饮 buffet 服务' },
+    { image: 'assets/images/reference-series/service-styling.png', alt: '场地布置和背景设计' },
+    { image: 'assets/images/reference-series/service-cocktail.png', alt: '鸡尾酒与饮料吧服务' },
+    { image: 'assets/images/reference-series/service-corporate.png', alt: '公司员工餐和品牌餐盒' }
+  ]
+};
+
+const DEFAULT_DETAIL_CONTENT = {
+  catering: {
+    eyebrow: 'EVENT CATERING · MENU CALCULATOR',
+    title: '活动餐饮，先把菜单和预算理清楚。',
+    heroDesc: '从人数、菜式到服务形式，使用套餐算法快速做出一份清晰的初步预算，再交给我们确认现场细节。',
+    heroImage: 'assets/images/reference-series/service-catering.png',
+    heroAlt: '活动餐饮自助餐台',
+    kicker: 'A CLEARER CATERING PLAN',
+    introTitle: '把选择留在这里，沟通更快。',
+    introDesc: '适合公司活动、开幕典礼、学校活动、庆功宴和小型 Buffet。勾选菜式、输入人数，系统会先给你一个活动餐饮的参考预算。',
+    contactTitle: '需要我们帮你配？',
+    contactDesc: '把日期、地点和人数发给我们。',
+    panelTitle: '菜单选择与预算',
+    panelDesc: '先用推荐组合开始，也可以自由搭配菜式。系统价格为初步估算，实际报价会按地点、份量、运输、餐具和现场服务确认。',
+    gallery: [
+      { image: 'assets/images/reference-series/service-catering.png', alt: '自助餐台与活动用餐场景', caption: '自助餐台与活动现场，可以按人数和服务形式安排。' },
+      { image: 'assets/images/reference-series/contact-table.png', alt: '餐桌与烛光布置', caption: '菜单确定后，再细化餐桌、餐具与现场动线。' },
+      { image: 'assets/images/reference-series/service-corporate.png', alt: '公司员工餐盒', caption: '公司员工餐也可以独立规划份量与配送方式。' }
+    ]
+  },
+  styling: {
+    eyebrow: 'EVENT STYLING · VENUE DESIGN',
+    title: '把场地变成值得记住的那一刻。',
+    heroDesc: '从迎宾区、主桌到餐桌细节，按活动主题、人数和现场动线，整理出完整的布置方向。',
+    heroImage: 'assets/images/reference-series/service-styling.png',
+    heroAlt: '场地布置与花艺桌面',
+    kicker: 'STYLING SHOWCASE',
+    introTitle: '先看作品，再一起定风格。',
+    introDesc: '婚礼、生日派对、开幕典礼和企业活动，都可以从色调、花艺、灯光、桌面与背景设计开始规划。',
+    contactTitle: '告诉我们你的场地',
+    contactDesc: '发送日期、地点、人数和参考风格。',
+    panelTitle: '场地布置展示',
+    panelDesc: '每一组布置都会围绕活动目的和现场条件调整，图片用于展示风格方向。',
+    gallery: [
+      { image: 'assets/images/reference-series/service-styling.png', alt: '九零食刻花艺与宴会桌布置', caption: '花艺、桌面与品牌背景，适合婚礼和正式宴会。' },
+      { image: 'assets/images/event/styling-floral-table.webp', alt: '花艺餐桌布置案例', caption: '用花材和烛光建立温暖、细腻的用餐氛围。' },
+      { image: 'assets/images/event/styling-photo-lounge.webp', alt: '活动拍照区布置案例', caption: '拍照区、迎宾区和活动主视觉可以统一设计。' },
+      { image: 'assets/images/event/styling-backdrop.webp', alt: '活动背景布置案例', caption: '背景结构与灯光安排，让现场更有层次。' },
+      { image: 'assets/images/reference-series/contact-table.png', alt: '餐桌细节布置', caption: '从餐具、酒杯到菜单卡，补足品牌体验。' },
+      { image: 'assets/images/event/styling-bar.webp', alt: '活动吧台布置案例', caption: '需要饮品服务时，可把吧台与整体布置一起规划。' }
+    ]
+  },
+  cocktail: {
+    eyebrow: 'COCKTAIL SERVICE · MOBILE BAR',
+    title: '让每一杯饮品，都成为活动的亮点。',
+    heroDesc: '由专业调酒师配合移动吧台、饮品搭配和现场节奏，为开幕、派对与品牌活动增加一段有记忆点的体验。',
+    heroImage: 'assets/images/reference-series/service-cocktail.png',
+    heroAlt: '鸡尾酒与移动吧台服务',
+    kicker: 'COCKTAIL SHOWCASE',
+    introTitle: '从吧台视觉到饮品选择，一次整理。',
+    introDesc: '可按宾客人数、活动时长和主题色，安排无酒精特调、经典鸡尾酒、果味饮品与现场服务流程。',
+    contactTitle: '准备好你的活动资料',
+    contactDesc: '告诉我们人数、场地和想要的氛围。',
+    panelTitle: '鸡尾酒服务展示',
+    panelDesc: '把饮品、吧台和布置放在同一张活动蓝图里，现场会更完整。',
+    gallery: [
+      { image: 'assets/images/reference-series/service-cocktail.png', alt: '九零食刻鸡尾酒移动吧台', caption: '移动吧台与品牌展示结合，适合开幕和晚宴。' },
+      { image: 'assets/images/event/mocktail-bar-case.webp', alt: '无酒精饮品吧台案例', caption: '无酒精特调与果味饮品，适合家庭和企业活动。' },
+      { image: 'assets/images/event/styling-bar.webp', alt: '活动吧台布置案例', caption: '吧台陈列和灯光可配合现场主题色。' },
+      { image: 'assets/images/reference-series/contact-table.png', alt: '晚宴桌面与酒杯细节', caption: '桌面酒杯、餐饮和吧台服务可以统一安排。' },
+      { image: 'assets/images/reference-series/service-catering.png', alt: '活动餐饮与饮品服务现场', caption: '大型活动可同时规划餐饮与饮品动线。' },
+      { image: 'assets/images/reference-series/service-styling.png', alt: '活动布置与饮品服务搭配', caption: '从主视觉到服务细节，建立一致的活动风格。' }
+    ]
+  }
+};
+
 const SITE_CONTENT_FIELDS = [
   { path: 'title', label: 'SEO 标题 / Browser Title' },
   { path: 'description', label: 'SEO 描述 / Meta Description', multiline: true },
@@ -296,9 +430,11 @@ const SITE_CONTENT_FIELDS = [
   { path: 'nav.catering', label: '导航：外餐服务' },
   { path: 'nav.styling', label: '导航：活动布置' },
   { path: 'nav.faq', label: '导航：FAQ' },
-  { path: 'nav.referral', label: '导航：推荐奖励' },
   { path: 'nav.whatsapp', label: '导航：WhatsApp 按钮' },
   { path: 'nav.mobileWhatsApp', label: '手机底部 WhatsApp 按钮' },
+  { path: 'contact.phone', label: '联系方式：电话号码' },
+  { path: 'contact.whatsapp', label: '联系方式：WhatsApp 号码' },
+  { path: 'contact.footer', label: '页脚版权文字' },
   { path: 'hero.title', label: 'Hero 主标题' },
   { path: 'hero.eyebrow', label: 'Hero 英文/副标' },
   { path: 'hero.tags', label: 'Hero 服务标签' },
@@ -333,14 +469,11 @@ const SITE_CONTENT_FIELDS = [
   { path: 'order.fields.meal', label: '表单字段：餐期' },
   { path: 'order.fields.date', label: '表单字段：开始日期' },
   { path: 'order.fields.area', label: '表单字段：配送区域' },
-  { path: 'order.fields.referralCode', label: '表单字段：推荐码' },
-  { path: 'order.fields.addons', label: '表单字段：加购' },
   { path: 'order.fields.notes', label: '表单字段：备注' },
   { path: 'order.placeholders.name', label: '表单提示：姓名' },
   { path: 'order.placeholders.phone', label: '表单提示：电话' },
   { path: 'order.placeholders.pax', label: '表单提示：人数' },
   { path: 'order.placeholders.area', label: '表单提示：配送地区' },
-  { path: 'order.placeholders.referralCode', label: '表单提示：推荐码' },
   { path: 'order.placeholders.notes', label: '表单提示：备注', multiline: true },
   ...[0, 1, 2].map(index => ({ path: `order.mealOptions.${index}.label`, label: `餐期选项 ${index + 1} 显示` })),
   ...[0, 1, 2].map(index => ({ path: `order.mealOptions.${index}.value`, label: `餐期选项 ${index + 1} WhatsApp 内容` })),
@@ -368,15 +501,6 @@ const SITE_CONTENT_FIELDS = [
   { path: 'cateringTool.builderTitle', label: '展开区标题' },
   { path: 'cateringTool.builderDesc', label: '展开区说明', multiline: true },
   { path: 'cateringTool.close', label: '展开区收起按钮' },
-  { path: 'referral.title', label: '推荐奖励标题' },
-  { path: 'referral.desc', label: '推荐奖励说明', multiline: true },
-  ...[0, 1, 2].flatMap(index => [
-    { path: `referral.cards.${index}.title`, label: `推荐卡 ${index + 1} 标题` },
-    { path: `referral.cards.${index}.desc`, label: `推荐卡 ${index + 1} 说明`, multiline: true }
-  ]),
-  { path: 'referral.noteStrong', label: '推荐规则开头' },
-  { path: 'referral.note', label: '推荐规则说明', multiline: true },
-  ...[0, 1, 2, 3, 4, 5].map(index => ({ path: `referral.terms.${index}`, label: `推荐条款 ${index + 1}`, multiline: true })),
   { path: 'faq.title', label: 'FAQ 标题' },
   ...[0, 1, 2, 3, 4, 5].flatMap(index => [
     { path: `faq.items.${index}.0`, label: `FAQ ${index + 1} 问题` },
@@ -403,13 +527,12 @@ const translations = {
     description: '九零食刻 90 PROJECT - 包伙食、外餐、活动餐饮、布置设计。高级餐饮品牌服务，日常价格享受。',
     nav: {
       home: '首页',
-      meal: '包伙食',
-      catering: '外餐服务',
-      styling: '活动布置',
+      meal: '包伙食服务',
+      catering: '活动餐饮',
+      styling: '场地布置',
       faq: 'FAQ',
-      referral: '推荐奖励',
-      whatsapp: 'WhatsApp 询问',
-      mobileWhatsApp: '☏ WhatsApp 下单',
+      whatsapp: '011-1097 7166',
+      mobileWhatsApp: 'WhatsApp 下单',
       menu: '打开菜单',
       backTop: '返回顶部'
     },
@@ -424,7 +547,7 @@ const translations = {
     },
     services: [
       { title: '餐饮', label: 'CATERING', desc: '专业外餐服务，多样美食选择，满足不同需求。' },
-      { title: '包伙食', label: 'MEAL PLAN', desc: '每月包伙食计划，营养均衡，每天新鲜现煮。' },
+      { title: '包伙食', label: 'MEALS', desc: '每月包伙食计划，营养均衡，每天新鲜现煮。' },
       { title: '活动策划', label: 'EVENT', desc: '生日、公司、节庆、婚礼等活动餐饮一站式服务。' },
       { title: '布置设计', label: 'STYLING', desc: '餐桌布置、背景设计、花艺搭配，让活动更有氛围。' }
     ],
@@ -442,40 +565,29 @@ const translations = {
         button: '选择这个配套'
       },
       {
-        title: '丰富包伙食',
-        priceHtml: 'RM<span>380</span><small>/ 月</small>',
-        muted: '20 餐 · 平均 RM19 / 餐',
-        line: '1 主菜 + 2 配菜 + 白饭',
-        small: '适合吃得比较饱 / 想要更丰富的人',
-        button: '选择这个配套'
+        title: '活动餐饮',
+        priceHtml: '<span>WhatsApp</span><small>询问</small>',
+        muted: '活动、公司餐、开幕与庆典',
+        line: '根据人数、地点与服务形式报价',
+        small: '适合公司、学校、家庭与社团活动',
+        button: '了解更多'
       },
       {
-        title: '家庭配套',
+        title: '场地布置',
         priceHtml: '价格<br><span>WhatsApp</span><small>询问</small>',
-        muted: '2人 / 3人 / 4人',
-        line: '家庭式每日餐，可商量菜色，可长期安排。',
+        muted: '宴会、生日、开幕与拍照区',
+        line: '根据主题、尺寸与现场需求安排。',
         small: '',
-        button: 'WhatsApp 询问'
+        button: '了解更多'
       }
     ],
     referral: {
-      title: '会员推荐奖励',
-      desc: '分享九零食刻给朋友，朋友下单时填入你的推荐码，完成消费并经后台确认后即可记录会员回馈。',
-      cards: [
-        { title: 'TnG RM20 / 下次抵扣', desc: '朋友首次成功购买服务后，推荐人可获得 RM20 奖励，可作为下次购买服务抵扣。' },
-        { title: '多层推荐回馈', desc: '多层回馈只作为活动记录与下次服务抵扣，所有层级、比例与状态都需后台审核确认。' },
-        { title: '会员推荐码', desc: '登录会员中心即可查看自己的推荐码。朋友 WhatsApp 下单时填入推荐码，我们会协助登记。' }
-      ],
-      noteStrong: '透明规则：',
-      note: '推荐奖励属于下次服务抵扣，不可兑换现金或转让；多层记录、比例与有效期以后台审核和活动设定为准。',
-      terms: [
-        '朋友首次成功消费并完成付款后，RM20 会记录为推荐人的下次服务抵扣。',
-        '多层推荐回馈开放记录，比例、层级、有效期和结算方式以后台活动设定为准。',
-        '所有奖励只可用于九零食刻下次服务抵扣，不可兑换现金、不可转让、不可要求提现。',
-        '奖励需等订单状态确认、顾客实付金额核对和管理员审核后才可使用。',
-        '退款、取消、未完成付款或恶意重复注册的订单，不会计算推荐奖励。',
-        '最终以付款记录、后台状态与 WhatsApp 确认为准；九零食刻保留调整活动条款的权利。'
-      ]
+      title: '',
+      desc: '',
+      cards: [],
+      noteStrong: '',
+      note: '',
+      terms: []
     },
     weekly: {
       title: '每周菜单示例',
@@ -490,52 +602,45 @@ const translations = {
       note: '每周菜单轮换，实际菜色会根据当天新鲜食材调整。<br>Weekly menu changes based on fresh ingredients.'
     },
     addons: {
-      title: '自由加购',
-      label: 'ADD-ONS',
-      priceHtml: '可询问<br>Ask us',
-      list: [
-        { label: '加蛋', en: 'Add Egg', value: '加蛋 Add Egg' },
-        { label: '加肉', en: 'Extra Meat', value: '加肉 Extra Meat' },
-        { label: '加汤', en: 'Soup', value: '加汤 Soup' },
-        { label: '加菜', en: 'Extra Veg', value: '加菜 Extra Veg' },
-        { label: '饮料', en: 'Drink', value: '饮料 Drink' }
-      ]
+      title: '',
+      label: '',
+      priceHtml: '',
+      list: []
     },
     order: {
-      title: 'WhatsApp 下单系统',
-      label: 'ORDER FORM',
+      title: '联系我们',
+      label: '',
       fields: {
-        name: '姓名 Name',
-        phone: '电话 Phone',
-        package: '配套 Package',
+        name: '姓名',
+        phone: '电话号码',
+        package: '服务类型',
         pax: '人数 Pax',
         meal: '餐期 Meal',
         date: '开始日期 Start Date',
         area: '配送区域 Delivery Area',
-        referralCode: '推荐码 Referral Code',
-        addons: '加购 Add-ons',
+        referralCode: '',
+        addons: '',
         notes: '备注 Notes'
       },
       placeholders: {
-        name: '请输入姓名',
-        phone: '请输入电话',
+        name: '姓名',
+        phone: '电话号码',
         pax: '请输入人数',
         area: '请输入配送地区',
-        referralCode: '朋友推荐可填写，例如 NP90-XXXX',
-        notes: '其他要求 / 不要辣 / 不要某种食材'
+        referralCode: '',
+        notes: '留言'
       },
       packageOptions: [
-        { label: '标准包伙食 RM300/月', value: '标准包伙食 RM300/月' },
-        { label: '丰富包伙食 RM380/月', value: '丰富包伙食 RM380/月' },
-        { label: '家庭配套 WhatsApp 询问', value: '家庭配套 WhatsApp 询问' },
-        { label: '活动餐饮 Catering', value: '活动餐饮 Catering' }
+        { label: '包伙食服务', value: '包伙食服务' },
+        { label: '活动餐饮', value: '活动餐饮' },
+        { label: '场地布置', value: '场地布置' },
+        { label: '鸡尾酒服务', value: '鸡尾酒服务' },
+        { label: '公司员工餐', value: '公司员工餐' }
       ],
       mealOptions: [
-        { label: '午餐 Lunch', value: '午餐 Lunch' },
-        { label: '晚餐 Dinner', value: '晚餐 Dinner' },
-        { label: '午餐 + 晚餐', value: '午餐 + 晚餐 Lunch + Dinner' }
+        { label: 'WhatsApp 询问', value: 'WhatsApp 询问' }
       ],
-      submit: 'WhatsApp 确认订单',
+      submit: '发送询问',
       none: '无',
       previewLabel: 'WHATSAPP 预览',
       previewEmpty: '填写资料后，这里会显示即将发送到 WhatsApp 的订单内容。',
@@ -544,17 +649,19 @@ const translations = {
     },
     features: {
       catering: {
-        label: 'CATERING SERVICE',
-        title: '外餐 Catering 服务',
-        items: ['生日聚会 Birthday', '公司聚餐 Company Meal', '家庭聚会 Family Gathering', '开张活动 Grand Opening', '佛教会 / 社团活动', '小型 Buffet / Custom Catering'],
-        menuButton: '菜单选择 / 计算价格',
-        button: 'WhatsApp 询问活动餐饮'
+        label: 'EVENT CATERING',
+        title: '活动餐饮',
+        desc: '公司活动、开幕典礼、产品发布会、学校活动、庆功宴，提供多样化餐饮。',
+        items: [],
+        menuButton: '',
+        button: '了解更多'
       },
       styling: {
-        label: 'EVENT & STYLING',
-        title: '活动布置 / Styling',
-        items: ['餐桌布置', '背景布置', '简单花艺', '餐饮展示台', '拍照氛围', 'Mocktail / Beverage Bar'],
-        button: '查看动态作品集'
+        label: 'EVENT STYLING',
+        title: '场地布置',
+        desc: '婚礼布置、生日派对、开幕典礼、企业活动，为您打造完美现场。',
+        items: [],
+        button: '了解更多'
       }
     },
     cateringTool: {
@@ -580,8 +687,8 @@ const translations = {
       ]
     },
     cta: {
-      title: '九零食刻 90 PROJECT',
-      slogan: '每一刻，都是美好食刻',
+      title: '联系我们',
+      slogan: '无论是日常用餐还是大型活动，我们都能为您提供最优质的服务与体验。',
       button: 'WhatsApp 立即询问'
     },
     member: {
@@ -596,19 +703,19 @@ const translations = {
       createSubmit: '创建会员',
       name: '姓名 Name',
       phone: '电话 Phone',
-      referralCode: '推荐码 Referral Code',
+      referralCode: '',
       logout: '退出',
       dashboardTitle: '会员中心',
       benefits: [
         ['询问记录', '自动保存本机订单询问'],
-        ['推荐 RM20', '朋友成功消费后可得下次抵扣'],
-        ['多层回馈', '后台审核后记录抵扣']
+        ['会员资料', '保存常用地区与偏好'],
+        ['快速下单', '下次询问可自动带入资料']
       ],
-      referralIntro: '把推荐码发给朋友。朋友下单时填入推荐码，完成消费并经后台确认后，可记录 RM20 抵扣与多层会员回馈。',
-      copyCode: '复制推荐码',
+      referralIntro: '',
+      copyCode: '',
       shareCode: 'WhatsApp 分享',
-      rewardsTitle: '我的推荐奖励',
-      clearRewards: '清空奖励',
+      rewardsTitle: '',
+      clearRewards: '',
       recordsTitle: '我的包伙食询问',
       clearRecords: '清空记录',
       profileTitle: '我的资料',
@@ -616,22 +723,21 @@ const translations = {
       profileArea: '默认地区 Area',
       profilePackage: '常选配套 Package',
       profilePreference: '口味备注 Preference',
-      copyLink: '复制推荐链接',
+      copyLink: '',
       levelLabel: 'MEMBER LEVEL',
-      rewardLabel: 'REWARD SUMMARY',
       nextLabel: 'NEXT STEP',
       profileSaved: '会员资料已保存。',
-      linkCopied: '推荐链接已复制，可以直接发给朋友。',
+      linkCopied: '',
       emptyRecords: '还没有询问记录。登录后提交 WhatsApp 订单，记录会保存在这里。',
-      emptyRewards: '还没有推荐奖励记录。朋友下单时填写你的推荐码后，会先记录为待确认奖励。',
+      emptyRewards: '',
       messages: {
         required: '请填写完整资料，密码至少 6 个字符。',
         duplicate: '这个 Email 已经注册，请直接登录。',
         registerSuccess: '注册成功，已进入会员中心。',
         loginError: 'Email 或密码不正确。',
         loginSuccess: '登录成功。',
-        copied: '推荐码已复制，可以发给朋友。',
-        copyFail: '复制失败，请手动复制推荐码。'
+        copied: '',
+        copyFail: ''
       }
     }
   },
@@ -645,7 +751,6 @@ const translations = {
       catering: 'Catering',
       styling: 'Event Styling',
       faq: 'FAQ',
-      referral: 'Referral',
       whatsapp: 'WhatsApp Us',
       mobileWhatsApp: '☏ WhatsApp Order',
       menu: 'Open menu',
@@ -697,22 +802,12 @@ const translations = {
       }
     ],
     referral: {
-      title: 'Member Referral Rewards',
-      desc: 'Share 90 PROJECT with friends. When they order with your referral code, rewards are recorded after purchase and admin confirmation.',
-      cards: [
-        { title: 'TnG RM20 / next-order credit', desc: 'After your friend completes their first purchase, you can receive RM20 credit for your next service order.' },
-        { title: 'Multi-level referral reward', desc: 'Multi-level rewards are campaign records for next-order service credit only. Levels, rates and status require admin approval.' },
-        { title: 'Member referral code', desc: 'Log in to your member centre to view your referral code. Your friend can enter it when ordering through WhatsApp.' }
-      ],
-      noteStrong: 'Clear rule:',
-      note: 'Referral rewards are next-order service credits only. They are not cash, transferable balance or guaranteed payout. Multi-level records, rates and validity follow admin approval and campaign settings.',
+      title: '',
+      desc: '',
+      cards: [],
+      noteStrong: '',
+      note: '',
       terms: [
-        'RM20 is recorded as next-order service credit after the referred friend completes the first paid purchase.',
-        'Multi-level referral rewards are open for tracking. Rates, levels, validity and settlement follow the active admin campaign settings.',
-        'Rewards can only be used as 90 PROJECT next-service credits. They are not cash, transferable balance or withdrawal payouts.',
-        'Rewards become usable only after the order status, paid amount and admin approval are confirmed.',
-        'Refunded, cancelled, unpaid or abusive duplicate registrations will not qualify for referral rewards.',
-        'Final validity follows payment records, admin status and WhatsApp confirmation. 90 PROJECT may adjust campaign terms when needed.'
       ]
     },
     weekly: {
@@ -728,52 +823,45 @@ const translations = {
       note: 'Weekly menus rotate and may change based on fresh ingredients available for the day.'
     },
     addons: {
-      title: 'Add-ons',
-      label: 'ADD-ONS',
-      priceHtml: 'Ask us',
-      list: [
-        { label: 'Add Egg', en: '', value: 'Add Egg' },
-        { label: 'Extra Meat', en: '', value: 'Extra Meat' },
-        { label: 'Soup', en: '', value: 'Soup' },
-        { label: 'Extra Veg', en: '', value: 'Extra Veg' },
-        { label: 'Drink', en: '', value: 'Drink' }
-      ]
+      title: '',
+      label: '',
+      priceHtml: '',
+      list: []
     },
     order: {
-      title: 'WhatsApp Order Form',
-      label: 'ORDER FORM',
+      title: 'Contact Us',
+      label: '',
       fields: {
         name: 'Name',
-        phone: 'Phone',
-        package: 'Package',
+        phone: 'Phone Number',
+        package: 'Service Type',
         pax: 'Pax',
         meal: 'Meal',
         date: 'Start Date',
         area: 'Delivery Area',
-        referralCode: 'Referral Code',
-        addons: 'Add-ons',
+        referralCode: '',
+        addons: '',
         notes: 'Notes'
       },
       placeholders: {
-        name: 'Enter your name',
-        phone: 'Enter your phone number',
+        name: 'Name',
+        phone: 'Phone Number',
         pax: 'Enter pax',
         area: 'Enter delivery area',
-        referralCode: 'Optional, e.g. NP90-XXXX',
-        notes: 'Other requests / no spicy / ingredients to avoid'
+        referralCode: '',
+        notes: 'Message'
       },
       packageOptions: [
-        { label: 'Standard Meal Plan RM300/month', value: 'Standard Meal Plan RM300/month' },
-        { label: 'Rich Meal Plan RM380/month', value: 'Rich Meal Plan RM380/month' },
-        { label: 'Family Package - Ask on WhatsApp', value: 'Family Package - Ask on WhatsApp' },
-        { label: 'Event Catering', value: 'Event Catering' }
+        { label: 'Monthly Meal Plan', value: 'Monthly Meal Plan' },
+        { label: 'Event Catering', value: 'Event Catering' },
+        { label: 'Event Styling', value: 'Event Styling' },
+        { label: 'Cocktail Service', value: 'Cocktail Service' },
+        { label: 'Corporate Meals', value: 'Corporate Meals' }
       ],
       mealOptions: [
-        { label: 'Lunch', value: 'Lunch' },
-        { label: 'Dinner', value: 'Dinner' },
-        { label: 'Lunch + Dinner', value: 'Lunch + Dinner' }
+        { label: 'WhatsApp Inquiry', value: 'WhatsApp Inquiry' }
       ],
-      submit: 'Confirm on WhatsApp',
+      submit: 'Send Inquiry',
       none: 'None',
       previewLabel: 'WHATSAPP PREVIEW',
       previewEmpty: 'Complete the form and your WhatsApp order message will appear here.',
@@ -810,7 +898,7 @@ const translations = {
       title: 'FAQ',
       items: [
         ['How many meals are included in RM300?', 'RM300 includes 20 meals, averaging RM15 per meal.'],
-        ['Can I choose lunch or dinner?', 'Yes. You can choose lunch, dinner, or lunch + dinner in the order form.'],
+        ['Can I choose lunch or dinner?', 'Yes. You can mention lunch, dinner, or lunch + dinner in your WhatsApp inquiry.'],
         ['Can I request non-spicy meals?', 'Yes. Please mention non-spicy or any ingredients to avoid in the notes.'],
         ['Can I order for a family?', 'Yes. Family packages for 2, 3 or 4 pax can be discussed on WhatsApp.'],
         ['How is delivery coverage calculated?', 'Please provide your delivery area. We will confirm availability and delivery charges on WhatsApp.'],
@@ -834,19 +922,19 @@ const translations = {
       createSubmit: 'Create Member',
       name: 'Name',
       phone: 'Phone',
-      referralCode: 'Referral Code',
+      referralCode: '',
       logout: 'Logout',
       dashboardTitle: 'Member Centre',
       benefits: [
         ['Inquiry Records', 'Save order inquiries on this device'],
-        ['RM20 Referral', 'Credit after your friend completes a purchase'],
-        ['Multi-level Reward', 'Admin-approved credit records']
+        ['Member Profile', 'Save usual area and preferences'],
+        ['Faster Orders', 'Reuse details for future inquiries']
       ],
-      referralIntro: 'Share your referral code with friends. When they order with your code, RM20 credit and multi-level reward records may be added after purchase and admin confirmation.',
-      copyCode: 'Copy Code',
+      referralIntro: '',
+      copyCode: '',
       shareCode: 'Share on WhatsApp',
-      rewardsTitle: 'My Referral Rewards',
-      clearRewards: 'Clear Rewards',
+      rewardsTitle: '',
+      clearRewards: '',
       recordsTitle: 'My Meal Plan Inquiries',
       clearRecords: 'Clear Records',
       profileTitle: 'My Profile',
@@ -854,28 +942,28 @@ const translations = {
       profileArea: 'Default Area',
       profilePackage: 'Usual Package',
       profilePreference: 'Taste Preference',
-      copyLink: 'Copy Referral Link',
+      copyLink: '',
       levelLabel: 'MEMBER LEVEL',
-      rewardLabel: 'REWARD SUMMARY',
       nextLabel: 'NEXT STEP',
       profileSaved: 'Member profile saved.',
-      linkCopied: 'Referral link copied. You can send it to your friend.',
+      linkCopied: '',
       emptyRecords: 'No inquiry records yet. Submit a WhatsApp order after login and it will be saved here.',
-      emptyRewards: 'No referral rewards yet. When a friend orders with your code, the reward will be recorded as pending.',
+      emptyRewards: '',
       messages: {
         required: 'Please complete all details. Password must be at least 6 characters.',
         duplicate: 'This email is already registered. Please log in directly.',
         registerSuccess: 'Registration successful. You are now in the member centre.',
         loginError: 'Email or password is incorrect.',
         loginSuccess: 'Login successful.',
-        copied: 'Referral code copied. You can send it to your friend.',
-        copyFail: 'Unable to copy. Please copy the referral code manually.'
+        copied: '',
+        copyFail: ''
       }
     }
   }
 };
 
-let currentLanguage = localStorage.getItem(LANG_KEY) === 'en' ? 'en' : 'zh';
+let currentLanguage = 'zh';
+localStorage.setItem(LANG_KEY, currentLanguage);
 
 function getById(id) {
   return document.getElementById(id);
@@ -1246,6 +1334,94 @@ function renderMediaContent(content = loadAdminContent()) {
   renderStylingCaseCards(media.cases);
 }
 
+function applyManagedImage(image, source) {
+  if (!(image instanceof HTMLImageElement) || !source) return;
+  if (source.image) image.src = source.image;
+  if (source.alt) image.alt = source.alt;
+}
+
+function renderHomepageMedia(content = loadAdminContent()) {
+  const homepage = normalizeAdminContent(content).media.homepage;
+  applyManagedImage(document.querySelector('.hero-media img'), homepage.hero);
+  const heroSource = document.querySelector('.hero-media source');
+  if (heroSource && homepage.hero.image) heroSource.srcset = homepage.hero.image;
+  applyManagedImage(document.querySelector('.contact-image img'), homepage.contact);
+  document.querySelectorAll('.reference-service-card').forEach((card, index) => {
+    applyManagedImage(card.querySelector('img'), homepage.services[index]);
+  });
+}
+
+function renderWeeklyReferenceGrid(days = []) {
+  const grid = document.querySelector('.weekly-reference-grid');
+  if (!grid) return;
+  grid.innerHTML = days.map((item, index) => {
+    const dishes = String(item.dish || '').split(/\n+/).map(line => line.trim()).filter(Boolean);
+    const alt = item.alt || `${item.day || `Day ${index + 1}`} 菜单餐盘`;
+    return `
+      <article>
+        <strong>${escapeHtml(item.day || `Day ${index + 1}`)}</strong>
+        ${dishes.map(dish => `<span>${escapeHtml(dish)}</span>`).join('')}
+        <picture><img src="${escapeHtml(item.image || DEFAULT_WEEKLY_MENU[index % DEFAULT_WEEKLY_MENU.length]?.image || '')}" width="1536" height="1024" alt="${escapeHtml(alt)}" loading="lazy" decoding="async"></picture>
+      </article>
+    `;
+  }).join('');
+}
+
+function renderDetailPageContent(content = loadAdminContent()) {
+  const pageKey = document.body?.dataset.detailPage;
+  if (!pageKey) return;
+  const page = normalizeAdminContent(content).media.details[pageKey];
+  if (!page) return;
+
+  const heroImageElement = document.querySelector('.detail-hero-media img');
+  applyManagedImage(heroImageElement, { image: page.heroImage, alt: page.heroAlt });
+  setText('.detail-hero-copy > span', page.eyebrow);
+  setText('.detail-hero-copy h1', page.title);
+  setText('.detail-hero-copy p', page.heroDesc);
+  setText('.detail-kicker', page.kicker);
+
+  const intro = document.querySelector('.detail-intro > div:first-child');
+  if (intro) {
+    intro.querySelector('h2')?.replaceChildren(document.createTextNode(page.introTitle));
+    intro.querySelector('p')?.replaceChildren(document.createTextNode(page.introDesc));
+  }
+  const contact = document.querySelector('.detail-contact-card');
+  if (contact) {
+    contact.querySelector('strong')?.replaceChildren(document.createTextNode(page.contactTitle));
+    contact.querySelector('p')?.replaceChildren(document.createTextNode(page.contactDesc));
+  }
+  setText('.detail-panel > h2', page.panelTitle);
+  setText('.detail-panel > p', page.panelDesc);
+
+  const gallery = document.querySelector('.detail-panel .detail-gallery');
+  if (gallery) {
+    gallery.innerHTML = page.gallery.map(item => `
+      <figure>
+        <img src="${escapeHtml(item.image)}" alt="${escapeHtml(item.alt)}" loading="lazy" decoding="async">
+        <figcaption>${escapeHtml(item.caption)}</figcaption>
+      </figure>
+    `).join('');
+  }
+
+  const phone = languageText().contact?.phone || '011-1097 7166';
+  const whatsapp = languageText().contact?.whatsapp || WHATSAPP_NUMBER;
+  const message = currentLanguage === 'en'
+    ? 'Hi, I would like to ask about 90 PROJECT.'
+    : '你好，我想询问九零食刻 90 PROJECT。';
+  document.querySelectorAll('.detail-contact-card a').forEach(link => {
+    link.textContent = `WhatsApp ${phone}`;
+    link.href = `https://wa.me/${String(whatsapp).replace(/\D/g, '')}?text=${encodeURIComponent(message)}`;
+  });
+  const footerLink = document.querySelector('.detail-footer a');
+  if (footerLink) footerLink.textContent = currentLanguage === 'en' ? 'Contact 90 PROJECT' : '联系九零食刻';
+  if (document.body.classList.contains('detail-page-body')) document.title = page.title;
+}
+
+function renderManagedContent(content = loadAdminContent()) {
+  renderHomepageMedia(content);
+  renderDetailPageContent(content);
+}
+
 function openStylingCases(scroll = true) {
   if (!stylingCasesSection) return;
   stylingCasesSection.hidden = false;
@@ -1549,7 +1725,7 @@ function cloudRewardToLocalReward(row) {
   return {
     cloudId: row.id,
     createdAt: row.created_at || new Date().toISOString(),
-    referredName: row.referred_name || (currentLanguage === 'en' ? 'Friend referral inquiry' : '朋友推荐询问'),
+    referredName: row.referred_name || (currentLanguage === 'en' ? 'Member inquiry' : '会员询问'),
     package: row.package_label || '-',
     level: row.level || 1,
     fixedCredit: row.fixed_credit ? Number(row.fixed_credit) : 0,
@@ -1677,6 +1853,9 @@ function siteContentDefaults(language) {
   SITE_CONTENT_FIELDS.forEach(field => {
     setPathValue(site, field.path, getPathValue(source, field.path) ?? '');
   });
+  setPathValue(site, 'contact.phone', '011-1097 7166');
+  setPathValue(site, 'contact.whatsapp', WHATSAPP_NUMBER);
+  setPathValue(site, 'contact.footer', '© 2026 九零食刻 90 PROJECT. All Rights Reserved.');
   return site;
 }
 
@@ -1722,10 +1901,60 @@ function normalizeVideoContent(video = {}) {
   };
 }
 
+function normalizeManagedImage(item = {}, fallback = {}) {
+  return {
+    image: String(item?.image || fallback.image || '').trim(),
+    alt: String(item?.alt || fallback.alt || '').trim()
+  };
+}
+
+function normalizeHomepageMedia(homepage = {}) {
+  const source = homepage || {};
+  return {
+    hero: normalizeManagedImage(source.hero, DEFAULT_HOMEPAGE_MEDIA.hero),
+    contact: normalizeManagedImage(source.contact, DEFAULT_HOMEPAGE_MEDIA.contact),
+    services: DEFAULT_HOMEPAGE_MEDIA.services.map((fallback, index) => normalizeManagedImage(source.services?.[index], fallback))
+  };
+}
+
+function normalizeDetailPage(page = {}, fallback = {}) {
+  const source = page || {};
+  const fallbackGallery = Array.isArray(fallback.gallery) ? fallback.gallery : [];
+  const gallerySource = Array.isArray(source.gallery) && source.gallery.length ? source.gallery : fallbackGallery;
+  return {
+    eyebrow: String(source.eyebrow || fallback.eyebrow || '').trim(),
+    title: String(source.title || fallback.title || '').trim(),
+    heroDesc: String(source.heroDesc || fallback.heroDesc || '').trim(),
+    heroImage: String(source.heroImage || fallback.heroImage || '').trim(),
+    heroAlt: String(source.heroAlt || fallback.heroAlt || '').trim(),
+    kicker: String(source.kicker || fallback.kicker || '').trim(),
+    introTitle: String(source.introTitle || fallback.introTitle || '').trim(),
+    introDesc: String(source.introDesc || fallback.introDesc || '').trim(),
+    contactTitle: String(source.contactTitle || fallback.contactTitle || '').trim(),
+    contactDesc: String(source.contactDesc || fallback.contactDesc || '').trim(),
+    panelTitle: String(source.panelTitle || fallback.panelTitle || '').trim(),
+    panelDesc: String(source.panelDesc || fallback.panelDesc || '').trim(),
+    gallery: gallerySource.map((item, index) => ({
+      image: String(item?.image || fallbackGallery[index]?.image || '').trim(),
+      alt: String(item?.alt || fallbackGallery[index]?.alt || '').trim(),
+      caption: String(item?.caption || fallbackGallery[index]?.caption || '').trim()
+    })).filter(item => item.image || item.alt || item.caption)
+  };
+}
+
+function normalizeDetailPages(details = {}) {
+  return Object.fromEntries(Object.entries(DEFAULT_DETAIL_CONTENT).map(([key, fallback]) => [
+    key,
+    normalizeDetailPage(details?.[key], fallback)
+  ]));
+}
+
 function defaultMediaContent() {
   return {
     cases: normalizeCaseItems(DEFAULT_STYLING_CASES),
-    video: normalizeVideoContent(DEFAULT_VIDEO_CONTENT)
+    video: normalizeVideoContent(DEFAULT_VIDEO_CONTENT),
+    homepage: normalizeHomepageMedia(DEFAULT_HOMEPAGE_MEDIA),
+    details: normalizeDetailPages(DEFAULT_DETAIL_CONTENT)
   };
 }
 
@@ -1828,11 +2057,6 @@ const AUTO_TRANSLATION_PHRASES = [
   ['蔬菜类', 'Vegetables'],
   ['汤类', 'Soup'],
   ['清淡餐', 'Light Meal'],
-  ['加蛋', 'Add Egg'],
-  ['加肉', 'Extra Meat'],
-  ['加汤', 'Soup'],
-  ['加菜', 'Extra Veg'],
-  ['饮料', 'Drink'],
   ['午餐', 'Lunch'],
   ['晚餐', 'Dinner'],
   ['不要辣', 'No spicy'],
@@ -1886,12 +2110,26 @@ function autoTranslateText(value) {
   return dedupeLines(lines).join('\n');
 }
 
+function defaultWeeklyDays(language = 'zh') {
+  const key = language === 'en' ? 'en' : 'zh';
+  return DEFAULT_WEEKDAYS.map((weekday, index) => {
+    const preset = DEFAULT_WEEKLY_MENU[index];
+    return {
+      day: weekday[key],
+      dish: preset[key],
+      image: preset.image,
+      alt: preset.alt,
+      preset: preset.day
+    };
+  });
+}
+
 function defaultAdminContent() {
   return {
     zh: {
       site: siteContentDefaults('zh'),
       weekly: {
-        days: translations.zh.weekly.days.map(([day, dish]) => ({ day, dish })),
+        days: defaultWeeklyDays('zh'),
         note: htmlToPlainText(translations.zh.weekly.note)
       },
       addons: translations.zh.addons.list.map(item => ({
@@ -1903,7 +2141,7 @@ function defaultAdminContent() {
     en: {
       site: siteContentDefaults('en'),
       weekly: {
-        days: translations.en.weekly.days.map(([day, dish]) => ({ day, dish })),
+        days: defaultWeeklyDays('en'),
         note: htmlToPlainText(translations.en.weekly.note)
       },
       addons: translations.en.addons.list.map(item => ({
@@ -1931,13 +2169,26 @@ function normalizeAdminContent(content) {
       }
     });
 
-    const weeklyDays = Array.isArray(source.weekly?.days) ? source.weekly.days : normalized[language].weekly.days;
+    const rawWeeklyDays = Array.isArray(source.weekly?.days) && source.weekly.days.length
+      ? source.weekly.days
+      : normalized[language].weekly.days;
+    const isLegacyWeeklyContent = rawWeeklyDays.length > 0
+      && rawWeeklyDays.length <= 5
+      && rawWeeklyDays.every(item => !item?.image);
+    const weeklyDays = (isLegacyWeeklyContent ? normalized[language].weekly.days : rawWeeklyDays)
+      .slice(0, DEFAULT_WEEKDAYS.length);
     normalized[language].weekly.days = weeklyDays
-      .map(item => ({
-        day: String(item?.day || '').trim(),
-        dish: String(item?.dish || '').trim()
-      }))
-      .filter(item => item.day || item.dish);
+      .map((item, index) => {
+        const preset = DEFAULT_WEEKLY_MENU.find(option => option.day === item?.preset || option.image === item?.image);
+        return {
+          day: String(item?.day || DEFAULT_WEEKDAYS[index][language]).trim(),
+          dish: String(item?.dish || '').trim(),
+          image: String(item?.image || preset?.image || DEFAULT_WEEKLY_MENU[index]?.image || '').trim(),
+          alt: String(item?.alt || preset?.alt || DEFAULT_WEEKLY_MENU[index]?.alt || '').trim(),
+          preset: String(item?.preset || preset?.day || '').trim()
+        };
+      })
+      .filter(item => item.day || item.dish || item.image);
     normalized[language].weekly.note = String(source.weekly?.note ?? normalized[language].weekly.note);
 
     const addons = Array.isArray(source.addons) ? source.addons : normalized[language].addons;
@@ -1959,7 +2210,9 @@ function normalizeAdminContent(content) {
   const mediaSource = content?.media || {};
   normalized.media = {
     cases: normalizeCaseItems(mediaSource.cases || normalized.media.cases),
-    video: normalizeVideoContent(mediaSource.video || normalized.media.video)
+    video: normalizeVideoContent(mediaSource.video || normalized.media.video),
+    homepage: normalizeHomepageMedia(mediaSource.homepage || normalized.media.homepage),
+    details: normalizeDetailPages(mediaSource.details || normalized.media.details)
   };
 
   return normalized;
@@ -2200,21 +2453,23 @@ function updateStaticLanguage() {
   const editable = editableContentForLanguage();
   document.documentElement.lang = t.htmlLang;
   document.body.dataset.language = currentLanguage;
-  document.title = t.title;
-  updateSeoMeta(t);
+  if (!document.body.classList.contains('detail-page-body')) {
+    document.title = t.title;
+    updateSeoMeta(t);
+  }
 
   setText('#navLinks a[href="#home"]', t.nav.home);
   setText('#navLinks a[href="#meal-plan"]', t.nav.meal);
   setText('#navLinks a[href="#catering"]', t.nav.catering);
   setText('#navLinks a[href="#styling"]', t.nav.styling);
   setText('#navLinks a[href="#faq"]', t.nav.faq);
-  setText('#navLinks a[href="#referral"]', t.nav.referral);
-  setHtml('.nav-whatsapp', `<span>☏</span> ${t.nav.whatsapp}`);
+  setHtml('.nav-whatsapp', `<i class="ri-whatsapp-line" aria-hidden="true"></i> ${t.nav.whatsapp}`);
   const quickMessage = currentLanguage === 'en'
     ? 'Hi, I would like to ask about 90 PROJECT.'
     : '你好，我想询问九零食刻 90 PROJECT。';
   const navWhatsapp = document.querySelector('.nav-whatsapp');
-  if (navWhatsapp) navWhatsapp.href = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(quickMessage)}`;
+  const whatsappNumber = String(t.contact?.whatsapp || WHATSAPP_NUMBER).replace(/\D/g, '');
+  if (navWhatsapp) navWhatsapp.href = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(quickMessage)}`;
   setText('.mobile-wa', t.nav.mobileWhatsApp);
   menuToggle?.setAttribute('aria-label', t.nav.menu);
   backTop?.setAttribute('aria-label', t.nav.backTop);
@@ -2240,21 +2495,6 @@ function updateStaticLanguage() {
   setText('#meal-plan .section-title p', t.mealPlan.desc);
   updatePriceCards(t);
 
-  setText('#referral .section-title h2', t.referral.title);
-  setText('#referral .section-title p', t.referral.desc);
-  document.querySelectorAll('.referral-grid article').forEach((card, index) => {
-    const item = t.referral.cards[index];
-    if (!item) return;
-    card.querySelector('h3').textContent = item.title;
-    card.querySelector('p').textContent = item.desc;
-  });
-  setText('.referral-note strong', t.referral.noteStrong);
-  setText('.referral-note span', t.referral.note);
-  const referralTerms = document.querySelector('.referral-terms');
-  if (referralTerms) {
-    referralTerms.innerHTML = t.referral.terms.map(item => `<li>${escapeHtml(item)}</li>`).join('');
-  }
-
   setText('.weekly-menu .panel-title h2', t.weekly.title);
   setText('.weekly-menu .panel-title span', t.weekly.label);
   const dayList = document.querySelector('.day-list');
@@ -2263,6 +2503,7 @@ function updateStaticLanguage() {
       <li><strong>${escapeHtml(item.day)}</strong><span>${escapeHtml(item.dish)}</span></li>
     `).join('');
   }
+  renderWeeklyReferenceGrid(editable.weekly.days);
   setHtml('.weekly-menu .note', formatMultiline(editable.weekly.note));
 
   setText('.addons .panel-title h2', t.addons.title);
@@ -2278,14 +2519,12 @@ function updateStaticLanguage() {
   setFieldLabel('meal', t.order.fields.meal);
   setFieldLabel('date', t.order.fields.date);
   setFieldLabel('area', t.order.fields.area);
-  setFieldLabel('referralCode', t.order.fields.referralCode);
   setFieldLabel('notes', t.order.fields.notes);
   setText('fieldset legend', t.order.fields.addons);
   setPlaceholder('name', t.order.placeholders.name);
   setPlaceholder('phone', t.order.placeholders.phone);
   setPlaceholder('pax', t.order.placeholders.pax);
   setPlaceholder('area', t.order.placeholders.area);
-  setPlaceholder('referralCode', t.order.placeholders.referralCode);
   setPlaceholder('notes', t.order.placeholders.notes);
   updateSelectOptions('package', t.order.packageOptions);
   updateSelectOptions('meal', t.order.mealOptions);
@@ -2313,7 +2552,9 @@ function updateStaticLanguage() {
   setText('.footer-brand h2', t.cta.title);
   setText('.footer-brand p', t.cta.slogan);
   setText('.final-cta .btn.big', t.cta.button);
-  setText('.site-footer span:nth-child(2)', 'WhatsApp: 011-1097 7166');
+  setText('.site-footer span:nth-child(2)', `WhatsApp: ${t.contact?.phone || '011-1097 7166'}`);
+  setText('.site-footer span:nth-child(3)', t.contact?.footer || '© 2026 九零食刻 90 PROJECT. All Rights Reserved.');
+  renderManagedContent();
 
   setText('#memberTitle', t.member.title);
   setText('.member-intro p', t.member.intro);
@@ -2323,7 +2564,6 @@ function updateStaticLanguage() {
   setFieldLabel('registerName', t.member.name);
   setFieldLabel('registerPhone', t.member.phone);
   setFieldLabel('registerPassword', t.member.password);
-  setFieldLabel('registerReferralCode', t.member.referralCode);
   setText('#memberLoginForm .btn-wide', t.member.loginSubmit);
   setText('#memberRegisterForm .btn-wide', t.member.createSubmit);
   setText('#memberLogout', t.member.logout);
@@ -2334,10 +2574,6 @@ function updateStaticLanguage() {
     card.querySelector('b').textContent = item[0];
     card.querySelector('span').textContent = item[1];
   });
-  setText('.member-referral-panel p', t.member.referralIntro);
-  setText('#copyReferralCode', t.member.copyCode);
-  setText('#shareReferralWhatsApp', t.member.shareCode);
-  setText('#copyReferralLink', t.member.copyLink);
   setText('#memberProfileForm .member-records-head h3', t.member.profileTitle);
   setText('#memberProfileForm .member-records-head button', t.member.saveProfile);
   setFieldLabel('profileName', t.member.name);
@@ -2346,10 +2582,8 @@ function updateStaticLanguage() {
   setFieldLabel('profileDefaultPackage', t.member.profilePackage);
   setFieldLabel('profilePreference', t.member.profilePreference);
   document.querySelectorAll('.member-tier-card span').forEach((label, index) => {
-    label.textContent = [t.member.levelLabel, t.member.rewardLabel, t.member.nextLabel][index] || label.textContent;
+    label.textContent = [t.member.levelLabel, t.member.nextLabel][index] || label.textContent;
   });
-  setText('.member-rewards-head h3', t.member.rewardsTitle);
-  setText('#clearReferralRewards', t.member.clearRewards);
   setText('.member-records-head:not(.member-rewards-head) h3', t.member.recordsTitle);
   setText('#clearMemberRecords', t.member.clearRecords);
 
@@ -2529,7 +2763,7 @@ function renderReferralQr(link = '') {
     const active = index < 7 || index > 41 || index % 7 === 0 || index % 7 === 6 || ((seed + index * 17) % 5 < 2);
     return `<i class="${active ? 'active' : ''}"></i>`;
   }).join('');
-  memberReferralQr.innerHTML = `<div>${cells}</div><span>${currentLanguage === 'en' ? 'Referral link visual code' : '推荐链接视觉码'}</span>`;
+  memberReferralQr.innerHTML = `<div>${cells}</div><span>${currentLanguage === 'en' ? 'Member link visual code' : '会员链接视觉码'}</span>`;
 }
 
 function renderMemberProfileForm(member) {
@@ -2627,8 +2861,6 @@ function renderMemberRecords(member) {
         <p>${currentLanguage === 'en' ? 'Status' : '状态'}：${escapeHtml(inquiryStatusLabel(record.status || 'new'))}</p>
         <p>${currentLanguage === 'en' ? 'Pax' : '人数'}：${escapeHtml(record.pax || '-')} ｜ ${currentLanguage === 'en' ? 'Meal' : '餐期'}：${escapeHtml(record.meal || '-')}</p>
         <p>${currentLanguage === 'en' ? 'Start date' : '开始日期'}：${escapeHtml(record.date || '-')} ｜ ${currentLanguage === 'en' ? 'Area' : '区域'}：${escapeHtml(record.area || '-')}</p>
-        <p>${currentLanguage === 'en' ? 'Referral code' : '推荐码'}：${escapeHtml(record.referralCode || t.order.none)}</p>
-        <p>${currentLanguage === 'en' ? 'Add-ons' : '加购'}：${escapeHtml(record.addons || t.order.none)}</p>
         <p>${currentLanguage === 'en' ? 'Notes' : '备注'}：${escapeHtml(record.notes || '-')}</p>
       </article>
     `;
@@ -2651,12 +2883,12 @@ function renderReferralRewards(member) {
     const normalizedStatus = reward.status === '待确认' ? 'pending' : (reward.status || 'pending');
     return `
       <article class="member-record">
-        <strong>${escapeHtml(reward.referredName || (currentLanguage === 'en' ? 'Friend referral inquiry' : '朋友推荐询问'))}</strong>
+        <strong>${escapeHtml(reward.referredName || (currentLanguage === 'en' ? 'Member record' : '会员记录'))}</strong>
         <p>${currentLanguage === 'en' ? 'Date' : '日期'}：${date}</p>
         <p>${currentLanguage === 'en' ? 'Package' : '配套'}：${escapeHtml(reward.package || '-')}</p>
-        <p>${currentLanguage === 'en' ? 'Referral level' : '推荐层级'}：${escapeHtml(reward.level ? `L${reward.level}` : 'L1')}</p>
-        ${reward.fixedCredit ? `<p>${currentLanguage === 'en' ? 'Fixed reward' : '固定奖励'}：RM${escapeHtml(reward.fixedCredit)} ${currentLanguage === 'en' ? 'next-order credit' : '下次服务抵扣'}</p>` : ''}
-        <p>${currentLanguage === 'en' ? 'Spending reward' : '消费额回馈'}：${escapeHtml(reward.ratePercent || 1)}% ${currentLanguage === 'en' ? 'of confirmed spending, pending WhatsApp confirmation' : '实际消费额回馈（待 WhatsApp 确认订单金额）'}</p>
+        <p>${currentLanguage === 'en' ? 'Level' : '层级'}：${escapeHtml(reward.level ? `L${reward.level}` : 'L1')}</p>
+        ${reward.fixedCredit ? `<p>${currentLanguage === 'en' ? 'Credit' : '额度'}：RM${escapeHtml(reward.fixedCredit)}</p>` : ''}
+        <p>${currentLanguage === 'en' ? 'Rate' : '比例'}：${escapeHtml(reward.ratePercent || 1)}%</p>
         <p>${currentLanguage === 'en' ? 'Status' : '状态'}：${escapeHtml(referralRewardStatusLabel(normalizedStatus))}</p>
       </article>
     `;
@@ -2672,18 +2904,10 @@ function referralShareLink(member) {
 function referralShareMessage(member) {
   const code = normalizeReferralCode(member?.referralCode);
   if (currentLanguage === 'en') {
-    return `Hi, I would like to recommend 90 PROJECT meal plans / catering service.
-
-Referral code: ${code}
-Please enter this code when ordering.
-${referralShareLink(member)}`;
+    return `Hi, I would like to ask about 90 PROJECT meal plans / catering service.`;
   }
 
-  return `你好，我推荐你试九零食刻 90 PROJECT 包伙食 / 外餐服务。
-
-推荐码：${code}
-下单时填写推荐码即可。
-${referralShareLink(member)}`;
+  return `你好，我想询问九零食刻 90 PROJECT 包伙食 / 外餐服务。`;
 }
 
 function renderMemberOverview(member) {
@@ -2736,8 +2960,8 @@ function renderMemberState() {
   updateMemberButton();
 
   if (member) {
-    memberAuthPanel.hidden = true;
-    memberDashboard.hidden = false;
+    if (memberAuthPanel) memberAuthPanel.hidden = true;
+    if (memberDashboard) memberDashboard.hidden = false;
     if (memberProfileText) {
       memberProfileText.textContent = `${member.name} · ${member.phone} · ${member.email} · ${memberStatusLabel(member.status || 'active')}`;
     }
@@ -2748,8 +2972,8 @@ function renderMemberState() {
     fillMemberToOrder(member);
     applyMemberProfileToOrder(member);
   } else {
-    memberAuthPanel.hidden = false;
-    memberDashboard.hidden = true;
+    if (memberAuthPanel) memberAuthPanel.hidden = false;
+    if (memberDashboard) memberDashboard.hidden = true;
     renderReferralPanel(null);
     renderMemberRecords(null);
   }
@@ -2780,10 +3004,6 @@ function setMemberTab(tab) {
 }
 
 function collectOrderData() {
-  const addons = Array.from(form?.querySelectorAll('fieldset input[type="checkbox"]:checked') || [])
-    .map(input => input.value)
-    .join(currentLanguage === 'en' ? ', ' : '、') || languageText().order.none;
-
   return {
     name: fieldValue('name'),
     phone: fieldValue('phone'),
@@ -2792,8 +3012,8 @@ function collectOrderData() {
     meal: fieldValue('meal'),
     date: fieldValue('date'),
     area: fieldValue('area'),
-    referralCode: normalizeReferralCode(fieldValue('referralCode')),
-    addons,
+    referralCode: '',
+    addons: '',
     notes: fieldValue('notes'),
     leadSource: currentLeadSource()
   };
@@ -2840,8 +3060,6 @@ Pax: ${displayValue(data.pax)}
 Meal: ${displayValue(data.meal)}
 Start date: ${displayValue(data.date)}
 Delivery area: ${displayValue(data.area)}
-Referral code: ${displayValue(data.referralCode)}
-Add-ons: ${displayValue(data.addons)}
 Notes: ${displayValue(data.notes)}
 
 Please help me confirm the price and delivery arrangement. Thank you.`;
@@ -2856,8 +3074,6 @@ Please help me confirm the price and delivery arrangement. Thank you.`;
 餐期：${displayValue(data.meal)}
 开始日期：${displayValue(data.date)}
 配送区域：${displayValue(data.area)}
-推荐码：${displayValue(data.referralCode)}
-加购：${displayValue(data.addons)}
 备注：${displayValue(data.notes)}
 
 请帮我确认价格和配送安排，谢谢。`;
@@ -2866,8 +3082,8 @@ Please help me confirm the price and delivery arrangement. Thank you.`;
 function renderOrderPreview() {
   if (!orderPreviewText) return;
   const data = collectOrderData();
-  const hasInput = ['name', 'phone', 'pax', 'date', 'area', 'referralCode', 'notes'].some(key => data[key]);
-  if (!hasInput && data.addons === languageText().order.none) {
+  const hasInput = ['name', 'phone', 'pax', 'date', 'area', 'notes'].some(key => data[key]);
+  if (!hasInput) {
     orderPreviewText.textContent = languageText().order.previewEmpty;
     return;
   }
@@ -2888,11 +3104,10 @@ function inquiryToSupabasePayload(inquiry, userId = null) {
     guest_count: Number.isFinite(pax) ? pax : null,
     service_type: [inquiry.package, inquiry.meal].filter(Boolean).join(' | ') || null,
     lead_source: inquiry.leadSource || inquiry.source || null,
-    budget: inquiry.referralCode ? `Referral: ${inquiry.referralCode}` : null,
+    budget: null,
     message: buildOrderMessage(inquiry),
     status: inquiry.status || 'new',
     admin_notes: [
-      inquiry.addons ? `Add-ons: ${inquiry.addons}` : '',
       inquiry.notes ? `Notes: ${inquiry.notes}` : '',
       inquiry.leadSource ? `Lead source: ${inquiry.leadSource}` : '',
       inquiry.language ? `Language: ${inquiry.language}` : ''
@@ -2904,8 +3119,7 @@ function inquiryToSupabasePayload(inquiry, userId = null) {
 
 function supabaseRowToInquiry(row) {
   const [packageName = row.service_type || '', meal = ''] = String(row.service_type || '').split(' | ');
-  const notes = String(row.admin_notes || '').replace(/^Add-ons:.*$/m, '').replace(/^Lead source:.*$/m, '').replace(/^Language:.*$/m, '').replace(/^Notes:\s*/m, '').trim();
-  const addonsMatch = String(row.admin_notes || '').match(/^Add-ons:\s*(.+)$/m);
+  const notes = String(row.admin_notes || '').replace(/^Lead source:.*$/m, '').replace(/^Language:.*$/m, '').replace(/^Notes:\s*/m, '').trim();
   const leadSourceMatch = String(row.admin_notes || '').match(/^Lead source:\s*(.+)$/m);
   return {
     id: row.id,
@@ -2917,8 +3131,8 @@ function supabaseRowToInquiry(row) {
     meal,
     date: row.event_date || '',
     area: row.event_location || '',
-    referralCode: String(row.budget || '').replace(/^Referral:\s*/i, ''),
-    addons: addonsMatch?.[1] || '',
+    referralCode: '',
+    addons: '',
     notes,
     status: row.status || 'new',
     source: 'supabase',
@@ -3093,9 +3307,7 @@ function renderAdminInquiries(refreshRemote = true) {
           <p>${currentLanguage === 'en' ? 'Package' : '配套'}：${escapeHtml(inquiry.package || t.order.none)}</p>
           <p>${currentLanguage === 'en' ? 'Pax / Meal' : '人数 / 餐期'}：${escapeHtml(inquiry.pax || t.order.none)} · ${escapeHtml(inquiry.meal || t.order.none)}</p>
           <p>${currentLanguage === 'en' ? 'Date / Area' : '日期 / 地区'}：${escapeHtml(inquiry.date || t.order.none)} · ${escapeHtml(inquiry.area || t.order.none)}</p>
-          <p>${currentLanguage === 'en' ? 'Add-ons' : '加购'}：${escapeHtml(inquiry.addons || t.order.none)}</p>
-          <p>${currentLanguage === 'en' ? 'Referral' : '推荐码'}：${escapeHtml(inquiry.referralCode || t.order.none)}</p>
-          <p>${currentLanguage === 'en' ? 'Lead source' : '来源'}：${escapeHtml(inquiry.leadSource || inquiry.source || 'direct')}</p>
+        <p>${currentLanguage === 'en' ? 'Lead source' : '来源'}：${escapeHtml(inquiry.leadSource || inquiry.source || 'direct')}</p>
           <p>${currentLanguage === 'en' ? 'Notes' : '备注'}：${escapeHtml(inquiry.notes || t.order.none)}</p>
           <p>${currentLanguage === 'en' ? 'Created' : '建立时间'}：${escapeHtml(createdAt)}</p>
         </div>
@@ -3258,7 +3470,7 @@ function renderRewardLine(reward, memberEmail, index) {
   return `
     <div class="admin-reward-line">
       <div>
-        <b>${escapeHtml(reward.referred_name || reward.referredName || (currentLanguage === 'en' ? 'Referral reward' : '推荐奖励'))}</b>
+        <b>${escapeHtml(reward.referred_name || reward.referredName || (currentLanguage === 'en' ? 'Member record' : '会员记录'))}</b>
         <span>${escapeHtml(date)} · L${escapeHtml(reward.level || 1)} · RM${escapeHtml(reward.fixed_credit ?? reward.fixedCredit ?? 0)} + ${escapeHtml(reward.rate_percent ?? reward.ratePercent ?? 0)}%</span>
       </div>
       <select data-reward-status ${idAttribute}>${rewardStatusOptions(status)}</select>
@@ -3294,8 +3506,8 @@ function renderAdminMembers(refreshRemote = true) {
   if (adminMemberStatus) {
     if (isSupabaseConfigured() && getSupabaseSession()?.access_token) {
       adminMemberStatus.textContent = currentLanguage === 'en'
-        ? `${members.length} members shown. ${cloudRewards} cloud reward records and ${localRewards} local reward records are available.`
-        : `目前显示 ${members.length} 位会员；云端奖励 ${cloudRewards} 笔，本地奖励 ${localRewards} 笔。`;
+        ? `${members.length} members shown.`
+        : `目前显示 ${members.length} 位会员。`;
     } else if (isSupabaseConfigured()) {
       adminMemberStatus.textContent = currentLanguage === 'en'
         ? `${members.length} local members shown. Log in with Supabase admin to read cloud members.`
@@ -3308,13 +3520,12 @@ function renderAdminMembers(refreshRemote = true) {
   }
 
   if (!members.length && !supabaseRewardsCache.length) {
-    adminMembers.innerHTML = `<div class="member-empty">${currentLanguage === 'en' ? 'No members or rewards yet.' : '目前还没有会员或推荐奖励记录。'}</div>`;
+    adminMembers.innerHTML = `<div class="member-empty">${currentLanguage === 'en' ? 'No members yet.' : '目前还没有会员记录。'}</div>`;
     return;
   }
 
   const memberCards = members.map(member => {
     const memberEmail = String(member.email || '').toLowerCase();
-    const rewards = member.referralRewards || [];
     return `
       <article class="admin-member-card">
         <div>
@@ -3323,9 +3534,7 @@ function renderAdminMembers(refreshRemote = true) {
           <p>Email：${escapeHtml(member.email || '-')}</p>
           <p>${currentLanguage === 'en' ? 'Tier' : '会员等级'}：${escapeHtml(member.tier || 'Classic')}</p>
           <p>${currentLanguage === 'en' ? 'Area / Package' : '地区 / 常选配套'}：${escapeHtml(member.profile?.area || '-')} / ${escapeHtml(member.profile?.defaultPackage || '-')}</p>
-          <p>${currentLanguage === 'en' ? 'Referral code' : '推荐码'}：${escapeHtml(normalizeReferralCode(member.referralCode) || '-')}</p>
-          <p>${currentLanguage === 'en' ? 'Referred by' : '上级推荐'}：${escapeHtml(normalizeReferralCode(member.referredByCode) || '-')}</p>
-          <p>${currentLanguage === 'en' ? 'Records / Rewards' : '询问 / 奖励'}：${escapeHtml(member.records?.length || 0)} / ${escapeHtml(rewards.length || 0)}</p>
+          <p>${currentLanguage === 'en' ? 'Records' : '询问记录'}：${escapeHtml(member.records?.length || 0)}</p>
           <p>${currentLanguage === 'en' ? 'Area / Package' : '地区 / 配套'}：${escapeHtml(member.profile?.area || '-')} / ${escapeHtml(member.profile?.defaultPackage || '-')}</p>
           <p>${currentLanguage === 'en' ? 'Source' : '来源'}：${escapeHtml(member.source === 'supabase' ? 'Supabase' : 'Local')}</p>
         </div>
@@ -3339,20 +3548,13 @@ function renderAdminMembers(refreshRemote = true) {
           <label>${currentLanguage === 'en' ? 'Admin note' : '后台备注'}
             <textarea data-member-admin-field="adminNote" data-member-email="${escapeHtml(memberEmail)}" rows="3" placeholder="${currentLanguage === 'en' ? 'Follow-up notes' : '例如：已联系、偏好清淡、VIP 客户'}">${escapeHtml(member.adminNote || '')}</textarea>
           </label>
-          ${rewards.length ? rewards.map((reward, index) => renderRewardLine(reward, memberEmail, index)).join('') : `<span>${currentLanguage === 'en' ? 'No local rewards.' : '暂无本地奖励。'}</span>`}
         </div>
       </article>
     `;
   }).join('');
 
-  const cloudOnlyRewards = supabaseRewardsCache
-    .filter(reward => !members.some(member => member.supabaseUserId === reward.referrer_user_id))
-    .map(reward => renderRewardLine(reward, '', 0))
-    .join('');
-
   adminMembers.innerHTML = `
     ${memberCards}
-    ${cloudOnlyRewards ? `<article class="admin-member-card admin-cloud-rewards"><strong>${currentLanguage === 'en' ? 'Cloud reward records' : '云端奖励记录'}</strong><div class="admin-reward-list">${cloudOnlyRewards}</div></article>` : ''}
   `;
 }
 
@@ -3668,7 +3870,7 @@ function ensureAdminTranslateHelper() {
   helper.innerHTML = `
     <div>
       <strong>中文自动翻译英文</strong>
-      <p>输入中文全站文案、菜单、菜色、加购或价格说明时，英文栏会自动生成；英文仍可手动微调。</p>
+      <p>输入中文全站文案、菜单、菜色或价格说明时，英文栏会自动生成；英文仍可手动微调。</p>
     </div>
     <button type="button" id="autoTranslateAdminContent">翻译全部英文</button>
   `;
@@ -3708,19 +3910,22 @@ function renderAdminSiteRows(content) {
 
 function renderAdminWeeklyRows(content) {
   if (!adminWeeklyRows) return;
-  const maxRows = Math.max(content.zh.weekly.days.length, content.en.weekly.days.length, 1);
+  const maxRows = DEFAULT_WEEKDAYS.length;
   const rows = [];
 
   for (let index = 0; index < maxRows; index += 1) {
-    const zh = content.zh.weekly.days[index] || { day: '', dish: '' };
-    const en = content.en.weekly.days[index] || { day: '', dish: '' };
+    const zh = content.zh.weekly.days[index] || { day: DEFAULT_WEEKDAYS[index].zh, dish: '' };
+    const en = content.en.weekly.days[index] || { day: DEFAULT_WEEKDAYS[index].en, dish: '' };
+    const selectedPreset = zh.preset || en.preset || DEFAULT_WEEKLY_MENU.find(option => option.image === zh.image)?.day || '';
+    const presetOptions = DEFAULT_WEEKLY_MENU.map(option => `<option value="${escapeHtml(option.day)}"${option.day === selectedPreset ? ' selected' : ''}>${escapeHtml(option.day)} · ${escapeHtml(option.zh.split('\n')[0])}</option>`).join('');
     rows.push(`
-      <div class="admin-row" data-weekly-row>
-        <label>中文日期<input data-field="zh-day" value="${escapeHtml(zh.day)}" placeholder="星期一"></label>
-        <label>中文菜色<input data-field="zh-dish" value="${escapeHtml(zh.dish)}" placeholder="酱油鸡 + 炒青菜 + 白饭"></label>
-        <label>English Day<input data-field="en-day" value="${escapeHtml(en.day)}" placeholder="Monday"></label>
-        <label>English Menu<input data-field="en-dish" value="${escapeHtml(en.dish)}" placeholder="Soy Sauce Chicken + Rice"></label>
-        <button type="button" data-remove-weekly>删除</button>
+      <div class="admin-row admin-weekly-row" data-weekly-row>
+        <label>星期<input data-field="zh-day" value="${escapeHtml(zh.day || DEFAULT_WEEKDAYS[index].zh)}" readonly></label>
+        <label>套用菜单预设<select data-field="weekly-preset"><option value="">手动编辑</option>${presetOptions}</select></label>
+        <label>中文菜色<textarea data-field="zh-dish" rows="3" placeholder="每行一道菜">${escapeHtml(zh.dish)}</textarea></label>
+        <label>图片路径<input data-field="weekly-image" value="${escapeHtml(zh.image || en.image)}" placeholder="assets/images/reference-series/weekly-menu/day-01.png"></label>
+        <label>图片 Alt<input data-field="weekly-alt" value="${escapeHtml(zh.alt || en.alt)}" placeholder="图片说明"></label>
+        <label>English Menu<textarea data-field="en-dish" rows="3" placeholder="One dish per line">${escapeHtml(en.dish)}</textarea></label>
       </div>
     `);
   }
@@ -3739,7 +3944,7 @@ function renderAdminAddonRows(content) {
     rows.push(`
       <div class="admin-row two-line" data-addon-row>
         <label>中文名称<input data-field="zh-name" value="${escapeHtml(zh.name)}" placeholder="加蛋"></label>
-        <label>English Name<input data-field="en-name" value="${escapeHtml(en.name || zh.sub)}" placeholder="Add Egg"></label>
+        <label>English Name<input data-field="en-name" value="${escapeHtml(en.name || zh.sub)}"></label>
         <label>中文价格<textarea data-field="zh-price" rows="2" placeholder="可询问">${escapeHtml(zh.price)}</textarea></label>
         <label>English Price<textarea data-field="en-price" rows="2" placeholder="Ask us">${escapeHtml(en.price)}</textarea></label>
         <button type="button" data-remove-addon>删除</button>
@@ -3805,6 +4010,57 @@ function renderAdminMediaRows(content) {
   `).join('');
 }
 
+function renderAdminHomepageRows(content) {
+  if (!adminHomepageRows) return;
+  const homepage = normalizeAdminContent(content).media.homepage;
+  const rows = [
+    { key: 'hero', label: '首页 Hero 主图', ...homepage.hero },
+    { key: 'contact', label: '首页联系图片区', ...homepage.contact },
+    ...homepage.services.map((item, index) => ({ key: 'services', index, label: `首页服务图片 ${index + 1}`, ...item }))
+  ];
+  adminHomepageRows.innerHTML = rows.map(row => `
+    <div class="admin-asset-row" data-homepage-row data-homepage-key="${escapeHtml(row.key)}" data-homepage-index="${row.index ?? ''}">
+      <strong>${escapeHtml(row.label)}</strong>
+      <label>图片路径<input data-field="homepage-image" value="${escapeHtml(row.image)}" placeholder="assets/images/..." /></label>
+      <label>Alt 文字<input data-field="homepage-alt" value="${escapeHtml(row.alt)}" placeholder="图片说明" /></label>
+    </div>
+  `).join('');
+}
+
+function renderAdminDetailRows(content) {
+  if (!adminDetailRows) return;
+  const details = normalizeAdminContent(content).media.details;
+  adminDetailRows.innerHTML = Object.entries(details).map(([key, page]) => `
+    <section class="admin-detail-editor" data-detail-editor="${escapeHtml(key)}">
+      <div class="admin-catering-head"><strong>${escapeHtml(key.toUpperCase())} 服务页</strong><span>可修改标题、说明和所有展示图</span></div>
+      <div class="admin-detail-grid">
+        <label>Hero 英文小标<input data-field="detail-eyebrow" value="${escapeHtml(page.eyebrow)}"></label>
+        <label>Hero 标题<input data-field="detail-title" value="${escapeHtml(page.title)}"></label>
+        <label>Hero 图片<input data-field="detail-heroImage" value="${escapeHtml(page.heroImage)}"></label>
+        <label>Hero Alt<input data-field="detail-heroAlt" value="${escapeHtml(page.heroAlt)}"></label>
+        <label>Hero 说明<textarea data-field="detail-heroDesc" rows="3">${escapeHtml(page.heroDesc)}</textarea></label>
+        <label>区块英文小标<input data-field="detail-kicker" value="${escapeHtml(page.kicker)}"></label>
+        <label>介绍标题<input data-field="detail-introTitle" value="${escapeHtml(page.introTitle)}"></label>
+        <label>介绍说明<textarea data-field="detail-introDesc" rows="3">${escapeHtml(page.introDesc)}</textarea></label>
+        <label>联系卡标题<input data-field="detail-contactTitle" value="${escapeHtml(page.contactTitle)}"></label>
+        <label>联系卡说明<input data-field="detail-contactDesc" value="${escapeHtml(page.contactDesc)}"></label>
+        <label>展示区标题<input data-field="detail-panelTitle" value="${escapeHtml(page.panelTitle)}"></label>
+        <label>展示区说明<textarea data-field="detail-panelDesc" rows="3">${escapeHtml(page.panelDesc)}</textarea></label>
+      </div>
+      <div class="admin-detail-gallery">
+        ${page.gallery.map((item, index) => `
+          <div class="admin-detail-gallery-row" data-detail-gallery-row>
+            <strong>展示图 ${index + 1}</strong>
+            <label>图片<input data-field="gallery-image" value="${escapeHtml(item.image)}"></label>
+            <label>Alt<input data-field="gallery-alt" value="${escapeHtml(item.alt)}"></label>
+            <label>图片说明<input data-field="gallery-caption" value="${escapeHtml(item.caption)}"></label>
+          </div>
+        `).join('')}
+      </div>
+    </section>
+  `).join('');
+}
+
 function loadConversionEvents() {
   try {
     return JSON.parse(localStorage.getItem(CONVERSION_EVENTS_KEY) || '[]');
@@ -3836,11 +4092,9 @@ function sourceFromElement(element) {
   if (href.includes('#meal-plan')) return 'nav_meal_plan';
   if (href.includes('#catering-menu')) return 'catering_menu';
   if (href.includes('#catering')) return 'catering_service';
-  if (href.includes('#referral')) return 'referral_section';
   if (href.includes('#order')) return 'order_form';
   if (/配套|package/i.test(text)) return 'package_card';
   if (/外餐|catering/i.test(text)) return 'catering_service';
-  if (/推荐|referral/i.test(text)) return 'referral_section';
   if (/whatsapp|下单|询问/i.test(text)) return 'whatsapp_cta';
   return '';
 }
@@ -3971,6 +4225,8 @@ function renderAdminEditor() {
   renderAdminAddonRows(content);
   renderAdminCateringRows(content);
   renderAdminMediaRows(content);
+  renderAdminHomepageRows(content);
+  renderAdminDetailRows(content);
   renderAdminConversions();
   primeAdminTranslationFields();
 }
@@ -4042,10 +4298,14 @@ function collectAdminContent() {
   adminWeeklyRows?.querySelectorAll('[data-weekly-row]').forEach(row => {
     const zhDay = adminRowValue(row, '[data-field="zh-day"]');
     const zhDish = adminRowValue(row, '[data-field="zh-dish"]');
-    const enDay = adminRowValue(row, '[data-field="en-day"]');
+    const preset = adminRowValue(row, '[data-field="weekly-preset"]');
+    const image = adminRowValue(row, '[data-field="weekly-image"]');
+    const alt = adminRowValue(row, '[data-field="weekly-alt"]');
     const enDish = adminRowValue(row, '[data-field="en-dish"]');
-    if (zhDay || zhDish) content.zh.weekly.days.push({ day: zhDay, dish: zhDish });
-    if (enDay || enDish) content.en.weekly.days.push({ day: enDay, dish: enDish });
+    const index = content.zh.weekly.days.length;
+    const weekday = DEFAULT_WEEKDAYS[index] || DEFAULT_WEEKDAYS[DEFAULT_WEEKDAYS.length - 1];
+    if (zhDay || zhDish || image) content.zh.weekly.days.push({ day: weekday.zh, dish: zhDish, image, alt, preset });
+    if (enDish || image) content.en.weekly.days.push({ day: weekday.en, dish: enDish, image, alt, preset });
   });
 
   adminAddonRows?.querySelectorAll('[data-addon-row]').forEach(row => {
@@ -4102,6 +4362,40 @@ function collectAdminContent() {
         desc
       });
     }
+  });
+
+  const baseMedia = defaultMediaContent();
+  content.media.homepage = cloneData(baseMedia.homepage);
+  adminHomepageRows?.querySelectorAll('[data-homepage-row]').forEach(row => {
+    const key = row.dataset.homepageKey || '';
+    const index = Number.parseInt(row.dataset.homepageIndex || '', 10);
+    const value = {
+      image: adminRowValue(row, '[data-field="homepage-image"]'),
+      alt: adminRowValue(row, '[data-field="homepage-alt"]')
+    };
+    if (key === 'hero' || key === 'contact') content.media.homepage[key] = value;
+    if ((key === 'meals' || key === 'services') && Number.isInteger(index)) {
+      content.media.homepage[key][index] = value;
+    }
+  });
+
+  content.media.details = cloneData(baseMedia.details);
+  adminDetailRows?.querySelectorAll('[data-detail-editor]').forEach(editor => {
+    const key = editor.dataset.detailEditor || '';
+    if (!content.media.details[key]) return;
+    const detail = content.media.details[key];
+    ['eyebrow', 'title', 'heroImage', 'heroAlt', 'heroDesc', 'kicker', 'introTitle', 'introDesc', 'contactTitle', 'contactDesc', 'panelTitle', 'panelDesc'].forEach(field => {
+      detail[field] = adminRowValue(editor, `[data-field="detail-${field}"]`);
+    });
+    detail.gallery = [];
+    editor.querySelectorAll('[data-detail-gallery-row]').forEach(row => {
+      const item = {
+        image: adminRowValue(row, '[data-field="gallery-image"]'),
+        alt: adminRowValue(row, '[data-field="gallery-alt"]'),
+        caption: adminRowValue(row, '[data-field="gallery-caption"]')
+      };
+      if (item.image || item.alt || item.caption) detail.gallery.push(item);
+    });
   });
 
   return normalizeAdminContent(content);
@@ -4287,7 +4581,7 @@ document.addEventListener('click', event => {
   setMobileMenu(false);
 });
 
-const scrollSections = ['home', 'meal-plan', 'order', 'catering', 'styling', 'faq', 'referral']
+const scrollSections = ['home', 'meal-plan', 'order', 'catering', 'styling', 'faq']
   .map(id => document.getElementById(id))
   .filter(Boolean);
 const navAnchors = Array.from(document.querySelectorAll('.nav-links a[href^="#"]'));
@@ -4705,6 +4999,24 @@ adminWeeklyRows?.addEventListener('input', event => {
   if (field === 'zh-day' || field === 'zh-dish') translateAdminRow(row);
 });
 
+adminWeeklyRows?.addEventListener('change', event => {
+  const target = event.target;
+  if (!(target instanceof HTMLSelectElement) || target.dataset.field !== 'weekly-preset') return;
+  const preset = DEFAULT_WEEKLY_MENU.find(option => option.day === target.value);
+  const row = target.closest('[data-weekly-row]');
+  if (!preset || !row) return;
+  const fields = {
+    '[data-field="zh-dish"]': preset.zh,
+    '[data-field="en-dish"]': preset.en,
+    '[data-field="weekly-image"]': preset.image,
+    '[data-field="weekly-alt"]': preset.alt
+  };
+  Object.entries(fields).forEach(([selector, value]) => {
+    const field = row.querySelector(selector);
+    if (field) field.value = value;
+  });
+});
+
 adminAddonRows?.addEventListener('click', event => {
   if (!(event.target instanceof HTMLElement) || !event.target.matches('[data-remove-addon]')) return;
   const row = event.target.closest('[data-addon-row]');
@@ -4758,6 +5070,7 @@ saveAdminContent?.addEventListener('click', async () => {
   renderCateringMenu();
   renderCateringEstimate();
   renderMediaContent(content);
+  renderManagedContent(content);
   renderAdminEditor();
   try {
     const cloudSaved = await saveAdminContentToSupabase(content);
@@ -4777,12 +5090,13 @@ resetAdminContent?.addEventListener('click', async () => {
   renderCateringMenu();
   renderCateringEstimate();
   renderMediaContent(defaults);
+  renderManagedContent(defaults);
   renderAdminEditor();
   try {
     const cloudSaved = await saveAdminContentToSupabase(defaults);
     showAdminMessage(cloudSaved
-      ? '已恢复默认菜单和加购内容，并已同步 Supabase。'
-      : '已恢复默认菜单和加购内容。Supabase 尚未连接管理员权限，所以先保存在本地。');
+      ? '已恢复默认菜单内容，并已同步 Supabase。'
+      : '已恢复默认菜单内容。Supabase 尚未连接管理员权限，所以先保存在本地。');
   } catch (error) {
     console.warn('Supabase admin content reset failed', error);
     showAdminMessage('已恢复本地默认内容，但暂时无法同步 Supabase。请检查 Supabase admin 权限。', true);
@@ -4973,7 +5287,6 @@ form?.addEventListener('submit', event => {
     label: `${orderData.package || 'package'} / ${orderData.meal || 'meal'}`
   });
   const inquiry = saveInquiryForAdmin(orderData);
-  saveReferralReward(orderData);
   saveInquiryForMember({ ...orderData, id: inquiry.id, status: inquiry.status });
   renderOrderPreview();
   showOrderMessage(currentLanguage === 'en' ? 'WhatsApp is opening now.' : '正在打开 WhatsApp。');
@@ -5003,6 +5316,9 @@ async function initializeApp() {
   refreshSupabaseMemberData();
   if (window.location.hash === '#styling-cases') {
     openStylingCases(true);
+  }
+  if (!adminModal && adminAuthPanel && adminDashboard) {
+    renderAdminState();
   }
   if (shouldOpenAdminFromUrl()) {
     openAdminModal();

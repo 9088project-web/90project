@@ -22,7 +22,31 @@
   <link rel="icon" type="image/jpeg" href="assets/images/logo/logo-icon-dark.jpg" />
   <link rel="apple-touch-icon" href="assets/images/logo/logo-icon-light.jpg" />
   <link rel="manifest" href="site.webmanifest" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/remixicon@4.6.0/fonts/remixicon.css" />
   <link rel="stylesheet" href="css/style.css?v=20260702-admin-video-only" />
+  <link rel="stylesheet" href="css/redesign.css?v=20260710-luxe-motion" />
+  <link rel="stylesheet" href="css/reference-match.css?v=20260710-mobile-polish" />
+  <style>
+    .mobile-menu-fallback { display: none; }
+    @media (max-width: 640px) {
+      .mobile-menu-fallback {
+        position: fixed;
+        top: 12px;
+        right: 16px;
+        z-index: 1100;
+        display: grid;
+        width: 48px;
+        height: 48px;
+        place-items: center;
+        color: #f3d49a;
+        border: 1px solid rgba(255, 223, 154, .5);
+        border-radius: 8px;
+        background: rgba(9, 7, 5, .92);
+        font-size: 26px;
+        line-height: 1;
+      }
+    }
+  </style>
 </head>
 <body>
   <div class="scroll-progress" id="scrollProgress" aria-hidden="true"></div>
@@ -37,15 +61,16 @@
         </span>
       </a>
 
-      <button class="menu-toggle" id="menuToggle" aria-label="打开菜单">☰</button>
+      <button class="menu-toggle" id="menuToggle" aria-label="打开菜单"><i class="ri-menu-line" aria-hidden="true"></i></button>
 
       <nav class="nav-links" id="navLinks">
         <a href="#home" class="active">首页</a>
-        <a href="#meal-plan">包伙食</a>
-        <a href="#catering">外餐服务</a>
-        <a href="#styling">活动布置</a>
-        <a href="#faq">FAQ</a>
-        <a href="#referral">推荐奖励</a>
+        <a href="#about">关于我们</a>
+        <a href="#meal-plan">包伙食服务</a>
+        <a href="#catering">活动餐饮</a>
+        <a href="#styling">场地布置</a>
+        <a href="#cocktail">鸡尾酒服务</a>
+        <a href="#contact">联系我们</a>
         <button class="member-nav" id="memberOpen" type="button">会员登录</button>
       </nav>
 
@@ -55,8 +80,9 @@
       </div>
 
       <a class="nav-whatsapp" href="https://wa.me/601110977166?text=%E4%BD%A0%E5%A5%BD%EF%BC%8C%E6%88%91%E6%83%B3%E8%AF%A2%E9%97%AE%E4%B9%9D%E9%9B%B6%E9%A3%9F%E5%88%BB%2090%20PROJECT%E3%80%82" target="_blank" rel="noopener" data-wa-source="header_whatsapp">
-        <span>☏</span> WhatsApp 询问
+        <i class="ri-whatsapp-line" aria-hidden="true"></i> 011-1097 7166
       </a>
+      <button class="mobile-menu-fallback" type="button" aria-label="打开菜单" onclick="document.getElementById('menuToggle')?.click()">☰</button>
     </div>
   </header>
 
@@ -87,6 +113,12 @@
             <a href="#meal-plan" class="btn btn-gold">查看包伙食配套</a>
             <a href="#order" class="btn btn-outline" data-wa-source="hero_whatsapp">WhatsApp 立即询问</a>
           </div>
+
+          <div class="hero-proof-grid" aria-label="90 PROJECT 服务亮点">
+            <span><b>20</b><small>餐 / 月</small></span>
+            <span><b>RM15</b><small>起 / 餐</small></span>
+            <span><b>1-stop</b><small>餐饮 + 布置</small></span>
+          </div>
         </div>
       </div>
     </section>
@@ -115,25 +147,25 @@
     <section class="service-strip">
       <div class="section-frame service-grid">
         <article class="service-card">
-          <div class="service-icon">◒</div>
+          <div class="service-icon"><i class="ri-restaurant-line" aria-hidden="true"></i></div>
           <h3>餐饮</h3>
           <p class="service-en">CATERING</p>
           <p>专业外餐服务，多样美食选择，满足不同需求。</p>
         </article>
         <article class="service-card">
-          <div class="service-icon">♨</div>
+          <div class="service-icon"><i class="ri-bowl-line" aria-hidden="true"></i></div>
           <h3>包伙食</h3>
           <p class="service-en">MEAL PLAN</p>
           <p>每月包伙食计划，营养均衡，每天新鲜现煮。</p>
         </article>
         <article class="service-card">
-          <div class="service-icon">♢</div>
+          <div class="service-icon"><i class="ri-goblet-line" aria-hidden="true"></i></div>
           <h3>活动策划</h3>
           <p class="service-en">EVENT</p>
           <p>生日、公司、节庆、婚礼等活动餐饮一站式服务。</p>
         </article>
         <article class="service-card">
-          <div class="service-icon">✾</div>
+          <div class="service-icon"><i class="ri-flower-line" aria-hidden="true"></i></div>
           <h3>布置设计</h3>
           <p class="service-en">STYLING</p>
           <p>餐桌布置、背景设计、花艺搭配，让活动更有氛围。</p>
@@ -141,436 +173,131 @@
       </div>
     </section>
 
-    <section class="section dark-section" id="meal-plan">
-      <div class="section-frame">
-        <div class="section-title">
-          <span>MEAL PLAN</span>
-          <h2>包伙食配套</h2>
-          <p>适合上班族、学生、家庭与长期订餐顾客。</p>
-        </div>
+    <section class="reference-main" id="about">
+      <div class="section-frame reference-overview">
+        <aside class="meal-plan-panel" id="meal-plan" aria-labelledby="mealPlanTitle">
+          <div class="compact-title">
+            <h2 id="mealPlanTitle">包伙食配套</h2>
+            <span>MONTHLY MEAL PLAN</span>
+          </div>
+          <div class="price-pill">
+            <strong>RM300</strong><span>/ 月</span>
+            <small>20餐（月） | 平均一餐 RM15</small>
+          </div>
+          <ul class="check-list">
+            <li><i class="ri-checkbox-circle-line" aria-hidden="true"></i>新鲜现煮，每日更换菜单</li>
+            <li><i class="ri-checkbox-circle-line" aria-hidden="true"></i>星期一至星期五供应</li>
+            <li><i class="ri-checkbox-circle-line" aria-hidden="true"></i>适合上班族、学生、家庭</li>
+            <li><i class="ri-checkbox-circle-line" aria-hidden="true"></i>固定地址配送</li>
+          </ul>
+          <button class="btn btn-brown choose-package" type="button" data-package="标准包伙食 RM300/月"><i class="ri-whatsapp-line" aria-hidden="true"></i>立即订购 (011-1097 7166)</button>
+        </aside>
 
-        <div class="pricing-grid">
-          <article class="price-card featured">
-            <div class="price-image">
-              <picture>
-                <source srcset="assets/images/meal/meal-standard.webp" type="image/webp" />
-                <img src="assets/images/meal/meal-standard.jpg" width="1254" height="1254" alt="标准包伙食鸡饭餐盒" loading="lazy" decoding="async" />
-              </picture>
-            </div>
-            <div class="price-body">
-              <span class="badge">A</span>
-              <h3>标准包伙食</h3>
-              <div class="price">RM<span>300</span><small>/ 月</small></div>
-              <p class="muted">20 餐 · 平均 RM15 / 餐</p>
-              <p>1 主菜 + 1 配菜 + 白饭</p>
-              <p class="small">适合上班族 / 学生 / 简单日常餐</p>
-              <button class="btn btn-gold choose-package" data-package="标准包伙食 RM300/月">选择这个配套</button>
-            </div>
-          </article>
+        <article class="weekly-reference-card">
+          <div class="compact-title">
+            <h2>每周菜单示例</h2>
+          </div>
+    <div class="weekly-reference-grid" aria-label="星期一至星期日菜单示例" id="weeklyReferenceGrid"></div>
+          <p class="note">* 菜单将不定期调整，以实际供应为准。</p>
+        </article>
+      </div>
 
-          <article class="price-card">
-            <div class="price-image">
-              <picture>
-                <source srcset="assets/images/meal/meal-rich.webp" type="image/webp" />
-                <img src="assets/images/meal/meal-rich.jpg" width="1254" height="1254" alt="丰富包伙食多菜式餐盒" loading="lazy" decoding="async" />
-              </picture>
-            </div>
-            <div class="price-body">
-              <span class="badge">B</span>
-              <h3>丰富包伙食</h3>
-              <div class="price">RM<span>380</span><small>/ 月</small></div>
-              <p class="muted">20 餐 · 平均 RM19 / 餐</p>
-              <p>1 主菜 + 2 配菜 + 白饭</p>
-              <p class="small">适合吃得比较饱 / 想要更丰富的人</p>
-              <button class="btn btn-gold choose-package" data-package="丰富包伙食 RM380/月">选择这个配套</button>
-            </div>
-          </article>
+      <div class="section-frame service-showcase">
+        <article class="reference-service-card" id="catering">
+          <picture><img src="assets/images/reference-series/service-catering.png" width="1536" height="1024" alt="活动餐饮 buffet 服务" loading="eager" decoding="async"></picture>
+          <div>
+            <h2>活动餐饮</h2>
+            <span>EVENT CATERING</span>
+            <p>公司活动、开幕典礼、产品发布会、学校活动、庆功宴，提供多样化餐饮。</p>
+            <a href="catering.html" class="btn btn-mini" data-wa-source="event_catering">了解更多</a>
+          </div>
+        </article>
+        <article class="reference-service-card" id="styling">
+          <picture><img src="assets/images/reference-series/service-styling.png" width="1536" height="1024" alt="场地布置和背景设计" loading="eager" decoding="async"></picture>
+          <div>
+            <h2>场地布置</h2>
+            <span>EVENT STYLING</span>
+            <p>婚礼布置、生日派对、开幕典礼、企业活动，为您打造完美现场。</p>
+            <a href="styling.html" class="btn btn-mini" data-wa-source="event_styling">了解更多</a>
+          </div>
+        </article>
+        <article class="reference-service-card" id="cocktail">
+          <picture><img src="assets/images/reference-series/service-cocktail.png" width="1536" height="1024" alt="鸡尾酒与饮料吧服务" loading="eager" decoding="async"></picture>
+          <div>
+            <h2>鸡尾酒服务</h2>
+            <span>COCKTAIL SERVICE</span>
+            <p>专业调酒师与移动吧台服务，为活动增添特调与氛围。</p>
+            <a href="cocktail.html" class="btn btn-mini" data-wa-source="cocktail_service">了解更多</a>
+          </div>
+        </article>
+        <article class="reference-service-card" id="corporate">
+          <picture><img src="assets/images/reference-series/service-corporate.png" width="1536" height="1024" alt="公司员工餐和品牌餐盒" loading="eager" decoding="async"></picture>
+          <div>
+            <h2>公司员工餐</h2>
+            <span>CORPORATE MEALS</span>
+            <p>为公司团队提供营养均衡、美味卫生的员工餐解决方案。</p>
+            <a href="#contact" class="btn btn-mini" data-wa-source="corporate_meals">了解更多</a>
+          </div>
+        </article>
+      </div>
 
-          <article class="price-card">
-            <div class="price-image">
-              <picture>
-                <source srcset="assets/images/meal/meal-family.webp" type="image/webp" />
-                <img src="assets/images/meal/meal-family.jpg" width="1254" height="1254" alt="家庭包伙食多份餐点" loading="lazy" decoding="async" />
-              </picture>
-            </div>
-            <div class="price-body">
-              <span class="badge">C</span>
-              <h3>家庭配套</h3>
-              <div class="price inquiry">价格<br><span>WhatsApp</span><small>询问</small></div>
-              <p class="muted">2人 / 3人 / 4人</p>
-              <p>家庭式每日餐，可商量菜色，可长期安排。</p>
-              <button class="btn btn-gold choose-package" data-package="家庭配套 WhatsApp 询问">WhatsApp 询问</button>
-            </div>
-          </article>
+      <div class="section-frame why-strip">
+        <h2>为什么选择九零食刻?</h2>
+        <div>
+          <span><i class="ri-bowl-line" aria-hidden="true"></i>新鲜现煮</span>
+          <span><i class="ri-team-line" aria-hidden="true"></i>专业团队</span>
+          <span><i class="ri-service-line" aria-hidden="true"></i>一站式服务</span>
+          <span><i class="ri-clipboard-line" aria-hidden="true"></i>客制化菜单</span>
+          <span><i class="ri-money-dollar-circle-line" aria-hidden="true"></i>价格透明</span>
+          <span><i class="ri-heart-line" aria-hidden="true"></i>用心服务</span>
         </div>
       </div>
     </section>
 
-    <section class="section content-grid-section">
-      <div class="section-frame three-col">
-        <div class="menu-side">
-          <article class="panel light-panel weekly-menu">
-            <div class="panel-title">
-              <h2>每周菜单示例</h2>
-              <span>WEEKLY MENU</span>
-            </div>
-            <ul class="day-list">
-              <li><strong>星期一</strong><span>酱油鸡 + 炒青菜 + 白饭</span></li>
-              <li><strong>星期二</strong><span>咖喱鸡 + 豆腐 + 白饭</span></li>
-              <li><strong>星期三</strong><span>香煎鱼 + 炒时蔬 + 白饭</span></li>
-              <li><strong>星期四</strong><span>姜葱鸡 + 荷包蛋 + 白饭</span></li>
-              <li><strong>星期五</strong><span>炸鸡扒 + 清炒菜心 + 白饭</span></li>
-            </ul>
-            <p class="note">每周菜单轮换，实际菜色会根据当天新鲜食材调整。<br>Weekly menu changes based on fresh ingredients.</p>
-          </article>
-
-          <article class="panel light-panel addons">
-            <div class="panel-title">
-              <h2>自由加购</h2>
-              <span>ADD-ONS</span>
-            </div>
-            <ul class="addon-list">
-              <li><span>◎ 加蛋 <em>Add Egg</em></span><b>可询问<br>Ask us</b></li>
-              <li><span>◎ 加肉 <em>Extra Meat</em></span><b>可询问<br>Ask us</b></li>
-              <li><span>◎ 加汤 <em>Soup</em></span><b>可询问<br>Ask us</b></li>
-              <li><span>◎ 加菜 <em>Extra Veg</em></span><b>可询问<br>Ask us</b></li>
-              <li><span>◎ 饮料 <em>Drink</em></span><b>可询问<br>Ask us</b></li>
-            </ul>
-          </article>
+    <section class="final-cta reference-contact" id="contact">
+      <div class="section-frame contact-grid">
+        <div class="footer-brand">
+          <h2>联系我们</h2>
+          <strong>九零食刻 90 PROJECT</strong>
+          <p>无论是日常用餐还是大型活动，我们都能为您提供最优质的服务与体验。</p>
+          <a href="tel:01110977166"><i class="ri-phone-line" aria-hidden="true"></i>011-1097 7166</a>
+          <a href="https://wa.me/601110977166" target="_blank" rel="noopener"><i class="ri-whatsapp-line" aria-hidden="true"></i>011-1097 7166</a>
+          <span><i class="ri-facebook-circle-line" aria-hidden="true"></i>90 PROJECT</span>
         </div>
+
+        <picture class="contact-image">
+          <img src="assets/images/reference-series/contact-table.png" width="1536" height="1024" alt="九零食刻餐桌与酒杯布置" loading="eager" decoding="async">
+        </picture>
 
         <article class="panel order-panel" id="order">
           <div class="panel-title">
-            <h2>WhatsApp 下单系统</h2>
-            <span>ORDER FORM</span>
+            <h2>联系我们</h2>
           </div>
           <form id="orderForm" novalidate>
-            <div class="order-step">
-              <div class="order-step-title"><span>01</span><strong>顾客资料</strong><small>Customer</small></div>
-              <div class="form-grid">
-                <label>姓名 Name<input id="name" type="text" placeholder="请输入姓名" autocomplete="name" required></label>
-                <label>电话 Phone<input id="phone" type="tel" placeholder="请输入电话" autocomplete="tel" inputmode="tel" pattern="[0-9+\-\s]{8,20}" required></label>
-              </div>
-            </div>
-
-            <div class="order-step">
-              <div class="order-step-title"><span>02</span><strong>配套安排</strong><small>Package</small></div>
-              <div class="form-grid">
-                <label>配套 Package
-                  <select id="package" required>
-                    <option value="标准包伙食 RM300/月">标准包伙食 RM300/月</option>
-                    <option value="丰富包伙食 RM380/月">丰富包伙食 RM380/月</option>
-                    <option value="家庭配套 WhatsApp 询问">家庭配套 WhatsApp 询问</option>
-                    <option value="活动餐饮 Catering">活动餐饮 Catering</option>
-                  </select>
-                </label>
-                <label>人数 Pax<input id="pax" type="number" min="1" placeholder="请输入人数" required></label>
-                <label>餐期 Meal
-                  <select id="meal" required>
-                    <option value="午餐 Lunch">午餐 Lunch</option>
-                    <option value="晚餐 Dinner">晚餐 Dinner</option>
-                    <option value="午餐 + 晚餐 Lunch + Dinner">午餐 + 晚餐</option>
-                  </select>
-                </label>
-                <label>开始日期 Start Date<input id="date" type="date" required></label>
-              </div>
-            </div>
-
-            <div class="order-step">
-              <div class="order-step-title"><span>03</span><strong>配送与备注</strong><small>Delivery</small></div>
-              <label>配送区域 Delivery Area<input id="area" type="text" placeholder="请输入配送地区" required></label>
-              <label>推荐码 Referral Code<input id="referralCode" type="text" placeholder="朋友推荐可填写，例如 NP90-XXXX"></label>
-              <fieldset>
-                <legend>加购 Add-ons</legend>
-                <label><input type="checkbox" value="加蛋 Add Egg"> 加蛋</label>
-                <label><input type="checkbox" value="加肉 Extra Meat"> 加肉</label>
-                <label><input type="checkbox" value="加汤 Soup"> 加汤</label>
-                <label><input type="checkbox" value="加菜 Extra Veg"> 加菜</label>
-                <label><input type="checkbox" value="饮料 Drink"> 饮料</label>
-              </fieldset>
-              <label>备注 Notes<textarea id="notes" rows="3" placeholder="其他要求 / 不要辣 / 不要某种食材"></textarea></label>
-            </div>
-            <p class="form-message" id="orderFormMessage" aria-live="polite"></p>
-            <button type="submit" class="btn btn-gold btn-wide">WhatsApp 确认订单</button>
-          </form>
-        </article>
-      </div>
-    </section>
-
-    <section class="section bottom-cards">
-      <div class="section-frame triple-feature">
-        <article class="feature-card image-card" id="catering">
-          <picture>
-            <source srcset="assets/images/event/catering-event.webp" type="image/webp" />
-            <img src="assets/images/event/catering-event.jpg" width="1672" height="941" alt="活动外餐 buffet catering" loading="lazy" decoding="async" />
-          </picture>
-          <div>
-            <span>CATERING SERVICE</span>
-            <h2>外餐 Catering 服务</h2>
-            <ul>
-              <li>生日聚会 Birthday</li>
-              <li>公司聚餐 Company Meal</li>
-              <li>家庭聚会 Family Gathering</li>
-              <li>开张活动 Grand Opening</li>
-              <li>佛教会 / 社团活动</li>
-              <li>小型 Buffet / Custom Catering</li>
-            </ul>
-            <div class="feature-actions">
-              <a href="#catering-menu" class="btn btn-small" data-open-catering-menu>菜单选择 / 计算价格</a>
-              <a href="#order" class="btn btn-small btn-soft" data-wa-source="catering_service">WhatsApp 询问</a>
-            </div>
-          </div>
-        </article>
-
-        <article class="feature-card image-card" id="styling">
-          <picture>
-            <source srcset="assets/images/event/styling-bar.webp" type="image/webp" />
-            <img src="assets/images/event/styling-bar.jpg" width="1672" height="941" alt="活动布置和饮料吧" loading="lazy" decoding="async" />
-          </picture>
-          <div>
-            <span>EVENT & STYLING</span>
-            <h2>活动布置 / Styling</h2>
-            <ul>
-              <li>餐桌布置</li>
-              <li>背景布置</li>
-              <li>简单花艺</li>
-              <li>餐饮展示台</li>
-              <li>拍照氛围</li>
-              <li>Mocktail / Beverage Bar</li>
-            </ul>
-            <a href="#styling-cases" class="btn btn-small dynamic-case-btn" data-open-styling-cases>查看动态作品集</a>
-          </div>
-        </article>
-      </div>
-    </section>
-
-    <section class="section styling-cases-section" id="styling-cases" hidden>
-      <div class="section-frame">
-        <div class="case-header">
-          <div>
-            <span>STYLING CASES</span>
-            <h2>活动布置案例展示</h2>
-            <p>把餐饮、现场气氛、饮料吧与互动餐台整合成更有记忆点的活动体验。</p>
-          </div>
-          <button type="button" data-close-styling-cases>收起案例</button>
-        </div>
-
-        <div class="case-showcase" data-case-showcase aria-live="polite">
-          <button class="case-nav case-nav-prev" type="button" data-case-prev aria-label="上一张案例">‹</button>
-          <button class="case-showcase-media" type="button" data-case-lightbox-open aria-label="放大查看案例">
-            <img src="assets/images/event/styling-backdrop.webp" width="1448" height="1086" alt="九零食刻黑金活动背景布置展示图" data-case-featured loading="lazy" decoding="async" />
-            <span data-case-counter>01 / 06</span>
-          </button>
-          <div class="case-showcase-copy">
-            <span data-case-label>BRAND BACKDROP</span>
-            <h3 data-case-title>品牌背景布置</h3>
-            <p data-case-desc>黑金主视觉、灯光、花艺与品牌 Logo 统一呈现，适合开张、晚宴与活动入口拍照区。</p>
-            <div class="case-showcase-actions">
-              <button type="button" data-case-play>暂停轮播</button>
-              <a href="#order" data-wa-source="styling_service">WhatsApp 询问布置</a>
-            </div>
-            <div class="case-progress" aria-hidden="true"><span data-case-progress></span></div>
-          </div>
-          <button class="case-nav case-nav-next" type="button" data-case-next aria-label="下一张案例">›</button>
-        </div>
-
-        <div class="case-gallery">
-          <article class="case-card case-wide is-active" data-case-card tabindex="0">
-            <img src="assets/images/event/styling-backdrop.webp" width="1448" height="1086" alt="九零食刻黑金活动背景布置展示图" loading="lazy" decoding="async" />
-            <div>
-              <span>BRAND BACKDROP</span>
-              <h3>品牌背景布置</h3>
-              <p>黑金主视觉、灯光、花艺与品牌 Logo 统一呈现，适合开张、晚宴与活动入口拍照区。</p>
-            </div>
-          </article>
-
-          <article class="case-card" data-case-card tabindex="0">
-            <img src="assets/images/event/styling-floral-table.webp" width="1448" height="1086" alt="黑金餐桌花艺与餐桌布置展示图" loading="lazy" decoding="async" />
-            <div>
-              <span>TABLE STYLING</span>
-              <h3>餐桌花艺布置</h3>
-              <p>花艺、烛光、餐具与菜单卡搭配，提升生日、私人聚会和小型宴会的仪式感。</p>
-            </div>
-          </article>
-
-          <article class="case-card" data-case-card tabindex="0">
-            <img src="assets/images/event/catering-display-case.webp" width="1448" height="1086" alt="九零食刻外餐餐饮展示台与 Buffet 摆设" loading="lazy" decoding="async" />
-            <div>
-              <span>FOOD DISPLAY</span>
-              <h3>餐饮展示台</h3>
-              <p>适合生日、公司活动、开张仪式、小型 Buffet 与社团聚会，菜色与品牌摆设一起呈现。</p>
-            </div>
-          </article>
-
-          <article class="case-card" data-case-card tabindex="0">
-            <img src="assets/images/event/styling-photo-lounge.webp" width="1448" height="1086" alt="黑金活动拍照区和气球布置展示图" loading="lazy" decoding="async" />
-            <div>
-              <span>PHOTO LOUNGE</span>
-              <h3>拍照区与氛围设计</h3>
-              <p>沙发区、气球、灯光与背景板整合，给来宾一个自然打卡和拍照的位置。</p>
-            </div>
-          </article>
-
-          <article class="case-card" data-case-card tabindex="0">
-            <img src="assets/images/event/mocktail-bar-case.webp" width="1448" height="1086" alt="Mocktail 饮料吧和无酒精特调展示图" loading="lazy" decoding="async" />
-            <div>
-              <span>MOCKTAIL BAR</span>
-              <h3>Mocktail / Beverage Bar</h3>
-              <p>主推无酒精特调、迎宾饮料与水果饮品，适合家庭活动、公司活动和品牌聚会。</p>
-            </div>
-          </article>
-
-          <article class="case-card" data-case-card tabindex="0">
-            <img src="assets/images/event/table-menu-detail.webp" width="1448" height="1086" alt="黑金餐桌菜单卡与餐具细节展示图" loading="lazy" decoding="async" />
-            <div>
-              <span>MENU DETAIL</span>
-              <h3>菜单卡与餐桌细节</h3>
-              <p>菜单卡、桌牌、餐具与小物统一视觉，让餐饮服务更像完整品牌体验。</p>
-            </div>
-          </article>
-        </div>
-
-        <div class="case-cta">
-          <p>想要类似活动效果？WhatsApp 提供日期、地点、人数与主题，我们可以先帮你建议方向。</p>
-          <a class="btn btn-gold" href="#order" data-wa-source="styling_cases">WhatsApp 询问布置</a>
-        </div>
-      </div>
-
-      <div class="case-lightbox" id="caseLightbox" hidden aria-hidden="true">
-        <button class="case-lightbox-close" type="button" data-case-lightbox-close aria-label="关闭预览">×</button>
-        <button class="case-lightbox-nav case-lightbox-prev" type="button" data-case-lightbox-prev aria-label="上一张案例">‹</button>
-        <img src="assets/images/event/styling-backdrop.webp" width="1448" height="1086" alt="九零食刻黑金活动背景布置展示图" data-case-lightbox-img />
-        <div class="case-lightbox-caption">
-          <span data-case-lightbox-label>BRAND BACKDROP</span>
-          <strong data-case-lightbox-title>品牌背景布置</strong>
-        </div>
-        <button class="case-lightbox-nav case-lightbox-next" type="button" data-case-lightbox-next aria-label="下一张案例">›</button>
-      </div>
-    </section>
-
-    <section class="section catering-menu-section" id="catering-menu" hidden>
-      <div class="section-frame">
-        <div class="menu-builder-wrap" id="cateringMenuBuilder" hidden>
-          <div class="menu-builder-head">
-            <div>
-              <span>MENU SELECTION</span>
-              <h3>菜单选择与预算</h3>
-              <p>选择菜式后，系统会先给你活动餐饮的初步预算。</p>
-            </div>
-            <button type="button" data-close-catering-menu>收起</button>
-          </div>
-          <div class="combo-presets" aria-label="推荐外餐组合">
-            <div class="combo-presets-head">
-              <span>RECOMMENDED SETS</span>
-              <strong>推荐组合，一键套用</strong>
-            </div>
-            <div class="combo-preset-grid" id="cateringComboPresets"></div>
-          </div>
-          <div class="menu-builder">
-            <div class="catering-menu-grid" id="cateringMenuGrid" aria-label="外餐自由搭配菜单"></div>
-
-            <aside class="calculator-panel">
-              <div class="calc-head">
-                <span>PRICE CALCULATOR</span>
-                <h3>菜单预算</h3>
-              </div>
-              <label>活动人数 Pax
-                <input id="cateringPax" type="number" min="1" value="30" inputmode="numeric">
-              </label>
-              <label>服务形式 Service
-                <select id="cateringServiceStyle">
-                  <option value="packed">餐盒 / Packed Meal</option>
-                  <option value="buffet">小型 Buffet / Setup</option>
-                  <option value="event">活动餐饮 / Event Catering</option>
+            <div class="form-grid contact-form-grid">
+              <label>姓名<input id="name" type="text" placeholder="姓名" autocomplete="name" required></label>
+              <label>电话号码<input id="phone" type="tel" placeholder="电话号码" autocomplete="tel" inputmode="tel" pattern="[0-9+\-\s]{8,20}" required></label>
+              <label>服务类型
+                <select id="package" required>
+                  <option value="包伙食服务">包伙食服务</option>
+                  <option value="活动餐饮">活动餐饮</option>
+                  <option value="场地布置">场地布置</option>
+                  <option value="鸡尾酒服务">鸡尾酒服务</option>
+                  <option value="公司员工餐">公司员工餐</option>
                 </select>
               </label>
-              <button class="btn btn-gold btn-wide" id="calculateCateringPrice" type="button">计算价格</button>
-
-              <div class="estimate-box">
-                <small>初步预算</small>
-                <strong id="cateringEstimateTotal">RM0</strong>
-                <p id="cateringEstimateMeta">请选择菜式开始计算。</p>
-              </div>
-
-              <div class="selected-menu-summary" id="selectedCateringSummary">还没有选择菜式。</div>
-              <a class="btn btn-outline btn-wide" id="cateringWhatsApp" href="https://wa.me/601110977166" target="_blank" rel="noopener" data-wa-source="catering_calculator">WhatsApp 发送菜单</a>
-              <p class="calc-note">价格为系统初步估算，最低预算可在后台调整。实际价格会根据人数、地点、份量、运输、餐具和现场服务调整。</p>
-            </aside>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <section class="section faq-section" id="faq">
-      <div class="section-frame">
-        <div class="faq-title">常见问题 FAQ</div>
-        <div class="faq-grid">
-          <details><summary><span>01</span> RM300 是多少餐？</summary><p>RM300 是 20 餐，平均 RM15 / 餐。</p></details>
-          <details><summary><span>02</span> 可以选午餐还是晚餐吗？</summary><p>可以，可在下单表单选择午餐或晚餐。</p></details>
-          <details><summary><span>03</span> 可以指定不要辣吗？</summary><p>可以，在备注写明不要辣或不要某些食材。</p></details>
-          <details><summary><span>04</span> 可以家庭订餐吗？</summary><p>可以，2人、3人、4人家庭配套可 WhatsApp 询问。</p></details>
-          <details><summary><span>05</span> 配送范围怎么算？</summary><p>请填写配送区域，我们会在 WhatsApp 确认是否可送与费用。</p></details>
-          <details><summary><span>06</span> 活动餐饮需要提前几天订？</summary><p>建议至少提前 3 至 7 天，人数越多越早确认比较好。</p></details>
-        </div>
-      </div>
-    </section>
-
-    <section class="section referral-section" id="referral">
-      <div class="section-frame referral-inner">
-        <div class="section-title">
-          <span>MEMBER REFERRAL</span>
-          <h2>会员推荐奖励</h2>
-          <p>分享九零食刻给朋友，朋友下单时填入你的推荐码，完成消费并经后台确认后即可记录会员回馈。</p>
-        </div>
-
-        <div class="referral-grid">
-          <article>
-            <span>01</span>
-            <h3>TnG RM20 / 下次抵扣</h3>
-            <p>朋友首次成功购买服务后，推荐人可获得 RM20 奖励，可作为下次购买服务抵扣。</p>
-          </article>
-          <article>
-            <span>02</span>
-            <h3>多层推荐回馈</h3>
-            <p>多层回馈只作为活动记录与下次服务抵扣，所有层级、比例与状态都需后台审核确认。</p>
-          </article>
-          <article>
-            <span>03</span>
-            <h3>会员推荐码</h3>
-            <p>登录会员中心即可查看自己的推荐码。朋友 WhatsApp 下单时填入推荐码，我们会协助登记。</p>
-          </article>
-        </div>
-
-        <div class="referral-note">
-          <strong>透明规则：</strong>
-          <span>推荐奖励属于下次服务抵扣，不可兑换现金或转让；多层记录、比例与有效期以后台审核和活动设定为准。</span>
-        </div>
-        <ul class="referral-terms">
-          <li>朋友首次成功消费并完成付款后，RM20 会记录为推荐人的下次服务抵扣。</li>
-          <li>多层推荐回馈开放记录，比例、层级、有效期和结算方式以后台活动设定为准。</li>
-          <li>所有奖励只可用于九零食刻下次服务抵扣，不可兑换现金、不可转让、不可要求提现。</li>
-          <li>奖励需等订单状态确认、顾客实付金额核对和管理员审核后才可使用。</li>
-          <li>退款、取消、未完成付款或恶意重复注册的订单，不会计算推荐奖励。</li>
-          <li>最终以付款记录、后台状态与 WhatsApp 确认为准；九零食刻保留调整活动条款的权利。</li>
-        </ul>
-      </div>
-    </section>
-
-    <section class="final-cta">
-      <div class="section-frame cta-inner">
-        <div class="footer-brand">
-          <img src="assets/images/logo/logo-icon-dark.jpg" alt="90 Project logo">
-          <div>
-            <h2>九零食刻 90 PROJECT</h2>
-            <p>每一刻，都是美好食刻</p>
-            <small>FOOD · CATERING · EVENT · STYLING</small>
-          </div>
-        </div>
-        <a class="btn btn-gold big" href="#order" data-wa-source="footer_cta">WhatsApp 立即询问</a>
-        <picture class="cta-food">
-          <source srcset="assets/images/meal/meal-rich.webp" type="image/webp" />
-          <img src="assets/images/meal/meal-rich.jpg" width="1254" height="1254" alt="九零食刻餐饮" loading="lazy" decoding="async">
-        </picture>
+              <label>留言<textarea id="notes" rows="4" placeholder="留言"></textarea></label>
+            </div>
+            <input id="pax" type="hidden" value="1">
+            <select id="meal" hidden aria-hidden="true">
+              <option value="WhatsApp 询问">WhatsApp 询问</option>
+            </select>
+            <input id="date" type="hidden" value="待确认">
+            <input id="area" type="hidden" value="WhatsApp 确认">
+            <p class="form-message" id="orderFormMessage" aria-live="polite"></p>
+            <button type="submit" class="btn btn-gold btn-wide">发送询问</button>
+          </form>
+        </article>
       </div>
     </section>
   </main>
@@ -579,6 +306,7 @@
     <span>九零食刻 90 PROJECT</span>
     <span>WhatsApp: 011-1097 7166</span>
     <span>© 2026 九零食刻 90 PROJECT. All Rights Reserved.</span>
+    <a href="admin.html" aria-label="打开内容管理后台">后台</a>
   </footer>
 
   <section class="member-modal" id="memberModal" aria-hidden="true">
@@ -609,7 +337,6 @@
           <label>电话 Phone<input id="registerPhone" type="tel" autocomplete="tel" placeholder="例如：011-1234 5678" required></label>
           <label>Email<input id="registerEmail" type="email" autocomplete="email" placeholder="member@example.com" required></label>
           <label>密码 Password<input id="registerPassword" type="password" autocomplete="new-password" placeholder="至少 6 个字符" required></label>
-          <label>推荐码 Referral Code<input id="registerReferralCode" type="text" autocomplete="off" placeholder="朋友推荐可填写"></label>
           <button class="btn btn-gold btn-wide" type="submit">创建会员</button>
         </form>
 
@@ -628,8 +355,8 @@
 
         <div class="member-benefits">
           <article><b>询问记录</b><span>自动保存本机订单询问</span></article>
-          <article><b>推荐 RM20</b><span>朋友成功消费后可得下次抵扣</span></article>
-          <article><b>多层回馈</b><span>上级推荐链待确认奖励</span></article>
+          <article><b>会员资料</b><span>保存常用地区与偏好</span></article>
+          <article><b>快速下单</b><span>下次询问可自动带入资料</span></article>
         </div>
 
         <div class="member-overview-grid">
@@ -637,11 +364,6 @@
             <span>MEMBER LEVEL</span>
             <strong id="memberTierBadge">Classic Member</strong>
             <p id="memberTierProgress">完成更多询问后可升级会员等级。</p>
-          </article>
-          <article class="member-tier-card">
-            <span>REWARD SUMMARY</span>
-            <strong id="memberRewardSummary">RM0 pending</strong>
-            <p>奖励以后台确认、付款记录与 WhatsApp 对话为准。</p>
           </article>
           <article class="member-tier-card">
             <span>NEXT STEP</span>
@@ -661,34 +383,15 @@
             <label>默认地区 Area<input id="profileArea" type="text" autocomplete="address-level2" placeholder="例如：Kuala Lumpur"></label>
             <label>常选配套 Package<select id="profileDefaultPackage">
               <option value="">暂不设定</option>
-              <option value="标准包伙食 RM300/月">标准包伙食 RM300/月</option>
-              <option value="丰富包伙食 RM380/月">丰富包伙食 RM380/月</option>
-              <option value="家庭配套 WhatsApp 询问">家庭配套 WhatsApp 询问</option>
+              <option value="包伙食服务">包伙食服务</option>
+              <option value="活动餐饮">活动餐饮</option>
+              <option value="场地布置">场地布置</option>
+              <option value="鸡尾酒服务">鸡尾酒服务</option>
+              <option value="公司员工餐">公司员工餐</option>
             </select></label>
             <label class="member-profile-wide">口味备注 Preference<textarea id="profilePreference" rows="3" placeholder="例如：少辣、不要葱、喜欢清淡"></textarea></label>
           </div>
         </form>
-
-        <div class="member-referral-panel">
-          <div>
-            <span>MY REFERRAL CODE</span>
-            <strong id="memberReferralCode">-</strong>
-            <p>把推荐码发给朋友。朋友下单时填入推荐码，完成消费并经后台确认后，可记录 RM20 抵扣与多层会员回馈。</p>
-            <small id="memberReferralLink">-</small>
-          </div>
-          <div class="member-referral-qr" id="memberReferralQr" aria-label="推荐链接视觉码"></div>
-          <div class="member-referral-actions">
-            <button class="btn btn-gold" id="copyReferralCode" type="button">复制推荐码</button>
-            <button class="btn btn-outline" id="copyReferralLink" type="button">复制推荐链接</button>
-            <a class="btn btn-outline" id="shareReferralWhatsApp" href="#" target="_blank" rel="noopener">WhatsApp 分享</a>
-          </div>
-        </div>
-
-        <div class="member-records-head member-rewards-head">
-          <h3>我的推荐奖励</h3>
-          <button type="button" id="clearReferralRewards">清空奖励</button>
-        </div>
-        <div class="member-records" id="memberReferralRewards"></div>
 
         <div class="member-records-head">
           <h3>我的包伙食询问</h3>
@@ -708,7 +411,7 @@
         <div class="member-intro">
           <span>LOCAL ADMIN</span>
           <h2 id="adminTitle">内容管理后台</h2>
-          <p>本地离线编辑每周菜单和自由加购内容。保存后会马上更新首页，并储存在这个浏览器。</p>
+          <p>本地离线编辑每周菜单和网站内容。保存后会马上更新首页，并储存在这个浏览器。</p>
         </div>
 
         <form class="admin-login" id="adminLoginForm">
@@ -724,7 +427,7 @@
           <div>
             <span>CONTENT ADMIN</span>
             <h2>内容管理后台</h2>
-            <p>编辑全站文案、菜单、加购、外餐计算、顾客询问、会员和推荐奖励。</p>
+            <p>编辑全站文案、菜单、外餐计算、顾客询问和会员资料。</p>
           </div>
           <button class="btn btn-outline" id="adminLogout" type="button">退出后台</button>
         </div>
@@ -735,7 +438,7 @@
           <button type="button" data-admin-panel-tab="catering">外餐菜单</button>
           <button type="button" data-admin-panel-tab="media">媒体案例</button>
           <button type="button" data-admin-panel-tab="inquiries">顾客询问</button>
-          <button type="button" data-admin-panel-tab="members">会员奖励</button>
+          <button type="button" data-admin-panel-tab="members">会员资料</button>
           <button type="button" data-admin-panel-tab="tracking">转化追踪</button>
         </div>
 
@@ -743,7 +446,7 @@
           <div class="admin-section-head">
             <div>
               <h3>全站内容设定</h3>
-              <p>可修改首页 Hero、SEO、导航、服务卡、配套、推荐奖励、外餐、活动布置、FAQ 与最终 CTA。</p>
+              <p>可修改首页 Hero、SEO、导航、服务卡、配套、外餐、活动布置、FAQ 与最终 CTA。</p>
             </div>
           </div>
           <div class="admin-site-rows" id="adminSiteRows"></div>
@@ -752,10 +455,9 @@
         <div class="admin-section" data-admin-panel="meal" hidden>
           <div class="admin-section-head">
             <div>
-              <h3>每周菜单示例</h3>
-              <p>可修改日期、菜色和底部说明。</p>
+            <h3>每周菜单（星期一至星期日）</h3>
+              <p>后台固定编辑星期一至星期日。每一行可以选择 30 组菜单预设，自动带入三道菜和对应图片，也可以手动修改。</p>
             </div>
-            <button type="button" id="addWeeklyRow">新增菜单行</button>
           </div>
           <div class="admin-note-grid">
             <label>中文说明<textarea id="weeklyNoteZh" rows="2"></textarea></label>
@@ -763,18 +465,6 @@
           </div>
           <div class="admin-rows" id="adminWeeklyRows"></div>
         </div>
-
-        <div class="admin-section" data-admin-panel="meal" hidden>
-          <div class="admin-section-head">
-            <div>
-              <h3>自由加购 Add-ons</h3>
-              <p>可修改名称、英文、价格说明，也可以新增或删除项目。</p>
-            </div>
-            <button type="button" id="addAddonRow">新增加购</button>
-          </div>
-          <div class="admin-rows" id="adminAddonRows"></div>
-        </div>
-
         <div class="admin-section" data-admin-panel="catering" hidden>
           <div class="admin-section-head">
             <div>
@@ -827,8 +517,8 @@
         <div class="admin-section" data-admin-panel="members" hidden>
           <div class="admin-section-head">
             <div>
-              <h3>会员与推荐奖励</h3>
-              <p id="adminMemberStatus">查看会员、推荐码、推荐关系和奖励状态；正式结算仍以付款记录与 WhatsApp 确认为准。</p>
+              <h3>会员资料</h3>
+              <p id="adminMemberStatus">查看会员资料、询问记录与后台备注。</p>
             </div>
           </div>
           <div class="admin-rows admin-members" id="adminMembers"></div>
@@ -856,5 +546,6 @@
   <a class="mobile-wa" href="#order" data-wa-source="mobile_bottom_bar">☏ WhatsApp 下单</a>
   <button class="back-top" id="backTop" aria-label="返回顶部">↑</button>
   <script src="js/app.js?v=20260702-admin-video-only"></script>
+  <script src="js/redesign-effects.js?v=20260710-luxe-motion"></script>
 </body>
 </html>
