@@ -4563,11 +4563,13 @@ function setMobileMenu(open) {
   navLinks.classList.toggle('open', open);
   document.body.classList.toggle('nav-open', open);
   menuToggle.setAttribute('aria-expanded', String(open));
-  menuToggle.textContent = open ? '×' : '☰';
+  menuToggle.setAttribute('aria-label', open ? '关闭菜单' : '打开菜单');
+  menuToggle.innerHTML = `<span aria-hidden="true">${open ? '×' : '☰'}</span>`;
 }
 
 if (menuToggle && navLinks) {
   menuToggle.setAttribute('aria-expanded', 'false');
+  menuToggle.innerHTML = '<span aria-hidden="true">☰</span>';
   menuToggle.addEventListener('click', () => setMobileMenu(!navLinks.classList.contains('open')));
   navLinks.querySelectorAll('a').forEach(anchor => {
     anchor.addEventListener('click', () => setMobileMenu(false));

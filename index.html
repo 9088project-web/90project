@@ -26,27 +26,6 @@
   <link rel="stylesheet" href="css/style.css?v=20260702-admin-video-only" />
   <link rel="stylesheet" href="css/redesign.css?v=20260710-luxe-motion" />
   <link rel="stylesheet" href="css/reference-match.css?v=20260710-mobile-polish" />
-  <style>
-    .mobile-menu-fallback { display: none; }
-    @media (max-width: 640px) {
-      .mobile-menu-fallback {
-        position: fixed;
-        top: 12px;
-        right: 16px;
-        z-index: 1100;
-        display: grid;
-        width: 48px;
-        height: 48px;
-        place-items: center;
-        color: #f3d49a;
-        border: 1px solid rgba(255, 223, 154, .5);
-        border-radius: 8px;
-        background: rgba(9, 7, 5, .92);
-        font-size: 26px;
-        line-height: 1;
-      }
-    }
-  </style>
 </head>
 <body>
   <div class="scroll-progress" id="scrollProgress" aria-hidden="true"></div>
@@ -82,7 +61,6 @@
       <a class="nav-whatsapp" href="https://wa.me/601110977166?text=%E4%BD%A0%E5%A5%BD%EF%BC%8C%E6%88%91%E6%83%B3%E8%AF%A2%E9%97%AE%E4%B9%9D%E9%9B%B6%E9%A3%9F%E5%88%BB%2090%20PROJECT%E3%80%82" target="_blank" rel="noopener" data-wa-source="header_whatsapp">
         <i class="ri-whatsapp-line" aria-hidden="true"></i> 011-1097 7166
       </a>
-      <button class="mobile-menu-fallback" type="button" aria-label="打开菜单" onclick="document.getElementById('menuToggle')?.click()">☰</button>
     </div>
   </header>
 
