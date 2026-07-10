@@ -90,6 +90,7 @@ const selectedCateringSummary = document.getElementById('selectedCateringSummary
 const cateringWhatsApp = document.getElementById('cateringWhatsApp');
 const cateringMenuBuilder = document.getElementById('cateringMenuBuilder');
 const cateringComboPresets = document.getElementById('cateringComboPresets');
+const cateringSelectionNotice = document.getElementById('cateringSelectionNotice');
 const stylingCasesSection = document.getElementById('styling-cases');
 const stylingCaseCards = Array.from(document.querySelectorAll('[data-case-card]'));
 const caseShowcaseMedia = document.querySelector('[data-case-lightbox-open]');
@@ -146,19 +147,32 @@ const CATERING_SERVICE_STYLES = {
   buffet: { label: '小型 Buffet / Setup', multiplier: 1.12 },
   event: { label: '活动餐饮 / Event Catering', multiplier: 1.18 }
 };
+const CATERING_SELECTION_LIMITS = {
+  staple: 1,
+  vegetable: 4,
+  protein: 2,
+  dessert: 1
+};
+const CATERING_SELECTION_LABELS = {
+  staple: '主食',
+  vegetable: '蔬菜 / 豆腐',
+  protein: '肉类 / 鱼虾',
+  dessert: '甜品'
+};
+let cateringMenuMode = 'buffet';
 const CATERING_MENU = [
   {
     id: 'staple',
     title: '主食',
     label: 'Staple',
-    rate: 3,
+    rate: 4.5,
     items: ['腊肠炒饭', '蛋炒饭', '福建面', '炒米粉', '扬州炒饭', '干炒河粉', '白饭']
   },
   {
     id: 'porridge',
     title: '汤类 / 粥类',
     label: 'Soup / Porridge',
-    rate: 4,
+    rate: 4.5,
     items: ['皮蛋瘦肉粥', '鸡丝粥']
   },
   {
@@ -166,13 +180,13 @@ const CATERING_MENU = [
     title: '蔬菜类',
     label: 'Vegetables',
     rate: 4.5,
-    items: ['炒什锦菜', '干煸四季豆', 'Salad', '娘惹阿杂', '蒜蓉西兰花', '清炒小白菜', '奶油杂菜', '蚝油生菜', '蒜蓉菠菜', '炒高丽菜']
+    items: ['炒什锦菜', '干煸四季豆', 'Salad', '娘惹阿杂', '蒜蓉西兰花', '清炒小白菜', '蒜蓉小白菜', '奶油杂菜', '蚝油生菜', '蒜蓉菠菜', '炒高丽菜']
   },
   {
     id: 'chicken',
     title: '鸡肉类',
     label: 'Chicken',
-    rate: 7,
+    rate: 7.5,
     items: ['咖喱鸡', 'Sambal 鸡', '香料炸鸡', '咸蛋奶油鸡', '黑胡椒鸡扒', '蘑菇鸡扒', 'Lemon Chicken', 'Sweet & Sour Chicken', 'Ginger Onion Chicken']
   },
   {
@@ -193,7 +207,7 @@ const CATERING_MENU = [
     id: 'prawn',
     title: '虾类',
     label: 'Prawn',
-    rate: 11,
+    rate: 9,
     items: ['椒盐虾', '麦片虾', '咸蛋奶油虾']
   },
   {
@@ -209,36 +223,70 @@ const CATERING_MENU = [
     label: 'Sauce Style',
     rate: 0,
     items: ['咖喱 Curry', 'Sambal', '咸蛋奶油 Salted Egg Butter', '宫保 Kung Pao', '泰式酸辣 Thai Style', 'Sweet & Sour', '姜葱 Ginger Onion', '麦片 Cereal', '椒盐 Salt & Pepper']
+  },
+  {
+    id: 'dessert',
+    title: '甜品',
+    label: 'Dessert',
+    rate: 3.5,
+    items: ['焦糖布丁', '水果拼盘', '椰香西米露', '迷你泡芙']
+  },
+  {
+    id: 'beverage',
+    title: '饮料',
+    label: 'Beverage',
+    rate: 2.5,
+    items: ['柠檬茶', '玫瑰饮', '咖啡与茶', '矿泉水']
   }
 ];
 
+const LEGACY_CATERING_RATES = {
+  staple: 3,
+  porridge: 4,
+  chicken: 7,
+  prawn: 11
+};
+
 const CATERING_COMBOS = [
   {
-    id: 'birthday',
-    title: '生日聚会组合',
-    label: 'Birthday Party',
-    desc: '适合 20-40 人轻松聚会，有主食、鸡肉、蔬菜、豆腐和鱼类。',
+    id: 'set-a',
+    title: 'Set A',
+    label: 'SET A',
+    price: 'RM29.90',
+    desc: '主食 2 · 肉类 2 · 菜类 / 豆腐 / 炸料 2',
     pax: 30,
-    service: 'event',
-    items: ['扬州炒饭', '咖喱鸡', '蒜蓉西兰花', '泰式豆腐', 'Sweet Sour Fish']
-  },
-  {
-    id: 'company',
-    title: '公司午餐组合',
-    label: 'Company Meal',
-    desc: '适合办公室午餐或员工餐，口味稳定、份量清楚、方便配送。',
-    pax: 50,
     service: 'packed',
-    items: ['白饭', 'Ginger Onion Chicken', '炒高丽菜', '红烧豆腐', '咸蛋奶油猪']
+    items: ['腊肠炒饭', '炒米粉', '咖喱鸡', '黑胡椒鸡扒', '蒜蓉小白菜', '泰式豆腐']
   },
   {
-    id: 'buffet',
-    title: '小型 Buffet 组合',
-    label: 'Small Buffet',
-    desc: '适合开张、社团、家庭聚会，菜式更丰富，也适合现场摆台。',
-    pax: 60,
-    service: 'buffet',
-    items: ['炒米粉', '香料炸鸡', '麦片虾', '娘惹阿杂', '宫保鱼片', '椒盐 Salt & Pepper']
+    id: 'set-b',
+    title: 'Set B',
+    label: 'SET B',
+    price: 'RM32.90',
+    desc: '主食 2 · 肉类 1 · 菜类 / 炸料 / 豆腐 2 · 海鲜 1',
+    pax: 30,
+    service: 'packed',
+    items: ['蛋炒饭', '福建面', 'Ginger Onion Chicken', '蒜蓉西兰花', '红烧豆腐', '炸鱼柳']
+  },
+  {
+    id: 'set-c',
+    title: 'Set C',
+    label: 'SET C',
+    price: 'RM39.90',
+    desc: '主食 2 · 肉类 2 · 菜类 / 炸料 / 豆腐 2 · 海鲜 1',
+    pax: 30,
+    service: 'packed',
+    items: ['扬州炒饭', '干炒河粉', '香料炸鸡', '糖醋肉', '炒高丽菜', '蒜蓉菠菜', '麦片虾']
+  },
+  {
+    id: 'set-d',
+    title: 'Set D',
+    label: 'SET D',
+    price: 'RM43.90',
+    desc: '主食 2 · 肉类 2 · 海鲜 1 · 菜类 / 炸料 / 豆腐 3',
+    pax: 30,
+    service: 'packed',
+    items: ['白饭', '炒米粉', '姜葱肉片', '黑胡椒鸡扒', '咸蛋奶油虾', '奶油杂菜', '蚝油生菜', '蒜蓉菜心']
   }
 ];
 
@@ -358,14 +406,14 @@ const DEFAULT_HOMEPAGE_MEDIA = {
 
 const DEFAULT_DETAIL_CONTENT = {
   catering: {
-    eyebrow: 'EVENT CATERING · MENU CALCULATOR',
-    title: '活动餐饮，先把菜单和预算理清楚。',
-    heroDesc: '从人数、菜式到服务形式，使用套餐算法快速做出一份清晰的初步预算，再交给我们确认现场细节。',
+    eyebrow: 'FAMILY BUFFET · CUSTOM CATERING',
+    title: '家庭式 Buffet，轻松搭配一份完整菜单。',
+    heroDesc: '先选 1 主食、4 菜、2 肉和 1 甜品，再按需要加上酱料与饮料；人数和服务形式会同步计算参考预算。',
     heroImage: 'assets/images/reference-series/service-catering.png',
     heroAlt: '活动餐饮自助餐台',
-    kicker: 'A CLEARER CATERING PLAN',
-    introTitle: '把选择留在这里，沟通更快。',
-    introDesc: '适合公司活动、开幕典礼、学校活动、庆功宴和小型 Buffet。勾选菜式、输入人数，系统会先给你一个活动餐饮的参考预算。',
+    kicker: 'EASY BUFFET BUILDER',
+    introTitle: '',
+    introDesc: '适合家庭聚会、生日会、公司活动和小型 Buffet。先用套餐模式快速配好菜，再切换自由搭配，直接把菜单发送给我们确认。',
     contactTitle: '需要我们帮你配？',
     contactDesc: '把日期、地点和人数发给我们。',
     panelTitle: '菜单选择与预算',
@@ -390,12 +438,14 @@ const DEFAULT_DETAIL_CONTENT = {
     panelTitle: '场地布置展示',
     panelDesc: '每一组布置都会围绕活动目的和现场条件调整，图片用于展示风格方向。',
     gallery: [
-      { image: 'assets/images/reference-series/service-styling.png', alt: '九零食刻花艺与宴会桌布置', caption: '花艺、桌面与品牌背景，适合婚礼和正式宴会。' },
-      { image: 'assets/images/event/styling-floral-table.webp', alt: '花艺餐桌布置案例', caption: '用花材和烛光建立温暖、细腻的用餐氛围。' },
-      { image: 'assets/images/event/styling-photo-lounge.webp', alt: '活动拍照区布置案例', caption: '拍照区、迎宾区和活动主视觉可以统一设计。' },
-      { image: 'assets/images/event/styling-backdrop.webp', alt: '活动背景布置案例', caption: '背景结构与灯光安排，让现场更有层次。' },
-      { image: 'assets/images/reference-series/contact-table.png', alt: '餐桌细节布置', caption: '从餐具、酒杯到菜单卡，补足品牌体验。' },
-      { image: 'assets/images/event/styling-bar.webp', alt: '活动吧台布置案例', caption: '需要饮品服务时，可把吧台与整体布置一起规划。' }
+      { image: 'assets/images/event/styling-gallery-wedding.webp', alt: '暖金婚礼宴会厅与长桌花艺布置', caption: '暖金婚礼宴会厅：长桌、花艺与烛光一起完成完整动线。' },
+      { image: 'assets/images/event/styling-gallery-birthday.webp', alt: '生日派对私人宴会厅布置', caption: '生日派对：私人宴会厅用柔和花色和餐桌细节营造仪式感。' },
+      { image: 'assets/images/event/styling-gallery-corporate.webp', alt: '企业发布会舞台与接待区布置', caption: '企业活动：舞台、签到台与宾客座位保持清晰而专业。' },
+      { image: 'assets/images/event/styling-gallery-outdoor.webp', alt: '户外花园晚宴与灯串布置', caption: '户外晚宴：帐篷、花园、灯串和餐桌组成自然的晚间场景。' },
+      { image: 'assets/images/event/styling-gallery-stage.webp', alt: '黑金晚宴舞台与背景装置', caption: '晚宴舞台：黑金结构、灯光和低矮花艺打造高级主视觉。' },
+      { image: 'assets/images/event/styling-gallery-entrance.webp', alt: '活动迎宾区与花艺入口布置', caption: '迎宾入口：金色框架、花艺与灯笼引导宾客进入活动现场。' },
+      { image: 'assets/images/event/styling-gallery-floral.webp', alt: '花艺餐桌与餐具细节布置', caption: '花艺细节：从花材、餐巾到杯具，把整体风格落到桌面。' },
+      { image: 'assets/images/event/styling-gallery-lighting.webp', alt: '暖金灯光与晚宴餐桌布置', caption: '灯光氛围：用层次灯光和烛光让晚宴空间更有记忆点。' }
     ]
   },
   cocktail: {
@@ -984,6 +1034,66 @@ function formatCurrency(value) {
   })}`;
 }
 
+function cateringSelectionGroup(categoryId) {
+  if (['staple', 'porridge'].includes(categoryId)) return 'staple';
+  if (['vegetable', 'tofu'].includes(categoryId)) return 'vegetable';
+  if (['chicken', 'pork', 'fish', 'prawn'].includes(categoryId)) return 'protein';
+  if (categoryId === 'dessert') return 'dessert';
+  return 'optional';
+}
+
+function selectedCateringCounts() {
+  return Array.from(cateringMenuGrid?.querySelectorAll('input[type="checkbox"]:checked') || [])
+    .reduce((counts, input) => {
+      const group = input.dataset.menuGroup || 'optional';
+      counts[group] = (counts[group] || 0) + 1;
+      return counts;
+    }, {});
+}
+
+function cateringBuffetStatus() {
+  const counts = selectedCateringCounts();
+  const missing = Object.entries(CATERING_SELECTION_LIMITS)
+    .filter(([group, limit]) => (counts[group] || 0) < limit)
+    .map(([group, limit]) => `${CATERING_SELECTION_LABELS[group]} ${(counts[group] || 0)}/${limit}`);
+  return { counts, missing, complete: missing.length === 0 };
+}
+
+function setCateringMenuMode(mode) {
+  cateringMenuMode = mode === 'free' ? 'free' : 'buffet';
+  document.querySelectorAll('[data-catering-mode]').forEach(button => {
+    const active = button.dataset.cateringMode === cateringMenuMode;
+    button.classList.toggle('is-active', active);
+    button.setAttribute('aria-pressed', String(active));
+  });
+  if (cateringSelectionNotice) {
+    cateringSelectionNotice.textContent = cateringMenuMode === 'buffet'
+      ? '套餐模式：主食 1、蔬菜 / 豆腐 4、肉类 / 鱼虾 2、甜品 1；饮料和酱料可自由加购。'
+      : '自由搭配模式：不限制分类数量，适合定制菜单与大型活动。';
+  }
+  renderCateringEstimate();
+}
+
+function renderCateringSelectionGuide() {
+  const status = cateringBuffetStatus();
+  Object.entries(CATERING_SELECTION_LIMITS).forEach(([group, limit]) => {
+    const count = document.querySelector(`[data-catering-count="${group}"]`);
+    if (count) count.textContent = `${status.counts[group] || 0}/${limit}`;
+  });
+  const statusText = document.querySelector('[data-catering-rule-status]');
+  if (statusText) {
+    statusText.textContent = cateringMenuMode === 'free'
+      ? '自由搭配已开启'
+      : status.complete ? '套餐组合已达标' : `还差：${status.missing.join('、')}`;
+    statusText.classList.toggle('is-complete', cateringMenuMode === 'free' || status.complete);
+  }
+}
+
+function cateringItemRate(category, item) {
+  if (item === '香煎三文鱼配 Tartar Sauce') return 11;
+  return Number.parseFloat(category?.rate || '0') || 0;
+}
+
 function renderCateringMenu() {
   if (!cateringMenuGrid) return;
   const cateringMenu = editableCateringConfig().menu;
@@ -998,12 +1108,16 @@ function renderCateringMenu() {
         <b>${category.rate ? `${formatCurrency(category.rate)} / pax` : '搭配'}</b>
       </div>
       <div class="menu-options">
-        ${category.items.map(item => `
+        ${category.items.map(item => {
+          const itemRate = cateringItemRate(category, item);
+          return `
           <label class="menu-option">
-            <input type="checkbox" data-menu-category="${escapeHtml(category.id)}" data-menu-title="${escapeHtml(category.title)}" data-menu-rate="${category.rate}" value="${escapeHtml(item)}">
-            <span>${escapeHtml(item)}</span>
+          <input type="checkbox" data-menu-category="${escapeHtml(category.id)}" data-menu-group="${cateringSelectionGroup(category.id)}" data-menu-title="${escapeHtml(category.title)}" data-menu-rate="${itemRate}" value="${escapeHtml(item)}">
+            <span class="menu-option-name">${escapeHtml(item)}</span>
+            ${itemRate ? `<small class="menu-option-price">${formatCurrency(itemRate)}</small>` : ''}
           </label>
-        `).join('')}
+        `;
+        }).join('')}
       </div>
     </article>
   `).join('');
@@ -1014,6 +1128,7 @@ function renderCateringCombos() {
   cateringComboPresets.innerHTML = CATERING_COMBOS.map(combo => `
     <button class="combo-preset-card" type="button" data-catering-combo="${escapeHtml(combo.id)}">
       <span>${escapeHtml(combo.label)}</span>
+      <b class="combo-price">${escapeHtml(combo.price || '')}</b>
       <strong>${escapeHtml(combo.title)}</strong>
       <small>${escapeHtml(combo.desc)}</small>
     </button>
@@ -1030,6 +1145,7 @@ function applyCateringCombo(comboId) {
   });
   if (cateringPax) cateringPax.value = String(combo.pax);
   if (cateringServiceStyle) cateringServiceStyle.value = combo.service;
+  setCateringMenuMode(combo.service === 'buffet' ? 'buffet' : 'free');
 
   cateringComboPresets?.querySelectorAll('[data-catering-combo]').forEach(button => {
     button.classList.toggle('is-active', button.dataset.cateringCombo === combo.id);
@@ -1106,6 +1222,7 @@ function renderCateringEstimate() {
   if (!cateringEstimateTotal || !cateringEstimateMeta || !selectedCateringSummary || !cateringWhatsApp) return;
 
   const estimate = calculateCateringEstimate();
+  renderCateringSelectionGuide();
   cateringEstimateTotal.textContent = estimate.total ? formatCurrency(estimate.total) : 'RM0';
   cateringEstimateMeta.textContent = estimate.total
     ? `${estimate.pax} pax · 每人约 ${formatCurrency(estimate.perPax)} · ${estimate.service.label}`
@@ -1382,7 +1499,11 @@ function renderDetailPageContent(content = loadAdminContent()) {
 
   const intro = document.querySelector('.detail-intro > div:first-child');
   if (intro) {
-    intro.querySelector('h2')?.replaceChildren(document.createTextNode(page.introTitle));
+    const introTitle = intro.querySelector('h2');
+    if (introTitle) {
+      introTitle.replaceChildren(document.createTextNode(page.introTitle));
+      introTitle.hidden = !page.introTitle;
+    }
     intro.querySelector('p')?.replaceChildren(document.createTextNode(page.introDesc));
   }
   const contact = document.querySelector('.detail-contact-card');
@@ -1861,15 +1982,26 @@ function siteContentDefaults(language) {
 
 function normalizeCateringMenu(menu) {
   const source = Array.isArray(menu) && menu.length ? menu : CATERING_MENU;
-  return source.map((category, index) => ({
-    id: String(category?.id || `category-${index + 1}`).trim(),
+  const missingDefaults = CATERING_MENU.filter(defaultCategory => (
+    !source.some(category => category?.id === defaultCategory.id)
+  ));
+  return [...source, ...missingDefaults].map((category, index) => {
+    const id = String(category?.id || `category-${index + 1}`).trim();
+    const defaultCategory = CATERING_MENU.find(item => item.id === id);
+    const rawRate = Number.parseFloat(category?.rate || 0) || 0;
+    const rate = LEGACY_CATERING_RATES[id] === rawRate
+      ? Number(defaultCategory?.rate || rawRate)
+      : rawRate;
+    return {
+    id,
     title: String(category?.title || '').trim(),
     label: String(category?.label || '').trim(),
-    rate: Number.parseFloat(category?.rate || 0) || 0,
+    rate,
     items: Array.isArray(category?.items)
       ? category.items.map(item => String(item || '').trim()).filter(Boolean)
       : String(category?.items || '').split(/\n+/).map(item => item.trim()).filter(Boolean)
-  })).filter(category => category.title || category.label || category.items.length);
+    };
+  }).filter(category => category.title || category.label || category.items.length);
 }
 
 function defaultCateringContent() {
@@ -1920,7 +2052,17 @@ function normalizeHomepageMedia(homepage = {}) {
 function normalizeDetailPage(page = {}, fallback = {}) {
   const source = page || {};
   const fallbackGallery = Array.isArray(fallback.gallery) ? fallback.gallery : [];
-  const gallerySource = Array.isArray(source.gallery) && source.gallery.length ? source.gallery : fallbackGallery;
+  const legacyCateringIntroTitle = '从 1 + 4 + 2 + 1 开始，自由调整。';
+  const introTitle = fallback === DEFAULT_DETAIL_CONTENT.catering && source.introTitle === legacyCateringIntroTitle
+    ? ''
+    : String(source.introTitle || fallback.introTitle || '').trim();
+  const sourceGallery = Array.isArray(source.gallery) && source.gallery.length ? source.gallery : fallbackGallery;
+  const isLegacyStylingGallery = fallback === DEFAULT_DETAIL_CONTENT.styling
+    && sourceGallery.length < fallbackGallery.length
+    && sourceGallery.some(item => String(item?.image || '').includes('reference-series/service-styling.png'));
+  const gallerySource = isLegacyStylingGallery
+    ? [...sourceGallery, ...fallbackGallery.filter(fallbackItem => !sourceGallery.some(item => item?.image === fallbackItem.image))]
+    : sourceGallery;
   return {
     eyebrow: String(source.eyebrow || fallback.eyebrow || '').trim(),
     title: String(source.title || fallback.title || '').trim(),
@@ -1928,7 +2070,7 @@ function normalizeDetailPage(page = {}, fallback = {}) {
     heroImage: String(source.heroImage || fallback.heroImage || '').trim(),
     heroAlt: String(source.heroAlt || fallback.heroAlt || '').trim(),
     kicker: String(source.kicker || fallback.kicker || '').trim(),
-    introTitle: String(source.introTitle || fallback.introTitle || '').trim(),
+    introTitle,
     introDesc: String(source.introDesc || fallback.introDesc || '').trim(),
     contactTitle: String(source.contactTitle || fallback.contactTitle || '').trim(),
     contactDesc: String(source.contactDesc || fallback.contactDesc || '').trim(),
@@ -5150,6 +5292,20 @@ document.querySelectorAll('.choose-package').forEach(button => {
   });
 });
 
+document.querySelectorAll('[data-service-href]').forEach(card => {
+  card.addEventListener('click', event => {
+    if (event.target instanceof HTMLElement && event.target.closest('a,button')) return;
+    const href = card.dataset.serviceHref;
+    if (href) window.location.href = href;
+  });
+  card.addEventListener('keydown', event => {
+    if (event.key !== 'Enter' && event.key !== ' ') return;
+    event.preventDefault();
+    const href = card.dataset.serviceHref;
+    if (href) window.location.href = href;
+  });
+});
+
 document.querySelectorAll('[data-open-catering-menu]').forEach(button => {
   button.addEventListener('click', event => {
     event.preventDefault();
@@ -5250,9 +5406,28 @@ document.addEventListener('click', event => {
   }
 });
 
-cateringMenuGrid?.addEventListener('change', renderCateringEstimate);
+cateringMenuGrid?.addEventListener('change', event => {
+  const input = event.target;
+  if (input instanceof HTMLInputElement && input.type === 'checkbox' && input.checked && cateringMenuMode === 'buffet') {
+    const group = input.dataset.menuGroup || 'optional';
+    const limit = CATERING_SELECTION_LIMITS[group];
+    if (limit) {
+      const count = Array.from(cateringMenuGrid.querySelectorAll(`input[data-menu-group="${group}"]:checked`)).length;
+      if (count > limit) {
+        input.checked = false;
+        if (cateringSelectionNotice) {
+          cateringSelectionNotice.textContent = `${CATERING_SELECTION_LABELS[group]}最多选择 ${limit} 项；如需更多，请切换到自由搭配。`;
+        }
+      }
+    }
+  }
+  renderCateringEstimate();
+});
 cateringPax?.addEventListener('input', renderCateringEstimate);
 cateringServiceStyle?.addEventListener('change', renderCateringEstimate);
+document.querySelectorAll('[data-catering-mode]').forEach(button => {
+  button.addEventListener('click', () => setCateringMenuMode(button.dataset.cateringMode || 'buffet'));
+});
 calculateCateringPrice?.addEventListener('click', () => {
   renderCateringEstimate();
   document.querySelector('.estimate-box')?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
@@ -5302,6 +5477,9 @@ async function initializeApp() {
   renderCateringCombos();
   renderCateringMenu();
   renderCateringEstimate();
+  if (document.body?.dataset.detailPage === 'catering') {
+    openCateringMenuBuilder(false);
+  }
   renderMediaContent();
   setStylingCase(0);
   updateStylingCasePlayButton();

@@ -32,18 +32,17 @@
     <section class="detail-hero">
       <div class="detail-hero-media" aria-hidden="true"><img src="assets/images/reference-series/service-catering.png" alt="活动餐饮自助餐台" /></div>
       <div class="detail-hero-copy">
-        <span>EVENT CATERING · MENU CALCULATOR</span>
-        <h1>活动餐饮，先把菜单和预算理清楚。</h1>
-        <p>从人数、菜式到服务形式，使用套餐算法快速做出一份清晰的初步预算，再交给我们确认现场细节。</p>
+        <span>FAMILY BUFFET · CUSTOM CATERING</span>
+        <h1>家庭式 Buffet，轻松搭配一份完整菜单。</h1>
+        <p>先选 1 主食、4 菜、2 肉和 1 甜品，再按需要加上酱料与饮料；人数和服务形式会同步计算参考预算。</p>
       </div>
     </section>
 
     <section class="detail-wrap">
       <div class="detail-intro">
         <div>
-          <span class="detail-kicker">A CLEARER CATERING PLAN</span>
-          <h2>把选择留在这里，沟通更快。</h2>
-          <p>适合公司活动、开幕典礼、学校活动、庆功宴和小型 Buffet。勾选菜式、输入人数，系统会先给你一个活动餐饮的参考预算。</p>
+          <span class="detail-kicker">EASY BUFFET BUILDER</span>
+          <p>适合家庭聚会、生日会、公司活动和小型 Buffet。先用套餐模式快速配好菜，再切换自由搭配，直接把菜单发送给我们确认。</p>
         </div>
         <div class="detail-contact-card">
           <strong>需要我们帮你配？</strong>
@@ -63,6 +62,25 @@
               <p>选好之后可直接发送菜单到 WhatsApp。</p>
             </div>
           </div>
+          <div class="buffet-selection-guide" aria-labelledby="buffetRuleTitle">
+            <div class="buffet-selection-copy">
+              <span>FAMILY BUFFET / CUSTOM CATERING</span>
+              <h3 id="buffetRuleTitle">1 主食 + 4 菜 + 2 肉 + 1 甜品</h3>
+              <p>先用简单组合选菜，备料更清楚；饮料和酱料可以自由加购。</p>
+            </div>
+            <div class="buffet-mode-switch" aria-label="菜单模式">
+              <button type="button" class="is-active" data-catering-mode="buffet" aria-pressed="true">套餐模式</button>
+              <button type="button" data-catering-mode="free" aria-pressed="false">自由搭配 / Mix &amp; Match</button>
+            </div>
+            <div class="buffet-selection-counts" aria-label="套餐选择进度">
+              <span>主食 <b data-catering-count="staple">0/1</b></span>
+              <span>菜 / 豆腐 <b data-catering-count="vegetable">0/4</b></span>
+              <span>肉 / 鱼虾 <b data-catering-count="protein">0/2</b></span>
+              <span>甜品 <b data-catering-count="dessert">0/1</b></span>
+              <strong data-catering-rule-status>还差：主食 0/1、蔬菜 / 豆腐 0/4、肉类 / 鱼虾 0/2、甜品 0/1</strong>
+            </div>
+            <p class="buffet-selection-notice" id="cateringSelectionNotice" aria-live="polite">套餐模式：主食 1、蔬菜 / 豆腐 4、肉类 / 鱼虾 2、甜品 1；饮料和酱料可自由加购。</p>
+          </div>
           <div class="combo-presets" aria-label="推荐外餐组合">
             <div class="combo-presets-head"><span>RECOMMENDED SETS</span><strong>推荐组合，一键套用</strong></div>
             <div class="combo-preset-grid" id="cateringComboPresets"></div>
@@ -72,7 +90,7 @@
             <aside class="calculator-panel">
               <div class="calc-head"><span>PRICE CALCULATOR</span><h3>菜单预算</h3></div>
               <label>活动人数 Pax<input id="cateringPax" type="number" min="1" value="30" inputmode="numeric"></label>
-              <label>服务形式 Service<select id="cateringServiceStyle"><option value="packed">餐盒 / Packed Meal</option><option value="buffet">小型 Buffet / Setup</option><option value="event">活动餐饮 / Event Catering</option></select></label>
+              <label>服务形式 Service<select id="cateringServiceStyle"><option value="packed">餐盒 / Packed Meal</option><option value="buffet" selected>小型 Buffet / Setup</option><option value="event">活动餐饮 / Event Catering</option></select></label>
               <button class="btn btn-gold btn-wide" id="calculateCateringPrice" type="button">计算价格</button>
               <div class="estimate-box"><small>初步预算</small><strong id="cateringEstimateTotal">RM0</strong><p id="cateringEstimateMeta">请选择菜式开始计算。</p></div>
               <div class="selected-menu-summary" id="selectedCateringSummary">还没有选择菜式。</div>

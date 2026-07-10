@@ -1941,6 +1941,11 @@ body.case-lightbox-open{overflow:hidden}
   font-weight:900;
   letter-spacing:1.8px;
 }
+.combo-preset-card .combo-price{
+  color:#fff7e8;
+  font-size:20px;
+  line-height:1;
+}
 .combo-preset-card strong{
   color:#fff7e8;
   font-size:17px;
@@ -2117,6 +2122,17 @@ body.case-lightbox-open{overflow:hidden}
   font-weight:800;
   cursor:pointer;
 }
+.menu-option-name{
+  min-width:0;
+  flex:1 1 auto;
+}
+.menu-option-price{
+  margin-left:auto;
+  color:#d6a85c;
+  font-size:11px;
+  font-weight:900;
+  white-space:nowrap;
+}
 .menu-option input{
   width:14px;
   height:14px;
@@ -2128,6 +2144,9 @@ body.case-lightbox-open{overflow:hidden}
   border-color:rgba(255,223,154,.72);
   color:#17120d;
   background:linear-gradient(135deg,#ffdf9a,#d6a85c);
+}
+.menu-option:has(input:checked) .menu-option-price{
+  color:#17120d;
 }
 .faq-section{background:#0a0806;padding-top:20px}
 .faq-title{

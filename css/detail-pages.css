@@ -252,6 +252,103 @@ body.detail-page-body {
   font-weight: 900;
 }
 
+.buffet-selection-guide {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 16px 22px;
+  margin: 0 0 22px;
+  padding: 20px;
+  border: 1px solid rgba(194, 138, 67, .34);
+  border-radius: 8px;
+  background: linear-gradient(135deg, #fffaf4, #f5e8d7);
+}
+
+.buffet-selection-copy > span {
+  color: var(--detail-gold);
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: .16em;
+}
+
+.buffet-selection-copy h3 {
+  margin: 5px 0 4px;
+  color: var(--detail-ink);
+  font-size: 24px;
+}
+
+.buffet-selection-copy p,
+.buffet-selection-notice {
+  margin: 0;
+  color: #6c5d4d;
+  line-height: 1.55;
+}
+
+.buffet-mode-switch {
+  display: inline-flex;
+  align-self: start;
+  gap: 4px;
+  padding: 4px;
+  border: 1px solid rgba(120, 82, 42, .2);
+  border-radius: 999px;
+  background: #efe0cc;
+}
+
+.buffet-mode-switch button {
+  min-height: 34px;
+  padding: 7px 12px;
+  border: 0;
+  border-radius: 999px;
+  color: #6c5d4d;
+  background: transparent;
+  cursor: pointer;
+  font-weight: 900;
+}
+
+.buffet-mode-switch button.is-active {
+  color: #fffaf4;
+  background: #8a5c2d;
+}
+
+.buffet-selection-counts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  grid-column: 1 / -1;
+}
+
+.buffet-selection-counts span,
+.buffet-selection-counts strong {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 32px;
+  padding: 6px 10px;
+  border: 1px solid rgba(120, 82, 42, .18);
+  border-radius: 999px;
+  color: #6c5d4d;
+  background: rgba(255, 255, 255, .45);
+  font-size: 12px;
+}
+
+.buffet-selection-counts b {
+  color: #8a5c2d;
+}
+
+.buffet-selection-counts strong {
+  border-color: rgba(138, 92, 45, .34);
+  color: #8a5c2d;
+}
+
+.buffet-selection-counts strong.is-complete {
+  color: #356348;
+  border-color: rgba(53, 99, 72, .28);
+}
+
+.buffet-selection-notice {
+  grid-column: 1 / -1;
+  font-size: 12px;
+}
+
 .detail-page-body .combo-presets,
 .detail-page-body .menu-builder,
 .detail-page-body .calculator-panel {
@@ -313,5 +410,28 @@ body.detail-page-body {
 
   .detail-wrap {
     padding-block: 30px 46px;
+  }
+
+  .buffet-selection-guide {
+    grid-template-columns: 1fr;
+    gap: 12px;
+    padding: 16px;
+  }
+
+  .buffet-selection-copy h3 {
+    font-size: 21px;
+  }
+
+  .buffet-mode-switch {
+    justify-self: start;
+  }
+
+  .buffet-selection-counts {
+    gap: 6px;
+  }
+
+  .buffet-selection-counts span,
+  .buffet-selection-counts strong {
+    font-size: 11px;
   }
 }
