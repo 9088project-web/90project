@@ -91,6 +91,9 @@ const cateringWhatsApp = document.getElementById('cateringWhatsApp');
 const cateringMenuBuilder = document.getElementById('cateringMenuBuilder');
 const cateringComboPresets = document.getElementById('cateringComboPresets');
 const cateringSelectionNotice = document.getElementById('cateringSelectionNotice');
+const mealStartDate = document.getElementById('mealStartDate');
+const mealEndDate = document.getElementById('mealEndDate');
+const mealPeriodSummary = document.getElementById('mealPeriodSummary');
 const stylingCasesSection = document.getElementById('styling-cases');
 const stylingCaseCards = Array.from(document.querySelectorAll('[data-case-card]'));
 const caseShowcaseMedia = document.querySelector('[data-case-lightbox-open]');
@@ -130,6 +133,7 @@ const ADMIN_CONTENT_SETTING_KEY = 'admin_content';
 const ADMIN_EMAIL = '9088project@gmail.com';
 const ADMIN_PASSWORD_HASH = '3b523443';
 const WHATSAPP_NUMBER = '601110977166';
+const MEAL_PLAN_RATE = 15;
 const INQUIRY_STATUSES = ['new', 'contacted', 'quoted', 'confirmed', 'completed', 'cancelled'];
 const REFERRAL_REWARD_STATUSES = ['pending', 'approved', 'redeemed', 'cancelled'];
 const MEMBER_STATUSES = ['active', 'vip', 'blocked'];
@@ -597,7 +601,7 @@ const translations = {
     },
     services: [
       { title: '餐饮', label: 'CATERING', desc: '专业外餐服务，多样美食选择，满足不同需求。' },
-      { title: '包伙食', label: 'MEALS', desc: '每月包伙食计划，营养均衡，每天新鲜现煮。' },
+      { title: '包伙食', label: 'MEALS', desc: '选择开始与结束日期，安排你的包伙食期限。' },
       { title: '活动策划', label: 'EVENT', desc: '生日、公司、节庆、婚礼等活动餐饮一站式服务。' },
       { title: '布置设计', label: 'STYLING', desc: '餐桌布置、背景设计、花艺搭配，让活动更有氛围。' }
     ],
@@ -817,7 +821,7 @@ const translations = {
     },
     services: [
       { title: 'Catering', label: '餐饮', desc: 'Professional catering service with flexible menus for different event needs.' },
-      { title: 'Meal Plan', label: '包伙食', desc: 'Monthly meal plans with balanced portions, fresh cooking and practical daily pricing.' },
+      { title: 'Meal Plan', label: '包伙食', desc: 'Choose start and end dates for a flexible meal-plan period.' },
       { title: 'Event', label: '活动策划', desc: 'Food service support for birthdays, company meals, celebrations, weddings and gatherings.' },
       { title: 'Styling', label: '布置设计', desc: 'Table styling, backdrop design and simple floral touches for a warmer event atmosphere.' }
     ],
@@ -2555,6 +2559,110 @@ function updatePriceCards(t) {
   });
 }
 
+function localDateValue(date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+function parseLocalDate(value) {
+  if (!value) return null;
+  const [year, month, day] = value.split('-').map(Number);
+  if (![year, month, day].every(Number.isFinite)) return null;
+  return new Date(year, month - 1, day);
+}
+
+function addCalendarDays(date, days) {
+  const next = new Date(date);
+  next.setDate(next.getDate() + days);
+  return next;
+}
+
+function countMealWeekdays(start, end) {
+  if (!start || !end || end < start) return 0;
+  let count = 0;
+  const cursor = new Date(start);
+  while (cursor <= end) {
+    const weekday = cursor.getDay();
+    if (weekday !== 0 && weekday !== 6) count += 1;
+    cursor.setDate(cursor.getDate() + 1);
+  }
+  return count;
+}
+
+function formatMealDate(value) {
+  const date = parseLocalDate(value);
+  if (!date) return value || '-';
+  return new Intl.DateTimeFormat(currentLanguage === 'en' ? 'en-MY' : 'zh-MY', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric'
+  }).format(date);
+}
+
+function syncMealPlanPeriod() {
+  if (!mealStartDate || !mealEndDate || !mealPeriodSummary) return;
+  const start = parseLocalDate(mealStartDate.value);
+  const end = parseLocalDate(mealEndDate.value);
+  const orderDateField = document.getElementById('date');
+  if (!start || !end) {
+    mealPeriodSummary.textContent = currentLanguage === 'en'
+      ? 'Choose dates to calculate your working-day meals.'
+      : '请选择日期，系统会计算工作日餐数。';
+    if (orderDateField) orderDateField.value = '待确认';
+    return;
+  }
+  if (end < start) {
+    mealPeriodSummary.textContent = currentLanguage === 'en'
+      ? 'End date must be on or after the start date.'
+      : '结束日期必须是开始日期当天或之后。';
+    if (orderDateField) orderDateField.value = '日期待确认';
+    return;
+  }
+
+  const meals = countMealWeekdays(start, end);
+  const total = meals * MEAL_PLAN_RATE;
+  mealPeriodSummary.textContent = currentLanguage === 'en'
+    ? `${formatMealDate(mealStartDate.value)} - ${formatMealDate(mealEndDate.value)} · ${meals} working-day meals · Estimated RM${total}`
+    : `${formatMealDate(mealStartDate.value)} 至 ${formatMealDate(mealEndDate.value)} · ${meals} 个工作日餐 · 预计 RM${total}`;
+  if (orderDateField) {
+    orderDateField.value = `${formatMealDate(mealStartDate.value)} 至 ${formatMealDate(mealEndDate.value)}（${meals} 个工作日）`;
+  }
+}
+
+function setMealPlanDuration(workdays) {
+  if (!mealStartDate || !mealEndDate) return;
+  const start = parseLocalDate(mealStartDate.value) || new Date();
+  const end = new Date(start);
+  let remaining = Math.max(1, workdays);
+  while (remaining > 1) {
+    end.setDate(end.getDate() + 1);
+    const weekday = end.getDay();
+    if (weekday !== 0 && weekday !== 6) remaining -= 1;
+  }
+  mealStartDate.value = localDateValue(start);
+  mealEndDate.value = localDateValue(end);
+  syncMealPlanPeriod();
+}
+
+function initializeMealPlanDates() {
+  if (!mealStartDate || !mealEndDate) return;
+  const today = new Date();
+  const todayValue = localDateValue(today);
+  mealStartDate.min = todayValue;
+  mealEndDate.min = todayValue;
+  if (!mealStartDate.value) {
+    const firstWorkingDay = new Date(today);
+    while (firstWorkingDay.getDay() === 0 || firstWorkingDay.getDay() === 6) {
+      firstWorkingDay.setDate(firstWorkingDay.getDate() + 1);
+    }
+    mealStartDate.value = localDateValue(firstWorkingDay);
+  }
+  if (!mealEndDate.value) setMealPlanDuration(5);
+  syncMealPlanPeriod();
+}
+
 function updateFeatureCard(selector, feature) {
   const card = document.querySelector(selector);
   if (!card) return;
@@ -2697,6 +2805,7 @@ function updateStaticLanguage() {
   setText('.site-footer span:nth-child(2)', `WhatsApp: ${t.contact?.phone || '011-1097 7166'}`);
   setText('.site-footer span:nth-child(3)', t.contact?.footer || '© 2026 九零食刻 90 PROJECT. All Rights Reserved.');
   renderManagedContent();
+  syncMealPlanPeriod();
 
   setText('#memberTitle', t.member.title);
   setText('.member-intro p', t.member.intro);
@@ -5292,6 +5401,11 @@ document.querySelectorAll('.choose-package').forEach(button => {
   });
 });
 
+[mealStartDate, mealEndDate].forEach(input => input?.addEventListener('change', syncMealPlanPeriod));
+document.querySelectorAll('[data-meal-duration]').forEach(button => {
+  button.addEventListener('click', () => setMealPlanDuration(Number(button.dataset.mealDuration || 5)));
+});
+
 document.querySelectorAll('[data-service-href]').forEach(card => {
   card.addEventListener('click', event => {
     if (event.target instanceof HTMLElement && event.target.closest('a,button')) return;
@@ -5474,6 +5588,7 @@ form?.addEventListener('submit', event => {
 async function initializeApp() {
   await loadSupabaseRuntimeConfig();
   await loadAdminContentFromSupabase();
+  initializeMealPlanDates();
   renderCateringCombos();
   renderCateringMenu();
   renderCateringEstimate();

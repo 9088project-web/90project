@@ -130,12 +130,12 @@
           <p class="service-en">CATERING</p>
           <p>专业外餐服务，多样美食选择，满足不同需求。</p>
         </a>
-        <article class="service-card">
+        <a class="service-card service-card-link meal-service-card" href="#meal-plan" data-wa-source="meal_plan" aria-label="选择包伙食配套与伙食期限">
           <div class="service-icon"><i class="ri-bowl-line" aria-hidden="true"></i></div>
           <h3>包伙食</h3>
-          <p class="service-en">MEAL PLAN</p>
-          <p>每月包伙食计划，营养均衡，每天新鲜现煮。</p>
-        </article>
+          <p class="service-en">MEALS</p>
+          <p>选择开始与结束日期，安排你的包伙食期限。</p>
+        </a>
         <article class="service-card">
           <div class="service-icon"><i class="ri-goblet-line" aria-hidden="true"></i></div>
           <h3>活动策划</h3>
@@ -168,6 +168,23 @@
             <li><i class="ri-checkbox-circle-line" aria-hidden="true"></i>适合上班族、学生、家庭</li>
             <li><i class="ri-checkbox-circle-line" aria-hidden="true"></i>固定地址配送</li>
           </ul>
+          <div class="meal-period-picker" aria-labelledby="mealPeriodTitle">
+            <div class="meal-period-heading">
+              <span>MEAL PERIOD</span>
+              <strong id="mealPeriodTitle">选择伙食期限</strong>
+              <p>用日历自由选择开始和结束日期。</p>
+            </div>
+            <div class="meal-quick-options" role="group" aria-label="快捷伙食期限">
+              <button type="button" data-meal-duration="5">5 个工作日</button>
+              <button type="button" data-meal-duration="10">2 周工作日</button>
+              <button type="button" data-meal-duration="20">1 个月工作日</button>
+            </div>
+            <div class="meal-date-grid">
+              <label>开始日期<input id="mealStartDate" type="date" autocomplete="off"></label>
+              <label>结束日期<input id="mealEndDate" type="date" autocomplete="off"></label>
+            </div>
+            <p class="meal-period-summary" id="mealPeriodSummary" aria-live="polite">请选择日期，系统会计算工作日餐数。</p>
+          </div>
           <button class="btn btn-brown choose-package" type="button" data-package="标准包伙食 RM300/月"><i class="ri-whatsapp-line" aria-hidden="true"></i>立即订购 (011-1097 7166)</button>
         </aside>
 
