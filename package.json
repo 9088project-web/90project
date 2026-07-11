@@ -5,7 +5,6 @@
   "scripts": {
     "dev": "node scripts/serve-static-site.mjs",
     "build": "node scripts/build-static-site.mjs",
-    "vercel-build": "node scripts/build-static-site.mjs",
     "start": "node scripts/serve-static-site.mjs"
   },
   "dependencies": {},
