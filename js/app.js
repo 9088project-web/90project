@@ -1016,8 +1016,7 @@ const translations = {
   }
 };
 
-let currentLanguage = 'zh';
-localStorage.setItem(LANG_KEY, currentLanguage);
+let currentLanguage = localStorage.getItem(LANG_KEY) === 'en' ? 'en' : 'zh';
 
 function getById(id) {
   return document.getElementById(id);
