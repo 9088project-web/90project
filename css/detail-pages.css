@@ -355,6 +355,45 @@ body.detail-page-body {
   border-color: var(--detail-line);
 }
 
+.detail-page-body .combo-presets {
+  background: #fffaf4;
+}
+
+.detail-page-body .combo-presets-head strong {
+  color: var(--detail-ink);
+}
+
+.detail-page-body .combo-preset-card {
+  opacity: 1;
+  transform: none;
+  filter: none;
+  clip-path: none;
+  color: #4f3b2a;
+  border-color: rgba(194, 138, 67, .32);
+  background: linear-gradient(145deg, #fffdf9, #f4e6d4);
+  box-shadow: 0 8px 22px rgba(92, 55, 22, .08);
+}
+
+.detail-page-body .combo-preset-card span {
+  color: #a66d2b;
+}
+
+.detail-page-body .combo-preset-card .combo-price,
+.detail-page-body .combo-preset-card strong {
+  color: var(--detail-ink);
+}
+
+.detail-page-body .combo-preset-card small {
+  color: #6c5d4d;
+}
+
+.detail-page-body .combo-preset-card:hover,
+.detail-page-body .combo-preset-card.is-active {
+  border-color: #c28a43;
+  background: linear-gradient(145deg, #fff8e9, #edd5b0);
+  box-shadow: 0 14px 30px rgba(92, 55, 22, .14);
+}
+
 .detail-page-body .catering-menu-grid {
   background: #fffaf4;
 }
