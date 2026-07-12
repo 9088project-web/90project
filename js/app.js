@@ -597,7 +597,8 @@ const translations = {
       slogan: '每一刻，都是美好食刻',
       sub: '高级餐饮品牌服务，日常价格享受。<br><em>Premium catering style, affordable daily meals.</em>',
       primary: '查看包伙食配套',
-      secondary: 'WhatsApp 立即询问'
+      secondary: 'WhatsApp 立即询问',
+      proof: ['餐 / 月', '起 / 餐', '餐饮 + 布置']
     },
     services: [
       { title: '餐饮', label: 'CATERING', desc: '专业外餐服务，多样美食选择，满足不同需求。' },
@@ -607,7 +608,20 @@ const translations = {
     ],
     mealPlan: {
       title: '包伙食配套',
-      desc: '适合上班族、学生、家庭与长期订餐顾客。'
+      label: 'MONTHLY MEAL PLAN',
+      desc: '适合上班族、学生、家庭与长期订餐顾客。',
+      price: '300',
+      priceUnit: '/ 月',
+      priceNote: '20餐（月） | 平均一餐 RM15',
+      points: ['新鲜现煮，每日更换菜单', '星期一至星期五供应', '适合上班族、学生、家庭', '固定地址配送'],
+      periodLabel: 'MEAL PERIOD',
+      periodTitle: '选择伙食期限',
+      periodDesc: '用日历自由选择开始和结束日期。',
+      quickOptions: ['5 个工作日', '2 周工作日', '1 个月工作日'],
+      startLabel: '开始日期',
+      endLabel: '结束日期',
+      periodEmpty: '请选择日期，系统会计算工作日餐数。',
+      periodButton: '立即订购 (011-1097 7166)'
     },
     prices: [
       {
@@ -745,6 +759,16 @@ const translations = {
       slogan: '无论是日常用餐还是大型活动，我们都能为您提供最优质的服务与体验。',
       button: 'WhatsApp 立即询问'
     },
+    showcase: [
+      { title: '活动餐饮', label: 'EVENT CATERING', desc: '公司活动、开幕典礼、产品发布会、学校活动、庆功宴，提供多样化餐饮。', button: '了解更多' },
+      { title: '场地布置', label: 'EVENT STYLING', desc: '婚礼布置、生日派对、开幕典礼、企业活动，为您打造完美现场。', button: '了解更多' },
+      { title: '鸡尾酒服务', label: 'COCKTAIL SERVICE', desc: '专业调酒师与移动吧台服务，为活动增添特调与氛围。', button: '了解更多' },
+      { title: '公司员工餐', label: 'CORPORATE MEALS', desc: '为公司团队提供营养均衡、美味卫生的员工餐解决方案。', button: '了解更多' }
+    ],
+    why: {
+      title: '为什么选择九零食刻?',
+      items: ['新鲜现煮', '专业团队', '一站式服务', '客制化菜单', '价格透明', '用心服务']
+    },
     member: {
       loginButton: '会员登录',
       centerButton: '会员中心',
@@ -817,17 +841,31 @@ const translations = {
       slogan: 'Every moment deserves a good meal',
       sub: 'Premium catering style, affordable daily meals.<br><em>Meal plans, event catering and branded food presentation.</em>',
       primary: 'View Meal Plans',
-      secondary: 'WhatsApp Now'
+      secondary: 'WhatsApp Now',
+      proof: ['meals / month', 'from / meal', 'Catering + Styling']
     },
     services: [
-      { title: 'Catering', label: '餐饮', desc: 'Professional catering service with flexible menus for different event needs.' },
-      { title: 'Meal Plan', label: '包伙食', desc: 'Choose start and end dates for a flexible meal-plan period.' },
-      { title: 'Event', label: '活动策划', desc: 'Food service support for birthdays, company meals, celebrations, weddings and gatherings.' },
-      { title: 'Styling', label: '布置设计', desc: 'Table styling, backdrop design and simple floral touches for a warmer event atmosphere.' }
+      { title: 'Catering', label: 'CATERING', desc: 'Professional catering service with flexible menus for different event needs.' },
+      { title: 'Meal Plan', label: 'MEALS', desc: 'Choose start and end dates for a flexible meal-plan period.' },
+      { title: 'Event', label: 'EVENT', desc: 'Food service support for birthdays, company meals, celebrations, weddings and gatherings.' },
+      { title: 'Styling', label: 'STYLING', desc: 'Table styling, backdrop design and simple floral touches for a warmer event atmosphere.' }
     ],
     mealPlan: {
       title: 'Meal Plan Packages',
-      desc: 'Suitable for working adults, students, families and long-term meal arrangements.'
+      label: 'MONTHLY MEAL PLAN',
+      desc: 'Suitable for working adults, students, families and long-term meal arrangements.',
+      price: '300',
+      priceUnit: '/ month',
+      priceNote: '20 meals / month | Average RM15 per meal',
+      points: ['Freshly cooked, with a rotating daily menu', 'Available Monday to Friday', 'Suitable for offices, students and families', 'Delivery to a fixed address'],
+      periodLabel: 'MEAL PERIOD',
+      periodTitle: 'Choose your meal period',
+      periodDesc: 'Use the calendar to choose your start and end dates.',
+      quickOptions: ['5 working days', '2 working weeks', '1 working month'],
+      startLabel: 'Start date',
+      endLabel: 'End date',
+      periodEmpty: 'Choose dates to calculate your working-day meals.',
+      periodButton: 'Order now (011-1097 7166)'
     },
     prices: [
       {
@@ -960,9 +998,19 @@ const translations = {
       ]
     },
     cta: {
-      title: '90 PROJECT',
+      title: 'Contact Us',
       slogan: 'Every moment deserves a good meal',
       button: 'WhatsApp Now'
+    },
+    showcase: [
+      { title: 'Event Catering', label: 'EVENT CATERING', desc: 'Buffet and food service for company events, launches, school activities and celebrations.', button: 'Learn More' },
+      { title: 'Event Styling', label: 'EVENT STYLING', desc: 'Wedding, birthday, launch and corporate styling designed around your venue and theme.', button: 'Learn More' },
+      { title: 'Cocktail Service', label: 'COCKTAIL SERVICE', desc: 'Professional bartenders and mobile bar service with signature drinks for your event.', button: 'Learn More' },
+      { title: 'Corporate Meals', label: 'CORPORATE MEALS', desc: 'Balanced, hygienic and practical meal solutions for company teams and daily staff meals.', button: 'Learn More' }
+    ],
+    why: {
+      title: 'Why choose 90 PROJECT?',
+      items: ['Freshly cooked', 'Professional team', 'One-stop service', 'Custom menus', 'Clear pricing', 'Thoughtful service']
     },
     member: {
       loginButton: 'Member Login',
@@ -2434,8 +2482,8 @@ function languageText() {
   return deepMerge(base, site);
 }
 
-function setText(selector, value) {
-  const element = document.querySelector(selector);
+function setText(selector, value, root = document) {
+  const element = root.querySelector(selector);
   if (element) element.textContent = value;
 }
 
@@ -2707,11 +2755,19 @@ function updateStaticLanguage() {
     updateSeoMeta(t);
   }
 
-  setText('#navLinks a[href="#home"]', t.nav.home);
-  setText('#navLinks a[href="#meal-plan"]', t.nav.meal);
-  setText('#navLinks a[href="#catering"]', t.nav.catering);
-  setText('#navLinks a[href="#styling"]', t.nav.styling);
-  setText('#navLinks a[href="#faq"]', t.nav.faq);
+  [
+    ['a[href="#home"]', t.nav.home],
+    ['a[href="#about"]', currentLanguage === 'en' ? 'About Us' : '关于我们'],
+    ['a[href="#meal-plan"]', t.nav.meal],
+    ['a[href="#catering"]', t.nav.catering],
+    ['a[href="#styling"]', t.nav.styling],
+    ['a[href="#cocktail"]', currentLanguage === 'en' ? 'Cocktail Service' : '鸡尾酒服务'],
+    ['a[href="#contact"]', currentLanguage === 'en' ? 'Contact Us' : '联系我们']
+  ].forEach(([selector, value]) => {
+    document.querySelectorAll(`#navLinks ${selector}`).forEach(link => {
+      link.textContent = value;
+    });
+  });
   setHtml('.nav-whatsapp', `<i class="ri-whatsapp-line" aria-hidden="true"></i> ${t.nav.whatsapp}`);
   const quickMessage = currentLanguage === 'en'
     ? 'Hi, I would like to ask about 90 PROJECT.'
@@ -2731,6 +2787,9 @@ function updateStaticLanguage() {
   setHtml('.hero-sub', t.hero.sub);
   setText('.hero-actions .btn-gold', t.hero.primary);
   setText('.hero-actions .btn-outline', t.hero.secondary);
+  document.querySelectorAll('.hero-proof-grid span small').forEach((item, index) => {
+    item.textContent = t.hero.proof?.[index] || item.textContent;
+  });
 
   document.querySelectorAll('.service-card').forEach((card, index) => {
     const service = t.services[index];
@@ -2740,12 +2799,37 @@ function updateStaticLanguage() {
     card.querySelector('p:last-child').textContent = service.desc;
   });
 
-  setText('#meal-plan .section-title h2', t.mealPlan.title);
-  setText('#meal-plan .section-title p', t.mealPlan.desc);
+  setText('#meal-plan .compact-title h2', t.mealPlan.title);
+  setText('#meal-plan .compact-title span', t.mealPlan.label);
+  setText('#meal-plan .price-pill strong', t.mealPlan.price);
+  setText('#meal-plan .price-pill > span', t.mealPlan.priceUnit);
+  setText('#meal-plan .price-pill small', t.mealPlan.priceNote);
+  document.querySelectorAll('#meal-plan .check-list li').forEach((item, index) => {
+    const point = t.mealPlan.points?.[index];
+    if (!point) return;
+    const icon = item.querySelector('i');
+    item.replaceChildren(icon, document.createTextNode(point));
+  });
+  setText('#mealPeriodTitle', t.mealPlan.periodTitle);
+  setText('.meal-period-heading span', t.mealPlan.periodLabel);
+  setText('.meal-period-heading p', t.mealPlan.periodDesc);
+  document.querySelectorAll('[data-meal-duration]').forEach((button, index) => {
+    button.textContent = t.mealPlan.quickOptions?.[index] || button.textContent;
+  });
+  document.querySelectorAll('.meal-date-grid label').forEach((label, index) => {
+    const input = label.querySelector('input');
+    const text = index === 0 ? t.mealPlan.startLabel : t.mealPlan.endLabel;
+    label.replaceChildren(document.createTextNode(text), input);
+  });
+  const mealButton = document.querySelector('#meal-plan .choose-package');
+  if (mealButton) {
+    mealButton.innerHTML = `<i class="ri-whatsapp-line" aria-hidden="true"></i>${escapeHtml(t.mealPlan.periodButton)}`;
+  }
   updatePriceCards(t);
 
   setText('.weekly-menu .panel-title h2', t.weekly.title);
   setText('.weekly-menu .panel-title span', t.weekly.label);
+  setText('.weekly-reference-card .compact-title h2', t.weekly.title);
   const dayList = document.querySelector('.day-list');
   if (dayList) {
     dayList.innerHTML = editable.weekly.days.map(item => `
@@ -2754,6 +2838,7 @@ function updateStaticLanguage() {
   }
   renderWeeklyReferenceGrid(editable.weekly.days);
   setHtml('.weekly-menu .note', formatMultiline(editable.weekly.note));
+  setHtml('.weekly-reference-card .note', formatMultiline(editable.weekly.note));
 
   setText('.addons .panel-title h2', t.addons.title);
   setText('.addons .panel-title span', t.addons.label);
@@ -2784,6 +2869,20 @@ function updateStaticLanguage() {
 
   updateFeatureCard('#catering', t.features.catering);
   updateFeatureCard('#styling', t.features.styling);
+  document.querySelectorAll('.reference-service-card').forEach((card, index) => {
+    const item = t.showcase?.[index];
+    if (!item) return;
+    setText('h2', item.title, card);
+    setText('span', item.label, card);
+    setText('p', item.desc, card);
+    setText('.btn', item.button, card);
+  });
+  setText('.why-strip h2', t.why?.title || '');
+  document.querySelectorAll('.why-strip div span').forEach((item, index) => {
+    const icon = item.querySelector('i');
+    const label = t.why?.items?.[index];
+    if (label && icon) item.replaceChildren(icon, document.createTextNode(label));
+  });
   renderMediaContent();
   setText('.teaser-copy span', t.cateringTool.label);
   setText('.teaser-copy h2', t.cateringTool.title);
@@ -2799,10 +2898,14 @@ function updateStaticLanguage() {
   updateFaq(t);
 
   setText('.footer-brand h2', t.cta.title);
+  setText('.footer-brand strong', currentLanguage === 'en' ? '90 PROJECT' : '九零食刻 90 PROJECT');
   setText('.footer-brand p', t.cta.slogan);
   setText('.final-cta .btn.big', t.cta.button);
   setText('.site-footer span:nth-child(2)', `WhatsApp: ${t.contact?.phone || '011-1097 7166'}`);
-  setText('.site-footer span:nth-child(3)', t.contact?.footer || '© 2026 九零食刻 90 PROJECT. All Rights Reserved.');
+  setText('.site-footer span:nth-child(3)', currentLanguage === 'en'
+    ? '© 2026 90 PROJECT. All Rights Reserved.'
+    : '© 2026 九零食刻 90 PROJECT. All Rights Reserved.');
+  setText('.site-footer a', currentLanguage === 'en' ? 'Admin' : '后台');
   renderManagedContent();
   syncMealPlanPeriod();
 
