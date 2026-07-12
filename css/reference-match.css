@@ -1782,3 +1782,36 @@ main {
     font-size: 10px;
   }
 }
+
+/* Keep the seven-day English menu readable at tablet and compact desktop widths. */
+@media (min-width: 681px) and (max-width: 1120px) {
+  .weekly-reference-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 12px;
+    overflow: visible;
+    padding: 2px 0 10px;
+  }
+
+  .weekly-reference-grid article {
+    min-width: 0;
+  }
+
+  .weekly-reference-grid span {
+    line-height: 1.42;
+    overflow-wrap: normal;
+  }
+}
+
+@media (min-width: 681px) and (max-width: 900px) {
+  .weekly-reference-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1121px) {
+  .weekly-reference-grid span {
+    line-height: 1.45;
+    overflow-wrap: normal;
+  }
+}
