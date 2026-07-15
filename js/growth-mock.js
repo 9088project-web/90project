@@ -127,6 +127,8 @@ const currentMember = () => api.currentMember();
 const page = document.body?.dataset.growthPage || '';
 let cloudReady = false;
 let cloudGrowthSnapshot = null;
+let adminGrowthSearch = '';
+let adminGrowthFilters = { application: 'all', withdrawal: 'all' };
 
 function setText(selector, value) {
   document.querySelectorAll(selector).forEach(element => { element.textContent = value; });
@@ -137,6 +139,43 @@ function setMessage(message, error = false) {
     element.textContent = message;
     element.classList.toggle('error', error);
   });
+}
+
+function setBusy(form, busy, label = '') {
+  const button = form?.querySelector('button[type="submit"]');
+  if (!button) return;
+  if (busy) {
+    button.dataset.originalText = button.textContent;
+    button.textContent = label || '处理中...';
+    button.disabled = true;
+  } else {
+    button.textContent = button.dataset.originalText || button.textContent;
+    button.disabled = false;
+  }
+}
+
+function downloadCsv(filename, rows) {
+  const csv = rows.map(row => row.map(value => `"${String(value ?? '').replace(/"/g, '""')}"`).join(',')).join('\n');
+  const blob = new Blob([`\uFEFF${csv}`], { type: 'text/csv;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+}
+
+function matchesAdminSearch(values) {
+  const keyword = adminGrowthSearch.trim().toLowerCase();
+  if (!keyword) return true;
+  return values.some(value => String(value || '').toLowerCase().includes(keyword));
+}
+
+function statusBadge(status) {
+  const tone = ['approved', 'available', 'paid'].includes(status) ? 'is-good' : ['rejected', 'reversed', 'cancelled'].includes(status) ? 'is-bad' : 'is-waiting';
+  return `<span class="growth-status-badge ${tone}">${esc(status || '-')}</span>`;
 }
 
 function setCloudStatus(message, connected = false) {
@@ -272,9 +311,13 @@ function bindMemberPage() {
   const loginForm = document.getElementById('growthLoginForm');
   registerForm?.addEventListener('submit', async event => {
     event.preventDefault();
+    setBusy(registerForm, true, '创建中...');
     const data = Object.fromEntries(new FormData(registerForm));
     const result = api.registerMember(data);
-    if (!result.ok) return setMessage(result.reason === 'duplicate_member' ? 'Email or phone already exists.' : 'Please complete all details. Password needs 6 characters.', true);
+    if (!result.ok) {
+      setBusy(registerForm, false);
+      return setMessage(result.reason === 'duplicate_member' ? '这个 Email 或手机号已经注册，可以直接登录。' : '请填写完整资料，密码至少 6 个字符。', true);
+    }
     api.grantCoupon(result.member.id, { name: 'New member welcome', code: 'WELCOME90', discountType: 'fixed', discountValue: 20 });
     if (cloudReady) {
       const cloudResult = await cloud.signUp(result.member, data.password);
@@ -290,10 +333,13 @@ function bindMemberPage() {
     } else {
       setMessage('会员已创建。欢迎积分与新会员优惠券已加入。');
     }
+    setBusy(registerForm, false);
+    registerForm.reset();
     renderMemberDashboard();
   });
   loginForm?.addEventListener('submit', async event => {
     event.preventDefault();
+    setBusy(loginForm, true, '登录中...');
     const data = Object.fromEntries(new FormData(loginForm));
     let result = api.loginMember(data.identity, data.password);
     if (!result.ok && cloudReady) {
@@ -307,35 +353,55 @@ function bindMemberPage() {
       const cloudLogin = await cloud.signIn(result.member.email, data.password);
       if (cloudLogin.ok) await syncCloudDashboard(result.member);
     }
-    if (!result.ok) return setMessage('Email / phone or password is incorrect.', true);
+    if (!result.ok) {
+      setBusy(loginForm, false);
+      return setMessage('Email / 手机号或密码不正确。如果刚注册云端账号，请确认 Email 后再试。', true);
+    }
     setMessage(cloudReady ? '会员已登录，正在同步云端资料。' : '会员已登录。');
     await syncCloudDashboard(result.member);
+    setBusy(loginForm, false);
+    loginForm.reset();
     renderMemberDashboard();
   });
-  document.getElementById('growthLogout')?.addEventListener('click', () => { cloud.signOut(); api.logoutMember(); cloudGrowthSnapshot = null; renderAuthState(); });
+  document.getElementById('growthLogout')?.addEventListener('click', () => { cloud.signOut(); api.logoutMember(); cloudGrowthSnapshot = null; setMessage('已退出会员中心。'); renderAuthState(); });
   document.getElementById('growthProfileForm')?.addEventListener('submit', async event => {
     event.preventDefault();
+    setBusy(event.currentTarget, true, '保存中...');
     const member = currentMember();
-    if (!member) return setMessage('请先登录会员。', true);
+    if (!member) {
+      setBusy(event.currentTarget, false);
+      return setMessage('请先登录会员。', true);
+    }
     const result = api.updateMemberProfile(member.id, Object.fromEntries(new FormData(event.currentTarget)));
-    if (!result.ok) return setMessage('会员资料保存失败。', true);
+    if (!result.ok) {
+      setBusy(event.currentTarget, false);
+      return setMessage('会员资料保存失败。', true);
+    }
     if (cloudReady && cloud.getSession()?.access_token) {
       const cloudResult = await cloud.updateProfile(result.member);
       setMessage(cloudResult.ok ? '会员资料已保存，并已同步云端。' : '会员资料已保存，本次云端同步失败。', !cloudResult.ok);
     } else {
       setMessage('会员资料已保存。');
     }
+    setBusy(event.currentTarget, false);
     renderMemberDashboard();
   });
   document.getElementById('growthPromoterForm')?.addEventListener('submit', async event => {
     event.preventDefault();
+    setBusy(event.currentTarget, true, '提交中...');
     const member = currentMember();
-    if (!member) return setMessage('Please log in first.', true);
+    if (!member) {
+      setBusy(event.currentTarget, false);
+      return setMessage('请先登录会员。', true);
+    }
     const data = Object.fromEntries(new FormData(event.currentTarget));
     data.termsAccepted = event.currentTarget.querySelector('[name="termsAccepted"]').checked;
     data.privacyAccepted = event.currentTarget.querySelector('[name="privacyAccepted"]').checked;
     const result = api.submitPromoterApplication(member.id, data);
-    if (!result.ok) return setMessage('Please accept the terms and privacy policy.', true);
+    if (!result.ok) {
+      setBusy(event.currentTarget, false);
+      return setMessage(result.reason === 'application_exists' ? '你已经提交过推荐官申请，等待后台审核即可。' : '请先同意推荐官条款与隐私政策。', true);
+    }
     if (cloudReady && cloud.getSession()?.access_token) {
       const cloudResult = await cloud.submitPromoterApplication(data);
       setMessage(cloudResult.ok ? '推荐官申请已提交，并已同步云端。' : '推荐官申请已保存在本地，云端同步暂时失败。', !cloudResult.ok);
@@ -344,15 +410,29 @@ function bindMemberPage() {
       setMessage('推荐官申请已提交审核。');
     }
     event.currentTarget.reset();
+    setBusy(event.currentTarget, false);
     renderMemberDashboard();
   });
   document.getElementById('growthWithdrawalForm')?.addEventListener('submit', async event => {
     event.preventDefault();
+    setBusy(event.currentTarget, true, '提交中...');
     const member = currentMember();
-    if (!member) return setMessage('Please log in first.', true);
+    if (!member) {
+      setBusy(event.currentTarget, false);
+      return setMessage('请先登录会员。', true);
+    }
     const data = Object.fromEntries(new FormData(event.currentTarget));
     const result = api.submitWithdrawal(member.id, data);
-    if (!result.ok) return setMessage(`Withdrawal could not be submitted: ${result.reason}.`, true);
+    if (!result.ok) {
+      setBusy(event.currentTarget, false);
+      const reasons = {
+        promoter_not_approved: '推荐官通过审核后才可以申请提现。',
+        below_minimum: '提现金额低于最低提现金额。',
+        withdrawal_pending: '你已经有一笔提现在处理中。',
+        insufficient_balance: '可提现佣金余额不足。'
+      };
+      return setMessage(reasons[result.reason] || `提现申请无法提交：${result.reason}`, true);
+    }
     if (cloudReady && cloud.getSession()?.access_token) {
       const cloudResult = await cloud.submitWithdrawal(data);
       setMessage(cloudResult.ok ? '提现申请已提交，并已同步云端。' : '提现申请已保存在本地，云端同步暂时失败。', !cloudResult.ok);
@@ -361,6 +441,7 @@ function bindMemberPage() {
       setMessage('提现申请已提交后台审核。');
     }
     event.currentTarget.reset();
+    setBusy(event.currentTarget, false);
     renderMemberDashboard();
   });
   document.querySelectorAll('[data-growth-mock]').forEach(button => button.addEventListener('click', () => {
@@ -395,17 +476,57 @@ function renderAdmin() {
   const root = document.querySelector('[data-growth-admin]');
   if (!root) return;
   const snapshot = api.adminSnapshot();
+  const memberById = new Map(snapshot.members.map(member => [member.id, member]));
+  const promoterById = new Map(snapshot.promoters.map(promoter => [promoter.id, promoter]));
+  const codeByPromoterId = new Map((snapshot.referralCodes || []).map(item => [item.promoterId, item.code]).filter(item => item[1]));
+  snapshot.relations.forEach(relation => {
+    if (relation.promoterId && relation.referralCode) codeByPromoterId.set(relation.promoterId, relation.referralCode);
+  });
   const metric = (selector, value) => { const element = document.querySelector(selector); if (element) element.textContent = String(value); };
   metric('[data-admin-growth="applications"]', snapshot.applications.filter(item => item.status === 'submitted').length);
   metric('[data-admin-growth="promoters"]', snapshot.promoters.filter(item => item.status === 'approved').length);
   metric('[data-admin-growth="commission"]', formatMoney(snapshot.commissions.reduce((sum, item) => sum + Number(item.commissionAmount || 0), 0)));
   metric('[data-admin-growth="withdrawals"]', snapshot.withdrawals.filter(item => !['paid', 'rejected', 'cancelled'].includes(item.status)).length);
+  const memberRows = document.querySelector('[data-growth-admin-members]');
+  const visibleMembers = snapshot.members.filter(member => {
+    const promoter = snapshot.promoters.find(item => item.memberId === member.id);
+    const referralCode = promoter ? codeByPromoterId.get(promoter.id) || '' : '';
+    return matchesAdminSearch([member.name, member.email, member.phone, member.levelId, member.status, referralCode]);
+  });
+  if (memberRows) {
+    memberRows.innerHTML = visibleMembers.length ? visibleMembers.map(member => {
+      const promoter = snapshot.promoters.find(item => item.memberId === member.id);
+      const referralCode = promoter ? codeByPromoterId.get(promoter.id) || '-' : '-';
+      return `<tr><td><strong>${esc(member.name || '90 Member')}</strong><br><small>${esc(member.phone || '-')} · ${esc(member.email || '-')}</small></td><td>${esc(member.levelId || 'member')}<br>${statusBadge(member.status || 'active')}</td><td>${promoter ? `${statusBadge(promoter.status)}<br><small>${esc(referralCode)}</small>` : '<span class="growth-muted">未申请</span>'}</td><td>${formatMoney(member.totalSpend || 0)}<br><small>${Number(member.orderCount || 0)} orders</small></td><td><b>${Number(member.pointsBalance || 0)}</b></td></tr>`;
+    }).join('') : '<tr><td colspan="5">没有符合筛选的会员。</td></tr>';
+  }
   const appRows = document.querySelector('[data-growth-admin-applications]');
-  appRows.innerHTML = snapshot.applications.length ? snapshot.applications.map(item => `<tr><td>${esc(item.name)}<br><small>${esc(item.email)}</small></td><td>${esc(item.status)}</td><td>${esc(item.region || '-')}</td><td><div class="growth-admin-actions"><button class="growth-button" data-review-app="${item.id}" data-decision="approve">Approve</button><button class="growth-button secondary" data-review-app="${item.id}" data-decision="reject">Reject</button></div></td></tr>`).join('') : '<tr><td colspan="4">No promoter applications.</td></tr>';
+  const visibleApplications = snapshot.applications.filter(item => {
+    const statusOk = adminGrowthFilters.application === 'all' || item.status === adminGrowthFilters.application;
+    return statusOk && matchesAdminSearch([item.name, item.email, item.phone, item.region, item.socialPlatform, item.socialAccount, item.promotionMethod]);
+  });
+  appRows.innerHTML = visibleApplications.length ? visibleApplications.map(item => `<tr><td><strong>${esc(item.name)}</strong><br><small>${esc(item.email)} · ${esc(item.phone || '-')}</small></td><td>${statusBadge(item.status)}</td><td>${esc(item.region || '-')}<br><small>${esc(item.socialPlatform || '-')} · ${esc(item.promotionMethod || '-')}</small></td><td><div class="growth-admin-actions"><button class="growth-button" data-review-app="${item.id}" data-decision="approve">批准</button><button class="growth-button secondary" data-review-app="${item.id}" data-decision="reject">拒绝</button><button class="growth-button secondary" data-review-app="${item.id}" data-decision="suspend">暂停</button></div></td></tr>`).join('') : '<tr><td colspan="4">没有符合筛选的推荐官申请。</td></tr>';
   const commissionRows = document.querySelector('[data-growth-admin-commissions]');
-  commissionRows.innerHTML = snapshot.commissions.length ? snapshot.commissions.map(item => `<tr><td>${esc(item.orderId)}</td><td>${esc(item.status)}</td><td>${formatMoney(item.eligibleAmount)}</td><td>${formatMoney(item.commissionAmount)}</td></tr>`).join('') : '<tr><td colspan="4">No commission ledger entries.</td></tr>';
+  const visibleCommissions = snapshot.commissions.filter(item => {
+    const promoter = promoterById.get(item.promoterId);
+    const member = promoter ? memberById.get(promoter.memberId) : memberById.get(item.memberId);
+    return matchesAdminSearch([item.orderId, item.status, member?.name, member?.email, member?.phone]);
+  });
+  commissionRows.innerHTML = visibleCommissions.length ? visibleCommissions.map(item => {
+    const promoter = promoterById.get(item.promoterId);
+    const promoterMember = promoter ? memberById.get(promoter.memberId) : null;
+    return `<tr><td>${esc(item.orderId)}<br><small>${esc(promoterMember?.name || '-')}</small></td><td>${statusBadge(item.status)}</td><td>${formatMoney(item.eligibleAmount)}</td><td><b>${formatMoney(item.commissionAmount)}</b><br><small>${esc(item.commissionType)} ${Number(item.commissionRate || 0)}%</small></td></tr>`;
+  }).join('') : '<tr><td colspan="4">没有符合筛选的佣金记录。</td></tr>';
   const withdrawalRows = document.querySelector('[data-growth-admin-withdrawals]');
-  withdrawalRows.innerHTML = snapshot.withdrawals.length ? snapshot.withdrawals.map(item => `<tr><td>${esc(item.id)}</td><td>${formatMoney(item.amount)}</td><td>${esc(item.status)}</td><td><div class="growth-admin-actions"><button class="growth-button" data-review-withdrawal="${item.id}" data-decision="approve">Approve</button><button class="growth-button" data-review-withdrawal="${item.id}" data-decision="paid">Mock Paid</button></div></td></tr>`).join('') : '<tr><td colspan="4">No withdrawals.</td></tr>';
+  const visibleWithdrawals = snapshot.withdrawals.filter(item => {
+    const statusOk = adminGrowthFilters.withdrawal === 'all' || item.status === adminGrowthFilters.withdrawal;
+    const member = memberById.get(item.memberId);
+    return statusOk && matchesAdminSearch([item.id, item.status, item.bankName, item.accountName, member?.name, member?.email, member?.phone]);
+  });
+  withdrawalRows.innerHTML = visibleWithdrawals.length ? visibleWithdrawals.map(item => {
+    const member = memberById.get(item.memberId);
+    return `<tr><td><strong>${esc(member?.name || item.memberId)}</strong><br><small>${esc(item.bankName || '-')} · ${esc(item.accountName || '-')}</small></td><td><b>${formatMoney(item.amount)}</b><br><small>${new Date(item.createdAt).toLocaleDateString()}</small></td><td>${statusBadge(item.status)}</td><td><div class="growth-admin-actions"><button class="growth-button" data-review-withdrawal="${item.id}" data-decision="approve">批准</button><button class="growth-button secondary" data-review-withdrawal="${item.id}" data-decision="processing">处理中</button><button class="growth-button" data-review-withdrawal="${item.id}" data-decision="paid">标记已付款</button><button class="growth-button secondary" data-review-withdrawal="${item.id}" data-decision="reject">拒绝</button></div></td></tr>`;
+  }).join('') : '<tr><td colspan="4">没有符合筛选的提现请求。</td></tr>';
   const config = snapshot.config;
   document.querySelector('[data-growth-config-percent]').value = config.defaultCommission.value;
   document.querySelector('[data-growth-config-hold]').value = config.refundObservationDays;
@@ -414,16 +535,49 @@ function renderAdmin() {
 
 function bindAdmin() {
   if (!document.querySelector('[data-growth-admin]')) return;
+  document.querySelector('[data-growth-admin-search]')?.addEventListener('input', event => {
+    adminGrowthSearch = event.target.value || '';
+    renderAdmin();
+  });
+  document.querySelectorAll('[data-growth-admin-filter]').forEach(select => {
+    select.addEventListener('change', event => {
+      adminGrowthFilters[event.target.dataset.growthAdminFilter] = event.target.value || 'all';
+      renderAdmin();
+    });
+  });
   document.addEventListener('click', event => {
+    const exportButton = event.target.closest('[data-growth-export]');
+    if (exportButton) {
+      const snapshot = api.adminSnapshot();
+      if (exportButton.dataset.growthExport === 'members') {
+        downloadCsv(`90project-members-${new Date().toISOString().slice(0, 10)}.csv`, [
+          ['name', 'phone', 'email', 'status', 'level', 'orders', 'total_spend', 'points'],
+          ...snapshot.members.map(member => [member.name, member.phone, member.email, member.status, member.levelId, member.orderCount, member.totalSpend, member.pointsBalance])
+        ]);
+      } else {
+        const promoterById = new Map(snapshot.promoters.map(promoter => [promoter.id, promoter]));
+        const memberById = new Map(snapshot.members.map(member => [member.id, member]));
+        downloadCsv(`90project-commissions-${new Date().toISOString().slice(0, 10)}.csv`, [
+          ['order_id', 'promoter', 'member', 'status', 'eligible_amount', 'commission_amount', 'created_at'],
+          ...snapshot.commissions.map(item => {
+            const promoter = promoterById.get(item.promoterId);
+            return [item.orderId, memberById.get(promoter?.memberId)?.name || '', memberById.get(item.memberId)?.name || '', item.status, item.eligibleAmount, item.commissionAmount, item.createdAt];
+          })
+        ]);
+      }
+      return;
+    }
     const appButton = event.target.closest('[data-review-app]');
     if (appButton) {
       api.reviewPromoterApplication(appButton.dataset.reviewApp, appButton.dataset.decision, 'mock-admin', appButton.dataset.decision === 'reject' ? 'Mock review rejection' : 'Mock review approval');
+      setMessage('推荐官申请状态已更新。');
       renderAdmin();
       return;
     }
     const withdrawalButton = event.target.closest('[data-review-withdrawal]');
     if (withdrawalButton) {
       api.reviewWithdrawal(withdrawalButton.dataset.reviewWithdrawal, withdrawalButton.dataset.decision, 'mock-admin', { referenceNumber: `MOCK-${Date.now()}` });
+      setMessage('提现请求状态已更新。');
       renderAdmin();
       return;
     }
@@ -437,6 +591,7 @@ function bindAdmin() {
     config.refundObservationDays = Number(document.querySelector('[data-growth-config-hold]').value) || 7;
     config.minimumWithdrawal = Number(document.querySelector('[data-growth-config-min]').value) || 50;
     api.updateConfig(config, 'mock-admin');
+    setMessage('增长系统规则已保存。');
     renderAdmin();
   });
   renderAdmin();

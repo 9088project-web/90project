@@ -532,6 +532,7 @@ export function createGrowthApi(storage = defaultStorage(), options = {}) {
       config: clone(current.config),
       applications: clone(current.promoterApplications),
       promoters: clone(current.promoters),
+      referralCodes: clone(current.referralCodes),
       members: clone(current.members),
       clicks: clone(current.referralClicks),
       relations: clone(current.referralRelations),
