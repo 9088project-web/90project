@@ -104,3 +104,31 @@ test('withdrawals enforce approval, minimum amount and prevent duplicate open re
   assert.equal(paid.request.paidAmount, 15);
   assert.equal(api.getState().withdrawalPayments.length, 1);
 });
+
+test('cloud imported member can be used as the current member and updated locally', () => {
+  const { api } = setup();
+  const imported = api.importMember({
+    name: 'Cloud Member',
+    email: 'cloud@example.com',
+    phone: '01199998888',
+    source: 'supabase',
+    supabaseUserId: 'cloud-user-1',
+    pointsBalance: 120,
+    couponCount: 2
+  });
+
+  assert.equal(imported.ok, true);
+  assert.equal(api.currentMember().email, 'cloud@example.com');
+  assert.equal(api.summary(imported.member.id).points, 120);
+
+  const updated = api.updateMemberProfile(imported.member.id, {
+    name: 'Cloud Member Updated',
+    phone: '01199998888',
+    address: 'PJ',
+    preference: 'less spicy'
+  });
+
+  assert.equal(updated.ok, true);
+  assert.equal(api.currentMember().name, 'Cloud Member Updated');
+  assert.equal(api.currentMember().address, 'PJ');
+});

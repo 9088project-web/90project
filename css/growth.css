@@ -358,6 +358,19 @@ body.growth-page {
   min-height: 17px;
 }
 
+.member-cloud-status {
+  width: fit-content;
+  margin-top: 18px;
+  color: #f7d993;
+  background: rgba(0, 0, 0, .34);
+}
+
+.member-cloud-status.is-connected {
+  color: #18351f;
+  border-color: rgba(126, 210, 148, .55);
+  background: #dff8dd;
+}
+
 @media (max-width: 820px) {
   .growth-spotlight { grid-template-columns: 1fr; }
   .growth-header-inner { flex-wrap: wrap; padding: 12px 0; }

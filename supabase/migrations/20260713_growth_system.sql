@@ -326,6 +326,18 @@ drop policy if exists growth_notifications_member_select on public.growth_notifi
 create policy growth_notifications_member_select on public.growth_notifications for select to authenticated using (member_id = auth.uid());
 drop policy if exists growth_withdrawals_member_select on public.growth_withdrawal_requests;
 create policy growth_withdrawals_member_select on public.growth_withdrawal_requests for select to authenticated using (promoter_id in (select id from public.growth_promoters where member_id = auth.uid()));
+drop policy if exists growth_promoter_applications_member_insert on public.growth_promoter_applications;
+create policy growth_promoter_applications_member_insert on public.growth_promoter_applications for insert to authenticated with check (member_id = auth.uid());
+drop policy if exists growth_promoter_applications_member_select on public.growth_promoter_applications;
+create policy growth_promoter_applications_member_select on public.growth_promoter_applications for select to authenticated using (member_id = auth.uid());
+drop policy if exists growth_promoters_member_select on public.growth_promoters;
+create policy growth_promoters_member_select on public.growth_promoters for select to authenticated using (member_id = auth.uid());
+drop policy if exists growth_referral_codes_member_select on public.growth_referral_codes;
+create policy growth_referral_codes_member_select on public.growth_referral_codes for select to authenticated using (promoter_id in (select id from public.growth_promoters where member_id = auth.uid()));
+drop policy if exists growth_withdrawals_member_insert on public.growth_withdrawal_requests;
+create policy growth_withdrawals_member_insert on public.growth_withdrawal_requests for insert to authenticated with check (promoter_id in (select id from public.growth_promoters where member_id = auth.uid()));
+drop policy if exists growth_commissions_member_select on public.growth_commission_ledgers;
+create policy growth_commissions_member_select on public.growth_commission_ledgers for select to authenticated using (member_id = auth.uid() or promoter_id in (select id from public.growth_promoters where member_id = auth.uid()));
 
 comment on table public.growth_referral_relations is 'One-level direct referral binding. referred_member_id is unique and depth must equal 1.';
 comment on table public.growth_commission_ledgers is 'Commission is created after completed order and becomes available only after refund observation period.';

@@ -196,6 +196,52 @@ export function createGrowthApi(storage = defaultStorage(), options = {}) {
     return memberId ? clone(findMember(read(), memberId)) : null;
   }
 
+  function importMember(input = {}) {
+    const current = read();
+    const email = normalize(input.email);
+    const phone = normalizePhone(input.phone);
+    if (!email) return { ok: false, reason: 'invalid_details' };
+    const next = clone(current);
+    let member = next.members.find(item => normalize(item.email) === email || (phone && normalizePhone(item.phone) === phone));
+    if (!member) {
+      member = {
+        id: input.id || id('member'),
+        name: String(input.name || email.split('@')[0] || '90 Member').trim(),
+        email,
+        phone,
+        password: String(input.password || ''),
+        birthday: input.birthday || '',
+        language: input.language || 'zh',
+        address: input.address || '',
+        companyName: input.companyName || '',
+        eventType: input.eventType || '',
+        estimatedPax: Number(input.estimatedPax) || 0,
+        preference: input.preference || '',
+        source: input.source || 'supabase',
+        registeredAt: input.registeredAt || dateValue(now()),
+        lastPurchaseAt: null,
+        orderCount: Number(input.orderCount) || 0,
+        totalSpend: money(input.totalSpend),
+        pointsBalance: Number(input.pointsBalance) || 0,
+        couponCount: Number(input.couponCount) || 0,
+        levelId: input.levelId || 'member',
+        status: input.status || 'active'
+      };
+      next.members.unshift(member);
+    }
+    ['name', 'phone', 'birthday', 'language', 'address', 'companyName', 'eventType', 'preference', 'source', 'levelId', 'status', 'supabaseUserId', 'cloudSyncedAt', 'referralCode', 'referredByCode'].forEach(field => {
+      if (input[field] !== undefined) member[field] = input[field];
+    });
+    member.estimatedPax = Number(input.estimatedPax) || Number(member.estimatedPax) || 0;
+    if (input.pointsBalance !== undefined) member.pointsBalance = Number(input.pointsBalance) || 0;
+    if (input.couponCount !== undefined) member.couponCount = Number(input.couponCount) || 0;
+    member.updatedAt = dateValue(now());
+    audit(next, 'member.imported', member.id, 'member', member.id, input.source || 'cloud');
+    state = write(next);
+    storage?.setItem(GROWTH_SESSION_KEY, member.id);
+    return { ok: true, member: clone(member) };
+  }
+
   function updateMemberProfile(memberId, input = {}) {
     const current = read();
     const member = findMember(current, memberId);
@@ -508,7 +554,7 @@ export function createGrowthApi(storage = defaultStorage(), options = {}) {
     return { ok: true, config: clone(next.config) };
   }
 
-  return { getState, captureReferralVisit, pendingReferral, registerMember, loginMember, logoutMember, currentMember, updateMemberProfile, submitPromoterApplication, reviewPromoterApplication, createEnquiry, createOrder, completeOrder, releaseCommissions, mockAdvanceCommissionObservation, refundOrder, submitWithdrawal, reviewWithdrawal, grantCoupon, summary, adminSnapshot, updateConfig, availableCommissionFor };
+  return { getState, captureReferralVisit, pendingReferral, registerMember, loginMember, logoutMember, currentMember, importMember, updateMemberProfile, submitPromoterApplication, reviewPromoterApplication, createEnquiry, createOrder, completeOrder, releaseCommissions, mockAdvanceCommissionObservation, refundOrder, submitWithdrawal, reviewWithdrawal, grantCoupon, summary, adminSnapshot, updateConfig, availableCommissionFor };
 }
 
 export { COMMISSION_STATUSES, ORDER_STATUSES, WITHDRAWAL_STATUSES, money, normalizePhone };

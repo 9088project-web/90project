@@ -1,6 +1,8 @@
 import { createGrowthApi, money } from './growth-domain.mjs';
+import { createGrowthCloud } from './growth-cloud.mjs';
 
 const api = createGrowthApi();
+const cloud = createGrowthCloud();
 const LANG_KEY = 'np90_growth_language_v1';
 const translations = {
   zh: {
@@ -123,6 +125,8 @@ const esc = value => String(value ?? '').replace(/[&<>'"]/g, char => ({ '&': '&a
 const formatMoney = value => `RM${money(value).toFixed(2)}`;
 const currentMember = () => api.currentMember();
 const page = document.body?.dataset.growthPage || '';
+let cloudReady = false;
+let cloudGrowthSnapshot = null;
 
 function setText(selector, value) {
   document.querySelectorAll(selector).forEach(element => { element.textContent = value; });
@@ -133,6 +137,36 @@ function setMessage(message, error = false) {
     element.textContent = message;
     element.classList.toggle('error', error);
   });
+}
+
+function setCloudStatus(message, connected = false) {
+  document.querySelectorAll('[data-growth-cloud-status]').forEach(element => {
+    element.textContent = message;
+    element.classList.toggle('is-connected', connected);
+  });
+}
+
+async function syncCloudDashboard(member = currentMember()) {
+  if (!cloudReady || !member) return null;
+  const session = cloud.getSession();
+  if (!session?.access_token) return null;
+  try {
+    const [profile, growth] = await Promise.all([
+      cloud.loadProfile(session),
+      cloud.loadMemberGrowth(session)
+    ]);
+    if (profile) {
+      const imported = api.importMember(cloud.profileToMember(profile, session, member));
+      if (imported.ok) member = imported.member;
+    }
+    cloudGrowthSnapshot = growth;
+    setCloudStatus('Supabase 已连接，会员资料会同步云端。', true);
+    return { member, growth };
+  } catch (error) {
+    console.warn('Growth cloud sync failed', error);
+    setCloudStatus('Supabase 已配置，但当前读取失败；页面继续使用本地记录。', false);
+    return null;
+  }
 }
 
 function applyLanguage() {
@@ -195,19 +229,40 @@ function renderMemberDashboard() {
   const list = document.querySelector('[data-growth-order-list]');
   list.innerHTML = summary.orders.length ? summary.orders.map(order => `<li><span>${esc(order.serviceType || 'Service')}<br><small>${esc(order.status)}</small></span><b>${formatMoney(order.totalAmount)}</b></li>`).join('') : `<li>${esc(t('noData'))}</li>`;
   const commissionList = document.querySelector('[data-growth-commission-list]');
-  commissionList.innerHTML = summary.commissions.length ? summary.commissions.map(item => `<li><span>${esc(item.status)}<br><small>${esc(item.orderId)}</small></span><b>${formatMoney(item.commissionAmount)}</b></li>`).join('') : `<li>${esc(t('noData'))}</li>`;
+  const cloudCommissions = cloudGrowthSnapshot?.commissions || [];
+  const allCommissions = cloudCommissions.length
+    ? cloudCommissions.map(item => ({ status: item.status, orderId: item.order_id || item.orderId || 'cloud', commissionAmount: item.commission_amount || item.commissionAmount }))
+    : summary.commissions;
+  commissionList.innerHTML = allCommissions.length ? allCommissions.map(item => `<li><span>${esc(item.status)}<br><small>${esc(item.orderId)}</small></span><b>${formatMoney(item.commissionAmount)}</b></li>`).join('') : `<li>${esc(t('noData'))}</li>`;
   const couponList = document.querySelector('[data-growth-coupon-list]');
   if (couponList) {
-    couponList.innerHTML = summary.coupons.length ? summary.coupons.map(coupon => `<li><span>${esc(coupon.name)}<br><small>${esc(coupon.code)} · ${new Date(coupon.expiresAt).toLocaleDateString()}</small></span><b>${coupon.discountType === 'percent' ? `${coupon.discountValue}%` : formatMoney(coupon.discountValue)}</b></li>`).join('') : `<li>${esc(t('noData'))}</li>`;
+    const cloudCoupons = cloudGrowthSnapshot?.coupons || [];
+    couponList.innerHTML = cloudCoupons.length
+      ? cloudCoupons.map(coupon => {
+        const template = Array.isArray(coupon.growth_coupon_templates) ? coupon.growth_coupon_templates[0] : coupon.growth_coupon_templates;
+        const name = template?.name?.zh || template?.name?.en || coupon.code;
+        const value = template?.discount_type === 'percent' ? `${template.discount_value}%` : formatMoney(template?.discount_value || 0);
+        return `<li><span>${esc(name)}<br><small>${esc(coupon.code)} · ${coupon.expires_at ? new Date(coupon.expires_at).toLocaleDateString() : '-'}</small></span><b>${value}</b></li>`;
+      }).join('')
+      : summary.coupons.length ? summary.coupons.map(coupon => `<li><span>${esc(coupon.name)}<br><small>${esc(coupon.code)} · ${new Date(coupon.expiresAt).toLocaleDateString()}</small></span><b>${coupon.discountType === 'percent' ? `${coupon.discountValue}%` : formatMoney(coupon.discountValue)}</b></li>`).join('') : `<li>${esc(t('noData'))}</li>`;
   }
   const pointsList = document.querySelector('[data-growth-points-list]');
   if (pointsList) {
-    const entries = state.pointsLedgers.filter(item => item.memberId === member.id).slice(0, 6);
+    const entries = (cloudGrowthSnapshot?.points || []).length
+      ? cloudGrowthSnapshot.points.map(item => ({ reason: item.reason || item.transaction_type, createdAt: item.created_at, points: item.points }))
+      : state.pointsLedgers.filter(item => item.memberId === member.id).slice(0, 6);
     pointsList.innerHTML = entries.length ? entries.map(item => `<li><span>${esc(item.reason || item.transactionType)}<br><small>${new Date(item.createdAt).toLocaleDateString()}</small></span><b>${Number(item.points) > 0 ? '+' : ''}${Number(item.points)}</b></li>`).join('') : `<li>${esc(t('noData'))}</li>`;
   }
   const noticeList = document.querySelector('[data-growth-notification-list]');
   if (noticeList) {
-    noticeList.innerHTML = summary.notifications.length ? summary.notifications.slice(0, 6).map(item => `<li><span>${esc(item.title)}<br><small>${esc(item.body)}</small></span><b>${new Date(item.createdAt).toLocaleDateString()}</b></li>`).join('') : `<li>${esc(t('noData'))}</li>`;
+    const notices = (cloudGrowthSnapshot?.notifications || []).length
+      ? cloudGrowthSnapshot.notifications.map(item => ({
+        title: item.title?.zh || item.title?.en || item.notification_type,
+        body: item.body?.zh || item.body?.en || '',
+        createdAt: item.created_at
+      }))
+      : summary.notifications;
+    noticeList.innerHTML = notices.length ? notices.slice(0, 6).map(item => `<li><span>${esc(item.title)}<br><small>${esc(item.body)}</small></span><b>${new Date(item.createdAt).toLocaleDateString()}</b></li>`).join('') : `<li>${esc(t('noData'))}</li>`;
   }
   renderAuthState();
 }
@@ -215,34 +270,64 @@ function renderMemberDashboard() {
 function bindMemberPage() {
   const registerForm = document.getElementById('growthRegisterForm');
   const loginForm = document.getElementById('growthLoginForm');
-  registerForm?.addEventListener('submit', event => {
+  registerForm?.addEventListener('submit', async event => {
     event.preventDefault();
     const data = Object.fromEntries(new FormData(registerForm));
     const result = api.registerMember(data);
     if (!result.ok) return setMessage(result.reason === 'duplicate_member' ? 'Email or phone already exists.' : 'Please complete all details. Password needs 6 characters.', true);
     api.grantCoupon(result.member.id, { name: 'New member welcome', code: 'WELCOME90', discountType: 'fixed', discountValue: 20 });
-    setMessage('Member created. Welcome reward added.');
+    if (cloudReady) {
+      const cloudResult = await cloud.signUp(result.member, data.password);
+      if (cloudResult.ok && cloudResult.session) {
+        await cloud.updateProfile(result.member, cloudResult.session);
+        await syncCloudDashboard(result.member);
+        setMessage('会员已创建，并已同步 Supabase。');
+      } else if (cloudResult.ok) {
+        setMessage('会员已创建。Supabase 可能需要 Email 确认后才会同步。');
+      } else {
+        setMessage('会员已创建，本地可用；Supabase 同步暂时失败。', true);
+      }
+    } else {
+      setMessage('会员已创建。欢迎积分与新会员优惠券已加入。');
+    }
     renderMemberDashboard();
   });
-  loginForm?.addEventListener('submit', event => {
+  loginForm?.addEventListener('submit', async event => {
     event.preventDefault();
     const data = Object.fromEntries(new FormData(loginForm));
-    const result = api.loginMember(data.identity, data.password);
+    let result = api.loginMember(data.identity, data.password);
+    if (!result.ok && cloudReady) {
+      const cloudLogin = await cloud.signIn(data.identity, data.password);
+      if (cloudLogin.ok) {
+        const profile = await cloud.loadProfile(cloudLogin.session);
+        const imported = api.importMember(cloud.profileToMember(profile, cloudLogin.session, { email: data.identity, password: data.password }));
+        result = imported.ok ? { ok: true, member: imported.member } : result;
+      }
+    } else if (result.ok && cloudReady) {
+      const cloudLogin = await cloud.signIn(result.member.email, data.password);
+      if (cloudLogin.ok) await syncCloudDashboard(result.member);
+    }
     if (!result.ok) return setMessage('Email / phone or password is incorrect.', true);
-    setMessage('Logged in.');
+    setMessage(cloudReady ? '会员已登录，正在同步云端资料。' : '会员已登录。');
+    await syncCloudDashboard(result.member);
     renderMemberDashboard();
   });
-  document.getElementById('growthLogout')?.addEventListener('click', () => { api.logoutMember(); renderAuthState(); });
-  document.getElementById('growthProfileForm')?.addEventListener('submit', event => {
+  document.getElementById('growthLogout')?.addEventListener('click', () => { cloud.signOut(); api.logoutMember(); cloudGrowthSnapshot = null; renderAuthState(); });
+  document.getElementById('growthProfileForm')?.addEventListener('submit', async event => {
     event.preventDefault();
     const member = currentMember();
     if (!member) return setMessage('请先登录会员。', true);
     const result = api.updateMemberProfile(member.id, Object.fromEntries(new FormData(event.currentTarget)));
     if (!result.ok) return setMessage('会员资料保存失败。', true);
-    setMessage('会员资料已保存。');
+    if (cloudReady && cloud.getSession()?.access_token) {
+      const cloudResult = await cloud.updateProfile(result.member);
+      setMessage(cloudResult.ok ? '会员资料已保存，并已同步云端。' : '会员资料已保存，本次云端同步失败。', !cloudResult.ok);
+    } else {
+      setMessage('会员资料已保存。');
+    }
     renderMemberDashboard();
   });
-  document.getElementById('growthPromoterForm')?.addEventListener('submit', event => {
+  document.getElementById('growthPromoterForm')?.addEventListener('submit', async event => {
     event.preventDefault();
     const member = currentMember();
     if (!member) return setMessage('Please log in first.', true);
@@ -251,17 +336,30 @@ function bindMemberPage() {
     data.privacyAccepted = event.currentTarget.querySelector('[name="privacyAccepted"]').checked;
     const result = api.submitPromoterApplication(member.id, data);
     if (!result.ok) return setMessage('Please accept the terms and privacy policy.', true);
-    setMessage('Application submitted for review.');
+    if (cloudReady && cloud.getSession()?.access_token) {
+      const cloudResult = await cloud.submitPromoterApplication(data);
+      setMessage(cloudResult.ok ? '推荐官申请已提交，并已同步云端。' : '推荐官申请已保存在本地，云端同步暂时失败。', !cloudResult.ok);
+      await syncCloudDashboard(member);
+    } else {
+      setMessage('推荐官申请已提交审核。');
+    }
     event.currentTarget.reset();
     renderMemberDashboard();
   });
-  document.getElementById('growthWithdrawalForm')?.addEventListener('submit', event => {
+  document.getElementById('growthWithdrawalForm')?.addEventListener('submit', async event => {
     event.preventDefault();
     const member = currentMember();
     if (!member) return setMessage('Please log in first.', true);
-    const result = api.submitWithdrawal(member.id, Object.fromEntries(new FormData(event.currentTarget)));
+    const data = Object.fromEntries(new FormData(event.currentTarget));
+    const result = api.submitWithdrawal(member.id, data);
     if (!result.ok) return setMessage(`Withdrawal could not be submitted: ${result.reason}.`, true);
-    setMessage('Withdrawal submitted for Mock admin review.');
+    if (cloudReady && cloud.getSession()?.access_token) {
+      const cloudResult = await cloud.submitWithdrawal(data);
+      setMessage(cloudResult.ok ? '提现申请已提交，并已同步云端。' : '提现申请已保存在本地，云端同步暂时失败。', !cloudResult.ok);
+      await syncCloudDashboard(member);
+    } else {
+      setMessage('提现申请已提交后台审核。');
+    }
     event.currentTarget.reset();
     renderMemberDashboard();
   });
@@ -351,9 +449,15 @@ document.addEventListener('click', event => {
 });
 
 if (page === 'member') {
+  const cloudState = await cloud.init();
+  cloudReady = Boolean(cloudState.configured);
+  setCloudStatus(cloudReady ? 'Supabase 已连接，会员资料会同步云端。' : '本地会员模式：Supabase 尚未配置或暂不可用。', cloudReady);
   bindMemberPage();
   renderAuthState();
+  await syncCloudDashboard();
   renderMemberDashboard();
+} else {
+  await cloud.init();
 }
 if (page === 'referral') bindReferralPage();
 bindAdmin();
