@@ -6,6 +6,9 @@ const publicDir = path.join(root, "public");
 
 const entries = [
   "index.html",
+  "rewards.html",
+  "referral.html",
+  "member.html",
   "admin.html",
   "catering.html",
   "styling.html",

@@ -8,6 +8,7 @@
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/remixicon@4.6.0/fonts/remixicon.css" />
   <link rel="stylesheet" href="css/style.css?v=20260702-admin-video-only" />
   <link rel="stylesheet" href="css/admin.css?v=20260710-content-admin" />
+  <link rel="stylesheet" href="css/growth.css?v=20260713-growth" />
 </head>
 <body class="admin-page">
   <header class="admin-topbar">
@@ -55,6 +56,7 @@
         <button type="button" data-admin-panel-tab="inquiries">顾客询问</button>
         <button type="button" data-admin-panel-tab="members">会员资料</button>
         <button type="button" data-admin-panel-tab="tracking">转化追踪</button>
+        <button type="button" data-admin-panel-tab="growth">增长系统</button>
       </div>
 
       <section class="admin-section" data-admin-panel="site">
@@ -115,6 +117,36 @@
         <div class="admin-rows" id="adminConversions"></div>
       </section>
 
+      <section class="admin-section growth-admin-section" data-admin-panel="growth" hidden>
+        <div class="admin-section-head"><div><h2>90推荐官与会员奖励</h2><p>本地 Mock 管理区：审核推荐官、查看佣金、处理提现和调整默认规则。真实付款与通知 API 尚未接入。</p></div></div>
+        <div data-growth-admin>
+          <div class="growth-metric-grid">
+            <div class="growth-metric"><strong>待审核申请</strong><b data-admin-growth="applications">0</b></div>
+            <div class="growth-metric"><strong>已批准推荐官</strong><b data-admin-growth="promoters">0</b></div>
+            <div class="growth-metric"><strong>佣金总额</strong><b data-admin-growth="commission">RM0.00</b></div>
+            <div class="growth-metric"><strong>待处理提现</strong><b data-admin-growth="withdrawals">0</b></div>
+          </div>
+          <div class="growth-panel">
+            <h3>推荐官申请</h3>
+            <div class="growth-table-wrap"><table class="growth-table"><thead><tr><th>申请人</th><th>状态</th><th>地区</th><th>操作</th></tr></thead><tbody data-growth-admin-applications></tbody></table></div>
+          </div>
+          <div class="growth-panel">
+            <h3>佣金账本</h3>
+            <div class="growth-table-wrap"><table class="growth-table"><thead><tr><th>订单</th><th>状态</th><th>合资格金额</th><th>佣金</th></tr></thead><tbody data-growth-admin-commissions></tbody></table></div>
+          </div>
+          <div class="growth-panel">
+            <h3>提现请求</h3>
+            <div class="growth-table-wrap"><table class="growth-table"><thead><tr><th>请求</th><th>金额</th><th>状态</th><th>操作</th></tr></thead><tbody data-growth-admin-withdrawals></tbody></table></div>
+          </div>
+          <form class="growth-form growth-panel" data-growth-config-form>
+            <h3>默认规则</h3>
+            <div class="growth-form-grid"><label>直推佣金 %<input data-growth-config-percent type="number" min="0" max="100" step="0.1"></label><label>退款观察期（天）<input data-growth-config-hold type="number" min="0" step="1"></label></div>
+            <label>最低提现金额 RM<input data-growth-config-min type="number" min="0" step="0.01"></label>
+            <button class="growth-button" type="submit">保存 Mock 规则</button>
+          </form>
+        </div>
+      </section>
+
       <div class="admin-actions">
         <button class="btn btn-gold" id="saveAdminContent" type="button"><i class="ri-save-3-line" aria-hidden="true"></i>保存全部内容</button>
         <button class="btn btn-outline" id="resetAdminContent" type="button"><i class="ri-refresh-line" aria-hidden="true"></i>恢复默认内容</button>
@@ -124,5 +156,6 @@
   </main>
 
   <script src="js/app.js?v=20260710-content-admin"></script>
+  <script type="module" src="js/growth-mock.js?v=20260713-growth-admin"></script>
 </body>
 </html>

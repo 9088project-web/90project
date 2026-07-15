@@ -769,6 +769,13 @@ const translations = {
       title: '为什么选择九零食刻?',
       items: ['新鲜现煮', '专业团队', '一站式服务', '客制化菜单', '价格透明', '用心服务']
     },
+    growth: {
+      title: '分享美好食刻，获得90推荐奖励',
+      description: '成为90推荐官，把九零食刻介绍给朋友。当朋友完成符合资格的订单，你将获得透明、可查询的推荐奖励。',
+      apply: '立即申请',
+      view: '查看会员奖励',
+      steps: ['注册会员', '申请推荐官', '完成订单后获得奖励']
+    },
     member: {
       loginButton: '会员登录',
       centerButton: '会员中心',
@@ -1011,6 +1018,13 @@ const translations = {
     why: {
       title: 'Why choose 90 PROJECT?',
       items: ['Freshly cooked', 'Professional team', 'One-stop service', 'Custom menus', 'Clear pricing', 'Thoughtful service']
+    },
+    growth: {
+      title: 'Share good moments, earn 90 referral rewards',
+      description: 'Become a 90 Promoter and introduce 90 PROJECT to friends. When an eligible order is completed, you receive a transparent, trackable referral reward.',
+      apply: 'Apply now',
+      view: 'View member rewards',
+      steps: ['Register as a member', 'Apply as a promoter', 'Earn after an eligible order']
     },
     member: {
       loginButton: 'Member Login',
@@ -1642,6 +1656,12 @@ async function loadSupabaseRuntimeConfig() {
   const apiConfig = await fetchSupabaseConfig('/api/supabase-config');
   if (apiConfig?.url && apiConfig?.anonKey) {
     supabaseRuntimeConfig = { ...supabaseRuntimeConfig, ...apiConfig };
+    return;
+  }
+
+  const localConfig = await fetchSupabaseConfig('js/supabase-config.local.json?v=20260713-supabase');
+  if (localConfig?.url && localConfig?.anonKey) {
+    supabaseRuntimeConfig = { ...supabaseRuntimeConfig, ...localConfig };
     return;
   }
 
@@ -2769,6 +2789,8 @@ function updateStaticLanguage() {
     });
   });
   setHtml('.nav-whatsapp', `<i class="ri-whatsapp-line" aria-hidden="true"></i> ${t.nav.whatsapp}`);
+  setHtml('.nav-member-quick', `<i class="ri-user-heart-line" aria-hidden="true"></i><span>${currentLanguage === 'en' ? 'Member Login / Register' : '会员登录 / 注册'}</span>`);
+  document.querySelector('.nav-member-quick')?.setAttribute('aria-label', currentLanguage === 'en' ? 'Member login or register' : '会员登录或注册');
   const quickMessage = currentLanguage === 'en'
     ? 'Hi, I would like to ask about 90 PROJECT.'
     : '你好，我想询问九零食刻 90 PROJECT。';
@@ -2883,6 +2905,38 @@ function updateStaticLanguage() {
     const label = t.why?.items?.[index];
     if (label && icon) item.replaceChildren(icon, document.createTextNode(label));
   });
+  const homepageStory = currentLanguage === 'en'
+    ? {
+      experienceKicker: 'CHOOSE YOUR EXPERIENCE',
+      experienceTitle: 'Start with the service that matches your occasion',
+      experienceDescription: 'Meal plans, catering, event styling and beverage bars stay separated so customers can move directly into the right flow.',
+      storyKicker: 'BRAND JOURNEY',
+      storyTitle: 'From Daily Meals to Memorable Celebrations',
+      storyDescription: '90 PROJECT keeps everyday meals dependable, then brings the same care into buffet lines, styled tables and beverage bars for events.'
+    }
+    : {
+      experienceKicker: '选择你的服务体验',
+      experienceTitle: '按场景进入对应服务',
+      experienceDescription: '日常包伙食、活动外餐、场地布置和饮料吧都保留独立入口，顾客不用在一大堆信息里找方向。',
+      storyKicker: '品牌旅程',
+      storyTitle: '从每天的一餐，到值得记住的庆典',
+      storyDescription: '90 PROJECT 把日常包伙食的稳定、卫生与准时，延伸到外餐、场地布置和饮料吧，让顾客从午餐到活动都能交给同一个团队。'
+    };
+  setText('[data-experience-field="kicker"]', homepageStory.experienceKicker);
+  setText('[data-experience-field="title"]', homepageStory.experienceTitle);
+  setText('[data-experience-field="description"]', homepageStory.experienceDescription);
+  setText('[data-story-field="kicker"]', homepageStory.storyKicker);
+  setText('[data-story-field="title"]', homepageStory.storyTitle);
+  setText('[data-story-field="description"]', homepageStory.storyDescription);
+  if (t.growth) {
+    setText('[data-growth-home="title"]', t.growth.title);
+    setText('[data-growth-home="description"]', t.growth.description);
+    setText('[data-growth-home="apply"]', t.growth.apply);
+    setText('[data-growth-home="view"]', t.growth.view);
+    document.querySelectorAll('[data-growth-home^="step"]').forEach((item, index) => {
+      item.textContent = t.growth.steps?.[index] || item.textContent;
+    });
+  }
   renderMediaContent();
   setText('.teaser-copy span', t.cateringTool.label);
   setText('.teaser-copy h2', t.cateringTool.title);
@@ -2947,6 +3001,9 @@ function updateStaticLanguage() {
     renderAdminInquiries();
     renderAdminMembers(false);
   }
+  document.dispatchEvent(new CustomEvent('np90:languagechange', {
+    detail: { language: currentLanguage }
+  }));
 }
 
 function escapeHtml(value) {

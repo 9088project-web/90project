@@ -5,7 +5,8 @@
   "scripts": {
     "dev": "node scripts/serve-static-site.mjs",
     "build": "node scripts/build-static-site.mjs",
-    "start": "node scripts/serve-static-site.mjs"
+    "start": "node scripts/serve-static-site.mjs",
+    "test:growth": "node --test tests/growth-domain.test.mjs"
   },
   "dependencies": {},
   "devDependencies": {}

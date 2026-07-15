@@ -1,0 +1,199 @@
+<!doctype html>
+<html lang="zh-Hans">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="description" content="90 PROJECT 会员中心：会员资料、积分、优惠券、订单、推荐官、佣金与提现记录。" />
+  <title>会员中心 | 90 PROJECT</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/remixicon@4.6.0/fonts/remixicon.css" />
+  <link rel="stylesheet" href="css/growth.css?v=20260715-member-system" />
+</head>
+<body class="growth-page member-system-page" data-growth-page="member">
+  <header class="growth-header">
+    <div class="growth-shell growth-header-inner">
+      <a class="growth-brand" href="index.html#top" aria-label="返回九零食刻首页">
+        <img src="assets/images/logo/logo-icon-dark.jpg" alt="90 PROJECT" />
+        <span><strong>九零食刻</strong><small>90 PROJECT</small></span>
+      </a>
+      <nav class="growth-nav" aria-label="会员导航">
+        <a href="member.html">会员中心</a>
+        <a href="rewards.html">会员奖励</a>
+        <a href="referral.html">90推荐官</a>
+        <a href="index.html#top">返回首页</a>
+      </nav>
+      <div class="growth-language" aria-label="语言切换">
+        <button type="button" data-growth-language="zh">中文</button>
+        <button type="button" data-growth-language="en">EN</button>
+        <button type="button" data-growth-language="ms">BM</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="growth-main growth-shell">
+    <section class="member-hero">
+      <div>
+        <span class="growth-kicker">90 MEMBER SYSTEM</span>
+        <h1>九零食刻会员中心</h1>
+        <p>集中管理会员资料、包伙食记录、积分优惠、推荐官申请、佣金和提现。现在是本地验收版本，数据会保存在这台电脑的浏览器里。</p>
+      </div>
+      <div class="member-hero-card">
+        <strong>会员权益</strong>
+        <span>注册欢迎积分</span>
+        <span>订单记录归档</span>
+        <span>推荐奖励查询</span>
+      </div>
+    </section>
+
+    <section class="growth-section member-auth-grid" data-growth-auth>
+      <article class="growth-panel">
+        <span class="growth-badge">已有会员</span>
+        <h2>会员登录</h2>
+        <p>登录后可以查看积分、优惠券、订单和推荐奖励。</p>
+        <form class="growth-form" id="growthLoginForm">
+          <label>Email / 手机号码<input name="identity" required autocomplete="username" placeholder="member@example.com / 011xxxxxxx"></label>
+          <label>密码<input name="password" type="password" required autocomplete="current-password" placeholder="请输入密码"></label>
+          <button class="growth-button" type="submit">登录会员</button>
+        </form>
+      </article>
+
+      <article class="growth-panel">
+        <span class="growth-badge">新会员</span>
+        <h2>注册会员</h2>
+        <p>创建会员后会自动获得欢迎积分和新会员优惠券。</p>
+        <form class="growth-form" id="growthRegisterForm">
+          <div class="growth-form-grid">
+            <label>姓名<input name="name" required placeholder="例如：王小姐"></label>
+            <label>手机号码<input name="phone" required inputmode="tel" placeholder="011-xxxx xxxx"></label>
+          </div>
+          <label>Email<input name="email" type="email" required autocomplete="email" placeholder="member@example.com"></label>
+          <label>密码<input name="password" type="password" minlength="6" required autocomplete="new-password" placeholder="至少 6 个字符"></label>
+          <button class="growth-button" type="submit">创建会员</button>
+        </form>
+      </article>
+      <p class="growth-message member-message-line" data-growth-message aria-live="polite"></p>
+    </section>
+
+    <section class="growth-section member-dashboard-shell" data-growth-dashboard hidden>
+      <div class="member-dashboard-top">
+        <div>
+          <span class="growth-badge">已登录</span>
+          <h2>你好，<span data-growth-member-name></span></h2>
+          <p>你的会员资料、询问记录、优惠和推荐奖励都在这里。</p>
+        </div>
+        <button class="growth-button secondary" id="growthLogout" type="button">退出登录</button>
+      </div>
+
+      <div class="growth-metric-grid member-metric-grid">
+        <div class="growth-metric"><strong>积分余额</strong><b data-growth-points>0</b></div>
+        <div class="growth-metric"><strong>可用优惠券</strong><b data-growth-coupons>0</b></div>
+        <div class="growth-metric"><strong>可提现佣金</strong><b data-growth-commission>RM0.00</b></div>
+        <div class="growth-metric"><strong>会员等级</strong><b data-growth-level>90 Member</b></div>
+      </div>
+
+      <section class="member-profile-layout">
+        <article class="growth-panel">
+          <div class="member-section-title">
+            <span class="growth-badge">PROFILE</span>
+            <h3>会员资料</h3>
+          </div>
+          <form class="growth-form" id="growthProfileForm">
+            <div class="growth-form-grid">
+              <label>姓名<input name="name" data-member-field="name"></label>
+              <label>手机号码<input name="phone" data-member-field="phone" inputmode="tel"></label>
+              <label>生日<input name="birthday" data-member-field="birthday" type="date"></label>
+              <label>常用人数<input name="estimatedPax" data-member-field="estimatedPax" type="number" min="0" step="1"></label>
+            </div>
+            <label>公司 / 家庭名称<input name="companyName" data-member-field="companyName" placeholder="公司名、家庭名或联系人备注"></label>
+            <label>常用地址<input name="address" data-member-field="address" placeholder="方便下次下单自动带入"></label>
+            <label>口味备注<textarea name="preference" data-member-field="preference" rows="3" placeholder="例如：少辣、不要葱、不要猪肉、喜欢清淡"></textarea></label>
+            <button class="growth-button" type="submit">保存会员资料</button>
+          </form>
+        </article>
+
+        <article class="growth-panel" data-growth-promoter-box>
+          <h3>成为90推荐官</h3>
+          <p>申请通过后，你会得到专属推荐码、分享链接和佣金记录。</p>
+          <a class="growth-button" href="#promoter-application">立即申请</a>
+        </article>
+      </section>
+
+      <section class="member-record-grid growth-section">
+        <article class="growth-panel">
+          <h3>我的订单</h3>
+          <ul class="growth-list" data-growth-order-list></ul>
+        </article>
+        <article class="growth-panel">
+          <h3>优惠券</h3>
+          <ul class="growth-list" data-growth-coupon-list></ul>
+        </article>
+        <article class="growth-panel">
+          <h3>积分记录</h3>
+          <ul class="growth-list" data-growth-points-list></ul>
+        </article>
+        <article class="growth-panel">
+          <h3>佣金账本</h3>
+          <ul class="growth-list" data-growth-commission-list></ul>
+        </article>
+      </section>
+
+      <section class="growth-panel growth-section" id="promoter-application">
+        <div class="member-section-title">
+          <span class="growth-badge">PROMOTER</span>
+          <h3>申请成为90推荐官</h3>
+        </div>
+        <p>适合经常介绍朋友、公司、活动客户的人。后台审核通过后才会生成推荐码。</p>
+        <form class="growth-form" id="growthPromoterForm">
+          <div class="growth-form-grid">
+            <label>社交平台<input name="socialPlatform" placeholder="Facebook / Instagram / TikTok"></label>
+            <label>社交账号<input name="socialAccount" placeholder="@account"></label>
+            <label>所在地区<input name="region" placeholder="例如：KL / PJ / Cheras"></label>
+            <label>推荐方式<input name="promotionMethod" placeholder="WhatsApp / 社交平台 / 朋友介绍"></label>
+            <label>预计客户类型<input name="customerType" placeholder="家庭 / 公司 / 活动"></label>
+          </div>
+          <label class="growth-check"><input name="termsAccepted" type="checkbox"> 我同意90推荐官条款</label>
+          <label class="growth-check"><input name="privacyAccepted" type="checkbox"> 我同意隐私政策</label>
+          <button class="growth-button" type="submit">提交申请</button>
+        </form>
+      </section>
+
+      <section class="member-profile-layout growth-section">
+        <article class="growth-panel">
+          <h3>提现申请</h3>
+          <p>佣金达到最低提现金额后，可以提交后台审核。</p>
+          <form class="growth-form" id="growthWithdrawalForm">
+            <label>提现金额<input name="amount" type="number" min="50" step="0.01" required placeholder="最低 RM50"></label>
+            <div class="growth-form-grid">
+              <label>银行名称<input name="bankName" placeholder="Maybank / Public Bank"></label>
+              <label>银行账号<input name="bankAccount"></label>
+            </div>
+            <label>账户姓名<input name="accountName"></label>
+            <button class="growth-button" type="submit">提交提现</button>
+          </form>
+        </article>
+        <article class="growth-panel">
+          <h3>会员通知</h3>
+          <ul class="growth-list" data-growth-notification-list></ul>
+        </article>
+      </section>
+
+      <section class="growth-panel growth-section member-mock-tools">
+        <h3>本地验收工具</h3>
+        <p>只用于测试会员流程，不会真实收款、转账或通知顾客。</p>
+        <div class="growth-actions">
+          <button class="growth-button secondary" type="button" data-growth-mock="enquiry">模拟建立询价</button>
+          <button class="growth-button secondary" type="button" data-growth-mock="complete">模拟完成订单</button>
+          <button class="growth-button secondary" type="button" data-growth-mock="refund">模拟退款</button>
+          <button class="growth-button secondary" type="button" data-growth-mock="release">释放可提现佣金</button>
+        </div>
+      </section>
+
+      <p class="growth-message member-message-line" data-growth-message aria-live="polite"></p>
+    </section>
+  </main>
+
+  <footer class="growth-footer">
+    <div class="growth-shell">90 PROJECT Member System · <a href="index.html#top">返回首页</a></div>
+  </footer>
+  <script type="module" src="js/growth-mock.js?v=20260715-member-system"></script>
+</body>
+</html>

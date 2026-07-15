@@ -263,7 +263,7 @@ where user_id = (
 ```
 
 5. 到 Supabase Project Settings > API，复制 Project URL 和 anon public key。
-6. 本地测试可以打开 `js/supabase-config.json`，填入：
+6. 本地测试可以创建被 Git 忽略的 `js/supabase-config.local.json`，填入：
 
 ```json
 {
@@ -271,6 +271,8 @@ where user_id = (
   "anonKey": "你的 anon public key"
 }
 ```
+
+项目地址已经预填在本机的 `js/supabase-config.local.json`。只需补上 Supabase Dashboard > Project Settings > API 中的 `anon public` key；不要使用或提交 `service_role` key。
 
 注意：不要把 `service_role` key 放进网页。前端只可以使用 anon public key。
 

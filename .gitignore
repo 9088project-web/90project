@@ -22,3 +22,4 @@ public/site.webmanifest
 
 .vercel
 .env*
+js/supabase-config.local.json
