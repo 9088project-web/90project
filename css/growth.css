@@ -436,8 +436,29 @@ body.growth-page {
 @media (max-width: 820px) {
   .growth-spotlight { grid-template-columns: 1fr; }
   .growth-header-inner { flex-wrap: wrap; padding: 12px 0; }
-  .growth-nav { order: 3; width: 100%; overflow-x: auto; padding-bottom: 2px; }
-  .growth-nav a { white-space: nowrap; }
+  .growth-nav {
+    order: 3;
+    width: 100%;
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 6px;
+    overflow: visible;
+    padding-bottom: 0;
+  }
+  .growth-nav a {
+    min-height: 34px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 6px 5px;
+    border: 1px solid rgba(214, 168, 92, .18);
+    border-radius: 6px;
+    background: rgba(255, 244, 223, .04);
+    font-size: 11px;
+    line-height: 1.15;
+    text-align: center;
+    white-space: normal;
+  }
   .growth-grid, .growth-two-col { grid-template-columns: 1fr; }
   .growth-admin-toolbar { grid-template-columns: 1fr 1fr; }
   .growth-admin-toolbar label:first-child { grid-column: 1 / -1; }

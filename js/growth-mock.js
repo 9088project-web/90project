@@ -119,6 +119,234 @@ Object.assign(translations.zh, {
   applySubmit: '提交申请'
 });
 
+Object.assign(translations.zh, {
+  memberMetaTitle: '会员中心 | 90 PROJECT',
+  memberHeroTitle: '九零食刻会员中心',
+  memberHeroDesc: '集中管理会员资料、包伙食记录、积分优惠、推荐官申请、佣金和提现。现在是本地验收版本，数据会保存在这台电脑的浏览器里。',
+  cloudChecking: '正在检测会员云端...',
+  cloudConnected: 'Supabase 已连接，会员资料会同步云端。',
+  cloudLocal: '本地会员模式：Supabase 尚未配置或暂不可用。',
+  cloudReadFail: 'Supabase 已配置，但当前读取失败；页面继续使用本地记录。',
+  benefitOne: '注册欢迎积分',
+  benefitTwo: '订单记录归档',
+  benefitThree: '推荐奖励查询',
+  existingMember: '已有会员',
+  loginIntro: '登录后可以查看积分、优惠券、订单和推荐奖励。',
+  forgotLogin: '忘记密码或无法登入？',
+  whatsappHelp: 'WhatsApp 协助',
+  newMember: '新会员',
+  registerIntro: '创建会员后会自动获得欢迎积分和新会员优惠券。',
+  registerFootnote: '注册后可查看积分、优惠券、推荐奖励与提现记录。',
+  loggedIn: '已登录',
+  helloPrefix: '你好，',
+  dashboardIntro: '你的会员资料、询问记录、优惠和推荐奖励都在这里。',
+  profileTitle: '会员资料',
+  saveProfile: '保存会员资料',
+  companyLabel: '公司 / 家庭名称',
+  addressLabel: '常用地址',
+  preferenceLabel: '口味备注',
+  birthday: '生日',
+  estimatedPax: '常用人数',
+  companyPlaceholder: '公司名、家庭名或联系人备注',
+  addressPlaceholder: '方便下次下单自动带入',
+  preferencePlaceholder: '例如：少辣、不要葱、不要猪肉、喜欢清淡',
+  promoterIntro: '申请通过后，你会得到专属推荐码、分享链接和佣金记录。',
+  couponListTitle: '优惠券',
+  pointsListTitle: '积分记录',
+  notificationTitle: '会员通知',
+  applicationTitle: '申请成为90推荐官',
+  applicationIntro: '适合经常介绍朋友、公司、活动客户的人。后台审核通过后才会生成推荐码。',
+  withdrawalTitle: '提现申请',
+  withdrawalIntro: '佣金达到最低提现金额后，可以提交后台审核。',
+  submitWithdrawal: '提交提现',
+  mockToolsTitle: '本地验收工具',
+  mockToolsIntro: '只用于测试会员流程，不会真实收款、转账或通知顾客。',
+  footerBack: '返回首页',
+  loginHelpDuplicate: '这个 Email 或手机号已经注册，可以直接登录。',
+  invalidRegister: '请填写完整资料，密码至少 6 个字符。',
+  registerCloudOk: '会员已创建，并已同步 Supabase。',
+  registerCloudConfirm: '会员已创建。Supabase 可能需要 Email 确认后才会同步。',
+  registerCloudFail: '会员已创建，本地可用；Supabase 同步暂时失败。',
+  registerLocalOk: '会员已创建。欢迎积分与新会员优惠券已加入。',
+  loginBusy: '登录中...',
+  registerBusy: '创建中...',
+  saveBusy: '保存中...',
+  submitBusy: '提交中...',
+  loginError: 'Email / 手机号或密码不正确。如果刚注册云端账号，请确认 Email 后再试。',
+  loginOkCloud: '会员已登录，正在同步云端资料。',
+  loginOk: '会员已登录。',
+  logoutOk: '已退出会员中心。',
+  loginRequired: '请先登录会员。',
+  profileSaveFail: '会员资料保存失败。',
+  profileCloudOk: '会员资料已保存，并已同步云端。',
+  profileCloudFail: '会员资料已保存，本次云端同步失败。',
+  profileLocalOk: '会员资料已保存。',
+  applicationExists: '你已经提交过推荐官申请，等待后台审核即可。',
+  termsRequired: '请先同意推荐官条款与隐私政策。',
+  applicationCloudOk: '推荐官申请已提交，并已同步云端。',
+  applicationCloudFail: '推荐官申请已保存在本地，云端同步暂时失败。',
+  applicationLocalOk: '推荐官申请已提交审核。',
+  withdrawPromoterRequired: '推荐官通过审核后才可以申请提现。',
+  withdrawBelowMinimum: '提现金额低于最低提现金额。',
+  withdrawPending: '你已经有一笔提现在处理中。',
+  withdrawInsufficient: '可提现佣金余额不足。',
+  withdrawCloudOk: '提现申请已提交，并已同步云端。',
+  withdrawCloudFail: '提现申请已保存在本地，云端同步暂时失败。',
+  withdrawLocalOk: '提现申请已提交后台审核。'
+});
+
+Object.assign(translations.en, {
+  memberMetaTitle: 'Member Centre | 90 PROJECT',
+  memberHeroTitle: '90 PROJECT Member Centre',
+  memberHeroDesc: 'Manage member details, meal plan records, points, coupons, promoter applications, commissions and withdrawals in one place.',
+  cloudChecking: 'Checking member cloud connection...',
+  cloudConnected: 'Supabase is connected. Member data will sync to the cloud.',
+  cloudLocal: 'Local member mode: Supabase is not configured or temporarily unavailable.',
+  cloudReadFail: 'Supabase is configured, but reading failed. This page will continue with local records.',
+  benefitOne: 'Welcome points',
+  benefitTwo: 'Order history archive',
+  benefitThree: 'Referral reward tracking',
+  existingMember: 'Existing member',
+  loginIntro: 'Log in to view points, coupons, orders and referral rewards.',
+  forgotLogin: 'Forgot password or cannot log in?',
+  whatsappHelp: 'WhatsApp help',
+  newMember: 'New member',
+  registerIntro: 'Create a member account to receive welcome points and a new member coupon.',
+  registerFootnote: 'After registration, you can view points, coupons, referral rewards and withdrawals.',
+  loggedIn: 'Logged in',
+  helloPrefix: 'Hello, ',
+  dashboardIntro: 'Your profile, enquiry records, coupons and referral rewards are here.',
+  profileTitle: 'Member profile',
+  saveProfile: 'Save profile',
+  companyLabel: 'Company / family name',
+  addressLabel: 'Usual address',
+  preferenceLabel: 'Taste notes',
+  birthday: 'Birthday',
+  estimatedPax: 'Usual pax',
+  companyPlaceholder: 'Company, family name or contact note',
+  addressPlaceholder: 'Used for faster ordering next time',
+  preferencePlaceholder: 'Example: less spicy, no spring onion, no pork, lighter taste',
+  promoterIntro: 'After approval, you will receive a referral code, share link and commission records.',
+  couponListTitle: 'Coupons',
+  pointsListTitle: 'Points history',
+  notificationTitle: 'Member notifications',
+  applicationTitle: 'Apply as a 90 Promoter',
+  applicationIntro: 'Suitable for people who often introduce friends, companies or event customers. A referral code is created after admin approval.',
+  withdrawalTitle: 'Withdrawal request',
+  withdrawalIntro: 'Once your commission reaches the minimum amount, you can submit it for admin review.',
+  submitWithdrawal: 'Submit withdrawal',
+  mockToolsTitle: 'Local acceptance tools',
+  mockToolsIntro: 'For testing only. No real payment, transfer or customer notification is sent.',
+  footerBack: 'Back to home',
+  loginHelpDuplicate: 'This email or phone is already registered. Please log in.',
+  invalidRegister: 'Please complete all details. Password needs at least 6 characters.',
+  registerCloudOk: 'Member created and synced to Supabase.',
+  registerCloudConfirm: 'Member created. Supabase may require email confirmation before syncing.',
+  registerCloudFail: 'Member created locally, but Supabase sync failed for now.',
+  registerLocalOk: 'Member created. Welcome points and coupon have been added.',
+  loginBusy: 'Logging in...',
+  registerBusy: 'Creating...',
+  saveBusy: 'Saving...',
+  submitBusy: 'Submitting...',
+  loginError: 'Email / phone or password is incorrect. If you just registered, please confirm your email first.',
+  loginOkCloud: 'Member logged in. Syncing cloud data.',
+  loginOk: 'Member logged in.',
+  logoutOk: 'You have logged out.',
+  loginRequired: 'Please log in first.',
+  profileSaveFail: 'Profile could not be saved.',
+  profileCloudOk: 'Profile saved and synced to the cloud.',
+  profileCloudFail: 'Profile saved locally, but cloud sync failed this time.',
+  profileLocalOk: 'Profile saved.',
+  applicationExists: 'You already submitted a promoter application. Please wait for admin review.',
+  termsRequired: 'Please accept the promoter terms and privacy policy.',
+  applicationCloudOk: 'Promoter application submitted and synced to the cloud.',
+  applicationCloudFail: 'Promoter application saved locally, but cloud sync failed for now.',
+  applicationLocalOk: 'Promoter application submitted for review.',
+  withdrawPromoterRequired: 'You can request withdrawal after promoter approval.',
+  withdrawBelowMinimum: 'Withdrawal amount is below the minimum.',
+  withdrawPending: 'You already have a withdrawal in progress.',
+  withdrawInsufficient: 'Available commission balance is insufficient.',
+  withdrawCloudOk: 'Withdrawal request submitted and synced to the cloud.',
+  withdrawCloudFail: 'Withdrawal request saved locally, but cloud sync failed for now.',
+  withdrawLocalOk: 'Withdrawal request submitted for admin review.'
+});
+
+Object.assign(translations.ms, {
+  memberMetaTitle: 'Pusat Ahli | 90 PROJECT',
+  memberHeroTitle: 'Pusat Ahli 90 PROJECT',
+  memberHeroDesc: 'Urus profil ahli, rekod pelan makanan, mata, kupon, permohonan promoter, komisen dan pengeluaran dalam satu tempat.',
+  cloudChecking: 'Sedang menyemak sambungan cloud ahli...',
+  cloudConnected: 'Supabase telah disambung. Data ahli akan disegerakkan ke cloud.',
+  cloudLocal: 'Mod ahli tempatan: Supabase belum ditetapkan atau tidak tersedia buat masa ini.',
+  cloudReadFail: 'Supabase telah ditetapkan, tetapi bacaan gagal. Halaman ini akan terus menggunakan rekod tempatan.',
+  benefitOne: 'Mata alu-aluan',
+  benefitTwo: 'Arkib rekod pesanan',
+  benefitThree: 'Semakan ganjaran rujukan',
+  existingMember: 'Ahli sedia ada',
+  loginIntro: 'Log masuk untuk melihat mata, kupon, pesanan dan ganjaran rujukan.',
+  forgotLogin: 'Lupa kata laluan atau tidak boleh log masuk?',
+  whatsappHelp: 'Bantuan WhatsApp',
+  newMember: 'Ahli baharu',
+  registerIntro: 'Cipta akaun ahli untuk menerima mata alu-aluan dan kupon ahli baharu.',
+  registerFootnote: 'Selepas daftar, anda boleh melihat mata, kupon, ganjaran rujukan dan pengeluaran.',
+  loggedIn: 'Telah log masuk',
+  helloPrefix: 'Hai, ',
+  dashboardIntro: 'Profil, rekod pertanyaan, kupon dan ganjaran rujukan anda ada di sini.',
+  profileTitle: 'Profil ahli',
+  saveProfile: 'Simpan profil',
+  companyLabel: 'Nama syarikat / keluarga',
+  addressLabel: 'Alamat biasa',
+  preferenceLabel: 'Nota citarasa',
+  birthday: 'Hari lahir',
+  estimatedPax: 'Bilangan biasa',
+  companyPlaceholder: 'Nama syarikat, keluarga atau nota kenalan',
+  addressPlaceholder: 'Digunakan untuk pesanan seterusnya',
+  preferencePlaceholder: 'Contoh: kurang pedas, tanpa daun bawang, tanpa pork, rasa lebih ringan',
+  promoterIntro: 'Selepas diluluskan, anda akan menerima kod rujukan, pautan kongsi dan rekod komisen.',
+  couponListTitle: 'Kupon',
+  pointsListTitle: 'Sejarah mata',
+  notificationTitle: 'Notifikasi ahli',
+  applicationTitle: 'Mohon sebagai Promoter 90',
+  applicationIntro: 'Sesuai untuk mereka yang kerap memperkenalkan rakan, syarikat atau pelanggan acara. Kod rujukan dijana selepas kelulusan admin.',
+  withdrawalTitle: 'Permintaan pengeluaran',
+  withdrawalIntro: 'Apabila komisen mencapai jumlah minimum, anda boleh hantar untuk semakan admin.',
+  submitWithdrawal: 'Hantar pengeluaran',
+  mockToolsTitle: 'Alat ujian tempatan',
+  mockToolsIntro: 'Untuk ujian sahaja. Tiada bayaran, pindahan atau notifikasi pelanggan sebenar.',
+  footerBack: 'Kembali ke laman utama',
+  loginHelpDuplicate: 'Email atau telefon ini sudah didaftarkan. Sila log masuk.',
+  invalidRegister: 'Sila lengkapkan semua butiran. Kata laluan perlu sekurang-kurangnya 6 aksara.',
+  registerCloudOk: 'Ahli berjaya dicipta dan disegerakkan ke Supabase.',
+  registerCloudConfirm: 'Ahli berjaya dicipta. Supabase mungkin memerlukan pengesahan email sebelum sync.',
+  registerCloudFail: 'Ahli dicipta secara tempatan, tetapi sync Supabase gagal buat masa ini.',
+  registerLocalOk: 'Ahli berjaya dicipta. Mata alu-aluan dan kupon telah ditambah.',
+  loginBusy: 'Sedang log masuk...',
+  registerBusy: 'Sedang cipta...',
+  saveBusy: 'Sedang simpan...',
+  submitBusy: 'Sedang hantar...',
+  loginError: 'Email / telefon atau kata laluan tidak betul. Jika baru daftar, sila sahkan email dahulu.',
+  loginOkCloud: 'Ahli telah log masuk. Data cloud sedang disegerakkan.',
+  loginOk: 'Ahli telah log masuk.',
+  logoutOk: 'Anda telah log keluar.',
+  loginRequired: 'Sila log masuk dahulu.',
+  profileSaveFail: 'Profil tidak dapat disimpan.',
+  profileCloudOk: 'Profil disimpan dan disegerakkan ke cloud.',
+  profileCloudFail: 'Profil disimpan secara tempatan, tetapi sync cloud gagal kali ini.',
+  profileLocalOk: 'Profil disimpan.',
+  applicationExists: 'Anda telah menghantar permohonan promoter. Sila tunggu semakan admin.',
+  termsRequired: 'Sila terima terma promoter dan dasar privasi.',
+  applicationCloudOk: 'Permohonan promoter dihantar dan disegerakkan ke cloud.',
+  applicationCloudFail: 'Permohonan promoter disimpan secara tempatan, tetapi sync cloud gagal buat masa ini.',
+  applicationLocalOk: 'Permohonan promoter dihantar untuk semakan.',
+  withdrawPromoterRequired: 'Anda boleh mohon pengeluaran selepas promoter diluluskan.',
+  withdrawBelowMinimum: 'Jumlah pengeluaran di bawah minimum.',
+  withdrawPending: 'Anda sudah mempunyai pengeluaran yang sedang diproses.',
+  withdrawInsufficient: 'Baki komisen tersedia tidak mencukupi.',
+  withdrawCloudOk: 'Permintaan pengeluaran dihantar dan disegerakkan ke cloud.',
+  withdrawCloudFail: 'Permintaan pengeluaran disimpan secara tempatan, tetapi sync cloud gagal buat masa ini.',
+  withdrawLocalOk: 'Permintaan pengeluaran dihantar untuk semakan admin.'
+});
+
 let language = ['zh', 'en', 'ms'].includes(localStorage.getItem(LANG_KEY)) ? localStorage.getItem(LANG_KEY) : 'zh';
 const t = key => translations[language][key] || translations.zh[key] || key;
 const esc = value => String(value ?? '').replace(/[&<>'"]/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[char]));
@@ -152,6 +380,10 @@ function setBusy(form, busy, label = '') {
     button.textContent = button.dataset.originalText || button.textContent;
     button.disabled = false;
   }
+}
+
+function busyLabel(key) {
+  return t(key) || '处理中...';
 }
 
 function downloadCsv(filename, rows) {
@@ -199,11 +431,11 @@ async function syncCloudDashboard(member = currentMember()) {
       if (imported.ok) member = imported.member;
     }
     cloudGrowthSnapshot = growth;
-    setCloudStatus('Supabase 已连接，会员资料会同步云端。', true);
+    setCloudStatus(t('cloudConnected'), true);
     return { member, growth };
   } catch (error) {
     console.warn('Growth cloud sync failed', error);
-    setCloudStatus('Supabase 已配置，但当前读取失败；页面继续使用本地记录。', false);
+    setCloudStatus(t('cloudReadFail'), false);
     return null;
   }
 }
@@ -222,8 +454,11 @@ function applyLanguage() {
       element.textContent = t(key);
     }
   });
+  document.querySelectorAll('[data-i18n-placeholder]').forEach(element => {
+    element.setAttribute('placeholder', t(element.dataset.i18nPlaceholder));
+  });
   document.querySelectorAll('[data-growth-language]').forEach(button => button.classList.toggle('active', button.dataset.growthLanguage === language));
-  document.title = page === 'member' ? `${t('member')} | 90 PROJECT` : page === 'referral' ? `${t('referral')} | 90 PROJECT` : `${t('rewards')} | 90 PROJECT`;
+  document.title = page === 'member' ? t('memberMetaTitle') : page === 'referral' ? `${t('referral')} | 90 PROJECT` : `${t('rewards')} | 90 PROJECT`;
 }
 
 function shareUrl(code) {
@@ -311,12 +546,12 @@ function bindMemberPage() {
   const loginForm = document.getElementById('growthLoginForm');
   registerForm?.addEventListener('submit', async event => {
     event.preventDefault();
-    setBusy(registerForm, true, '创建中...');
+    setBusy(registerForm, true, busyLabel('registerBusy'));
     const data = Object.fromEntries(new FormData(registerForm));
     const result = api.registerMember(data);
     if (!result.ok) {
       setBusy(registerForm, false);
-      return setMessage(result.reason === 'duplicate_member' ? '这个 Email 或手机号已经注册，可以直接登录。' : '请填写完整资料，密码至少 6 个字符。', true);
+      return setMessage(result.reason === 'duplicate_member' ? t('loginHelpDuplicate') : t('invalidRegister'), true);
     }
     api.grantCoupon(result.member.id, { name: 'New member welcome', code: 'WELCOME90', discountType: 'fixed', discountValue: 20 });
     if (cloudReady) {
@@ -324,14 +559,14 @@ function bindMemberPage() {
       if (cloudResult.ok && cloudResult.session) {
         await cloud.updateProfile(result.member, cloudResult.session);
         await syncCloudDashboard(result.member);
-        setMessage('会员已创建，并已同步 Supabase。');
+        setMessage(t('registerCloudOk'));
       } else if (cloudResult.ok) {
-        setMessage('会员已创建。Supabase 可能需要 Email 确认后才会同步。');
+        setMessage(t('registerCloudConfirm'));
       } else {
-        setMessage('会员已创建，本地可用；Supabase 同步暂时失败。', true);
+        setMessage(t('registerCloudFail'), true);
       }
     } else {
-      setMessage('会员已创建。欢迎积分与新会员优惠券已加入。');
+      setMessage(t('registerLocalOk'));
     }
     setBusy(registerForm, false);
     registerForm.reset();
@@ -339,7 +574,7 @@ function bindMemberPage() {
   });
   loginForm?.addEventListener('submit', async event => {
     event.preventDefault();
-    setBusy(loginForm, true, '登录中...');
+    setBusy(loginForm, true, busyLabel('loginBusy'));
     const data = Object.fromEntries(new FormData(loginForm));
     let result = api.loginMember(data.identity, data.password);
     if (!result.ok && cloudReady) {
@@ -355,44 +590,44 @@ function bindMemberPage() {
     }
     if (!result.ok) {
       setBusy(loginForm, false);
-      return setMessage('Email / 手机号或密码不正确。如果刚注册云端账号，请确认 Email 后再试。', true);
+      return setMessage(t('loginError'), true);
     }
-    setMessage(cloudReady ? '会员已登录，正在同步云端资料。' : '会员已登录。');
+    setMessage(cloudReady ? t('loginOkCloud') : t('loginOk'));
     await syncCloudDashboard(result.member);
     setBusy(loginForm, false);
     loginForm.reset();
     renderMemberDashboard();
   });
-  document.getElementById('growthLogout')?.addEventListener('click', () => { cloud.signOut(); api.logoutMember(); cloudGrowthSnapshot = null; setMessage('已退出会员中心。'); renderAuthState(); });
+  document.getElementById('growthLogout')?.addEventListener('click', () => { cloud.signOut(); api.logoutMember(); cloudGrowthSnapshot = null; setMessage(t('logoutOk')); renderAuthState(); });
   document.getElementById('growthProfileForm')?.addEventListener('submit', async event => {
     event.preventDefault();
-    setBusy(event.currentTarget, true, '保存中...');
+    setBusy(event.currentTarget, true, busyLabel('saveBusy'));
     const member = currentMember();
     if (!member) {
       setBusy(event.currentTarget, false);
-      return setMessage('请先登录会员。', true);
+      return setMessage(t('loginRequired'), true);
     }
     const result = api.updateMemberProfile(member.id, Object.fromEntries(new FormData(event.currentTarget)));
     if (!result.ok) {
       setBusy(event.currentTarget, false);
-      return setMessage('会员资料保存失败。', true);
+      return setMessage(t('profileSaveFail'), true);
     }
     if (cloudReady && cloud.getSession()?.access_token) {
       const cloudResult = await cloud.updateProfile(result.member);
-      setMessage(cloudResult.ok ? '会员资料已保存，并已同步云端。' : '会员资料已保存，本次云端同步失败。', !cloudResult.ok);
+      setMessage(cloudResult.ok ? t('profileCloudOk') : t('profileCloudFail'), !cloudResult.ok);
     } else {
-      setMessage('会员资料已保存。');
+      setMessage(t('profileLocalOk'));
     }
     setBusy(event.currentTarget, false);
     renderMemberDashboard();
   });
   document.getElementById('growthPromoterForm')?.addEventListener('submit', async event => {
     event.preventDefault();
-    setBusy(event.currentTarget, true, '提交中...');
+    setBusy(event.currentTarget, true, busyLabel('submitBusy'));
     const member = currentMember();
     if (!member) {
       setBusy(event.currentTarget, false);
-      return setMessage('请先登录会员。', true);
+      return setMessage(t('loginRequired'), true);
     }
     const data = Object.fromEntries(new FormData(event.currentTarget));
     data.termsAccepted = event.currentTarget.querySelector('[name="termsAccepted"]').checked;
@@ -400,14 +635,14 @@ function bindMemberPage() {
     const result = api.submitPromoterApplication(member.id, data);
     if (!result.ok) {
       setBusy(event.currentTarget, false);
-      return setMessage(result.reason === 'application_exists' ? '你已经提交过推荐官申请，等待后台审核即可。' : '请先同意推荐官条款与隐私政策。', true);
+      return setMessage(result.reason === 'application_exists' ? t('applicationExists') : t('termsRequired'), true);
     }
     if (cloudReady && cloud.getSession()?.access_token) {
       const cloudResult = await cloud.submitPromoterApplication(data);
-      setMessage(cloudResult.ok ? '推荐官申请已提交，并已同步云端。' : '推荐官申请已保存在本地，云端同步暂时失败。', !cloudResult.ok);
+      setMessage(cloudResult.ok ? t('applicationCloudOk') : t('applicationCloudFail'), !cloudResult.ok);
       await syncCloudDashboard(member);
     } else {
-      setMessage('推荐官申请已提交审核。');
+      setMessage(t('applicationLocalOk'));
     }
     event.currentTarget.reset();
     setBusy(event.currentTarget, false);
@@ -415,30 +650,30 @@ function bindMemberPage() {
   });
   document.getElementById('growthWithdrawalForm')?.addEventListener('submit', async event => {
     event.preventDefault();
-    setBusy(event.currentTarget, true, '提交中...');
+    setBusy(event.currentTarget, true, busyLabel('submitBusy'));
     const member = currentMember();
     if (!member) {
       setBusy(event.currentTarget, false);
-      return setMessage('请先登录会员。', true);
+      return setMessage(t('loginRequired'), true);
     }
     const data = Object.fromEntries(new FormData(event.currentTarget));
     const result = api.submitWithdrawal(member.id, data);
     if (!result.ok) {
       setBusy(event.currentTarget, false);
       const reasons = {
-        promoter_not_approved: '推荐官通过审核后才可以申请提现。',
-        below_minimum: '提现金额低于最低提现金额。',
-        withdrawal_pending: '你已经有一笔提现在处理中。',
-        insufficient_balance: '可提现佣金余额不足。'
+        promoter_not_approved: t('withdrawPromoterRequired'),
+        below_minimum: t('withdrawBelowMinimum'),
+        withdrawal_pending: t('withdrawPending'),
+        insufficient_balance: t('withdrawInsufficient')
       };
       return setMessage(reasons[result.reason] || `提现申请无法提交：${result.reason}`, true);
     }
     if (cloudReady && cloud.getSession()?.access_token) {
       const cloudResult = await cloud.submitWithdrawal(data);
-      setMessage(cloudResult.ok ? '提现申请已提交，并已同步云端。' : '提现申请已保存在本地，云端同步暂时失败。', !cloudResult.ok);
+      setMessage(cloudResult.ok ? t('withdrawCloudOk') : t('withdrawCloudFail'), !cloudResult.ok);
       await syncCloudDashboard(member);
     } else {
-      setMessage('提现申请已提交后台审核。');
+      setMessage(t('withdrawLocalOk'));
     }
     event.currentTarget.reset();
     setBusy(event.currentTarget, false);
@@ -606,7 +841,7 @@ document.addEventListener('click', event => {
 if (page === 'member') {
   const cloudState = await cloud.init();
   cloudReady = Boolean(cloudState.configured);
-  setCloudStatus(cloudReady ? 'Supabase 已连接，会员资料会同步云端。' : '本地会员模式：Supabase 尚未配置或暂不可用。', cloudReady);
+  setCloudStatus(cloudReady ? t('cloudConnected') : t('cloudLocal'), cloudReady);
   bindMemberPage();
   renderAuthState();
   await syncCloudDashboard();
