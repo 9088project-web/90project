@@ -5061,13 +5061,10 @@ if ('IntersectionObserver' in window && form) {
   orderVisibilityObserver.observe(form);
 }
 
-memberOpen?.addEventListener('click', () => {
+memberOpen?.addEventListener('click', event => {
+  event.preventDefault();
   setMobileMenu(false);
-  openMemberModal();
-});
-
-document.querySelectorAll('[data-member-close]').forEach(element => {
-  element.addEventListener('click', closeMemberModal);
+  window.location.href = 'member.html';
 });
 
 document.querySelectorAll('[data-admin-close]').forEach(element => {
@@ -5077,7 +5074,6 @@ document.querySelectorAll('[data-admin-close]').forEach(element => {
 document.addEventListener('keydown', event => {
   if (event.key === 'Escape') {
     setMobileMenu(false);
-    closeMemberModal();
     closeAdminModal();
   }
 });

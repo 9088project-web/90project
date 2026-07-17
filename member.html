@@ -68,11 +68,18 @@
         <form class="growth-form" id="growthRegisterForm">
           <div class="growth-form-grid">
             <label data-i18n="name">姓名<input name="name" required placeholder="例如：王小姐"></label>
-            <label data-i18n="phone">手机号码<input name="phone" required inputmode="tel" placeholder="011-xxxx xxxx"></label>
+            <label data-i18n="phone">手机号码<input name="phone" id="registerPhoneInput" required inputmode="tel" autocomplete="tel" placeholder="011-xxxx xxxx"></label>
+          </div>
+          <div class="phone-verify-box" data-phone-verify>
+            <div class="phone-verify-row">
+              <label data-i18n="phoneCode">手机验证码<input name="phoneCode" id="registerPhoneCode" inputmode="numeric" maxlength="6" autocomplete="one-time-code" placeholder="6 位验证码"></label>
+              <button class="growth-button secondary phone-code-button" id="sendPhoneCode" type="button" data-i18n="sendPhoneCode">发送验证码</button>
+            </div>
+            <p class="phone-verify-status" data-phone-verify-status data-i18n="phoneVerifyHint">请先验证手机号码，验证成功后才可以创建会员。</p>
           </div>
           <label data-i18n="email">Email<input name="email" type="email" required autocomplete="email" placeholder="member@example.com"></label>
           <label data-i18n="password">密码<input name="password" type="password" minlength="6" required autocomplete="new-password" placeholder="至少 6 个字符"></label>
-          <button class="growth-button" type="submit" data-i18n="registerAction">创建会员</button>
+          <button class="growth-button" type="submit" data-i18n="registerAction" data-register-submit disabled>创建会员</button>
         </form>
         <div class="member-form-help">
           <span data-i18n="registerFootnote">注册后可查看积分、优惠券、推荐奖励与提现记录。</span>

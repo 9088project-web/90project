@@ -4,6 +4,14 @@ const normalize = value => String(value || '').trim();
 const normalizeEmail = value => normalize(value).toLowerCase();
 const normalizePhone = value => normalize(value).replace(/\D/g, '');
 const normalizeCode = value => normalize(value).toUpperCase().replace(/[^A-Z0-9]/g, '');
+const otpPhone = value => {
+  const raw = normalize(value);
+  if (raw.startsWith('+')) return raw.replace(/[^\d+]/g, '');
+  const digits = normalizePhone(raw);
+  if (digits.startsWith('60')) return `+${digits}`;
+  if (digits.startsWith('0')) return `+60${digits.slice(1)}`;
+  return digits ? `+${digits}` : '';
+};
 
 async function readJson(path) {
   try {
@@ -109,6 +117,39 @@ export function createGrowthCloud() {
     const session = payload?.session || payload;
     if (session?.access_token) setSession(session);
     return { ok: true, session: session?.access_token ? session : null, user: payload?.user || session?.user || null };
+  }
+
+  async function sendPhoneOtp(phone) {
+    if (!configured()) return { ok: false, skipped: true };
+    const normalizedPhone = otpPhone(phone);
+    if (!normalizedPhone) return { ok: false, message: 'missing_phone' };
+    const response = await fetch(`${config.url}/auth/v1/otp`, {
+      method: 'POST',
+      headers: { apikey: config.anonKey, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        phone: normalizedPhone,
+        create_user: true,
+        data: { source: '90_project_member_phone_verification' }
+      })
+    });
+    if (!response.ok) return { ok: false, message: await response.text() };
+    return { ok: true };
+  }
+
+  async function verifyPhoneOtp(phone, token) {
+    if (!configured()) return { ok: false, skipped: true };
+    const normalizedPhone = otpPhone(phone);
+    const code = normalize(token);
+    if (!normalizedPhone || !code) return { ok: false, message: 'missing_code' };
+    const response = await fetch(`${config.url}/auth/v1/verify`, {
+      method: 'POST',
+      headers: { apikey: config.anonKey, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ phone: normalizedPhone, token: code, type: 'sms' })
+    });
+    if (!response.ok) return { ok: false, message: await response.text() };
+    const session = await response.json();
+    if (session?.access_token) setSession(session);
+    return { ok: true, session: session?.access_token ? session : null, user: session?.user || null };
   }
 
   async function signIn(identity, password) {
@@ -250,6 +291,8 @@ export function createGrowthCloud() {
     configured,
     getSession,
     signUp,
+    sendPhoneOtp,
+    verifyPhoneOtp,
     signIn,
     signOut,
     loadProfile,

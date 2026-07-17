@@ -137,6 +137,19 @@ Object.assign(translations.zh, {
   newMember: '新会员',
   registerIntro: '创建会员后会自动获得欢迎积分和新会员优惠券。',
   registerFootnote: '注册后可查看积分、优惠券、推荐奖励与提现记录。',
+  phoneCode: '手机验证码',
+  sendPhoneCode: '发送验证码',
+  resendPhoneCode: '重新发送',
+  phoneVerifyHint: '请先验证手机号码，验证成功后才可以创建会员。',
+  phoneRequired: '请先填写手机号码。',
+  phoneCodeRequired: '请输入手机验证码。',
+  phoneCodeSent: '验证码已发送，请查看手机短信。',
+  phoneCodeLocal: '本地测试验证码：',
+  phoneCodeSending: '发送中...',
+  phoneCodeChecking: '验证中...',
+  phoneVerified: '手机号码已验证，可以创建会员。',
+  phoneVerifyFailed: '验证码不正确或已过期，请重新发送。',
+  phoneChanged: '手机号码已更改，请重新验证。',
   loggedIn: '已登录',
   helloPrefix: '你好，',
   dashboardIntro: '你的会员资料、询问记录、优惠和推荐奖励都在这里。',
@@ -213,6 +226,19 @@ Object.assign(translations.en, {
   newMember: 'New member',
   registerIntro: 'Create a member account to receive welcome points and a new member coupon.',
   registerFootnote: 'After registration, you can view points, coupons, referral rewards and withdrawals.',
+  phoneCode: 'Phone verification code',
+  sendPhoneCode: 'Send code',
+  resendPhoneCode: 'Resend',
+  phoneVerifyHint: 'Verify your phone number before creating a member account.',
+  phoneRequired: 'Please enter your mobile number first.',
+  phoneCodeRequired: 'Please enter the verification code.',
+  phoneCodeSent: 'Verification code sent. Please check your SMS.',
+  phoneCodeLocal: 'Local test code: ',
+  phoneCodeSending: 'Sending...',
+  phoneCodeChecking: 'Verifying...',
+  phoneVerified: 'Phone number verified. You can create a member account.',
+  phoneVerifyFailed: 'The code is incorrect or expired. Please resend it.',
+  phoneChanged: 'Phone number changed. Please verify again.',
   loggedIn: 'Logged in',
   helloPrefix: 'Hello, ',
   dashboardIntro: 'Your profile, enquiry records, coupons and referral rewards are here.',
@@ -289,6 +315,19 @@ Object.assign(translations.ms, {
   newMember: 'Ahli baharu',
   registerIntro: 'Cipta akaun ahli untuk menerima mata alu-aluan dan kupon ahli baharu.',
   registerFootnote: 'Selepas daftar, anda boleh melihat mata, kupon, ganjaran rujukan dan pengeluaran.',
+  phoneCode: 'Kod pengesahan telefon',
+  sendPhoneCode: 'Hantar kod',
+  resendPhoneCode: 'Hantar semula',
+  phoneVerifyHint: 'Sahkan nombor telefon sebelum mencipta akaun ahli.',
+  phoneRequired: 'Sila masukkan nombor telefon dahulu.',
+  phoneCodeRequired: 'Sila masukkan kod pengesahan.',
+  phoneCodeSent: 'Kod pengesahan telah dihantar. Sila semak SMS.',
+  phoneCodeLocal: 'Kod ujian tempatan: ',
+  phoneCodeSending: 'Sedang hantar...',
+  phoneCodeChecking: 'Sedang sahkan...',
+  phoneVerified: 'Nombor telefon disahkan. Anda boleh cipta akaun ahli.',
+  phoneVerifyFailed: 'Kod tidak betul atau tamat tempoh. Sila hantar semula.',
+  phoneChanged: 'Nombor telefon telah berubah. Sila sahkan semula.',
   loggedIn: 'Telah log masuk',
   helloPrefix: 'Hai, ',
   dashboardIntro: 'Profil, rekod pertanyaan, kupon dan ganjaran rujukan anda ada di sini.',
@@ -357,6 +396,7 @@ let cloudReady = false;
 let cloudGrowthSnapshot = null;
 let adminGrowthSearch = '';
 let adminGrowthFilters = { application: 'all', withdrawal: 'all' };
+let phoneVerification = { phone: '', code: '', verified: false, cloudSession: null };
 
 function setText(selector, value) {
   document.querySelectorAll(selector).forEach(element => { element.textContent = value; });
@@ -541,13 +581,84 @@ function renderMemberDashboard() {
   renderAuthState();
 }
 
+const normalizePhoneInput = value => String(value || '').replace(/\D/g, '');
+const makeLocalOtp = () => String(Math.floor(100000 + Math.random() * 900000));
+
+function setPhoneVerifyStatus(message, tone = '') {
+  document.querySelectorAll('[data-phone-verify-status]').forEach(element => {
+    element.textContent = message;
+    element.dataset.tone = tone;
+  });
+}
+
+function updatePhoneVerificationUi() {
+  const phoneInput = document.getElementById('registerPhoneInput');
+  const submit = document.querySelector('[data-register-submit]');
+  const codeButton = document.getElementById('sendPhoneCode');
+  const phone = normalizePhoneInput(phoneInput?.value);
+  if (phoneVerification.verified && phoneVerification.phone && phone !== phoneVerification.phone) {
+    phoneVerification = { phone: '', code: '', verified: false, cloudSession: null };
+    setPhoneVerifyStatus(t('phoneChanged'), 'warn');
+  }
+  if (submit) submit.disabled = !phoneVerification.verified;
+  if (codeButton) codeButton.textContent = phoneVerification.code || phoneVerification.verified ? t('resendPhoneCode') : t('sendPhoneCode');
+}
+
 function bindMemberPage() {
   const registerForm = document.getElementById('growthRegisterForm');
   const loginForm = document.getElementById('growthLoginForm');
+  const phoneInput = document.getElementById('registerPhoneInput');
+  const codeInput = document.getElementById('registerPhoneCode');
+  const codeButton = document.getElementById('sendPhoneCode');
+
+  phoneInput?.addEventListener('input', updatePhoneVerificationUi);
+  codeButton?.addEventListener('click', async () => {
+    const phone = phoneInput?.value || '';
+    const normalizedPhone = normalizePhoneInput(phone);
+    if (!normalizedPhone) return setPhoneVerifyStatus(t('phoneRequired'), 'bad');
+    codeButton.disabled = true;
+    codeButton.textContent = t('phoneCodeSending');
+    const sent = cloudReady ? await cloud.sendPhoneOtp(phone) : { ok: false, skipped: true };
+    if (sent.ok) {
+      phoneVerification = { phone: normalizedPhone, code: '', verified: false, cloudSession: null };
+      setPhoneVerifyStatus(t('phoneCodeSent'), 'good');
+    } else {
+      const localCode = makeLocalOtp();
+      phoneVerification = { phone: normalizedPhone, code: localCode, verified: false, cloudSession: null };
+      setPhoneVerifyStatus(`${t('phoneCodeLocal')}${localCode}`, 'warn');
+    }
+    codeButton.disabled = false;
+    updatePhoneVerificationUi();
+  });
+
+  codeInput?.addEventListener('input', async () => {
+    const phone = normalizePhoneInput(phoneInput?.value);
+    const code = String(codeInput.value || '').trim();
+    if (!phone || !code || code.length < 6) return;
+    setPhoneVerifyStatus(t('phoneCodeChecking'), 'warn');
+    let verified = false;
+    let cloudSession = null;
+    if (phoneVerification.code) {
+      verified = phone === phoneVerification.phone && code === phoneVerification.code;
+    } else if (cloudReady) {
+      const cloudVerify = await cloud.verifyPhoneOtp(phoneInput.value, code);
+      verified = Boolean(cloudVerify.ok);
+      cloudSession = cloudVerify.session || null;
+    }
+    phoneVerification = { ...phoneVerification, phone, verified, cloudSession };
+    setPhoneVerifyStatus(verified ? t('phoneVerified') : t('phoneVerifyFailed'), verified ? 'good' : 'bad');
+    updatePhoneVerificationUi();
+  });
+
   registerForm?.addEventListener('submit', async event => {
     event.preventDefault();
+    if (!phoneVerification.verified) {
+      updatePhoneVerificationUi();
+      return setMessage(t('phoneVerifyHint'), true);
+    }
     setBusy(registerForm, true, busyLabel('registerBusy'));
     const data = Object.fromEntries(new FormData(registerForm));
+    data.phoneVerified = true;
     const result = api.registerMember(data);
     if (!result.ok) {
       setBusy(registerForm, false);
@@ -555,7 +666,9 @@ function bindMemberPage() {
     }
     api.grantCoupon(result.member.id, { name: 'New member welcome', code: 'WELCOME90', discountType: 'fixed', discountValue: 20 });
     if (cloudReady) {
-      const cloudResult = await cloud.signUp(result.member, data.password);
+      const cloudResult = phoneVerification.cloudSession
+        ? { ok: true, session: phoneVerification.cloudSession }
+        : await cloud.signUp(result.member, data.password);
       if (cloudResult.ok && cloudResult.session) {
         await cloud.updateProfile(result.member, cloudResult.session);
         await syncCloudDashboard(result.member);
@@ -570,6 +683,9 @@ function bindMemberPage() {
     }
     setBusy(registerForm, false);
     registerForm.reset();
+    phoneVerification = { phone: '', code: '', verified: false, cloudSession: null };
+    setPhoneVerifyStatus(t('phoneVerifyHint'));
+    updatePhoneVerificationUi();
     renderMemberDashboard();
   });
   loginForm?.addEventListener('submit', async event => {

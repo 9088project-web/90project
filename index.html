@@ -52,7 +52,7 @@
         <a href="#styling">场地布置</a>
         <a href="#cocktail">鸡尾酒服务</a>
         <a href="#contact">联系我们</a>
-        <button class="member-nav" id="memberOpen" type="button">会员登录</button>
+        <a class="member-nav" id="memberOpen" href="member.html">会员登录</a>
       </nav>
 
       <div class="language-switch" aria-label="Language switch">
@@ -393,99 +393,6 @@
     <span>© 2026 九零食刻 90 PROJECT. All Rights Reserved.</span>
     <a href="admin.html" aria-label="打开内容管理后台">后台</a>
   </footer>
-
-  <section class="member-modal" id="memberModal" aria-hidden="true">
-    <div class="member-backdrop" data-member-close></div>
-    <div class="member-dialog" role="dialog" aria-modal="true" aria-labelledby="memberTitle">
-      <button class="member-close" type="button" aria-label="关闭会员中心" data-member-close>×</button>
-
-      <div class="member-panel member-auth" id="memberAuthPanel">
-        <div class="member-intro">
-          <span>MEMBER CLUB</span>
-          <h2 id="memberTitle">九零食刻会员中心</h2>
-          <p>登录后，下单询问会自动保存到本机会员记录，方便你之后查看包伙食配套、日期和备注。</p>
-        </div>
-
-        <div class="member-tabs" role="tablist" aria-label="会员登录注册">
-          <button class="active" type="button" data-member-tab="login">会员登录</button>
-          <button type="button" data-member-tab="register">注册会员</button>
-        </div>
-
-        <form class="member-form active" id="memberLoginForm">
-          <label>Email<input id="loginEmail" type="email" autocomplete="email" placeholder="member@example.com" required></label>
-          <label>密码 Password<input id="loginPassword" type="password" autocomplete="current-password" placeholder="请输入密码" required></label>
-          <button class="btn btn-gold btn-wide" type="submit">登录会员</button>
-        </form>
-
-        <form class="member-form" id="memberRegisterForm">
-          <label>姓名 Name<input id="registerName" type="text" autocomplete="name" placeholder="例如：陈小姐" required></label>
-          <label>电话 Phone<input id="registerPhone" type="tel" autocomplete="tel" placeholder="例如：011-1234 5678" required></label>
-          <label>Email<input id="registerEmail" type="email" autocomplete="email" placeholder="member@example.com" required></label>
-          <label>密码 Password<input id="registerPassword" type="password" autocomplete="new-password" placeholder="至少 6 个字符" required></label>
-          <button class="btn btn-gold btn-wide" type="submit">创建会员</button>
-        </form>
-
-        <p class="member-message" id="memberMessage"></p>
-      </div>
-
-      <div class="member-panel member-dashboard" id="memberDashboard" hidden>
-        <div class="member-dashboard-head">
-          <div>
-            <span>MEMBER DASHBOARD</span>
-            <h2>会员中心</h2>
-            <p id="memberProfileText">-</p>
-          </div>
-          <button class="btn btn-outline" id="memberLogout" type="button">退出</button>
-        </div>
-
-        <div class="member-benefits">
-          <article><b>询问记录</b><span>自动保存本机订单询问</span></article>
-          <article><b>会员资料</b><span>保存常用地区与偏好</span></article>
-          <article><b>快速下单</b><span>下次询问可自动带入资料</span></article>
-        </div>
-
-        <div class="member-overview-grid">
-          <article class="member-tier-card">
-            <span>MEMBER LEVEL</span>
-            <strong id="memberTierBadge">Classic Member</strong>
-            <p id="memberTierProgress">完成更多询问后可升级会员等级。</p>
-          </article>
-          <article class="member-tier-card">
-            <span>NEXT STEP</span>
-            <strong id="memberNextAction">填写下单表单</strong>
-            <p>系统会自动保存你的包伙食与外餐询问。</p>
-          </article>
-        </div>
-
-        <form class="member-profile-form" id="memberProfileForm">
-          <div class="member-records-head">
-            <h3>我的资料</h3>
-            <button type="submit">保存资料</button>
-          </div>
-          <div class="member-profile-grid">
-            <label>姓名 Name<input id="profileName" type="text" autocomplete="name"></label>
-            <label>电话 Phone<input id="profilePhone" type="tel" autocomplete="tel"></label>
-            <label>默认地区 Area<input id="profileArea" type="text" autocomplete="address-level2" placeholder="例如：Kuala Lumpur"></label>
-            <label>常选配套 Package<select id="profileDefaultPackage">
-              <option value="">暂不设定</option>
-              <option value="包伙食服务">包伙食服务</option>
-              <option value="活动餐饮">活动餐饮</option>
-              <option value="场地布置">场地布置</option>
-              <option value="鸡尾酒服务">鸡尾酒服务</option>
-              <option value="公司员工餐">公司员工餐</option>
-            </select></label>
-            <label class="member-profile-wide">口味备注 Preference<textarea id="profilePreference" rows="3" placeholder="例如：少辣、不要葱、喜欢清淡"></textarea></label>
-          </div>
-        </form>
-
-        <div class="member-records-head">
-          <h3>我的包伙食询问</h3>
-          <button type="button" id="clearMemberRecords">清空记录</button>
-        </div>
-        <div class="member-records" id="memberRecords"></div>
-      </div>
-    </div>
-  </section>
 
   <section class="member-modal admin-modal" id="adminModal" aria-hidden="true">
     <div class="member-backdrop" data-admin-close></div>
