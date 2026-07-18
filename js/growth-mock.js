@@ -66,9 +66,6 @@ const translations = {
   },
   en: {
     language: 'English', rewards: 'Member Rewards', referral: '90 Promoter', member: 'Member Centre', home: 'Home', login: 'Member Login', logout: 'Log out', register: 'Register', name: 'Name', email: 'Email', phone: 'Mobile number', password: 'Password (at least 6 characters)', loginAction: 'Log in', registerAction: 'Create member', welcome: 'Share 90 PROJECT with friends and earn transparent referral rewards.', apply: 'Become a 90 Promoter', applyIntro: 'After approval, you receive a referral code, share link and commission records.', pending: 'Under review', approved: 'Approved', code: 'Referral code', share: 'Share link', points: 'Points balance', coupons: 'Available coupons', commissions: 'Available commission', orders: 'My orders', enquiries: 'My enquiries', applySubmit: 'Submit application', socialPlatform: 'Social platform', socialAccount: 'Social account', region: 'Region', method: 'Promotion method', customerType: 'Expected customer type', agreeTerms: 'I agree to the promoter terms', agreePrivacy: 'I agree to the privacy policy', enquiry: 'Mock enquiry', complete: 'Mock complete order', refund: 'Mock refund', release: 'Release commission', withdrawal: 'Submit withdrawal', amount: 'Withdrawal amount', bank: 'Bank name', account: 'Bank account', accountName: 'Account name', mock: 'Mock mode: no real payment, bank transfer or API notification is used.', noData: 'No records yet.', shareText: 'Share 90 PROJECT with your friends:', identity: 'Email / mobile number', copy: 'Copy link', whatsapp: 'WhatsApp', benefitsTitle: 'Member benefits', benefitsIntro: 'Rewards are transparent and traceable, based on real enquiries and completed orders.', pointsTitle: 'Member points', pointsDesc: 'Earn points from registration, completed orders and selected campaigns. Every change is recorded.', couponTitle: 'Member coupons', couponDesc: 'Welcome, service, birthday and campaign coupons are controlled by admin rules.', rewardTitle: 'Referral rewards', rewardDesc: 'Only one-level direct referrals are supported. Commission becomes withdrawable after the refund observation period.', pathTitle: 'A clear reward path', pathRegister: 'Register as a member', pathWelcome: '+ Welcome points', pathOrder: 'Complete an eligible order', pathPoints: 'Points credited', pathRefer: 'Refer a friend who completes service', pathCommission: 'Commission confirmed', pathHold: 'Pass the refund observation period', pathWithdraw: 'Withdrawal available', startTitle: 'Start now', startDesc: 'Register first, then review points, coupons, orders, referrals and withdrawals in the member centre.', stepsTitle: 'Three simple steps', stepsIntro: 'Only direct one-level referrals are supported. Rewards come from real orders; there is no joining fee or multi-level commission.', stepApply: 'Register as a 90 Promoter', stepApplyDesc: 'Submit your platform, region and promotion method for admin review.', stepShare: 'Share your link or QR code', stepShareDesc: 'The first valid visit is recorded and an existing member binding cannot be overwritten.', stepEarn: 'Earn after the order is completed', stepEarnDesc: 'Commission becomes withdrawable after order completion and the refund observation period.', rulesTitle: 'Transparent rules', rulesMode: 'Reward model', rulesModeValue: 'One-level direct referral', rulesRate: 'Default commission', rulesRateValue: 'Adjustable by admin', rulesSettle: 'Settlement condition', rulesSettleValue: 'Completed order + hold period', rulesWithdraw: 'Withdrawal method', rulesWithdrawValue: 'Mock manual review', notMemberTitle: 'Not a member yet?', notMemberDesc: 'Register first, then submit the promoter application in the member centre. A referral code is created after approval.', mockTitle: 'Mock flow testing', mockDesc: 'For local acceptance only: create an enquiry, complete an order, simulate a refund and release held commission.', memberLevel: 'Member level', commissionBook: 'Commission ledger', application: 'Become a 90 Promoter', memberMock: 'Mock mode: no real payment, bank transfer or API notification is used.'
-  },
-  ms: {
-    language: 'Bahasa Melayu', rewards: 'Ganjaran Ahli', referral: 'Promoter 90', member: 'Pusat Ahli', home: 'Laman Utama', login: 'Log Masuk Ahli', logout: 'Log Keluar', register: 'Daftar Ahli', name: 'Nama', email: 'Email', phone: 'Nombor telefon', password: 'Kata laluan (sekurang-kurangnya 6 aksara)', loginAction: 'Log Masuk', registerAction: 'Daftar', welcome: 'Kongsi 90 PROJECT dengan rakan dan dapatkan ganjaran rujukan yang telus.', apply: 'Menjadi Promoter 90', applyIntro: 'Selepas diluluskan, anda menerima kod rujukan, pautan kongsi dan rekod komisen.', pending: 'Dalam semakan', approved: 'Diluluskan', code: 'Kod rujukan', share: 'Pautan kongsi', points: 'Baki mata', coupons: 'Kupon tersedia', commissions: 'Komisen tersedia', orders: 'Pesanan saya', enquiries: 'Pertanyaan saya', applySubmit: 'Hantar permohonan', socialPlatform: 'Platform sosial', socialAccount: 'Akaun sosial', region: 'Kawasan', method: 'Cara promosi', customerType: 'Jenis pelanggan', agreeTerms: 'Saya bersetuju dengan terma promoter', agreePrivacy: 'Saya bersetuju dengan dasar privasi', enquiry: 'Pertanyaan mock', complete: 'Lengkapkan pesanan mock', refund: 'Pulangan wang mock', release: 'Lepaskan komisen', withdrawal: 'Hantar pengeluaran', amount: 'Jumlah pengeluaran', bank: 'Nama bank', account: 'Nombor akaun bank', accountName: 'Nama pemegang akaun', mock: 'Mod mock: tiada bayaran, pemindahan bank atau notifikasi API sebenar.', noData: 'Belum ada rekod.', shareText: 'Kongsi 90 PROJECT dengan rakan:', identity: 'Email / nombor telefon', copy: 'Salin pautan', whatsapp: 'WhatsApp', benefitsTitle: 'Faedah ahli', benefitsIntro: 'Ganjaran adalah telus dan boleh dijejak berdasarkan pertanyaan serta pesanan sebenar.', pointsTitle: 'Mata ahli', pointsDesc: 'Dapatkan mata melalui pendaftaran, pesanan lengkap dan kempen terpilih.', couponTitle: 'Kupon ahli', couponDesc: 'Kupon alu-aluan, servis, hari jadi dan kempen dikawal oleh pentadbir.', rewardTitle: 'Ganjaran rujukan', rewardDesc: 'Hanya rujukan langsung satu tahap disokong. Komisen boleh dikeluarkan selepas tempoh pemerhatian bayaran balik.', pathTitle: 'Laluan ganjaran yang jelas', pathRegister: 'Daftar sebagai ahli', pathWelcome: '+ Mata alu-aluan', pathOrder: 'Lengkapkan pesanan layak', pathPoints: 'Mata dikreditkan', pathRefer: 'Rujuk rakan yang melengkapkan servis', pathCommission: 'Komisen disahkan', pathHold: 'Lepasi tempoh pemerhatian bayaran balik', pathWithdraw: 'Pengeluaran tersedia', startTitle: 'Mula sekarang', startDesc: 'Daftar dahulu, kemudian semak mata, kupon, pesanan, rujukan dan pengeluaran di pusat ahli.', stepsTitle: 'Tiga langkah mudah', stepsIntro: 'Hanya rujukan langsung satu tahap disokong. Ganjaran datang daripada pesanan sebenar tanpa yuran keahlian atau komisen berbilang tahap.', stepApply: 'Daftar sebagai Promoter 90', stepApplyDesc: 'Hantar platform, kawasan dan cara promosi untuk semakan pentadbir.', stepShare: 'Kongsi pautan atau kod QR', stepShareDesc: 'Lawatan sah pertama direkodkan dan ikatan ahli sedia ada tidak boleh ditukar.', stepEarn: 'Dapatkan ganjaran selepas pesanan selesai', stepEarnDesc: 'Komisen boleh dikeluarkan selepas pesanan selesai dan tempoh pemerhatian bayaran balik.', rulesTitle: 'Peraturan telus', rulesMode: 'Model ganjaran', rulesModeValue: 'Rujukan langsung satu tahap', rulesRate: 'Komisen lalai', rulesRateValue: 'Boleh diubah pentadbir', rulesSettle: 'Syarat penyelesaian', rulesSettleValue: 'Pesanan selesai + tempoh tahan', rulesWithdraw: 'Kaedah pengeluaran', rulesWithdrawValue: 'Semakan manual mock', notMemberTitle: 'Belum menjadi ahli?', notMemberDesc: 'Daftar dahulu, kemudian hantar permohonan promoter di pusat ahli. Kod rujukan dijana selepas diluluskan.', mockTitle: 'Ujian aliran mock', mockDesc: 'Untuk penerimaan tempatan sahaja: cipta pertanyaan, lengkapkan pesanan, simulasi bayaran balik dan lepaskan komisen tertahan.', memberLevel: 'Tahap ahli', commissionBook: 'Lejar komisen', application: 'Menjadi Promoter 90', memberMock: 'Mod mock: tiada bayaran, pemindahan bank atau notifikasi API sebenar.'
   }
 };
 
@@ -315,105 +312,8 @@ Object.assign(translations.en, {
   withdrawLocalOk: 'Withdrawal request submitted for admin review.'
 });
 
-Object.assign(translations.ms, {
-  memberMetaTitle: 'Pusat Ahli | 90 PROJECT',
-  memberHeroTitle: 'Pusat Ahli 90 PROJECT',
-  memberHeroDesc: 'Sahkan melalui nombor telefon, kemudian urus profil, rekod pesanan, mata, kupon, ganjaran rujukan dan permintaan pengeluaran dalam satu tempat.',
-  cloudChecking: 'Sedang menyemak sambungan cloud ahli...',
-  cloudConnected: 'Supabase telah disambung. Data ahli akan disegerakkan ke cloud.',
-  cloudLocal: 'Mod ahli tempatan: Supabase belum ditetapkan atau tidak tersedia buat masa ini.',
-  cloudReadFail: 'Supabase telah ditetapkan, tetapi bacaan gagal. Halaman ini akan terus menggunakan rekod tempatan.',
-  benefitOne: 'Mata alu-aluan',
-  benefitTwo: 'Arkib rekod pesanan',
-  benefitThree: 'Semakan ganjaran rujukan',
-  memberStepPhone: 'Pengesahan telefon',
-  memberStepPhoneDesc: 'Sahkan nombor telefon sebelum daftar untuk mengurangkan akaun berganda dan maklumat pesanan yang salah.',
-  memberStepProfile: 'Profil ahli',
-  memberStepProfileDesc: 'Simpan alamat biasa, bilangan orang dan nota citarasa supaya pertanyaan seterusnya lebih cepat.',
-  memberStepRewards: 'Rekod ganjaran',
-  memberStepRewardsDesc: 'Semak mata, kupon, ganjaran rujukan dan rekod pengeluaran dalam satu tempat.',
-  memberMiniStepVerify: 'Sahkan telefon',
-  memberMiniStepInfo: 'Isi maklumat',
-  memberMiniStepCreate: 'Cipta akaun',
-  existingMember: 'Ahli sedia ada',
-  loginIntro: 'Log masuk untuk melihat mata, kupon, pesanan dan ganjaran rujukan.',
-  forgotLogin: 'Lupa kata laluan atau tidak boleh log masuk?',
-  whatsappHelp: 'Bantuan WhatsApp',
-  newMember: 'Ahli baharu',
-  registerIntro: 'Cipta akaun ahli untuk menerima mata alu-aluan dan kupon ahli baharu.',
-  registerFootnote: 'Selepas daftar, anda boleh melihat mata, kupon, ganjaran rujukan dan pengeluaran.',
-  phoneCode: 'Kod pengesahan telefon',
-  sendPhoneCode: 'Hantar kod',
-  resendPhoneCode: 'Hantar semula',
-  phoneVerifyHint: 'Sahkan nombor telefon sebelum mencipta akaun ahli.',
-  phoneRequired: 'Sila masukkan nombor telefon dahulu.',
-  phoneCodeRequired: 'Sila masukkan kod pengesahan.',
-  phoneCodeSent: 'Kod pengesahan telah dihantar. Sila semak SMS.',
-  phoneCodeLocal: 'Kod ujian tempatan: ',
-  phoneCodeSending: 'Sedang hantar...',
-  phoneCodeChecking: 'Sedang sahkan...',
-  phoneVerified: 'Nombor telefon disahkan. Anda boleh cipta akaun ahli.',
-  phoneVerifyFailed: 'Kod tidak betul atau tamat tempoh. Sila hantar semula.',
-  phoneChanged: 'Nombor telefon telah berubah. Sila sahkan semula.',
-  loggedIn: 'Telah log masuk',
-  helloPrefix: 'Hai, ',
-  dashboardIntro: 'Profil, rekod pertanyaan, kupon dan ganjaran rujukan anda ada di sini.',
-  profileTitle: 'Profil ahli',
-  saveProfile: 'Simpan profil',
-  companyLabel: 'Nama syarikat / keluarga',
-  addressLabel: 'Alamat biasa',
-  preferenceLabel: 'Nota citarasa',
-  birthday: 'Hari lahir',
-  estimatedPax: 'Bilangan biasa',
-  companyPlaceholder: 'Nama syarikat, keluarga atau nota kenalan',
-  addressPlaceholder: 'Digunakan untuk pesanan seterusnya',
-  preferencePlaceholder: 'Contoh: kurang pedas, tanpa daun bawang, tanpa pork, rasa lebih ringan',
-  promoterIntro: 'Selepas diluluskan, anda akan menerima kod rujukan, pautan kongsi dan rekod komisen.',
-  couponListTitle: 'Kupon',
-  pointsListTitle: 'Sejarah mata',
-  notificationTitle: 'Notifikasi ahli',
-  applicationTitle: 'Mohon sebagai Promoter 90',
-  applicationIntro: 'Sesuai untuk mereka yang kerap memperkenalkan rakan, syarikat atau pelanggan acara. Kod rujukan dijana selepas kelulusan admin.',
-  withdrawalTitle: 'Permintaan pengeluaran',
-  withdrawalIntro: 'Apabila komisen mencapai jumlah minimum, anda boleh hantar untuk semakan admin.',
-  submitWithdrawal: 'Hantar pengeluaran',
-  mockToolsTitle: 'Alat ujian tempatan',
-  mockToolsIntro: 'Untuk ujian sahaja. Tiada bayaran, pindahan atau notifikasi pelanggan sebenar.',
-  footerBack: 'Kembali ke laman utama',
-  loginHelpDuplicate: 'Email atau telefon ini sudah didaftarkan. Sila log masuk.',
-  invalidRegister: 'Sila lengkapkan semua butiran. Kata laluan perlu sekurang-kurangnya 6 aksara.',
-  registerCloudOk: 'Ahli berjaya dicipta dan disegerakkan ke Supabase.',
-  registerCloudConfirm: 'Ahli berjaya dicipta. Supabase mungkin memerlukan pengesahan email sebelum sync.',
-  registerCloudFail: 'Ahli dicipta secara tempatan, tetapi sync Supabase gagal buat masa ini.',
-  registerLocalOk: 'Ahli berjaya dicipta. Mata alu-aluan dan kupon telah ditambah.',
-  loginBusy: 'Sedang log masuk...',
-  registerBusy: 'Sedang cipta...',
-  saveBusy: 'Sedang simpan...',
-  submitBusy: 'Sedang hantar...',
-  loginError: 'Email / telefon atau kata laluan tidak betul. Jika baru daftar, sila sahkan email dahulu.',
-  loginOkCloud: 'Ahli telah log masuk. Data cloud sedang disegerakkan.',
-  loginOk: 'Ahli telah log masuk.',
-  logoutOk: 'Anda telah log keluar.',
-  loginRequired: 'Sila log masuk dahulu.',
-  profileSaveFail: 'Profil tidak dapat disimpan.',
-  profileCloudOk: 'Profil disimpan dan disegerakkan ke cloud.',
-  profileCloudFail: 'Profil disimpan secara tempatan, tetapi sync cloud gagal kali ini.',
-  profileLocalOk: 'Profil disimpan.',
-  applicationExists: 'Anda telah menghantar permohonan promoter. Sila tunggu semakan admin.',
-  termsRequired: 'Sila terima terma promoter dan dasar privasi.',
-  applicationCloudOk: 'Permohonan promoter dihantar dan disegerakkan ke cloud.',
-  applicationCloudFail: 'Permohonan promoter disimpan secara tempatan, tetapi sync cloud gagal buat masa ini.',
-  applicationLocalOk: 'Permohonan promoter dihantar untuk semakan.',
-  withdrawPromoterRequired: 'Anda boleh mohon pengeluaran selepas promoter diluluskan.',
-  withdrawBelowMinimum: 'Jumlah pengeluaran di bawah minimum.',
-  withdrawPending: 'Anda sudah mempunyai pengeluaran yang sedang diproses.',
-  withdrawInsufficient: 'Baki komisen tersedia tidak mencukupi.',
-  withdrawCloudOk: 'Permintaan pengeluaran dihantar dan disegerakkan ke cloud.',
-  withdrawCloudFail: 'Permintaan pengeluaran disimpan secara tempatan, tetapi sync cloud gagal buat masa ini.',
-  withdrawLocalOk: 'Permintaan pengeluaran dihantar untuk semakan admin.'
-});
 
-let language = ['zh', 'en', 'ms'].includes(localStorage.getItem(LANG_KEY)) ? localStorage.getItem(LANG_KEY) : 'zh';
+let language = ['zh', 'en'].includes(localStorage.getItem(LANG_KEY)) ? localStorage.getItem(LANG_KEY) : 'zh';
 const t = key => translations[language][key] || translations.zh[key] || key;
 const esc = value => String(value ?? '').replace(/[&<>'"]/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[char]));
 const formatMoney = value => `RM${money(value).toFixed(2)}`;
@@ -976,7 +876,12 @@ function bindAdmin() {
   renderAdmin();
 }
 
-document.querySelectorAll('[data-growth-language]').forEach(button => button.addEventListener('click', () => { language = button.dataset.growthLanguage; localStorage.setItem(LANG_KEY, language); applyLanguage(); if (page === 'member') renderMemberDashboard(); }));
+document.querySelectorAll('[data-growth-language]').forEach(button => button.addEventListener('click', () => {
+  language = ['zh', 'en'].includes(button.dataset.growthLanguage) ? button.dataset.growthLanguage : 'zh';
+  localStorage.setItem(LANG_KEY, language);
+  applyLanguage();
+  if (page === 'member') renderMemberDashboard();
+}));
 document.addEventListener('click', event => {
   const link = event.target.closest('[data-growth-copy]');
   if (link) navigator.clipboard?.writeText(link.dataset.growthCopy);
