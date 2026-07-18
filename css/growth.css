@@ -421,6 +421,10 @@ body.growth-page {
   grid-column: 1 / -1;
 }
 
+.is-member-logged-in [data-growth-auth] {
+  display: none !important;
+}
+
 .member-form-help {
   display: flex;
   flex-wrap: wrap;

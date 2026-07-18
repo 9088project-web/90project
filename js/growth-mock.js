@@ -534,6 +534,7 @@ function shareUrl(code) {
 
 function renderAuthState() {
   const member = currentMember();
+  document.body.classList.toggle('is-member-logged-in', Boolean(member));
   document.querySelectorAll('[data-growth-auth]').forEach(element => { element.hidden = Boolean(member); });
   document.querySelectorAll('[data-growth-dashboard]').forEach(element => { element.hidden = !member; });
   document.querySelectorAll('[data-growth-member-name]').forEach(element => { element.textContent = member?.name || ''; });

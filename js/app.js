@@ -120,6 +120,8 @@ if (serviceStrip && heroSection) {
 const MEMBERS_KEY = 'np90_members_v1';
 const INQUIRIES_KEY = 'np90_inquiries_v1';
 const SESSION_KEY = 'np90_member_session_v1';
+const GROWTH_SESSION_KEY = 'np90_growth_session_v1';
+const GROWTH_STATE_KEY = 'np90_growth_state_v1';
 const LANG_KEY = 'np90_language_v1';
 const ADMIN_CONTENT_KEY = 'np90_admin_content_v1';
 const ADMIN_SESSION_KEY = 'np90_admin_session_v1';
@@ -2789,8 +2791,7 @@ function updateStaticLanguage() {
     });
   });
   setHtml('.nav-whatsapp', `<i class="ri-whatsapp-line" aria-hidden="true"></i> ${t.nav.whatsapp}`);
-  setHtml('.nav-member-quick', `<i class="ri-user-heart-line" aria-hidden="true"></i><span>${currentLanguage === 'en' ? 'Member Login / Register' : '会员登录 / 注册'}</span>`);
-  document.querySelector('.nav-member-quick')?.setAttribute('aria-label', currentLanguage === 'en' ? 'Member login or register' : '会员登录或注册');
+  updateMemberButton();
   const quickMessage = currentLanguage === 'en'
     ? 'Hi, I would like to ask about 90 PROJECT.'
     : '你好，我想询问九零食刻 90 PROJECT。';
@@ -3224,16 +3225,36 @@ function setCurrentMember(email) {
 }
 
 function getCurrentMember() {
+  const growthMember = getCurrentGrowthMember();
+  if (growthMember) return growthMember;
   const email = currentMemberEmail();
   if (!email) return null;
   return loadMembers().find(member => member.email === email) || null;
 }
 
+function getCurrentGrowthMember() {
+  try {
+    const memberId = localStorage.getItem(GROWTH_SESSION_KEY);
+    if (!memberId) return null;
+    const state = JSON.parse(localStorage.getItem(GROWTH_STATE_KEY) || 'null');
+    return state?.members?.find(member => member.id === memberId) || { id: memberId, name: '90 Member' };
+  } catch {
+    return null;
+  }
+}
+
 function updateMemberButton() {
   const member = getCurrentMember();
   const t = languageText();
-  if (!memberOpen) return;
-  memberOpen.textContent = member ? t.member.centerButton : t.member.loginButton;
+  const quickLabel = member
+    ? (currentLanguage === 'en' ? 'Member Centre' : '会员中心')
+    : (currentLanguage === 'en' ? 'Member Login / Register' : '会员登录 / 注册');
+  if (memberOpen) memberOpen.textContent = member ? t.member.centerButton : t.member.loginButton;
+  const quick = document.querySelector('.nav-member-quick');
+  if (quick) {
+    quick.innerHTML = `<i class="ri-user-heart-line" aria-hidden="true"></i><span>${quickLabel}</span>`;
+    quick.setAttribute('aria-label', quickLabel);
+  }
 }
 
 function showMemberMessage(message, isError = false) {
