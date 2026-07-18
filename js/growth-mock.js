@@ -461,12 +461,13 @@ function renderMemberDashboard() {
     element.textContent = member[key] || '-';
   });
   const promoterBox = document.querySelector('[data-growth-promoter-box]');
+  if (!promoterBox) return;
   if (promoter?.status === 'approved' && code) {
     promoterBox.innerHTML = `<span class="growth-badge">${esc(t('approved'))}</span><h3>${esc(t('code'))}</h3><code class="growth-code">${esc(code)}</code><p>${esc(t('share'))}:<br><a href="${esc(shareUrl(code))}">${esc(shareUrl(code))}</a></p><div class="growth-actions"><button class="growth-button" type="button" data-copy-growth="${esc(shareUrl(code))}">${esc(t('copy'))}</button><a class="growth-button secondary" target="_blank" rel="noopener" href="https://wa.me/601110977166?text=${encodeURIComponent(`${t('shareText')} ${shareUrl(code)}`)}">${esc(t('whatsapp'))}</a></div>`;
   } else if (application) {
     promoterBox.innerHTML = `<span class="growth-badge">${esc(application.status === 'submitted' ? t('pending') : application.status)}</span><h3>${esc(t('apply'))}</h3><p>${esc(t('applyIntro'))}</p>`;
   } else {
-    promoterBox.innerHTML = `<h3>${esc(t('apply'))}</h3><p>${esc(t('applyIntro'))}</p><a class="growth-button" href="#promoter-application">${esc(t('apply'))}</a>`;
+    promoterBox.innerHTML = `<h3>${esc(t('apply'))}</h3><p>${esc(t('applyIntro'))}</p><a class="growth-button" href="referral.html#promoter-application">${esc(t('apply'))}</a>`;
   }
   const list = document.querySelector('[data-growth-order-list]');
   list.innerHTML = summary.orders.length ? summary.orders.map(order => `<li><span>${esc(order.serviceType || 'Service')}<br><small>${esc(order.status)}</small></span><b>${formatMoney(order.totalAmount)}</b></li>`).join('') : `<li>${esc(t('noData'))}</li>`;
@@ -530,6 +531,36 @@ function updatePhoneVerificationUi() {
   }
   if (submit) submit.disabled = !phoneVerification.verified;
   if (codeButton) codeButton.textContent = phoneVerification.code || phoneVerification.verified ? t('resendPhoneCode') : t('sendPhoneCode');
+}
+
+function bindPromoterApplicationForm() {
+  document.getElementById('growthPromoterForm')?.addEventListener('submit', async event => {
+    event.preventDefault();
+    setBusy(event.currentTarget, true, busyLabel('submitBusy'));
+    const member = currentMember();
+    if (!member) {
+      setBusy(event.currentTarget, false);
+      return setMessage(t('loginRequired'), true);
+    }
+    const data = Object.fromEntries(new FormData(event.currentTarget));
+    data.termsAccepted = event.currentTarget.querySelector('[name="termsAccepted"]').checked;
+    data.privacyAccepted = event.currentTarget.querySelector('[name="privacyAccepted"]').checked;
+    const result = api.submitPromoterApplication(member.id, data);
+    if (!result.ok) {
+      setBusy(event.currentTarget, false);
+      return setMessage(result.reason === 'application_exists' ? t('applicationExists') : t('termsRequired'), true);
+    }
+    if (cloudReady && cloud.getSession()?.access_token) {
+      const cloudResult = await cloud.submitPromoterApplication(data);
+      setMessage(cloudResult.ok ? t('applicationCloudOk') : t('applicationCloudFail'), !cloudResult.ok);
+      await syncCloudDashboard(member);
+    } else {
+      setMessage(t('applicationLocalOk'));
+    }
+    event.currentTarget.reset();
+    setBusy(event.currentTarget, false);
+    if (page === 'member') renderMemberDashboard();
+  });
 }
 
 function bindMemberPage() {
@@ -665,33 +696,7 @@ function bindMemberPage() {
     setBusy(event.currentTarget, false);
     renderMemberDashboard();
   });
-  document.getElementById('growthPromoterForm')?.addEventListener('submit', async event => {
-    event.preventDefault();
-    setBusy(event.currentTarget, true, busyLabel('submitBusy'));
-    const member = currentMember();
-    if (!member) {
-      setBusy(event.currentTarget, false);
-      return setMessage(t('loginRequired'), true);
-    }
-    const data = Object.fromEntries(new FormData(event.currentTarget));
-    data.termsAccepted = event.currentTarget.querySelector('[name="termsAccepted"]').checked;
-    data.privacyAccepted = event.currentTarget.querySelector('[name="privacyAccepted"]').checked;
-    const result = api.submitPromoterApplication(member.id, data);
-    if (!result.ok) {
-      setBusy(event.currentTarget, false);
-      return setMessage(result.reason === 'application_exists' ? t('applicationExists') : t('termsRequired'), true);
-    }
-    if (cloudReady && cloud.getSession()?.access_token) {
-      const cloudResult = await cloud.submitPromoterApplication(data);
-      setMessage(cloudResult.ok ? t('applicationCloudOk') : t('applicationCloudFail'), !cloudResult.ok);
-      await syncCloudDashboard(member);
-    } else {
-      setMessage(t('applicationLocalOk'));
-    }
-    event.currentTarget.reset();
-    setBusy(event.currentTarget, false);
-    renderMemberDashboard();
-  });
+  bindPromoterApplicationForm();
   document.getElementById('growthWithdrawalForm')?.addEventListener('submit', async event => {
     event.preventDefault();
     setBusy(event.currentTarget, true, busyLabel('submitBusy'));
@@ -746,9 +751,11 @@ function bindMemberPage() {
 function bindReferralPage() {
   const code = new URLSearchParams(location.search).get('ref');
   const status = document.querySelector('[data-referral-status]');
-  if (!code) return;
-  const result = api.captureReferralVisit(code, '/referral.html');
-  if (status) status.textContent = result.ok ? `Referral code ${code.toUpperCase()} recorded for this visit.` : 'This referral link is not active.';
+  if (code) {
+    const result = api.captureReferralVisit(code, '/referral.html');
+    if (status) status.textContent = result.ok ? `Referral code ${code.toUpperCase()} recorded for this visit.` : 'This referral link is not active.';
+  }
+  bindPromoterApplicationForm();
 }
 
 function renderAdmin() {
@@ -887,16 +894,14 @@ document.addEventListener('click', event => {
   if (link) navigator.clipboard?.writeText(link.dataset.growthCopy);
 });
 
+const cloudState = await cloud.init();
+cloudReady = Boolean(cloudState.configured);
 if (page === 'member') {
-  const cloudState = await cloud.init();
-  cloudReady = Boolean(cloudState.configured);
   setCloudStatus(cloudReady ? t('cloudConnected') : t('cloudLocal'), cloudReady);
   bindMemberPage();
   renderAuthState();
   await syncCloudDashboard();
   renderMemberDashboard();
-} else {
-  await cloud.init();
 }
 if (page === 'referral') bindReferralPage();
 bindAdmin();
