@@ -6,7 +6,7 @@
   <meta name="description" content="90 PROJECT 会员中心：会员资料、积分、优惠券、订单、推荐官、佣金与提现记录。" />
   <title>会员中心 | 90 PROJECT</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/remixicon@4.6.0/fonts/remixicon.css" />
-  <link rel="stylesheet" href="css/growth.css?v=20260715-member-system" />
+  <link rel="stylesheet" href="css/growth.css?v=20260718-member-pro" />
 </head>
 <body class="growth-page member-system-page" data-growth-page="member">
   <header class="growth-header">
@@ -34,7 +34,7 @@
       <div>
         <span class="growth-kicker">90 MEMBER SYSTEM</span>
         <h1 data-i18n="memberHeroTitle">九零食刻会员中心</h1>
-        <p data-i18n="memberHeroDesc">集中管理会员资料、包伙食记录、积分优惠、推荐官申请、佣金和提现。现在是本地验收版本，数据会保存在这台电脑的浏览器里。</p>
+        <p data-i18n="memberHeroDesc">用手机验证建立会员身份，统一管理资料、订单记录、积分优惠、推荐奖励和提现申请。</p>
         <span class="growth-badge member-cloud-status" data-growth-cloud-status data-i18n="cloudChecking">正在检测会员云端...</span>
       </div>
       <div class="member-hero-card">
@@ -45,8 +45,26 @@
       </div>
     </section>
 
+    <section class="member-trust-row" data-growth-auth>
+      <article>
+        <b>01</b>
+        <strong data-i18n="memberStepPhone">手机验证</strong>
+        <span data-i18n="memberStepPhoneDesc">注册前先确认电话号码，减少重复会员与错误订单资料。</span>
+      </article>
+      <article>
+        <b>02</b>
+        <strong data-i18n="memberStepProfile">会员资料</strong>
+        <span data-i18n="memberStepProfileDesc">保存常用地址、人数和口味备注，下次询问更快处理。</span>
+      </article>
+      <article>
+        <b>03</b>
+        <strong data-i18n="memberStepRewards">奖励记录</strong>
+        <span data-i18n="memberStepRewardsDesc">积分、优惠券、推荐奖励和提现记录集中查看。</span>
+      </article>
+    </section>
+
     <section class="growth-section member-auth-grid" data-growth-auth>
-      <article class="growth-panel">
+      <article class="growth-panel member-login-card">
         <span class="growth-badge" data-i18n="existingMember">已有会员</span>
         <h2 data-i18n="login">会员登录</h2>
         <p data-i18n="loginIntro">登录后可以查看积分、优惠券、订单和推荐奖励。</p>
@@ -61,10 +79,15 @@
         </div>
       </article>
 
-      <article class="growth-panel">
+      <article class="growth-panel member-register-card">
         <span class="growth-badge" data-i18n="newMember">新会员</span>
         <h2 data-i18n="register">注册会员</h2>
         <p data-i18n="registerIntro">创建会员后会自动获得欢迎积分和新会员优惠券。</p>
+        <div class="member-register-steps" aria-label="会员注册流程">
+          <span data-i18n="memberMiniStepVerify">验证手机</span>
+          <span data-i18n="memberMiniStepInfo">填写资料</span>
+          <span data-i18n="memberMiniStepCreate">创建会员</span>
+        </div>
         <form class="growth-form" id="growthRegisterForm">
           <div class="growth-form-grid">
             <label data-i18n="name">姓名<input name="name" required placeholder="例如：王小姐"></label>
@@ -209,6 +232,6 @@
   <footer class="growth-footer">
     <div class="growth-shell">90 PROJECT Member System · <a href="index.html#top" data-i18n="footerBack">返回首页</a></div>
   </footer>
-  <script type="module" src="js/growth-mock.js?v=20260715-member-system"></script>
+  <script type="module" src="js/growth-mock.js?v=20260718-member-pro"></script>
 </body>
 </html>
