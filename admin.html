@@ -118,10 +118,10 @@
       </section>
 
       <section class="admin-section growth-admin-section" data-admin-panel="growth" hidden>
-        <div class="admin-section-head"><div><h2>90推荐官与会员奖励</h2><p>本地 Mock 管理区：审核推荐官、查看佣金、处理提现和调整默认规则。真实付款与通知 API 尚未接入。</p></div></div>
+        <div class="admin-section-head"><div><h2>会员推荐与会员奖励</h2><p>本地 Mock 管理区：查看会员推荐码、佣金、提现和默认规则。真实付款与通知 API 尚未接入。</p></div></div>
         <div data-growth-admin>
           <div class="growth-admin-toolbar">
-            <label>搜索会员 / 推荐官
+            <label>搜索会员 / 推荐码
               <input data-growth-admin-search type="search" placeholder="姓名、电话、Email、推荐码">
             </label>
             <label>申请状态
@@ -148,21 +148,21 @@
           </div>
           <div class="growth-metric-grid">
             <div class="growth-metric"><strong>待审核申请</strong><b data-admin-growth="applications">0</b></div>
-            <div class="growth-metric"><strong>已批准推荐官</strong><b data-admin-growth="promoters">0</b></div>
+            <div class="growth-metric"><strong>有推荐码会员</strong><b data-admin-growth="promoters">0</b></div>
             <div class="growth-metric"><strong>佣金总额</strong><b data-admin-growth="commission">RM0.00</b></div>
             <div class="growth-metric"><strong>待处理提现</strong><b data-admin-growth="withdrawals">0</b></div>
           </div>
           <div class="growth-panel">
-            <h3>会员与推荐官概览</h3>
-            <div class="growth-table-wrap"><table class="growth-table growth-admin-member-table"><thead><tr><th>会员</th><th>等级 / 状态</th><th>推荐官</th><th>消费 / 订单</th><th>积分</th></tr></thead><tbody data-growth-admin-members></tbody></table></div>
+            <h3>会员与推荐码概览</h3>
+            <div class="growth-table-wrap"><table class="growth-table growth-admin-member-table"><thead><tr><th>会员</th><th>等级 / 状态</th><th>推荐码</th><th>消费 / 订单</th><th>积分</th></tr></thead><tbody data-growth-admin-members></tbody></table></div>
           </div>
           <div class="growth-panel">
-            <h3>推荐官申请</h3>
+            <h3>推荐关系记录</h3>
             <div class="growth-table-wrap"><table class="growth-table"><thead><tr><th>申请人</th><th>状态</th><th>地区 / 方式</th><th>操作</th></tr></thead><tbody data-growth-admin-applications></tbody></table></div>
           </div>
           <div class="growth-panel">
             <h3>佣金账本</h3>
-            <div class="growth-table-wrap"><table class="growth-table"><thead><tr><th>订单 / 推荐官</th><th>状态</th><th>合资格金额</th><th>佣金</th></tr></thead><tbody data-growth-admin-commissions></tbody></table></div>
+            <div class="growth-table-wrap"><table class="growth-table"><thead><tr><th>订单 / 推荐会员</th><th>状态</th><th>合资格金额</th><th>佣金</th></tr></thead><tbody data-growth-admin-commissions></tbody></table></div>
           </div>
           <div class="growth-panel">
             <h3>提现请求</h3>

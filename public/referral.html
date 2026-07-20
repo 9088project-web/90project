@@ -3,37 +3,52 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <meta name="description" content="成为90推荐官，分享九零食刻并获得透明的三层推荐奖励。" />
-  <title>90推荐官 | 90 PROJECT</title>
-  <link rel="stylesheet" href="css/growth.css?v=20260713-growth" />
+  <meta name="description" content="90 PROJECT 会员推荐系统：每位会员自动拥有推荐码，支持三代推荐佣金。" />
+  <title>会员推荐 | 90 PROJECT</title>
+  <link rel="stylesheet" href="css/growth.css?v=20260720-member-referral" />
 </head>
 <body class="growth-page" data-growth-page="referral">
-  <header class="growth-header"><div class="growth-shell growth-header-inner"><a class="growth-brand" href="index.html"><img src="assets/images/logo/logo-icon-dark.jpg" alt="90 PROJECT" /><span><strong>九零食刻</strong><small>90 PROJECT</small></span></a><nav class="growth-nav" aria-label="Growth navigation"><a href="rewards.html" data-i18n="rewards">会员奖励</a><a href="referral.html" data-i18n="referral">90推荐官</a><a href="member.html" data-i18n="member">会员中心</a><a href="index.html" data-i18n="home">返回首页</a></nav><div class="growth-language" aria-label="Language"><button type="button" data-growth-language="zh">中文</button><button type="button" data-growth-language="en">EN</button></div></div></header>
+  <header class="growth-header">
+    <div class="growth-shell growth-header-inner">
+      <a class="growth-brand" href="index.html"><img src="assets/images/logo/logo-icon-dark.jpg" alt="90 PROJECT" /><span><strong>九零食刻</strong><small>90 PROJECT</small></span></a>
+      <nav class="growth-nav" aria-label="Growth navigation"><a href="rewards.html" data-i18n="rewards">会员奖励</a><a href="referral.html" data-i18n="referral">会员推荐</a><a href="member.html" data-i18n="member">会员中心</a><a href="index.html" data-i18n="home">返回首页</a></nav>
+      <div class="growth-language" aria-label="Language"><button type="button" data-growth-language="zh">中文</button><button type="button" data-growth-language="en">EN</button></div>
+    </div>
+  </header>
   <main class="growth-main growth-shell">
-    <section class="growth-hero"><span class="growth-kicker">90 PROMOTER · DIRECT REFERRAL</span><h1 data-i18n="referral">分享美好食刻，获得90推荐奖励</h1><p data-i18n="welcome">分享九零食刻，把美好食刻介绍给朋友，也获得属于你的推荐奖励。</p><div class="growth-actions"><a class="growth-button" href="#promoter-application" data-i18n="apply">立即申请</a><a class="growth-button secondary" href="#how-it-works">查看推荐方式</a></div><p class="growth-message" data-growth-message data-referral-status aria-live="polite"></p></section>
-    <section class="growth-section" id="how-it-works"><div class="growth-section-head"><h2 data-i18n="stepsTitle">三步开始</h2><p data-i18n="stepsIntro">最多追踪三层推荐关系，奖励只来自真实完成订单，不收取入会费，不靠拉人收费。</p></div><div class="growth-grid"><article class="growth-stat"><strong>01</strong><h3 data-i18n="stepApply">注册成为90推荐官</h3><p data-i18n="stepApplyDesc">提交社交平台、地区和推荐方式，等待后台审核。</p></article><article class="growth-stat"><strong>02</strong><h3 data-i18n="stepShare">分享专属链接或二维码</h3><p data-i18n="stepShareDesc">系统记录首次有效访问，已绑定的会员不会被其他推荐代码覆盖。</p></article><article class="growth-stat"><strong>03</strong><h3 data-i18n="stepEarn">订单完成后获得奖励</h3><p data-i18n="stepEarnDesc">订单完成并经过退款观察期，佣金才会变成可提现状态。</p></article></div></section>
-    <section class="growth-section growth-two-col"><article class="growth-panel"><h2 data-i18n="rulesTitle">透明规则</h2><ul class="growth-list"><li><span data-i18n="rulesMode">奖励模式</span><b data-i18n="rulesModeValue">三层推荐奖励</b></li><li><span data-i18n="rulesRate">默认佣金</span><b data-i18n="rulesRateValue">第一代3% · 第二代1% · 第三代1%</b></li><li><span data-i18n="rulesSettle">结算条件</span><b data-i18n="rulesSettleValue">完成订单 + 观察期</b></li><li><span data-i18n="rulesWithdraw">提现方式</span><b data-i18n="rulesWithdrawValue">Mock 人工审核</b></li></ul></article><article class="growth-panel"><h2 data-i18n="notMemberTitle">还不是会员？</h2><p data-i18n="notMemberDesc">先注册会员，再在会员中心提交90推荐官申请。审核通过后才会生成推荐代码。</p><a class="growth-button" href="member.html" data-i18n="register">注册会员</a></article></section>
-    <section class="growth-panel growth-section" id="promoter-application">
-      <div class="member-section-title">
-        <span class="growth-badge">PROMOTER</span>
-        <h2 data-i18n="applicationTitle">申请成为90推荐官</h2>
+    <section class="growth-hero">
+      <span class="growth-kicker">MEMBER REFERRAL · THREE GENERATIONS</span>
+      <h1 data-i18n="referral">会员推荐</h1>
+      <p data-i18n="welcome">每位会员都会自动拥有自己的推荐码。分享给朋友后，系统会自动绑定关系并按完成订单计算三代佣金。</p>
+      <div class="growth-actions"><a class="growth-button" href="member.html" data-i18n="member">会员中心</a><a class="growth-button secondary" href="#how-it-works" data-i18n="stepsTitle">三步开始</a></div>
+      <p class="growth-message" data-growth-message data-referral-status aria-live="polite"></p>
+    </section>
+    <section class="growth-section" id="how-it-works">
+      <div class="growth-section-head"><h2 data-i18n="stepsTitle">三步开始</h2><p data-i18n="stepsIntro">最多追踪三层推荐关系，奖励只来自真实完成订单，不收取入会费，不靠拉人收费。</p></div>
+      <div class="growth-grid">
+        <article class="growth-stat"><strong>01</strong><h3 data-i18n="stepApply">注册会员</h3><p data-i18n="stepApplyDesc">完成会员注册后，系统会自动生成你的专属推荐码和分享链接。</p></article>
+        <article class="growth-stat"><strong>02</strong><h3 data-i18n="stepShare">分享推荐码</h3><p data-i18n="stepShareDesc">朋友通过你的链接访问并注册后，系统自动记录直属下线关系。</p></article>
+        <article class="growth-stat"><strong>03</strong><h3 data-i18n="stepEarn">订单完成后获得奖励</h3><p data-i18n="stepEarnDesc">订单完成并经过退款观察期，佣金才会变成可提现状态。</p></article>
       </div>
-      <p data-i18n="applicationIntro">适合经常介绍朋友、公司、活动客户的人。后台审核通过后才会生成推荐码。</p>
-      <form class="growth-form" id="growthPromoterForm">
-        <div class="growth-form-grid">
-          <label data-i18n="socialPlatform">社交平台<input name="socialPlatform" placeholder="Facebook / Instagram / TikTok"></label>
-          <label data-i18n="socialAccount">社交账号<input name="socialAccount" placeholder="@account"></label>
-          <label data-i18n="region">所在地区<input name="region" placeholder="例如：KL / PJ / Cheras"></label>
-          <label data-i18n="method">推荐方式<input name="promotionMethod" placeholder="WhatsApp / 社交平台 / 朋友介绍"></label>
-          <label data-i18n="customerType">预计客户类型<input name="customerType" placeholder="家庭 / 公司 / 活动"></label>
-        </div>
-        <label class="growth-check" data-i18n="agreeTerms"><input name="termsAccepted" type="checkbox"> 我同意90推荐官条款</label>
-        <label class="growth-check" data-i18n="agreePrivacy"><input name="privacyAccepted" type="checkbox"> 我同意隐私政策</label>
-        <button class="growth-button" type="submit" data-i18n="applySubmit">提交申请</button>
-      </form>
+    </section>
+    <section class="growth-section growth-two-col">
+      <article class="growth-panel">
+        <h2 data-i18n="rulesTitle">透明规则</h2>
+        <ul class="growth-list">
+          <li><span data-i18n="rulesMode">奖励模式</span><b data-i18n="rulesModeValue">三层推荐奖励</b></li>
+          <li><span data-i18n="rulesRate">默认佣金</span><b data-i18n="rulesRateValue">第一代3% · 第二代1% · 第三代1%</b></li>
+          <li><span data-i18n="rulesSettle">结算条件</span><b data-i18n="rulesSettleValue">完成订单 + 观察期</b></li>
+          <li><span data-i18n="rulesWithdraw">提现方式</span><b data-i18n="rulesWithdrawValue">后台人工审核</b></li>
+        </ul>
+      </article>
+      <article class="growth-panel" id="member-referral">
+        <h2 data-i18n="notMemberTitle">还不是会员？</h2>
+        <p data-i18n="notMemberDesc">先注册会员，系统会自动为你准备推荐码。登录会员中心即可复制推荐码、分享链接和查看佣金记录。</p>
+        <a class="growth-button" href="member.html" data-i18n="register">注册会员</a>
+      </article>
     </section>
   </main>
-  <footer class="growth-footer"><div class="growth-shell">Mock Growth System · <a href="index.html">90 PROJECT</a></div></footer>
-  <script type="module" src="js/growth-mock.js?v=20260713-growth"></script>
+  <footer class="growth-footer"><div class="growth-shell">Member Referral System · <a href="index.html">90 PROJECT</a></div></footer>
+  <script type="module" src="js/growth-mock.js?v=20260720-member-referral"></script>
 </body>
 </html>

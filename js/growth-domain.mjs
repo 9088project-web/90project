@@ -130,6 +130,27 @@ export function createGrowthApi(storage = defaultStorage(), options = {}) {
     current.notifications.unshift({ id: id('notice'), memberId, type, title, body, read: false, createdAt: dateValue(now()) });
   };
 
+  function ensureReferralIdentity(current, memberId) {
+    const member = findMember(current, memberId);
+    if (!member) return null;
+    let promoter = findPromoter(current, memberId);
+    if (!promoter) {
+      promoter = { id: id('promoter'), memberId, status: 'approved', riskStatus: 'clear', approvedAt: dateValue(now()), commissionRuleId: 'member-referral', clickCount: 0, registrationCount: 0, orderCount: 0, salesAmount: 0, commissionAmount: 0 };
+      current.promoters.unshift(promoter);
+    } else if (promoter.status !== 'approved') {
+      promoter.status = 'approved';
+      promoter.approvedAt = promoter.approvedAt || dateValue(now());
+    }
+    let code = current.referralCodes.find(item => item.promoterId === promoter.id && item.active);
+    if (!code) {
+      const value = makeCode(current, member.name || member.email || member.phone || member.id);
+      code = { id: id('code'), promoterId: promoter.id, memberId, code: value, campaignId: null, active: true, createdAt: dateValue(now()) };
+      current.referralCodes.push(code);
+    }
+    member.referralCode = code.code;
+    return { promoter, code };
+  }
+
   function getState() {
     return clone(state);
   }
@@ -172,12 +193,13 @@ export function createGrowthApi(storage = defaultStorage(), options = {}) {
       const selfReferral = promoterMember && (normalize(promoterMember.email) === email || normalizePhone(promoterMember.phone) === phone);
       if (selfReferral) {
         current.riskFlags.unshift({ id: id('risk'), type: 'self_referral_blocked', severity: 'high', memberId: member.id, promoterId: promoter.id, referralCode: pending.code, reason: 'Same email or phone as promoter', createdAt: dateValue(now()) });
-      } else if (promoter?.status === 'approved' && promoter.memberId !== member.id) {
+      } else if (promoter && promoter.memberId !== member.id) {
         relation = { id: id('relation'), memberId: member.id, promoterId: promoter.id, promoterMemberId: promoter.memberId, referralCode: pending.code, clickId: pending.clickId, status: 'active', boundAt: dateValue(now()), boundBy: 'first_valid_visit' };
       }
     }
     const next = clone(current);
     next.members.unshift(member);
+    const identity = ensureReferralIdentity(next, member.id);
     if (relation) next.referralRelations.unshift(relation);
     const welcomePoints = addPointsToState(next, member.id, 50, 'registration', null, 'Welcome registration points', 'system');
     member.pointsBalance = welcomePoints.balanceAfter;
@@ -186,7 +208,7 @@ export function createGrowthApi(storage = defaultStorage(), options = {}) {
     state = write(next);
     storage?.setItem(GROWTH_SESSION_KEY, member.id);
     storage?.removeItem(`${GROWTH_SESSION_KEY}_pending`);
-    return { ok: true, member: clone(member), relation: clone(relation) };
+    return { ok: true, member: clone(member), relation: clone(relation), referralCode: identity?.code?.code || '' };
   }
 
   function loginMember(emailOrPhone, password) {
@@ -248,6 +270,7 @@ export function createGrowthApi(storage = defaultStorage(), options = {}) {
     if (input.pointsBalance !== undefined) member.pointsBalance = Number(input.pointsBalance) || 0;
     if (input.couponCount !== undefined) member.couponCount = Number(input.couponCount) || 0;
     member.updatedAt = dateValue(now());
+    ensureReferralIdentity(next, member.id);
     audit(next, 'member.imported', member.id, 'member', member.id, input.source || 'cloud');
     state = write(next);
     storage?.setItem(GROWTH_SESSION_KEY, member.id);
@@ -305,7 +328,7 @@ export function createGrowthApi(storage = defaultStorage(), options = {}) {
       } else promoter.status = 'approved';
       const code = makeCode(next, member?.name || target.email);
       next.referralCodes.push({ id: id('code'), promoterId: promoter.id, memberId: promoter.memberId, code, campaignId: null, active: true, createdAt: dateValue(now()) });
-      notify(next, target.memberId, 'promoter', '90推荐官已批准', `Your referral code is ${code}.`);
+      notify(next, target.memberId, 'promoter', '会员推荐码已生成', `Your referral code is ${code}.`);
     } else {
       const promoter = findPromoter(next, target.memberId);
       if (promoter) promoter.status = target.status;
@@ -362,8 +385,8 @@ export function createGrowthApi(storage = defaultStorage(), options = {}) {
     for (let generation = 1; generation <= max; generation += 1) {
       const relation = getRelationForMember(current, cursorMemberId);
       if (!relation || !relation.promoterMemberId || visitedMemberIds.has(relation.promoterMemberId)) break;
-      const promoter = findPromoter(current, relation.promoterMemberId);
-      if (!promoter || promoter.status !== 'approved') break;
+      const { promoter } = ensureReferralIdentity(current, relation.promoterMemberId) || {};
+      if (!promoter) break;
       chain.push({ generation, relation, promoter });
       visitedMemberIds.add(relation.promoterMemberId);
       cursorMemberId = relation.promoterMemberId;
@@ -508,7 +531,7 @@ export function createGrowthApi(storage = defaultStorage(), options = {}) {
     autoReleaseMaturedCommissions();
     const current = read();
     const promoter = findPromoter(current, memberId);
-    if (!promoter || promoter.status !== 'approved') return { ok: false, reason: 'promoter_not_approved' };
+    if (!promoter) return { ok: false, reason: 'referral_code_not_ready' };
     const amount = money(input.amount);
     if (amount < Number(current.config.minimumWithdrawal)) return { ok: false, reason: 'below_minimum' };
     const open = current.withdrawalRequests.some(item => item.promoterId === promoter.id && ['submitted', 'under_review', 'approved', 'processing'].includes(item.status));
@@ -571,7 +594,13 @@ export function createGrowthApi(storage = defaultStorage(), options = {}) {
 
   function summary(memberId) {
     autoReleaseMaturedCommissions();
-    const current = read();
+    let current = read();
+    if (findMember(current, memberId) && !findPromoter(current, memberId)) {
+      const next = clone(current);
+      ensureReferralIdentity(next, memberId);
+      state = write(next);
+      current = read();
+    }
     const member = findMember(current, memberId);
     const promoter = member && findPromoter(current, memberId);
     const code = promoter && current.referralCodes.find(item => item.promoterId === promoter.id && item.active);
@@ -594,7 +623,14 @@ export function createGrowthApi(storage = defaultStorage(), options = {}) {
 
   function adminSnapshot() {
     autoReleaseMaturedCommissions();
-    const current = read();
+    let current = read();
+    const missingReferral = current.members.some(member => !findPromoter(current, member.id));
+    if (missingReferral) {
+      const next = clone(current);
+      next.members.forEach(member => ensureReferralIdentity(next, member.id));
+      state = write(next);
+      current = read();
+    }
     return {
       config: clone(current.config),
       applications: clone(current.promoterApplications),

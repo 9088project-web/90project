@@ -23,34 +23,35 @@ function setup() {
   };
 }
 
-function createApprovedPromoter(api) {
-  const registered = api.registerMember({ name: 'Promoter One', email: 'promoter@example.com', phone: '011-1000 0001', password: 'secret1' });
-  assert.equal(registered.ok, true);
-  const application = api.submitPromoterApplication(registered.member.id, {
-    socialPlatform: 'Instagram', socialAccount: '@promoter', region: 'Kuala Lumpur', promotionMethod: 'Direct sharing', customerType: 'Family', termsAccepted: true, privacyAccepted: true
+function createMemberWithReferral(api, input = {}) {
+  const registered = api.registerMember({
+    name: input.name || 'Member One',
+    email: input.email || 'member@example.com',
+    phone: input.phone || '011-1000 0001',
+    password: input.password || 'secret1'
   });
-  assert.equal(application.ok, true);
-  const review = api.reviewPromoterApplication(application.application.id, 'approve');
-  assert.equal(review.ok, true);
-  const code = api.getState().referralCodes[0].code;
-  return { member: registered.member, code };
+  assert.equal(registered.ok, true);
+  const state = api.getState();
+  const promoter = state.promoters.find(item => item.memberId === registered.member.id);
+  assert.ok(promoter);
+  const code = state.referralCodes.find(item => item.promoterId === promoter.id && item.active)?.code;
+  assert.ok(code);
+  assert.equal(registered.referralCode, code);
+  return { member: registered.member, promoter, code };
 }
 
-function approveExistingMemberAsPromoter(api, memberId) {
-  const application = api.submitPromoterApplication(memberId, {
-    socialPlatform: 'Instagram', socialAccount: '@member', region: 'Kuala Lumpur', promotionMethod: 'Direct sharing', customerType: 'Family', termsAccepted: true, privacyAccepted: true
-  });
-  assert.equal(application.ok, true);
-  const review = api.reviewPromoterApplication(application.application.id, 'approve');
-  assert.equal(review.ok, true);
+function referralIdentityFor(api, memberId) {
+  api.summary(memberId);
   const promoter = api.getState().promoters.find(item => item.memberId === memberId);
+  assert.ok(promoter);
   const code = api.getState().referralCodes.find(item => item.promoterId === promoter.id).code;
+  assert.ok(code);
   return { promoter, code };
 }
 
-test('approval creates one direct referral code and registration binds the first valid visit', () => {
+test('member registration creates one direct referral code and registration binds the first valid visit', () => {
   const { api } = setup();
-  const promoter = createApprovedPromoter(api);
+  const promoter = createMemberWithReferral(api);
   assert.equal(api.captureReferralVisit(promoter.code, '/referral.html').ok, true);
   const referred = api.registerMember({ name: 'New Customer', email: 'customer@example.com', phone: '011-1000 0002', password: 'secret2' });
   assert.equal(referred.ok, true);
@@ -65,7 +66,7 @@ test('approval creates one direct referral code and registration binds the first
 
 test('completed referred order creates confirming commission and points', () => {
   const { api } = setup();
-  const promoter = createApprovedPromoter(api);
+  const promoter = createMemberWithReferral(api);
   api.captureReferralVisit(promoter.code);
   const referred = api.registerMember({ name: 'Order Customer', email: 'order@example.com', phone: '011-1000 0003', password: 'secret3' });
   const enquiry = api.createEnquiry(referred.member.id, { serviceType: 'Meal Plan', budget: 300 });
@@ -83,15 +84,15 @@ test('completed referred order creates confirming commission and points', () => 
 
 test('completed order creates three-generation referral commissions only', () => {
   const { api } = setup();
-  const first = createApprovedPromoter(api);
+  const first = createMemberWithReferral(api);
 
   api.captureReferralVisit(first.code);
   const secondMember = api.registerMember({ name: 'Second Promoter', email: 'second@example.com', phone: '011-1000 0011', password: 'secret2' });
-  const second = approveExistingMemberAsPromoter(api, secondMember.member.id);
+  const second = referralIdentityFor(api, secondMember.member.id);
 
   api.captureReferralVisit(second.code);
   const thirdMember = api.registerMember({ name: 'Third Promoter', email: 'third@example.com', phone: '011-1000 0012', password: 'secret3' });
-  const third = approveExistingMemberAsPromoter(api, thirdMember.member.id);
+  const third = referralIdentityFor(api, thirdMember.member.id);
 
   api.captureReferralVisit(third.code);
   const buyer = api.registerMember({ name: 'Third Generation Buyer', email: 'buyer@example.com', phone: '011-1000 0013', password: 'secret4' });
@@ -113,7 +114,7 @@ test('completed order creates three-generation referral commissions only', () =>
 
 test('commission protections enforce minimum eligible amount and per-order cap', () => {
   const { api } = setup();
-  const promoter = createApprovedPromoter(api);
+  const promoter = createMemberWithReferral(api);
   api.captureReferralVisit(promoter.code);
   const smallBuyer = api.registerMember({ name: 'Small Buyer', email: 'small@example.com', phone: '011-1000 0021', password: 'secret2' });
   const smallEnquiry = api.createEnquiry(smallBuyer.member.id, { serviceType: 'Meal Plan' });
@@ -142,7 +143,7 @@ test('commission protections enforce minimum eligible amount and per-order cap',
 
 test('commission releases after observation period and a full refund reverses commission and points', () => {
   const { api, moveDays } = setup();
-  const promoter = createApprovedPromoter(api);
+  const promoter = createMemberWithReferral(api);
   api.captureReferralVisit(promoter.code);
   const referred = api.registerMember({ name: 'Refund Customer', email: 'refund@example.com', phone: '011-1000 0004', password: 'secret4' });
   const enquiry = api.createEnquiry(referred.member.id, { serviceType: 'Catering', budget: 300 });
@@ -158,9 +159,9 @@ test('commission releases after observation period and a full refund reverses co
   assert.equal(state.members.find(item => item.id === referred.member.id).pointsBalance, 50);
 });
 
-test('withdrawals enforce approval, minimum amount and prevent duplicate open requests', () => {
+test('withdrawals require a referral code, minimum amount and prevent duplicate open requests', () => {
   const { api } = setup();
-  const promoter = createApprovedPromoter(api);
+  const promoter = createMemberWithReferral(api);
   api.updateConfig({ ...api.getState().config, minimumWithdrawal: 10 });
   api.captureReferralVisit(promoter.code);
   const referred = api.registerMember({ name: 'Withdrawal Customer', email: 'withdraw@example.com', phone: '011-1000 0005', password: 'secret5' });

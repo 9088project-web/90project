@@ -773,10 +773,10 @@ const translations = {
     },
     growth: {
       title: '分享美好食刻，获得90推荐奖励',
-      description: '成为90推荐官，把九零食刻介绍给朋友。当朋友完成符合资格的订单，你将获得透明、可查询的推荐奖励。',
-      apply: '立即申请',
+      description: '每位会员都会自动拥有自己的推荐码。朋友通过你的推荐码注册并完成订单后，你将获得透明、可查询的三代推荐佣金。',
+      apply: '查看会员推荐',
       view: '查看会员奖励',
-      steps: ['注册会员', '申请推荐官', '完成订单后获得奖励']
+      steps: ['注册会员', '分享推荐码', '完成订单后获得奖励']
     },
     member: {
       loginButton: '会员登录',
@@ -1023,10 +1023,10 @@ const translations = {
     },
     growth: {
       title: 'Share good moments, earn 90 referral rewards',
-      description: 'Become a 90 Promoter and introduce 90 PROJECT to friends. When an eligible order is completed, you receive a transparent, trackable referral reward.',
-      apply: 'Apply now',
+      description: 'Every member automatically receives a referral code. When friends register through your code and complete eligible orders, you receive transparent three-generation referral commission.',
+      apply: 'View referrals',
       view: 'View member rewards',
-      steps: ['Register as a member', 'Apply as a promoter', 'Earn after an eligible order']
+      steps: ['Register as a member', 'Share your referral code', 'Earn after an eligible order']
     },
     member: {
       loginButton: 'Member Login',

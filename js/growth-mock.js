@@ -312,6 +312,60 @@ Object.assign(translations.en, {
   withdrawLocalOk: 'Withdrawal request submitted for admin review.'
 });
 
+Object.assign(translations.zh, {
+  referral: '会员推荐',
+  welcome: '每位会员都会自动拥有自己的推荐码。分享给朋友后，系统会自动绑定关系并按完成订单计算三代佣金。',
+  apply: '我的推荐码',
+  applyIntro: '会员注册后自动拥有推荐码、分享链接和佣金记录。',
+  code: '我的推荐码',
+  shareText: '这是我的九零食刻会员推荐链接：',
+  application: '会员推荐',
+  promoterIntro: '每位会员注册后自动拥有推荐码、分享链接和佣金记录。',
+  applicationTitle: '会员自动拥有推荐码',
+  applicationIntro: '登录会员中心即可复制推荐码和分享链接。朋友通过你的链接注册后，系统会自动记录推荐关系。',
+  stepsTitle: '三步开始',
+  stepsIntro: '最多追踪三层推荐关系，奖励只来自真实完成订单，不收取入会费，不靠拉人收费。',
+  stepApply: '注册会员',
+  stepApplyDesc: '完成会员注册后，系统会自动生成你的专属推荐码和分享链接。',
+  stepShare: '分享推荐码',
+  stepShareDesc: '朋友通过你的链接访问并注册后，系统自动记录直属下线关系。',
+  notMemberTitle: '还不是会员？',
+  notMemberDesc: '先注册会员，系统会自动为你准备推荐码。登录会员中心即可复制推荐码、分享链接和查看佣金记录。',
+  applicationExists: '会员推荐资料已存在。',
+  termsRequired: '请确认会员推荐规则。',
+  applicationCloudOk: '会员推荐资料已同步云端。',
+  applicationCloudFail: '会员推荐资料已保存在本地，云端同步暂时失败。',
+  applicationLocalOk: '会员推荐资料已保存。',
+  withdrawPromoterRequired: '推荐码生成后才可以申请提现。'
+});
+
+Object.assign(translations.en, {
+  referral: 'Member Referral',
+  welcome: 'Every member automatically receives a referral code. Share it with friends, and the system records the relationship and calculates three-generation commission after completed orders.',
+  apply: 'My referral code',
+  applyIntro: 'Every registered member automatically receives a referral code, share link and commission records.',
+  code: 'My referral code',
+  shareText: 'This is my 90 PROJECT member referral link:',
+  application: 'Member Referral',
+  promoterIntro: 'Every registered member automatically receives a referral code, share link and commission records.',
+  applicationTitle: 'Members receive referral codes automatically',
+  applicationIntro: 'Log in to the member centre to copy your referral code and share link. When friends register through your link, the system records the referral relationship automatically.',
+  stepsTitle: 'Three simple steps',
+  stepsIntro: 'The system tracks up to three referral generations. Rewards only come from completed real orders; there is no joining fee or recruitment-based payout.',
+  stepApply: 'Register as a member',
+  stepApplyDesc: 'After member registration, the system creates your referral code and share link automatically.',
+  stepShare: 'Share your referral code',
+  stepShareDesc: 'When a friend visits and registers through your link, the system records the direct downline relationship automatically.',
+  notMemberTitle: 'Not a member yet?',
+  notMemberDesc: 'Register first and the system will prepare your referral code automatically. Log in to the member centre to copy your code, share link and review commission records.',
+  applicationExists: 'Member referral profile already exists.',
+  termsRequired: 'Please confirm the member referral rules.',
+  applicationCloudOk: 'Member referral profile synced to the cloud.',
+  applicationCloudFail: 'Member referral profile saved locally, but cloud sync failed for now.',
+  applicationLocalOk: 'Member referral profile saved.',
+  withdrawPromoterRequired: 'You can request withdrawal after your referral code is ready.'
+});
+
 
 let language = ['zh', 'en'].includes(localStorage.getItem(LANG_KEY)) ? localStorage.getItem(LANG_KEY) : 'zh';
 const t = key => translations[language][key] || translations.zh[key] || key;
@@ -447,7 +501,6 @@ function renderMemberDashboard() {
   const summary = api.summary(member.id);
   const promoter = summary.promoter;
   const code = summary.referralCode;
-  const application = api.getState().promoterApplications.find(item => item.memberId === member.id);
   const state = api.getState();
   document.querySelector('[data-growth-points]').textContent = String(summary.points);
   document.querySelector('[data-growth-coupons]').textContent = String(summary.coupons.length);
@@ -462,12 +515,10 @@ function renderMemberDashboard() {
   });
   const promoterBox = document.querySelector('[data-growth-promoter-box]');
   if (!promoterBox) return;
-  if (promoter?.status === 'approved' && code) {
+  if (promoter && code) {
     promoterBox.innerHTML = `<span class="growth-badge">${esc(t('approved'))}</span><h3>${esc(t('code'))}</h3><code class="growth-code">${esc(code)}</code><p>${esc(t('share'))}:<br><a href="${esc(shareUrl(code))}">${esc(shareUrl(code))}</a></p><div class="growth-actions"><button class="growth-button" type="button" data-copy-growth="${esc(shareUrl(code))}">${esc(t('copy'))}</button><a class="growth-button secondary" target="_blank" rel="noopener" href="https://wa.me/601110977166?text=${encodeURIComponent(`${t('shareText')} ${shareUrl(code)}`)}">${esc(t('whatsapp'))}</a></div>`;
-  } else if (application) {
-    promoterBox.innerHTML = `<span class="growth-badge">${esc(application.status === 'submitted' ? t('pending') : application.status)}</span><h3>${esc(t('apply'))}</h3><p>${esc(t('applyIntro'))}</p>`;
   } else {
-    promoterBox.innerHTML = `<h3>${esc(t('apply'))}</h3><p>${esc(t('applyIntro'))}</p><a class="growth-button" href="referral.html#promoter-application">${esc(t('apply'))}</a>`;
+    promoterBox.innerHTML = `<h3>${esc(t('code'))}</h3><p>${esc(t('noData'))}</p>`;
   }
   const list = document.querySelector('[data-growth-order-list]');
   list.innerHTML = summary.orders.length ? summary.orders.map(order => `<li><span>${esc(order.serviceType || 'Service')}<br><small>${esc(order.status)}</small></span><b>${formatMoney(order.totalAmount)}</b></li>`).join('') : `<li>${esc(t('noData'))}</li>`;
@@ -794,7 +845,7 @@ function renderAdmin() {
     memberRows.innerHTML = visibleMembers.length ? visibleMembers.map(member => {
       const promoter = snapshot.promoters.find(item => item.memberId === member.id);
       const referralCode = promoter ? codeByPromoterId.get(promoter.id) || '-' : '-';
-      return `<tr><td><strong>${esc(member.name || '90 Member')}</strong><br><small>${esc(member.phone || '-')} · ${esc(member.email || '-')}</small></td><td>${esc(member.levelId || 'member')}<br>${statusBadge(member.status || 'active')}</td><td>${promoter ? `${statusBadge(promoter.status)}<br><small>${esc(referralCode)}</small>` : '<span class="growth-muted">未申请</span>'}</td><td>${formatMoney(member.totalSpend || 0)}<br><small>${Number(member.orderCount || 0)} orders</small></td><td><b>${Number(member.pointsBalance || 0)}</b></td></tr>`;
+      return `<tr><td><strong>${esc(member.name || '90 Member')}</strong><br><small>${esc(member.phone || '-')} · ${esc(member.email || '-')}</small></td><td>${esc(member.levelId || 'member')}<br>${statusBadge(member.status || 'active')}</td><td>${promoter ? `${statusBadge(promoter.status)}<br><small>${esc(referralCode)}</small>` : '<span class="growth-muted">等待生成</span>'}</td><td>${formatMoney(member.totalSpend || 0)}<br><small>${Number(member.orderCount || 0)} orders</small></td><td><b>${Number(member.pointsBalance || 0)}</b></td></tr>`;
     }).join('') : '<tr><td colspan="5">没有符合筛选的会员。</td></tr>';
   }
   const appRows = document.querySelector('[data-growth-admin-applications]');
@@ -802,7 +853,7 @@ function renderAdmin() {
     const statusOk = adminGrowthFilters.application === 'all' || item.status === adminGrowthFilters.application;
     return statusOk && matchesAdminSearch([item.name, item.email, item.phone, item.region, item.socialPlatform, item.socialAccount, item.promotionMethod]);
   });
-  appRows.innerHTML = visibleApplications.length ? visibleApplications.map(item => `<tr><td><strong>${esc(item.name)}</strong><br><small>${esc(item.email)} · ${esc(item.phone || '-')}</small></td><td>${statusBadge(item.status)}</td><td>${esc(item.region || '-')}<br><small>${esc(item.socialPlatform || '-')} · ${esc(item.promotionMethod || '-')}</small></td><td><div class="growth-admin-actions"><button class="growth-button" data-review-app="${item.id}" data-decision="approve">批准</button><button class="growth-button secondary" data-review-app="${item.id}" data-decision="reject">拒绝</button><button class="growth-button secondary" data-review-app="${item.id}" data-decision="suspend">暂停</button></div></td></tr>`).join('') : '<tr><td colspan="4">没有符合筛选的推荐官申请。</td></tr>';
+  appRows.innerHTML = visibleApplications.length ? visibleApplications.map(item => `<tr><td><strong>${esc(item.name)}</strong><br><small>${esc(item.email)} · ${esc(item.phone || '-')}</small></td><td>${statusBadge(item.status)}</td><td>${esc(item.region || '-')}<br><small>${esc(item.socialPlatform || '-')} · ${esc(item.promotionMethod || '-')}</small></td><td><div class="growth-admin-actions"><button class="growth-button" data-review-app="${item.id}" data-decision="approve">批准</button><button class="growth-button secondary" data-review-app="${item.id}" data-decision="reject">拒绝</button><button class="growth-button secondary" data-review-app="${item.id}" data-decision="suspend">暂停</button></div></td></tr>`).join('') : '<tr><td colspan="4">现在不需要推荐申请；会员注册后会自动生成推荐码。</td></tr>';
   const commissionRows = document.querySelector('[data-growth-admin-commissions]');
   const visibleCommissions = snapshot.commissions.filter(item => {
     const promoter = promoterById.get(item.promoterId);
@@ -869,7 +920,7 @@ function bindAdmin() {
     const appButton = event.target.closest('[data-review-app]');
     if (appButton) {
       api.reviewPromoterApplication(appButton.dataset.reviewApp, appButton.dataset.decision, 'mock-admin', appButton.dataset.decision === 'reject' ? 'Mock review rejection' : 'Mock review approval');
-      setMessage('推荐官申请状态已更新。');
+      setMessage('会员推荐状态已更新。');
       renderAdmin();
       return;
     }
