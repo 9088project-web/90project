@@ -72,7 +72,9 @@ test('completed referred order creates confirming commission and points', () => 
   const order = api.createOrder(referred.member.id, enquiry.enquiry.id, { totalAmount: 300, serviceType: 'Meal Plan' });
   const completed = api.completeOrder(order.order.id);
   assert.equal(completed.ok, true);
+  assert.equal(api.completeOrder(order.order.id).reason, 'order_already_completed');
   const state = api.getState();
+  assert.equal(state.commissionLedgers.filter(item => item.orderId === order.order.id).length, 1);
   assert.equal(state.commissionLedgers[0].status, 'confirming');
   assert.equal(state.commissionLedgers[0].commissionRate, 3);
   assert.equal(state.commissionLedgers[0].commissionAmount, 9);
@@ -109,6 +111,35 @@ test('completed order creates three-generation referral commissions only', () =>
   assert.equal(commissions[1].promoterId, second.promoter.id);
 });
 
+test('commission protections enforce minimum eligible amount and per-order cap', () => {
+  const { api } = setup();
+  const promoter = createApprovedPromoter(api);
+  api.captureReferralVisit(promoter.code);
+  const smallBuyer = api.registerMember({ name: 'Small Buyer', email: 'small@example.com', phone: '011-1000 0021', password: 'secret2' });
+  const smallEnquiry = api.createEnquiry(smallBuyer.member.id, { serviceType: 'Meal Plan' });
+  const smallOrder = api.createOrder(smallBuyer.member.id, smallEnquiry.enquiry.id, { totalAmount: 99, serviceType: 'Meal Plan' });
+  api.completeOrder(smallOrder.order.id);
+  assert.equal(api.getState().commissionLedgers.filter(item => item.orderId === smallOrder.order.id).length, 0);
+  assert.equal(api.getState().riskFlags.some(item => item.type === 'commission_minimum_not_met'), true);
+
+  const config = api.getState().config;
+  api.updateConfig({
+    ...config,
+    maxCommissionPercentPerOrder: 5,
+    commissionRules: config.commissionRules.map(rule => ({ ...rule, value: 10 })),
+    referralCommissionRates: [10, 10, 10]
+  });
+
+  api.captureReferralVisit(promoter.code);
+  const cappedBuyer = api.registerMember({ name: 'Capped Buyer', email: 'capped@example.com', phone: '011-1000 0022', password: 'secret3' });
+  const cappedEnquiry = api.createEnquiry(cappedBuyer.member.id, { serviceType: 'Meal Plan' });
+  const cappedOrder = api.createOrder(cappedBuyer.member.id, cappedEnquiry.enquiry.id, { totalAmount: 1000, serviceType: 'Meal Plan' });
+  api.completeOrder(cappedOrder.order.id);
+  const cappedCommissions = api.getState().commissionLedgers.filter(item => item.orderId === cappedOrder.order.id);
+  const cappedTotal = cappedCommissions.reduce((sum, item) => sum + item.commissionAmount, 0);
+  assert.equal(cappedTotal, 50);
+});
+
 test('commission releases after observation period and a full refund reverses commission and points', () => {
   const { api, moveDays } = setup();
   const promoter = createApprovedPromoter(api);
@@ -118,7 +149,7 @@ test('commission releases after observation period and a full refund reverses co
   const order = api.createOrder(referred.member.id, enquiry.enquiry.id, { totalAmount: 300, serviceType: 'Catering' });
   api.completeOrder(order.order.id);
   moveDays(8);
-  assert.equal(api.releaseCommissions().released, 1);
+  api.summary(promoter.member.id);
   assert.equal(api.getState().commissionLedgers[0].status, 'available');
   assert.equal(api.refundOrder(order.order.id, 300).ok, true);
   const state = api.getState();

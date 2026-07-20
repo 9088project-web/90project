@@ -22,3 +22,8 @@ values
 on conflict do nothing;
 
 comment on column public.growth_commission_ledgers.generation is 'Referral generation for commission payout: 1=direct 3%, 2=upstream 1%, 3=upstream 1%.';
+
+-- Commercial protection defaults for application-side config:
+-- minimum eligible order amount = RM100
+-- max total commission per order = 5%
+-- matured confirming commissions can be released automatically after the refund observation period.

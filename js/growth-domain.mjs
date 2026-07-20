@@ -9,6 +9,9 @@ export const DEFAULT_GROWTH_CONFIG = {
   defaultCommission: { type: 'percent', value: 3 },
   maxReferralGenerations: 3,
   referralCommissionRates: [3, 1, 1],
+  minimumCommissionEligibleAmount: 100,
+  maxCommissionPercentPerOrder: 5,
+  autoReleaseCommissions: true,
   pointsPerMyr: 1,
   levels: [
     { id: 'member', name: '90 Member', spendThreshold: 0, orderThreshold: 0, discountPercent: 0, pointsMultiplier: 1, active: true },
@@ -69,7 +72,8 @@ function withDefaults(raw) {
       ...(source.config || {}),
       defaultCommission: { ...base.config.defaultCommission, ...(source.config?.defaultCommission || {}) },
       levels: Array.isArray(source.config?.levels) && source.config.levels.length ? source.config.levels : base.config.levels,
-      commissionRules: Array.isArray(source.config?.commissionRules) && source.config.commissionRules.length ? source.config.commissionRules : base.config.commissionRules
+      commissionRules: Array.isArray(source.config?.commissionRules) && source.config.commissionRules.length ? source.config.commissionRules : base.config.commissionRules,
+      referralCommissionRates: Array.isArray(source.config?.referralCommissionRates) && source.config.referralCommissionRates.length ? source.config.referralCommissionRates : base.config.referralCommissionRates
     }
   };
 }
@@ -164,7 +168,11 @@ export function createGrowthApi(storage = defaultStorage(), options = {}) {
     if (pending?.code) {
       const promoterCode = current.referralCodes.find(item => item.code === pending.code && item.active);
       const promoter = promoterCode && findPromoter(current, promoterCode.memberId);
-      if (promoter?.status === 'approved' && promoter.memberId !== member.id) {
+      const promoterMember = promoter && findMember(current, promoter.memberId);
+      const selfReferral = promoterMember && (normalize(promoterMember.email) === email || normalizePhone(promoterMember.phone) === phone);
+      if (selfReferral) {
+        current.riskFlags.unshift({ id: id('risk'), type: 'self_referral_blocked', severity: 'high', memberId: member.id, promoterId: promoter.id, referralCode: pending.code, reason: 'Same email or phone as promoter', createdAt: dateValue(now()) });
+      } else if (promoter?.status === 'approved' && promoter.memberId !== member.id) {
         relation = { id: id('relation'), memberId: member.id, promoterId: promoter.id, promoterMemberId: promoter.memberId, referralCode: pending.code, clickId: pending.clickId, status: 'active', boundAt: dateValue(now()), boundBy: 'first_valid_visit' };
       }
     }
@@ -378,6 +386,7 @@ export function createGrowthApi(storage = defaultStorage(), options = {}) {
     const current = read();
     const order = current.orders.find(item => item.id === orderId);
     if (!order || ['cancelled', 'refunded'].includes(order.status)) return { ok: false, reason: 'order_not_completable' };
+    if (['service_completed', 'fully_paid'].includes(order.status)) return { ok: false, reason: 'order_already_completed' };
     const next = clone(current);
     const target = next.orders.find(item => item.id === orderId);
     target.status = 'service_completed';
@@ -396,12 +405,21 @@ export function createGrowthApi(storage = defaultStorage(), options = {}) {
     const chain = referralCommissionChain(next, target.memberId);
     if (chain.length) {
       const base = eligibleAmount(target);
+      const minimumBase = money(next.config.minimumCommissionEligibleAmount || 0);
+      if (base < minimumBase) {
+        next.riskFlags.unshift({ id: id('risk'), type: 'commission_minimum_not_met', severity: 'low', memberId: target.memberId, orderId: target.id, eligibleAmount: base, minimumAmount: minimumBase, reason: 'Eligible order amount below commission threshold', createdAt: dateValue(now()) });
+      }
+      let remainingCommissionCap = money(base * Number(next.config.maxCommissionPercentPerOrder || 5) / 100);
       chain.forEach(({ generation, relation, promoter }) => {
+        if (base < minimumBase || remainingCommissionCap <= 0) return;
         const rule = referralGenerationRate(next, generation, target);
         if (!Number(rule.value)) return;
-        const commissionAmount = rule.type === 'fixed' ? money(rule.value) : money(base * Number(rule.value || 0) / 100);
+        const rawCommissionAmount = rule.type === 'fixed' ? money(rule.value) : money(base * Number(rule.value || 0) / 100);
+        const commissionAmount = money(Math.min(rawCommissionAmount, remainingCommissionCap));
+        if (commissionAmount <= 0) return;
         const ledger = { id: id('commission'), promoterId: promoter.id, memberId: target.memberId, orderId: target.id, campaignId: null, ruleId: rule.id || `generation-${generation}`, generation, referralRelationId: relation.id, eligibleAmount: base, commissionType: rule.type, commissionRate: Number(rule.value || 0), commissionAmount, status: 'confirming', availableAt: new Date(now().getTime() + next.config.refundObservationDays * 86400000).toISOString(), reversedAmount: 0, reversalReason: '', createdAt: dateValue(now()), updatedAt: dateValue(now()) };
         next.commissionLedgers.unshift(ledger);
+        remainingCommissionCap = money(remainingCommissionCap - commissionAmount);
         promoter.orderCount += 1;
         promoter.salesAmount = money(promoter.salesAmount + base);
         promoter.commissionAmount = money(promoter.commissionAmount + commissionAmount);
@@ -427,6 +445,24 @@ export function createGrowthApi(storage = defaultStorage(), options = {}) {
     if (released) audit(next, 'commission.released', actorId, 'commission', 'batch', `${released} commission(s) released in Mock mode`);
     state = write(next);
     return { ok: true, released };
+  }
+
+  function autoReleaseMaturedCommissions(actorId = 'system') {
+    const current = read();
+    if (!current.config.autoReleaseCommissions) return 0;
+    const next = clone(current);
+    let released = 0;
+    next.commissionLedgers.forEach(ledger => {
+      if (ledger.status === 'confirming' && new Date(ledger.availableAt) <= now()) {
+        ledger.status = 'available';
+        ledger.updatedAt = dateValue(now());
+        released += 1;
+      }
+    });
+    if (!released) return 0;
+    audit(next, 'commission.auto_released', actorId, 'commission', 'batch', `${released} matured commission(s) auto released`);
+    state = write(next);
+    return released;
   }
 
   function mockAdvanceCommissionObservation(actorId = 'mock-admin') {
@@ -469,6 +505,7 @@ export function createGrowthApi(storage = defaultStorage(), options = {}) {
   }
 
   function submitWithdrawal(memberId, input = {}) {
+    autoReleaseMaturedCommissions();
     const current = read();
     const promoter = findPromoter(current, memberId);
     if (!promoter || promoter.status !== 'approved') return { ok: false, reason: 'promoter_not_approved' };
@@ -533,6 +570,7 @@ export function createGrowthApi(storage = defaultStorage(), options = {}) {
   }
 
   function summary(memberId) {
+    autoReleaseMaturedCommissions();
     const current = read();
     const member = findMember(current, memberId);
     const promoter = member && findPromoter(current, memberId);
@@ -555,6 +593,7 @@ export function createGrowthApi(storage = defaultStorage(), options = {}) {
   }
 
   function adminSnapshot() {
+    autoReleaseMaturedCommissions();
     const current = read();
     return {
       config: clone(current.config),

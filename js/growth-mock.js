@@ -765,6 +765,15 @@ function renderAdmin() {
   const memberById = new Map(snapshot.members.map(member => [member.id, member]));
   const promoterById = new Map(snapshot.promoters.map(promoter => [promoter.id, promoter]));
   const codeByPromoterId = new Map((snapshot.referralCodes || []).map(item => [item.promoterId, item.code]).filter(item => item[1]));
+  const metricGrid = document.querySelector('.growth-admin-section .growth-metric-grid');
+  if (metricGrid && !metricGrid.querySelector('[data-admin-growth="pending-commissions"]')) {
+    metricGrid.insertAdjacentHTML('beforeend', '<div class="growth-metric"><strong>确认中佣金</strong><b data-admin-growth="pending-commissions">0</b></div><div class="growth-metric"><strong>异常记录</strong><b data-admin-growth="risk-flags">0</b></div>');
+  }
+  const configForm = document.querySelector('[data-growth-config-form]');
+  if (configForm && !configForm.querySelector('[data-growth-config-min-order]')) {
+    const saveButton = configForm.querySelector('button[type="submit"]');
+    saveButton?.insertAdjacentHTML('beforebegin', '<div class="growth-form-grid"><label>最低计佣金额 RM<input data-growth-config-min-order type="number" min="0" step="0.01"></label><label>每单总佣金封顶 %<input data-growth-config-cap type="number" min="0" max="100" step="0.1"></label></div>');
+  }
   snapshot.relations.forEach(relation => {
     if (relation.promoterId && relation.referralCode) codeByPromoterId.set(relation.promoterId, relation.referralCode);
   });
@@ -773,6 +782,8 @@ function renderAdmin() {
   metric('[data-admin-growth="promoters"]', snapshot.promoters.filter(item => item.status === 'approved').length);
   metric('[data-admin-growth="commission"]', formatMoney(snapshot.commissions.reduce((sum, item) => sum + Number(item.commissionAmount || 0), 0)));
   metric('[data-admin-growth="withdrawals"]', snapshot.withdrawals.filter(item => !['paid', 'rejected', 'cancelled'].includes(item.status)).length);
+  metric('[data-admin-growth="pending-commissions"]', snapshot.commissions.filter(item => item.status === 'confirming').length);
+  metric('[data-admin-growth="risk-flags"]', snapshot.riskFlags.length);
   const memberRows = document.querySelector('[data-growth-admin-members]');
   const visibleMembers = snapshot.members.filter(member => {
     const promoter = snapshot.promoters.find(item => item.memberId === member.id);
@@ -817,6 +828,8 @@ function renderAdmin() {
   document.querySelector('[data-growth-config-percent]').value = config.defaultCommission.value;
   document.querySelector('[data-growth-config-hold]').value = config.refundObservationDays;
   document.querySelector('[data-growth-config-min]').value = config.minimumWithdrawal;
+  document.querySelector('[data-growth-config-min-order]').value = config.minimumCommissionEligibleAmount || 0;
+  document.querySelector('[data-growth-config-cap]').value = config.maxCommissionPercentPerOrder || 5;
 }
 
 function bindAdmin() {
@@ -874,8 +887,13 @@ function bindAdmin() {
     event.preventDefault();
     const config = api.getState().config;
     config.defaultCommission.value = Number(document.querySelector('[data-growth-config-percent]').value) || 0;
+    config.referralCommissionRates = Array.isArray(config.referralCommissionRates) ? config.referralCommissionRates : [3, 1, 1];
+    config.referralCommissionRates[0] = config.defaultCommission.value;
+    config.commissionRules = (config.commissionRules || []).map(rule => Number(rule.generation) === 1 ? { ...rule, value: config.defaultCommission.value } : rule);
     config.refundObservationDays = Number(document.querySelector('[data-growth-config-hold]').value) || 7;
     config.minimumWithdrawal = Number(document.querySelector('[data-growth-config-min]').value) || 50;
+    config.minimumCommissionEligibleAmount = Number(document.querySelector('[data-growth-config-min-order]')?.value) || 0;
+    config.maxCommissionPercentPerOrder = Number(document.querySelector('[data-growth-config-cap]')?.value) || 5;
     api.updateConfig(config, 'mock-admin');
     setMessage('增长系统规则已保存。');
     renderAdmin();
