@@ -140,7 +140,7 @@ const INQUIRY_STATUSES = ['new', 'contacted', 'quoted', 'confirmed', 'completed'
 const REFERRAL_REWARD_STATUSES = ['pending', 'approved', 'redeemed', 'cancelled'];
 const MEMBER_STATUSES = ['active', 'vip', 'blocked'];
 const MEMBER_TIERS = ['Classic', 'Gold', 'Black Gold'];
-const REFERRAL_LEVEL_RATES = [1, 0.5, 0.3, 0.2, 0.1];
+const REFERRAL_LEVEL_RATES = [3, 1, 1];
 const CATERING_MINIMUM_TOTAL = 300;
 const STYLING_CASE_DELAY = 5200;
 const prefersReducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches || false;
@@ -4153,7 +4153,7 @@ function saveReferralReward(orderData) {
     referrer.referralRewards.unshift({
       ...rewardBase,
       level: index + 1,
-      fixedCredit: index === 0 ? 20 : 0,
+      fixedCredit: 0,
       ratePercent
     });
     referrer.referralRewards = referrer.referralRewards.slice(0, 30);

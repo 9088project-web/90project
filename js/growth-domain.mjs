@@ -6,7 +6,9 @@ export const DEFAULT_GROWTH_CONFIG = {
   referralWindowDays: 60,
   refundObservationDays: 7,
   minimumWithdrawal: 50,
-  defaultCommission: { type: 'percent', value: 5 },
+  defaultCommission: { type: 'percent', value: 3 },
+  maxReferralGenerations: 3,
+  referralCommissionRates: [3, 1, 1],
   pointsPerMyr: 1,
   levels: [
     { id: 'member', name: '90 Member', spendThreshold: 0, orderThreshold: 0, discountPercent: 0, pointsMultiplier: 1, active: true },
@@ -15,7 +17,9 @@ export const DEFAULT_GROWTH_CONFIG = {
     { id: 'vip', name: '90 VIP', spendThreshold: 4000, orderThreshold: 10, discountPercent: 8, pointsMultiplier: 2, active: true }
   ],
   commissionRules: [
-    { id: 'default-direct', name: 'Direct referral', service: '*', type: 'percent', value: 5, active: true }
+    { id: 'generation-1', name: 'Generation 1 referral', service: '*', type: 'percent', value: 3, generation: 1, active: true },
+    { id: 'generation-2', name: 'Generation 2 referral', service: '*', type: 'percent', value: 1, generation: 2, active: true },
+    { id: 'generation-3', name: 'Generation 3 referral', service: '*', type: 'percent', value: 1, generation: 3, active: true }
   ]
 };
 
@@ -335,6 +339,30 @@ export function createGrowthApi(storage = defaultStorage(), options = {}) {
     return current.config.commissionRules.find(rule => rule.active && (rule.service === '*' || rule.service === order.serviceType)) || current.config.defaultCommission;
   }
 
+  function referralGenerationRate(current, generation, order) {
+    const rule = current.config.commissionRules.find(item => item.active && Number(item.generation) === generation && (item.service === '*' || item.service === order.serviceType));
+    if (rule) return { id: rule.id || `generation-${generation}`, type: rule.type || 'percent', value: Number(rule.value || 0) };
+    const rates = Array.isArray(current.config.referralCommissionRates) ? current.config.referralCommissionRates : [current.config.defaultCommission?.value || 3];
+    return { id: `generation-${generation}`, type: 'percent', value: Number(rates[generation - 1] || 0) };
+  }
+
+  function referralCommissionChain(current, memberId) {
+    const max = Math.max(1, Number(current.config.maxReferralGenerations || 3));
+    const chain = [];
+    const visitedMemberIds = new Set([memberId]);
+    let cursorMemberId = memberId;
+    for (let generation = 1; generation <= max; generation += 1) {
+      const relation = getRelationForMember(current, cursorMemberId);
+      if (!relation || !relation.promoterMemberId || visitedMemberIds.has(relation.promoterMemberId)) break;
+      const promoter = findPromoter(current, relation.promoterMemberId);
+      if (!promoter || promoter.status !== 'approved') break;
+      chain.push({ generation, relation, promoter });
+      visitedMemberIds.add(relation.promoterMemberId);
+      cursorMemberId = relation.promoterMemberId;
+    }
+    return chain;
+  }
+
   function addPointsToState(current, memberId, points, transactionType, relatedOrderId, reason, createdBy) {
     const member = findMember(current, memberId);
     if (!member) return { balanceBefore: 0, balanceAfter: 0 };
@@ -365,20 +393,20 @@ export function createGrowthApi(storage = defaultStorage(), options = {}) {
       const pointEntry = addPointsToState(next, member.id, target.totalAmount * next.config.pointsPerMyr * (level.pointsMultiplier || 1), 'order_completed', target.id, 'Points for completed order', 'system');
       notify(next, member.id, 'points', 'Points added', `You earned ${pointEntry.points} points.`);
     }
-    const relation = getRelationForMember(next, target.memberId);
-    if (relation) {
-      const promoter = findPromoter(next, relation.promoterMemberId);
-      if (promoter?.status === 'approved') {
-        const rule = resolveCommissionRule(next, target);
-        const base = eligibleAmount(target);
+    const chain = referralCommissionChain(next, target.memberId);
+    if (chain.length) {
+      const base = eligibleAmount(target);
+      chain.forEach(({ generation, relation, promoter }) => {
+        const rule = referralGenerationRate(next, generation, target);
+        if (!Number(rule.value)) return;
         const commissionAmount = rule.type === 'fixed' ? money(rule.value) : money(base * Number(rule.value || 0) / 100);
-        const ledger = { id: id('commission'), promoterId: promoter.id, memberId: target.memberId, orderId: target.id, campaignId: null, ruleId: rule.id || 'default-direct', eligibleAmount: base, commissionType: rule.type, commissionRate: Number(rule.value || 0), commissionAmount, status: 'confirming', availableAt: new Date(now().getTime() + next.config.refundObservationDays * 86400000).toISOString(), reversedAmount: 0, reversalReason: '', createdAt: dateValue(now()), updatedAt: dateValue(now()) };
+        const ledger = { id: id('commission'), promoterId: promoter.id, memberId: target.memberId, orderId: target.id, campaignId: null, ruleId: rule.id || `generation-${generation}`, generation, referralRelationId: relation.id, eligibleAmount: base, commissionType: rule.type, commissionRate: Number(rule.value || 0), commissionAmount, status: 'confirming', availableAt: new Date(now().getTime() + next.config.refundObservationDays * 86400000).toISOString(), reversedAmount: 0, reversalReason: '', createdAt: dateValue(now()), updatedAt: dateValue(now()) };
         next.commissionLedgers.unshift(ledger);
         promoter.orderCount += 1;
         promoter.salesAmount = money(promoter.salesAmount + base);
         promoter.commissionAmount = money(promoter.commissionAmount + commissionAmount);
-        notify(next, relation.promoterMemberId, 'commission', 'Referral commission created', `RM${commissionAmount.toFixed(2)} is confirming after the refund observation period.`);
-      }
+        notify(next, relation.promoterMemberId, 'commission', `L${generation} referral commission created`, `RM${commissionAmount.toFixed(2)} is confirming after the refund observation period.`);
+      });
     }
     audit(next, 'order.completed', actorId, 'order', orderId, 'MOCK order completed');
     state = write(next);
