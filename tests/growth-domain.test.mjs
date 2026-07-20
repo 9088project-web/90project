@@ -180,6 +180,32 @@ test('withdrawals require a referral code, minimum amount and prevent duplicate 
   assert.equal(api.getState().withdrawalPayments.length, 1);
 });
 
+test('admin snapshot exposes referral relations, completable orders and withdrawal payments', () => {
+  const { api } = setup();
+  const promoter = createMemberWithReferral(api);
+  api.captureReferralVisit(promoter.code);
+  const referred = api.registerMember({ name: 'Admin Buyer', email: 'admin-buyer@example.com', phone: '011-1000 0031', password: 'secret6' });
+  const enquiry = api.createEnquiry(referred.member.id, { serviceType: 'Event Catering', budget: 800 });
+  const order = api.createOrder(referred.member.id, enquiry.enquiry.id, { totalAmount: 800, serviceType: 'Event Catering' });
+
+  let snapshot = api.adminSnapshot();
+  assert.equal(snapshot.relations.length, 1);
+  assert.equal(snapshot.orders.find(item => item.id === order.order.id).status, 'confirmed');
+
+  const completed = api.completeOrder(order.order.id, 'mock-admin');
+  assert.equal(completed.ok, true);
+  api.mockAdvanceCommissionObservation();
+  api.updateConfig({ ...api.getState().config, minimumWithdrawal: 10 });
+  const request = api.submitWithdrawal(promoter.member.id, { amount: 24, bankName: 'Mock Bank', bankAccount: '123', accountName: 'Member One' });
+  assert.equal(request.ok, true);
+  api.reviewWithdrawal(request.request.id, 'paid', 'mock-admin', { referenceNumber: 'BANK-REF-900' });
+
+  snapshot = api.adminSnapshot();
+  assert.equal(snapshot.orders.find(item => item.id === order.order.id).status, 'service_completed');
+  assert.equal(snapshot.commissions.some(item => item.orderId === order.order.id), true);
+  assert.equal(snapshot.withdrawalPayments[0].referenceNumber, 'BANK-REF-900');
+});
+
 test('cloud imported member can be used as the current member and updated locally', () => {
   const { api } = setup();
   const imported = api.importMember({

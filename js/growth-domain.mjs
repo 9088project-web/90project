@@ -644,6 +644,7 @@ export function createGrowthApi(storage = defaultStorage(), options = {}) {
       points: clone(current.pointsLedgers),
       commissions: clone(current.commissionLedgers),
       withdrawals: clone(current.withdrawalRequests),
+      withdrawalPayments: clone(current.withdrawalPayments),
       auditLogs: clone(current.auditLogs),
       riskFlags: clone(current.riskFlags)
     };

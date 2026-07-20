@@ -124,13 +124,14 @@
             <label>搜索会员 / 推荐码
               <input data-growth-admin-search type="search" placeholder="姓名、电话、Email、推荐码">
             </label>
-            <label>申请状态
-              <select data-growth-admin-filter="application">
-                <option value="all">全部申请</option>
-                <option value="submitted">待审核</option>
-                <option value="approved">已批准</option>
-                <option value="rejected">已拒绝</option>
-                <option value="suspended">已暂停</option>
+            <label>订单状态
+              <select data-growth-admin-filter="order">
+                <option value="all">全部订单</option>
+                <option value="confirmed">待确认完成</option>
+                <option value="deposit_paid">已付订金</option>
+                <option value="service_completed">已完成</option>
+                <option value="fully_paid">已结清</option>
+                <option value="refunded">已退款</option>
               </select>
             </label>
             <label>提现状态
@@ -147,7 +148,7 @@
             <button class="growth-button secondary" type="button" data-growth-export="commissions">导出佣金 CSV</button>
           </div>
           <div class="growth-metric-grid">
-            <div class="growth-metric"><strong>待审核申请</strong><b data-admin-growth="applications">0</b></div>
+            <div class="growth-metric"><strong>待完成订单</strong><b data-admin-growth="orders">0</b></div>
             <div class="growth-metric"><strong>有推荐码会员</strong><b data-admin-growth="promoters">0</b></div>
             <div class="growth-metric"><strong>佣金总额</strong><b data-admin-growth="commission">RM0.00</b></div>
             <div class="growth-metric"><strong>待处理提现</strong><b data-admin-growth="withdrawals">0</b></div>
@@ -158,7 +159,11 @@
           </div>
           <div class="growth-panel">
             <h3>推荐关系记录</h3>
-            <div class="growth-table-wrap"><table class="growth-table"><thead><tr><th>申请人</th><th>状态</th><th>地区 / 方式</th><th>操作</th></tr></thead><tbody data-growth-admin-applications></tbody></table></div>
+            <div class="growth-table-wrap"><table class="growth-table"><thead><tr><th>下线会员</th><th>直属推荐人</th><th>推荐码</th><th>绑定时间</th></tr></thead><tbody data-growth-admin-relations></tbody></table></div>
+          </div>
+          <div class="growth-panel">
+            <h3>订单完成确认</h3>
+            <div class="growth-table-wrap"><table class="growth-table"><thead><tr><th>订单 / 顾客</th><th>服务 / 状态</th><th>金额</th><th>操作</th></tr></thead><tbody data-growth-admin-orders></tbody></table></div>
           </div>
           <div class="growth-panel">
             <h3>佣金账本</h3>

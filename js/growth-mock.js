@@ -371,12 +371,13 @@ let language = ['zh', 'en'].includes(localStorage.getItem(LANG_KEY)) ? localStor
 const t = key => translations[language][key] || translations.zh[key] || key;
 const esc = value => String(value ?? '').replace(/[&<>'"]/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[char]));
 const formatMoney = value => `RM${money(value).toFixed(2)}`;
+const eligibleAmountForAdmin = order => money(Math.max(0, Number(order?.totalAmount || 0) - Number(order?.sstAmount || 0) - Number(order?.deliveryFee || 0) - Number(order?.extraLabourFee || 0) - Number(order?.thirdPartyFee || 0) - Number(order?.couponDiscount || 0)));
 const currentMember = () => api.currentMember();
 const page = document.body?.dataset.growthPage || '';
 let cloudReady = false;
 let cloudGrowthSnapshot = null;
 let adminGrowthSearch = '';
-let adminGrowthFilters = { application: 'all', withdrawal: 'all' };
+let adminGrowthFilters = { order: 'all', withdrawal: 'all' };
 let phoneVerification = { phone: '', code: '', verified: false, cloudSession: null };
 
 function setText(selector, value) {
@@ -816,6 +817,7 @@ function renderAdmin() {
   const memberById = new Map(snapshot.members.map(member => [member.id, member]));
   const promoterById = new Map(snapshot.promoters.map(promoter => [promoter.id, promoter]));
   const codeByPromoterId = new Map((snapshot.referralCodes || []).map(item => [item.promoterId, item.code]).filter(item => item[1]));
+  const relationByMemberId = new Map(snapshot.relations.map(relation => [relation.memberId, relation]));
   const metricGrid = document.querySelector('.growth-admin-section .growth-metric-grid');
   if (metricGrid && !metricGrid.querySelector('[data-admin-growth="pending-commissions"]')) {
     metricGrid.insertAdjacentHTML('beforeend', '<div class="growth-metric"><strong>确认中佣金</strong><b data-admin-growth="pending-commissions">0</b></div><div class="growth-metric"><strong>异常记录</strong><b data-admin-growth="risk-flags">0</b></div>');
@@ -829,7 +831,7 @@ function renderAdmin() {
     if (relation.promoterId && relation.referralCode) codeByPromoterId.set(relation.promoterId, relation.referralCode);
   });
   const metric = (selector, value) => { const element = document.querySelector(selector); if (element) element.textContent = String(value); };
-  metric('[data-admin-growth="applications"]', snapshot.applications.filter(item => item.status === 'submitted').length);
+  metric('[data-admin-growth="orders"]', snapshot.orders.filter(item => ['confirmed', 'deposit_paid'].includes(item.status)).length);
   metric('[data-admin-growth="promoters"]', snapshot.promoters.filter(item => item.status === 'approved').length);
   metric('[data-admin-growth="commission"]', formatMoney(snapshot.commissions.reduce((sum, item) => sum + Number(item.commissionAmount || 0), 0)));
   metric('[data-admin-growth="withdrawals"]', snapshot.withdrawals.filter(item => !['paid', 'rejected', 'cancelled'].includes(item.status)).length);
@@ -845,25 +847,50 @@ function renderAdmin() {
     memberRows.innerHTML = visibleMembers.length ? visibleMembers.map(member => {
       const promoter = snapshot.promoters.find(item => item.memberId === member.id);
       const referralCode = promoter ? codeByPromoterId.get(promoter.id) || '-' : '-';
-      return `<tr><td><strong>${esc(member.name || '90 Member')}</strong><br><small>${esc(member.phone || '-')} · ${esc(member.email || '-')}</small></td><td>${esc(member.levelId || 'member')}<br>${statusBadge(member.status || 'active')}</td><td>${promoter ? `${statusBadge(promoter.status)}<br><small>${esc(referralCode)}</small>` : '<span class="growth-muted">等待生成</span>'}</td><td>${formatMoney(member.totalSpend || 0)}<br><small>${Number(member.orderCount || 0)} orders</small></td><td><b>${Number(member.pointsBalance || 0)}</b></td></tr>`;
+      const directCount = snapshot.relations.filter(relation => relation.promoterMemberId === member.id && relation.status === 'active').length;
+      return `<tr><td><strong>${esc(member.name || '90 Member')}</strong><br><small>${esc(member.phone || '-')} · ${esc(member.email || '-')}</small></td><td>${esc(member.levelId || 'member')}<br>${statusBadge(member.status || 'active')}</td><td>${promoter ? `${statusBadge(promoter.status)}<br><small>${esc(referralCode)}</small><br><small>直属下线 ${directCount}</small>` : '<span class="growth-muted">等待生成</span>'}</td><td>${formatMoney(member.totalSpend || 0)}<br><small>${Number(member.orderCount || 0)} orders</small></td><td><b>${Number(member.pointsBalance || 0)}</b></td></tr>`;
     }).join('') : '<tr><td colspan="5">没有符合筛选的会员。</td></tr>';
   }
-  const appRows = document.querySelector('[data-growth-admin-applications]');
-  const visibleApplications = snapshot.applications.filter(item => {
-    const statusOk = adminGrowthFilters.application === 'all' || item.status === adminGrowthFilters.application;
-    return statusOk && matchesAdminSearch([item.name, item.email, item.phone, item.region, item.socialPlatform, item.socialAccount, item.promotionMethod]);
+  const relationRows = document.querySelector('[data-growth-admin-relations]');
+  const visibleRelations = snapshot.relations.filter(item => {
+    const member = memberById.get(item.memberId);
+    const parent = memberById.get(item.promoterMemberId);
+    return matchesAdminSearch([item.referralCode, item.status, member?.name, member?.email, member?.phone, parent?.name, parent?.email, parent?.phone]);
   });
-  appRows.innerHTML = visibleApplications.length ? visibleApplications.map(item => `<tr><td><strong>${esc(item.name)}</strong><br><small>${esc(item.email)} · ${esc(item.phone || '-')}</small></td><td>${statusBadge(item.status)}</td><td>${esc(item.region || '-')}<br><small>${esc(item.socialPlatform || '-')} · ${esc(item.promotionMethod || '-')}</small></td><td><div class="growth-admin-actions"><button class="growth-button" data-review-app="${item.id}" data-decision="approve">批准</button><button class="growth-button secondary" data-review-app="${item.id}" data-decision="reject">拒绝</button><button class="growth-button secondary" data-review-app="${item.id}" data-decision="suspend">暂停</button></div></td></tr>`).join('') : '<tr><td colspan="4">现在不需要推荐申请；会员注册后会自动生成推荐码。</td></tr>';
+  if (relationRows) {
+    relationRows.innerHTML = visibleRelations.length ? visibleRelations.map(item => {
+      const member = memberById.get(item.memberId);
+      const parent = memberById.get(item.promoterMemberId);
+      return `<tr><td><strong>${esc(member?.name || item.memberId)}</strong><br><small>${esc(member?.phone || '-')} · ${esc(member?.email || '-')}</small></td><td><strong>${esc(parent?.name || '-')}</strong><br><small>${esc(parent?.phone || '-')} · ${esc(parent?.email || '-')}</small></td><td><code>${esc(item.referralCode || '-')}</code><br>${statusBadge(item.status)}</td><td>${new Date(item.boundAt).toLocaleDateString()}</td></tr>`;
+    }).join('') : '<tr><td colspan="4">暂时没有推荐关系。</td></tr>';
+  }
+  const orderRows = document.querySelector('[data-growth-admin-orders]');
+  const visibleOrders = snapshot.orders.filter(item => {
+    const statusOk = adminGrowthFilters.order === 'all' || item.status === adminGrowthFilters.order;
+    const member = memberById.get(item.memberId);
+    const relation = relationByMemberId.get(item.memberId);
+    return statusOk && matchesAdminSearch([item.id, item.status, item.serviceType, member?.name, member?.email, member?.phone, relation?.referralCode]);
+  });
+  if (orderRows) {
+    orderRows.innerHTML = visibleOrders.length ? visibleOrders.map(item => {
+      const member = memberById.get(item.memberId);
+      const relation = relationByMemberId.get(item.memberId);
+      const canComplete = ['confirmed', 'deposit_paid'].includes(item.status);
+      return `<tr><td><strong>${esc(item.id)}</strong><br><small>${esc(member?.name || item.memberId)} · ${esc(member?.phone || '-')}</small></td><td>${esc(item.serviceType || '-') }<br>${statusBadge(item.status)}${relation ? `<br><small>推荐码 ${esc(relation.referralCode)}</small>` : ''}</td><td><b>${formatMoney(item.totalAmount)}</b><br><small>合资格 ${formatMoney(eligibleAmountForAdmin(item))}</small></td><td><div class="growth-admin-actions">${canComplete ? `<button class="growth-button" data-complete-order="${esc(item.id)}">确认完成并计佣</button>` : '<span class="growth-muted">无需操作</span>'}</div></td></tr>`;
+    }).join('') : '<tr><td colspan="4">没有符合筛选的订单。</td></tr>';
+  }
   const commissionRows = document.querySelector('[data-growth-admin-commissions]');
   const visibleCommissions = snapshot.commissions.filter(item => {
     const promoter = promoterById.get(item.promoterId);
-    const member = promoter ? memberById.get(promoter.memberId) : memberById.get(item.memberId);
-    return matchesAdminSearch([item.orderId, item.status, member?.name, member?.email, member?.phone]);
+    const promoterMember = promoter ? memberById.get(promoter.memberId) : null;
+    const buyer = memberById.get(item.memberId);
+    return matchesAdminSearch([item.orderId, item.status, promoterMember?.name, promoterMember?.email, promoterMember?.phone, buyer?.name, buyer?.email, buyer?.phone]);
   });
   commissionRows.innerHTML = visibleCommissions.length ? visibleCommissions.map(item => {
     const promoter = promoterById.get(item.promoterId);
     const promoterMember = promoter ? memberById.get(promoter.memberId) : null;
-    return `<tr><td>${esc(item.orderId)}<br><small>${esc(promoterMember?.name || '-')} · L${Number(item.generation || 1)}</small></td><td>${statusBadge(item.status)}</td><td>${formatMoney(item.eligibleAmount)}</td><td><b>${formatMoney(item.commissionAmount)}</b><br><small>${esc(item.commissionType)} ${Number(item.commissionRate || 0)}%</small></td></tr>`;
+    const buyer = memberById.get(item.memberId);
+    return `<tr><td>${esc(item.orderId)}<br><small>推荐人：${esc(promoterMember?.name || '-')} · L${Number(item.generation || 1)}</small><br><small>顾客：${esc(buyer?.name || item.memberId)}</small></td><td>${statusBadge(item.status)}<br><small>${item.availableAt ? `可提现日 ${new Date(item.availableAt).toLocaleDateString()}` : '-'}</small></td><td>${formatMoney(item.eligibleAmount)}</td><td><b>${formatMoney(item.commissionAmount)}</b><br><small>${esc(item.commissionType)} ${Number(item.commissionRate || 0)}%</small></td></tr>`;
   }).join('') : '<tr><td colspan="4">没有符合筛选的佣金记录。</td></tr>';
   const withdrawalRows = document.querySelector('[data-growth-admin-withdrawals]');
   const visibleWithdrawals = snapshot.withdrawals.filter(item => {
@@ -873,7 +900,8 @@ function renderAdmin() {
   });
   withdrawalRows.innerHTML = visibleWithdrawals.length ? visibleWithdrawals.map(item => {
     const member = memberById.get(item.memberId);
-    return `<tr><td><strong>${esc(member?.name || item.memberId)}</strong><br><small>${esc(item.bankName || '-')} · ${esc(item.accountName || '-')}</small></td><td><b>${formatMoney(item.amount)}</b><br><small>${new Date(item.createdAt).toLocaleDateString()}</small></td><td>${statusBadge(item.status)}</td><td><div class="growth-admin-actions"><button class="growth-button" data-review-withdrawal="${item.id}" data-decision="approve">批准</button><button class="growth-button secondary" data-review-withdrawal="${item.id}" data-decision="processing">处理中</button><button class="growth-button" data-review-withdrawal="${item.id}" data-decision="paid">标记已付款</button><button class="growth-button secondary" data-review-withdrawal="${item.id}" data-decision="reject">拒绝</button></div></td></tr>`;
+    const payment = snapshot.withdrawalPayments.find(paymentItem => paymentItem.withdrawalId === item.id);
+    return `<tr><td><strong>${esc(member?.name || item.memberId)}</strong><br><small>${esc(item.bankName || '-')} · ${esc(item.accountName || '-')}</small><br><small>${esc(item.bankAccount || item.duitNowNumber || '-')}</small></td><td><b>${formatMoney(item.amount)}</b><br><small>${new Date(item.createdAt).toLocaleDateString()}</small>${payment ? `<br><small>付款编号 ${esc(payment.referenceNumber || '-')}</small>` : ''}</td><td>${statusBadge(item.status)}</td><td><div class="growth-admin-actions"><button class="growth-button" data-review-withdrawal="${item.id}" data-decision="approve">批准</button><button class="growth-button secondary" data-review-withdrawal="${item.id}" data-decision="processing">处理中</button><button class="growth-button" data-review-withdrawal="${item.id}" data-decision="paid">标记已付款</button><button class="growth-button secondary" data-review-withdrawal="${item.id}" data-decision="reject">拒绝</button></div></td></tr>`;
   }).join('') : '<tr><td colspan="4">没有符合筛选的提现请求。</td></tr>';
   const config = snapshot.config;
   document.querySelector('[data-growth-config-percent]').value = config.defaultCommission.value;
@@ -924,10 +952,24 @@ function bindAdmin() {
       renderAdmin();
       return;
     }
+    const completeOrderButton = event.target.closest('[data-complete-order]');
+    if (completeOrderButton) {
+      const result = api.completeOrder(completeOrderButton.dataset.completeOrder, 'mock-admin');
+      setMessage(result.ok ? '订单已确认完成，系统已自动计算符合条件的推荐佣金。' : `订单无法完成：${result.reason}`, !result.ok);
+      renderAdmin();
+      return;
+    }
     const withdrawalButton = event.target.closest('[data-review-withdrawal]');
     if (withdrawalButton) {
-      api.reviewWithdrawal(withdrawalButton.dataset.reviewWithdrawal, withdrawalButton.dataset.decision, 'mock-admin', { referenceNumber: `MOCK-${Date.now()}` });
-      setMessage('提现请求状态已更新。');
+      const payment = withdrawalButton.dataset.decision === 'paid'
+        ? {
+            referenceNumber: window.prompt('请输入付款编号 / 银行交易编号', `PAY-${Date.now()}`) || `PAY-${Date.now()}`,
+            method: 'Manual bank transfer'
+          }
+        : { referenceNumber: `MOCK-${Date.now()}` };
+      const result = api.reviewWithdrawal(withdrawalButton.dataset.reviewWithdrawal, withdrawalButton.dataset.decision, 'mock-admin', payment);
+      if (!result.ok) setMessage(`提现请求无法更新：${result.reason}`, true);
+      else setMessage(withdrawalButton.dataset.decision === 'paid' ? '提现已标记付款，并记录付款编号。' : '提现请求状态已更新。');
       renderAdmin();
       return;
     }
