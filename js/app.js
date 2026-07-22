@@ -4423,6 +4423,33 @@ function renderAdminSiteRows(content) {
   }).join('');
 }
 
+function weeklyPresetByDay(day) {
+  return DEFAULT_WEEKLY_MENU.find(option => option.day === day) || null;
+}
+
+function setWeeklyRowPresetLock(row, locked) {
+  if (!(row instanceof HTMLElement)) return;
+  ['[data-field="zh-dish"]', '[data-field="weekly-image"]', '[data-field="weekly-alt"]', '[data-field="en-dish"]'].forEach(selector => {
+    const field = row.querySelector(selector);
+    if (field instanceof HTMLInputElement || field instanceof HTMLTextAreaElement) field.readOnly = Boolean(locked);
+  });
+}
+
+function applyWeeklyPresetToRow(row, preset) {
+  if (!(row instanceof HTMLElement) || !preset) return;
+  const fields = {
+    '[data-field="zh-dish"]': preset.zh,
+    '[data-field="en-dish"]': preset.en,
+    '[data-field="weekly-image"]': preset.image,
+    '[data-field="weekly-alt"]': preset.alt
+  };
+  Object.entries(fields).forEach(([selector, value]) => {
+    const field = row.querySelector(selector);
+    if (field instanceof HTMLInputElement || field instanceof HTMLTextAreaElement) field.value = value;
+  });
+  setWeeklyRowPresetLock(row, true);
+}
+
 function renderAdminWeeklyRows(content) {
   if (!adminWeeklyRows) return;
   const maxRows = DEFAULT_WEEKDAYS.length;
@@ -4432,15 +4459,17 @@ function renderAdminWeeklyRows(content) {
     const zh = content.zh.weekly.days[index] || { day: DEFAULT_WEEKDAYS[index].zh, dish: '' };
     const en = content.en.weekly.days[index] || { day: DEFAULT_WEEKDAYS[index].en, dish: '' };
     const selectedPreset = zh.preset || en.preset || DEFAULT_WEEKLY_MENU.find(option => option.image === zh.image)?.day || '';
-    const presetOptions = DEFAULT_WEEKLY_MENU.map(option => `<option value="${escapeHtml(option.day)}"${option.day === selectedPreset ? ' selected' : ''}>${escapeHtml(option.day)} · ${escapeHtml(option.zh.split('\n')[0])}</option>`).join('');
+    const selectedPresetSource = weeklyPresetByDay(selectedPreset);
+    const presetLock = selectedPresetSource ? ' readonly' : '';
+    const presetOptions = DEFAULT_WEEKLY_MENU.map(option => `<option value="${escapeHtml(option.day)}"${option.day === selectedPreset ? ' selected' : ''}>${escapeHtml(option.day)} \u00b7 ${escapeHtml(option.zh.split('\n')[0])}</option>`).join('');
     rows.push(`
       <div class="admin-row admin-weekly-row" data-weekly-row>
-        <label>星期<input data-field="zh-day" value="${escapeHtml(zh.day || DEFAULT_WEEKDAYS[index].zh)}" readonly></label>
-        <label>套用菜单预设<select data-field="weekly-preset"><option value="">手动编辑</option>${presetOptions}</select></label>
-        <label>中文菜色<textarea data-field="zh-dish" rows="3" placeholder="每行一道菜">${escapeHtml(zh.dish)}</textarea></label>
-        <label>图片路径<input data-field="weekly-image" value="${escapeHtml(zh.image || en.image)}" placeholder="assets/images/reference-series/weekly-menu/day-01.png"></label>
-        <label>图片 Alt<input data-field="weekly-alt" value="${escapeHtml(zh.alt || en.alt)}" placeholder="图片说明"></label>
-        <label>English Menu<textarea data-field="en-dish" rows="3" placeholder="One dish per line">${escapeHtml(en.dish)}</textarea></label>
+        <label>\u661f\u671f<input data-field="zh-day" value="${escapeHtml(zh.day || DEFAULT_WEEKDAYS[index].zh)}" readonly></label>
+        <label>\u5957\u7528\u83dc\u5355\u9884\u8bbe<select data-field="weekly-preset"><option value="">\u624b\u52a8\u7f16\u8f91</option>${presetOptions}</select></label>
+        <label>\u4e2d\u6587\u83dc\u8272<textarea data-field="zh-dish" rows="3" placeholder="\u6bcf\u884c\u4e00\u9053\u83dc"${presetLock}>${escapeHtml(selectedPresetSource?.zh || zh.dish)}</textarea></label>
+        <label>\u56fe\u7247\u8def\u5f84<input data-field="weekly-image" value="${escapeHtml(selectedPresetSource?.image || zh.image || en.image)}" placeholder="assets/images/reference-series/weekly-menu/day-01.png"${presetLock}></label>
+        <label>\u56fe\u7247 Alt<input data-field="weekly-alt" value="${escapeHtml(selectedPresetSource?.alt || zh.alt || en.alt)}" placeholder="\u56fe\u7247\u8bf4\u660e"${presetLock}></label>
+        <label>English Menu<textarea data-field="en-dish" rows="3" placeholder="One dish per line"${presetLock}>${escapeHtml(selectedPresetSource?.en || en.dish)}</textarea></label>
       </div>
     `);
   }
@@ -4812,11 +4841,12 @@ function collectAdminContent() {
 
   adminWeeklyRows?.querySelectorAll('[data-weekly-row]').forEach(row => {
     const zhDay = adminRowValue(row, '[data-field="zh-day"]');
-    const zhDish = adminRowValue(row, '[data-field="zh-dish"]');
     const preset = adminRowValue(row, '[data-field="weekly-preset"]');
-    const image = adminRowValue(row, '[data-field="weekly-image"]');
-    const alt = adminRowValue(row, '[data-field="weekly-alt"]');
-    const enDish = adminRowValue(row, '[data-field="en-dish"]');
+    const presetSource = weeklyPresetByDay(preset);
+    const zhDish = presetSource?.zh || adminRowValue(row, '[data-field="zh-dish"]');
+    const image = presetSource?.image || adminRowValue(row, '[data-field="weekly-image"]');
+    const alt = presetSource?.alt || adminRowValue(row, '[data-field="weekly-alt"]');
+    const enDish = presetSource?.en || adminRowValue(row, '[data-field="en-dish"]');
     const index = content.zh.weekly.days.length;
     const weekday = DEFAULT_WEEKDAYS[index] || DEFAULT_WEEKDAYS[DEFAULT_WEEKDAYS.length - 1];
     if (zhDay || zhDish || image) content.zh.weekly.days.push({ day: weekday.zh, dish: zhDish, image, alt, preset });
@@ -5515,19 +5545,14 @@ adminWeeklyRows?.addEventListener('input', event => {
 adminWeeklyRows?.addEventListener('change', event => {
   const target = event.target;
   if (!(target instanceof HTMLSelectElement) || target.dataset.field !== 'weekly-preset') return;
-  const preset = DEFAULT_WEEKLY_MENU.find(option => option.day === target.value);
   const row = target.closest('[data-weekly-row]');
-  if (!preset || !row) return;
-  const fields = {
-    '[data-field="zh-dish"]': preset.zh,
-    '[data-field="en-dish"]': preset.en,
-    '[data-field="weekly-image"]': preset.image,
-    '[data-field="weekly-alt"]': preset.alt
-  };
-  Object.entries(fields).forEach(([selector, value]) => {
-    const field = row.querySelector(selector);
-    if (field) field.value = value;
-  });
+  if (!row) return;
+  const preset = weeklyPresetByDay(target.value);
+  if (!preset) {
+    setWeeklyRowPresetLock(row, false);
+    return;
+  }
+  applyWeeklyPresetToRow(row, preset);
 });
 
 adminAddonRows?.addEventListener('click', event => {
