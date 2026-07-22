@@ -120,8 +120,8 @@
 
 .weekly-reference-grid {
   display: grid !important;
-  grid-template-columns: repeat(7, minmax(0, 1fr)) !important;
-  gap: 10px !important;
+  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  gap: 16px !important;
   overflow: visible;
   padding: 0;
 }
@@ -129,40 +129,47 @@
 .weekly-reference-grid article {
   display: flex;
   min-height: 100%;
-  padding: 10px;
+  padding: 14px;
   flex-direction: column;
   align-items: stretch;
   text-align: left;
   border: 1px solid rgba(150, 101, 40, .16);
   border-radius: 8px;
-  background: rgba(255, 255, 255, .52);
+  background: rgba(255, 255, 255, .64);
+  box-shadow: 0 14px 34px rgba(45, 31, 18, .06);
 }
 
 .weekly-reference-grid picture {
   order: -1;
-  margin: 0 0 9px !important;
-  aspect-ratio: 1.45 / 1 !important;
+  margin: 0 0 11px !important;
+  aspect-ratio: 1.55 / 1 !important;
   border-radius: 7px !important;
 }
 
 .weekly-reference-grid strong {
-  margin-bottom: 5px !important;
+  margin-bottom: 6px !important;
   color: #9b6a36;
-  font-size: 13px !important;
+  font-size: 15px !important;
   line-height: 1.2;
 }
 
 .weekly-reference-grid span {
   color: #2e261f;
-  font-size: 12px !important;
+  font-size: 15px !important;
   font-weight: 800;
-  line-height: 1.32 !important;
+  line-height: 1.36 !important;
   overflow-wrap: anywhere;
 }
 
 body[data-language="en"] .weekly-reference-grid span {
-  font-size: 11px !important;
-  line-height: 1.28 !important;
+  font-size: 13px !important;
+  line-height: 1.32 !important;
+}
+
+@media (max-width: 1180px) {
+  .weekly-reference-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  }
 }
 
 @media (max-width: 900px) {
