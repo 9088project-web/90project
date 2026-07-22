@@ -135,7 +135,7 @@ const LEAD_SOURCE_KEY = 'np90_lead_source_v1';
 const ADMIN_CONTENT_SETTING_KEY = 'admin_content';
 const ADMIN_EMAIL = '9088project@gmail.com';
 const ADMIN_PASSWORD_HASH = '3b523443';
-const WHATSAPP_NUMBER = '601110977166';
+const WHATSAPP_NUMBER = '60189490909';
 const MEAL_PLAN_RATE = 15;
 const INQUIRY_STATUSES = ['new', 'contacted', 'quoted', 'confirmed', 'completed', 'cancelled'];
 const REFERRAL_REWARD_STATUSES = ['pending', 'approved', 'redeemed', 'cancelled'];
@@ -588,7 +588,7 @@ const translations = {
       catering: '活动餐饮',
       styling: '场地布置',
       faq: 'FAQ',
-      whatsapp: '011-1097 7166',
+      whatsapp: '018-949 0909',
       mobileWhatsApp: 'WhatsApp 下单',
       menu: '打开菜单',
       backTop: '返回顶部'
@@ -624,7 +624,7 @@ const translations = {
       startLabel: '开始日期',
       endLabel: '结束日期',
       periodEmpty: '请选择日期，系统会计算工作日餐数。',
-      periodButton: '立即订购 (011-1097 7166)'
+      periodButton: '立即订购 (018-949 0909)'
     },
     prices: [
       {
@@ -875,7 +875,7 @@ const translations = {
       startLabel: 'Start date',
       endLabel: 'End date',
       periodEmpty: 'Choose dates to calculate your working-day meals.',
-      periodButton: 'Order now (011-1097 7166)'
+      periodButton: 'Order now (018-949 0909)'
     },
     prices: [
       {
@@ -1592,7 +1592,7 @@ function renderDetailPageContent(content = loadAdminContent()) {
     `).join('');
   }
 
-  const phone = languageText().contact?.phone || '011-1097 7166';
+  const phone = languageText().contact?.phone || '018-949 0909';
   const whatsapp = languageText().contact?.whatsapp || WHATSAPP_NUMBER;
   const message = currentLanguage === 'en'
     ? 'Hi, I would like to ask about 90 PROJECT.'
@@ -2048,7 +2048,7 @@ function siteContentDefaults(language) {
   SITE_CONTENT_FIELDS.forEach(field => {
     setPathValue(site, field.path, getPathValue(source, field.path) ?? '');
   });
-  setPathValue(site, 'contact.phone', '011-1097 7166');
+  setPathValue(site, 'contact.phone', '018-949 0909');
   setPathValue(site, 'contact.whatsapp', WHATSAPP_NUMBER);
   setPathValue(site, 'contact.footer', '© 2026 九零食刻 90 PROJECT. All Rights Reserved.');
   return site;
@@ -2957,7 +2957,7 @@ function updateStaticLanguage() {
   setText('.footer-brand strong', currentLanguage === 'en' ? '90 PROJECT' : '九零食刻 90 PROJECT');
   setText('.footer-brand p', t.cta.slogan);
   setText('.final-cta .btn.big', t.cta.button);
-  setText('.site-footer span:nth-child(2)', `WhatsApp: ${t.contact?.phone || '011-1097 7166'}`);
+  setText('.site-footer span:nth-child(2)', `WhatsApp: ${t.contact?.phone || '018-949 0909'}`);
   setText('.site-footer span:nth-child(3)', currentLanguage === 'en'
     ? '© 2026 90 PROJECT. All Rights Reserved.'
     : '© 2026 九零食刻 90 PROJECT. All Rights Reserved.');

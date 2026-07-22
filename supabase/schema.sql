@@ -1,4 +1,4 @@
-﻿-- Supabase schema for 九零食刻 90 PROJECT
+-- Supabase schema for 九零食刻 90 PROJECT
 -- Run this in the Supabase SQL editor after creating the project.
 
 create extension if not exists pgcrypto;
@@ -490,7 +490,7 @@ on conflict do nothing;
 insert into public.site_settings (key, value)
 values
   ('brand_name', '九零食刻 90 PROJECT'),
-  ('whatsapp_number', '601110977166'),
-  ('whatsapp_display', '011-1097 7166')
+  ('whatsapp_number', '60189490909'),
+  ('whatsapp_display', '018-949 0909')
 on conflict (key) do update set value = excluded.value, updated_at = now();
 

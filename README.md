@@ -1,4 +1,4 @@
-﻿# 九零食刻 90 PROJECT 最终静态网站
+# 九零食刻 90 PROJECT 最终静态网站
 
 这是以 `90project_final_design.zip` 为主整理出来的最终黑金品牌网站版本。网站可以本地打开测试，也可以部署到 Vercel；Supabase 属于可选云端同步层，未连接时会自动使用浏览器本地记录。
 
@@ -134,7 +134,7 @@ http://127.0.0.1:3040/ads/video-ad-15s.html
 按钮会打开：
 
 ```text
-https://wa.me/601110977166?text=编码后的订单内容
+https://wa.me/60189490909?text=编码后的订单内容
 ```
 
 JavaScript 使用 `encodeURIComponent` 处理中文内容。
