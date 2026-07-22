@@ -483,6 +483,40 @@ export function createGrowthApi(storage = defaultStorage(), options = {}) {
     return { ok: true, order: clone(order) };
   }
 
+  function updateOrder(orderId, input = {}, actorId = 'mock-admin') {
+    const current = read();
+    const order = current.orders.find(item => item.id === orderId);
+    if (!order) return { ok: false, reason: 'order_not_found' };
+    if (['service_completed', 'fully_paid', 'refunded', 'partially_refunded'].includes(order.status)) {
+      return { ok: false, reason: 'order_locked' };
+    }
+
+    const next = clone(current);
+    const target = next.orders.find(item => item.id === orderId);
+    ['serviceType', 'source'].forEach(field => {
+      if (input[field] !== undefined) target[field] = String(input[field] || '').trim();
+    });
+    ['totalAmount', 'sstAmount', 'deliveryFee', 'extraLabourFee', 'thirdPartyFee', 'couponDiscount'].forEach(field => {
+      if (input[field] !== undefined) target[field] = money(input[field]);
+    });
+    if (input.status !== undefined && ORDER_STATUSES.includes(input.status)) target.status = input.status;
+    if (input.adminNotes !== undefined) target.adminNotes = String(input.adminNotes || '').trim();
+    if (input.completedAt !== undefined) target.completedAt = input.completedAt || null;
+    target.updatedAt = dateValue(now());
+
+    const enquiry = next.enquiries.find(item => item.id === target.enquiryId);
+    if (enquiry) {
+      if (input.serviceType !== undefined) enquiry.serviceType = target.serviceType;
+      if (input.totalAmount !== undefined) enquiry.budget = target.totalAmount;
+      if (input.adminNotes !== undefined) enquiry.adminNotes = target.adminNotes;
+      enquiry.updatedAt = target.updatedAt;
+    }
+
+    audit(next, 'order.updated', actorId, 'order', orderId, `Status ${target.status}, total RM${target.totalAmount.toFixed(2)}`);
+    state = write(next);
+    return { ok: true, order: clone(target) };
+  }
+
   function eligibleAmount(order) {
     return money(Math.max(0, order.totalAmount - order.sstAmount - order.deliveryFee - order.extraLabourFee - order.thirdPartyFee - order.couponDiscount));
   }
@@ -780,7 +814,7 @@ export function createGrowthApi(storage = defaultStorage(), options = {}) {
     return { ok: true, config: clone(next.config) };
   }
 
-  return { getState, captureReferralVisit, pendingReferral, registerMember, loginMember, logoutMember, currentMember, importMember, updateMemberProfile, upsertOrderLead, submitPromoterApplication, reviewPromoterApplication, createEnquiry, createOrder, completeOrder, releaseCommissions, mockAdvanceCommissionObservation, refundOrder, submitWithdrawal, reviewWithdrawal, grantCoupon, summary, adminSnapshot, updateConfig, availableCommissionFor };
+  return { getState, captureReferralVisit, pendingReferral, registerMember, loginMember, logoutMember, currentMember, importMember, updateMemberProfile, upsertOrderLead, submitPromoterApplication, reviewPromoterApplication, createEnquiry, createOrder, updateOrder, completeOrder, releaseCommissions, mockAdvanceCommissionObservation, refundOrder, submitWithdrawal, reviewWithdrawal, grantCoupon, summary, adminSnapshot, updateConfig, availableCommissionFor };
 }
 
 export { COMMISSION_STATUSES, ORDER_STATUSES, WITHDRAWAL_STATUSES, money, normalizePhone };

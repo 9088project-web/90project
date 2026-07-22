@@ -294,6 +294,22 @@ export function createGrowthCloud() {
     });
   }
 
+  async function updateOrderLead(sourceInquiryId, input = {}, token) {
+    if (!configured() || !sourceInquiryId) return { ok: false, skipped: true };
+    return request(`/rest/v1/growth_order_leads?source_inquiry_id=eq.${encodeURIComponent(sourceInquiryId)}`, {
+      method: 'PATCH',
+      token,
+      headers: { Prefer: 'return=minimal' },
+      body: {
+        service_type: input.serviceType || null,
+        estimated_amount: Number(input.totalAmount) || 0,
+        status: input.status === 'service_completed' || input.status === 'fully_paid' ? 'completed' : input.status === 'cancelled' ? 'cancelled' : 'confirmed',
+        notes: input.adminNotes || input.notes || null,
+        updated_at: new Date().toISOString()
+      }
+    });
+  }
+
   return {
     init,
     configured,
@@ -308,6 +324,7 @@ export function createGrowthCloud() {
     updateProfile,
     loadMemberGrowth,
     loadOrderLeads,
+    updateOrderLead,
     submitPromoterApplication,
     submitWithdrawal
   };

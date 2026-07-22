@@ -199,6 +199,14 @@ body.growth-page {
 .growth-table th, .growth-table td { padding: 11px 9px; border-bottom: 1px solid rgba(116, 77, 32, .14); text-align: left; vertical-align: top; }
 .growth-table th { color: #8d5b26; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; }
 .growth-table td { color: #51443a; }
+.growth-inline-field { display: grid; gap: 5px; margin: 0 0 8px; color: #8d5b26; font-size: 11px; font-weight: 900; letter-spacing: .03em; }
+.growth-inline-field input,
+.growth-inline-field select,
+.growth-inline-field textarea { width: 100%; min-width: 130px; border: 1px solid rgba(116, 77, 32, .22); border-radius: 8px; padding: 8px 9px; background: #fffaf1; color: #24160d; font: inherit; font-size: 12px; letter-spacing: 0; }
+.growth-inline-field textarea { resize: vertical; min-height: 54px; }
+.growth-inline-field input:disabled,
+.growth-inline-field select:disabled,
+.growth-inline-field textarea:disabled { opacity: .58; cursor: not-allowed; }
 
 .growth-admin-actions { display: flex; flex-wrap: wrap; gap: 6px; }
 .growth-admin-actions .growth-button { min-height: 32px; padding: 7px 10px; font-size: 11px; }

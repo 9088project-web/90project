@@ -244,6 +244,36 @@ test('whatsapp inquiry can be imported as one backend order lead', () => {
   assert.equal(Boolean(snapshot.promoters.find(item => item.memberId === imported.member.id)), true);
 });
 
+test('admin can update an open order before commission is calculated', () => {
+  const { api } = setup();
+  const imported = api.upsertOrderLead({
+    externalInquiryId: 'inq-edit-001',
+    name: 'Editable Buyer',
+    phone: '011-3000 0002',
+    serviceType: 'Meal Plan',
+    totalAmount: 300
+  });
+
+  const updated = api.updateOrder(imported.order.id, {
+    serviceType: 'Event Catering',
+    totalAmount: 888.88,
+    status: 'deposit_paid',
+    adminNotes: 'Paid deposit by transfer'
+  });
+
+  assert.equal(updated.ok, true);
+  assert.equal(updated.order.serviceType, 'Event Catering');
+  assert.equal(updated.order.totalAmount, 888.88);
+  assert.equal(updated.order.status, 'deposit_paid');
+  assert.equal(updated.order.adminNotes, 'Paid deposit by transfer');
+
+  const completed = api.completeOrder(imported.order.id);
+  assert.equal(completed.ok, true);
+  const locked = api.updateOrder(imported.order.id, { totalAmount: 1 });
+  assert.equal(locked.ok, false);
+  assert.equal(locked.reason, 'order_locked');
+});
+
 test('cloud imported member can be used as the current member and updated locally', () => {
   const { api } = setup();
   const imported = api.importMember({
