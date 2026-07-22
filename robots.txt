@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://project-ctx0q.vercel.app/sitemap.xml
+Sitemap: https://www.90project.online/sitemap.xml
