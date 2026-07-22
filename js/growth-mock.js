@@ -5,6 +5,7 @@ const api = createGrowthApi();
 const cloud = createGrowthCloud();
 const LANG_KEY = 'np90_growth_language_v1';
 const GROWTH_ORDER_QUEUE_KEY = 'np90_growth_order_queue_v1';
+const SUPABASE_ADMIN_SESSION_KEY = 'np90_supabase_session_v1';
 const translations = {
   zh: {
     language: '中文',
@@ -377,6 +378,7 @@ const currentMember = () => api.currentMember();
 const page = document.body?.dataset.growthPage || '';
 let cloudReady = false;
 let cloudGrowthSnapshot = null;
+let cloudOrderLeadSync = { loading: false, lastAt: 0, count: 0, imported: 0, error: '' };
 let adminGrowthSearch = '';
 let adminGrowthFilters = { order: 'all', withdrawal: 'all' };
 let phoneVerification = { phone: '', code: '', verified: false, cloudSession: null };
@@ -431,6 +433,14 @@ function matchesAdminSearch(values) {
 function statusBadge(status) {
   const tone = ['approved', 'available', 'paid'].includes(status) ? 'is-good' : ['rejected', 'reversed', 'cancelled'].includes(status) ? 'is-bad' : 'is-waiting';
   return `<span class="growth-status-badge ${tone}">${esc(status || '-')}</span>`;
+}
+
+function getSupabaseAdminSession() {
+  try {
+    return JSON.parse(localStorage.getItem(SUPABASE_ADMIN_SESSION_KEY) || 'null');
+  } catch (error) {
+    return null;
+  }
 }
 
 function setCloudStatus(message, connected = false) {
@@ -839,10 +849,61 @@ function importQueuedGrowthOrders() {
   return imported;
 }
 
+function cloudLeadToGrowthPayload(row) {
+  return {
+    externalInquiryId: row.source_inquiry_id || row.id,
+    sourceInquiryId: row.local_inquiry_id || row.source_inquiry_id || row.id,
+    name: row.customer_name || 'WhatsApp Customer',
+    phone: row.phone || '',
+    email: row.email || '',
+    serviceType: row.service_type || 'Website Inquiry',
+    packageName: row.package_name || '',
+    eventDate: row.event_date || '',
+    eventTime: row.event_time || '',
+    location: row.event_location || '',
+    pax: Number(row.pax) || 0,
+    notes: row.notes || '',
+    referralCode: row.referral_code || '',
+    totalAmount: Number(row.estimated_amount) || 0,
+    budget: Number(row.estimated_amount) || 0,
+    status: row.status === 'completed' ? 'service_completed' : row.status === 'cancelled' ? 'cancelled' : 'confirmed',
+    source: 'supabase-growth-order-leads',
+    createdAt: row.created_at || new Date().toISOString()
+  };
+}
+
+async function syncCloudOrderLeads(force = false) {
+  if (!cloudReady || cloudOrderLeadSync.loading) return;
+  const token = getSupabaseAdminSession()?.access_token;
+  if (!token || typeof cloud.loadOrderLeads !== 'function') return;
+  if (!force && Date.now() - cloudOrderLeadSync.lastAt < 30000) return;
+
+  cloudOrderLeadSync = { ...cloudOrderLeadSync, loading: true, error: '' };
+  try {
+    const result = await cloud.loadOrderLeads(token);
+    if (!result.ok) {
+      cloudOrderLeadSync = { ...cloudOrderLeadSync, loading: false, lastAt: Date.now(), error: result.message || `HTTP ${result.status || ''}` };
+      return;
+    }
+    const rows = Array.isArray(result.data) ? result.data : [];
+    let imported = 0;
+    rows.forEach(row => {
+      const upserted = api.upsertOrderLead(cloudLeadToGrowthPayload(row));
+      if (upserted.ok && upserted.createdOrder) imported += 1;
+    });
+    cloudOrderLeadSync = { loading: false, lastAt: Date.now(), count: rows.length, imported, error: '' };
+    if (page === 'admin') renderAdmin();
+  } catch (error) {
+    console.warn('Cloud order lead sync failed', error);
+    cloudOrderLeadSync = { ...cloudOrderLeadSync, loading: false, lastAt: Date.now(), error: 'sync_failed' };
+  }
+}
+
 function renderAdmin() {
   const root = document.querySelector('[data-growth-admin]');
   if (!root) return;
   importQueuedGrowthOrders();
+  syncCloudOrderLeads(false);
   const snapshot = api.adminSnapshot();
   const memberById = new Map(snapshot.members.map(member => [member.id, member]));
   const promoterById = new Map(snapshot.promoters.map(promoter => [promoter.id, promoter]));
@@ -867,6 +928,7 @@ function renderAdmin() {
   metric('[data-admin-growth="withdrawals"]', snapshot.withdrawals.filter(item => !['paid', 'rejected', 'cancelled'].includes(item.status)).length);
   metric('[data-admin-growth="pending-commissions"]', snapshot.commissions.filter(item => item.status === 'confirming').length);
   metric('[data-admin-growth="risk-flags"]', snapshot.riskFlags.length);
+  metric('[data-admin-growth="cloud-leads"]', cloudOrderLeadSync.loading ? '同步中' : cloudOrderLeadSync.error ? '未连接' : cloudOrderLeadSync.count);
   const memberRows = document.querySelector('[data-growth-admin-members]');
   const visibleMembers = snapshot.members.filter(member => {
     const promoter = snapshot.promoters.find(item => item.memberId === member.id);
@@ -975,6 +1037,12 @@ function bindAdmin() {
       }
       return;
     }
+    const syncButton = event.target.closest('[data-growth-sync-leads]');
+    if (syncButton) {
+      syncCloudOrderLeads(true);
+      setMessage('正在同步线上订单线索...');
+      return;
+    }
     const appButton = event.target.closest('[data-review-app]');
     if (appButton) {
       api.reviewPromoterApplication(appButton.dataset.reviewApp, appButton.dataset.decision, 'mock-admin', appButton.dataset.decision === 'reject' ? 'Mock review rejection' : 'Mock review approval');
@@ -1048,6 +1116,7 @@ if (page === 'referral') bindReferralPage();
 bindAdmin();
 applyLanguage();
 importQueuedGrowthOrders();
+syncCloudOrderLeads(true);
 
 window.addEventListener('np90:growth-order-queued', () => {
   const imported = importQueuedGrowthOrders();

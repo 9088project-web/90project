@@ -286,6 +286,14 @@ export function createGrowthCloud() {
     });
   }
 
+  async function loadOrderLeads(token) {
+    if (!configured()) return { ok: false, skipped: true };
+    return request('/rest/v1/growth_order_leads?select=*&order=created_at.desc&limit=200', {
+      token,
+      headers: { Prefer: 'return=representation' }
+    });
+  }
+
   return {
     init,
     configured,
@@ -299,6 +307,7 @@ export function createGrowthCloud() {
     profileToMember,
     updateProfile,
     loadMemberGrowth,
+    loadOrderLeads,
     submitPromoterApplication,
     submitWithdrawal
   };
