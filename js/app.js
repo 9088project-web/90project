@@ -122,6 +122,7 @@ const INQUIRIES_KEY = 'np90_inquiries_v1';
 const SESSION_KEY = 'np90_member_session_v1';
 const GROWTH_SESSION_KEY = 'np90_growth_session_v1';
 const GROWTH_STATE_KEY = 'np90_growth_state_v1';
+const GROWTH_ORDER_QUEUE_KEY = 'np90_growth_order_queue_v1';
 const LANG_KEY = 'np90_language_v1';
 const ADMIN_CONTENT_KEY = 'np90_admin_content_v1';
 const ADMIN_SESSION_KEY = 'np90_admin_session_v1';
@@ -3607,6 +3608,88 @@ async function syncInquiryToSupabase(inquiry) {
   }
 }
 
+function numericValue(value) {
+  const number = Number(String(value || '').replace(/[^\d.]/g, ''));
+  return Number.isFinite(number) ? number : 0;
+}
+
+function growthOrderPayloadFromInquiry(inquiry) {
+  const serviceType = inquiry.package || inquiry.serviceType || inquiry.meal || 'Website Inquiry';
+  const packageName = inquiry.meal || inquiry.package || '';
+  const totalAmount = numericValue(inquiry.totalAmount || inquiry.budget || inquiry.price || inquiry.estimatedTotal);
+  const phoneDigits = String(inquiry.phone || '').replace(/\D/g, '');
+  return {
+    externalInquiryId: inquiry.supabaseId || inquiry.id,
+    sourceInquiryId: inquiry.id,
+    name: inquiry.name || 'WhatsApp Customer',
+    phone: inquiry.phone || '',
+    email: inquiry.email || (phoneDigits ? `${phoneDigits}@guest.90project.local` : ''),
+    serviceType,
+    packageName,
+    eventDate: inquiry.date || inquiry.eventDate || '',
+    eventTime: inquiry.time || inquiry.eventTime || '',
+    location: inquiry.area || inquiry.location || '',
+    pax: numericValue(inquiry.pax || inquiry.guestCount),
+    foodChoice: inquiry.meal || '',
+    budget: totalAmount,
+    totalAmount,
+    notes: [inquiry.notes, inquiry.addons ? `Add-ons: ${inquiry.addons}` : ''].filter(Boolean).join('\n'),
+    referralCode: inquiry.referralCode || '',
+    language: inquiry.language || currentLanguage,
+    status: 'confirmed',
+    source: 'whatsapp-inquiry',
+    createdAt: inquiry.createdAt || new Date().toISOString()
+  };
+}
+
+async function syncGrowthOrderLeadToSupabase(payload) {
+  if (!isSupabaseConfigured() || !payload?.externalInquiryId) return;
+  try {
+    await supabaseFetch('/rest/v1/growth_order_leads?on_conflict=source_inquiry_id', {
+      method: 'POST',
+      headers: { Prefer: 'resolution=merge-duplicates,return=minimal' },
+      body: {
+        source_inquiry_id: payload.externalInquiryId,
+        local_inquiry_id: payload.sourceInquiryId || null,
+        customer_name: payload.name || null,
+        phone: payload.phone || null,
+        email: payload.email || null,
+        service_type: payload.serviceType || null,
+        package_name: payload.packageName || null,
+        event_date: payload.eventDate || null,
+        event_time: payload.eventTime || null,
+        event_location: payload.location || null,
+        pax: payload.pax || null,
+        notes: payload.notes || null,
+        referral_code: payload.referralCode || null,
+        estimated_amount: payload.totalAmount || 0,
+        status: payload.status || 'confirmed',
+        raw_payload: payload
+      }
+    });
+  } catch (error) {
+    console.warn('Supabase growth lead sync failed', error);
+  }
+}
+
+function queueGrowthOrderFromInquiry(inquiry) {
+  const payload = growthOrderPayloadFromInquiry(inquiry);
+  if (!payload.externalInquiryId) return;
+  try {
+    const queue = JSON.parse(localStorage.getItem(GROWTH_ORDER_QUEUE_KEY) || '[]');
+    const safeQueue = Array.isArray(queue) ? queue : [];
+    const next = [
+      payload,
+      ...safeQueue.filter(item => item?.externalInquiryId !== payload.externalInquiryId)
+    ].slice(0, 160);
+    localStorage.setItem(GROWTH_ORDER_QUEUE_KEY, JSON.stringify(next));
+    window.dispatchEvent(new CustomEvent('np90:growth-order-queued'));
+  } catch (error) {
+    console.warn('Growth order queue failed', error);
+  }
+  syncGrowthOrderLeadToSupabase(payload);
+}
+
 function combinedAdminInquiries() {
   const localInquiries = loadInquiries();
   if (!supabaseInquiriesCache.length) return localInquiries;
@@ -3660,6 +3743,7 @@ function saveInquiryForAdmin(orderData) {
   inquiries.unshift(inquiry);
   saveInquiries(inquiries);
   renderAdminInquiries();
+  queueGrowthOrderFromInquiry(inquiry);
   syncInquiryToSupabase(inquiry);
   return inquiry;
 }

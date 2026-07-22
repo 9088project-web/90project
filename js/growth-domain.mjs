@@ -294,6 +294,127 @@ export function createGrowthApi(storage = defaultStorage(), options = {}) {
     return { ok: true, member: clone(target) };
   }
 
+  function upsertOrderLead(input = {}) {
+    const externalInquiryId = String(input.externalInquiryId || input.sourceInquiryId || '').trim();
+    const email = normalize(input.email) || (normalizePhone(input.phone) ? `${normalizePhone(input.phone)}@guest.90project.local` : '');
+    const phone = normalizePhone(input.phone);
+    if (!externalInquiryId || (!email && !phone)) return { ok: false, reason: 'invalid_lead' };
+
+    const current = read();
+    const existingOrder = current.orders.find(item => item.externalInquiryId === externalInquiryId);
+    if (existingOrder) {
+      return {
+        ok: true,
+        member: clone(findMember(current, existingOrder.memberId)),
+        enquiry: clone(current.enquiries.find(item => item.id === existingOrder.enquiryId)),
+        order: clone(existingOrder),
+        createdMember: false,
+        createdOrder: false
+      };
+    }
+
+    const next = clone(current);
+    let member = next.members.find(item => (email && normalize(item.email) === email) || (phone && normalizePhone(item.phone) === phone));
+    let createdMember = false;
+    if (!member) {
+      member = {
+        id: id('member'),
+        name: String(input.name || 'WhatsApp Customer').trim(),
+        email: email || `${externalInquiryId}@guest.90project.local`,
+        phone,
+        password: '',
+        birthday: '',
+        language: input.language || 'zh',
+        address: input.location || '',
+        companyName: '',
+        eventType: input.serviceType || '',
+        estimatedPax: Number(input.pax) || 0,
+        preference: '',
+        source: input.source || 'whatsapp-inquiry',
+        registeredAt: dateValue(now()),
+        lastPurchaseAt: null,
+        orderCount: 0,
+        totalSpend: 0,
+        pointsBalance: 0,
+        couponCount: 0,
+        levelId: 'member',
+        status: 'lead'
+      };
+      next.members.unshift(member);
+      createdMember = true;
+    } else {
+      if (input.name) member.name = String(input.name).trim();
+      if (phone) member.phone = phone;
+      if (input.location) member.address = input.location;
+      if (input.serviceType) member.eventType = input.serviceType;
+      member.estimatedPax = Number(input.pax) || Number(member.estimatedPax) || 0;
+      member.updatedAt = dateValue(now());
+    }
+
+    const identity = ensureReferralIdentity(next, member.id);
+    const referralCode = String(input.referralCode || '').trim().toUpperCase();
+    let relation = getRelationForMember(next, member.id);
+    if (referralCode && !relation) {
+      const promoterCode = next.referralCodes.find(item => item.code === referralCode && item.active);
+      const promoter = promoterCode && findPromoter(next, promoterCode.memberId);
+      if (promoter && promoter.memberId !== member.id) {
+        relation = { id: id('relation'), memberId: member.id, promoterId: promoter.id, promoterMemberId: promoter.memberId, referralCode, clickId: null, status: 'active', boundAt: dateValue(now()), boundBy: 'whatsapp_order' };
+        next.referralRelations.unshift(relation);
+      } else if (promoter?.memberId === member.id) {
+        next.riskFlags.unshift({ id: id('risk'), type: 'self_referral_blocked', severity: 'high', memberId: member.id, promoterId: promoter.id, referralCode, reason: 'WhatsApp lead attempted self referral', createdAt: dateValue(now()) });
+      }
+    }
+
+    const enquiry = {
+      id: id('enquiry'),
+      memberId: member.id,
+      referralCode: relation?.referralCode || referralCode || null,
+      externalInquiryId,
+      serviceType: input.serviceType || '',
+      packageName: input.packageName || '',
+      eventDate: input.eventDate || '',
+      eventTime: input.eventTime || '',
+      location: input.location || '',
+      pax: Number(input.pax) || 0,
+      foodChoice: input.foodChoice || '',
+      stylingNeeds: input.stylingNeeds || '',
+      beverageNeeds: input.beverageNeeds || '',
+      budget: money(input.budget || input.totalAmount),
+      notes: input.notes || '',
+      referenceImages: Array.isArray(input.referenceImages) ? input.referenceImages : [],
+      status: 'new',
+      source: input.source || 'whatsapp-inquiry',
+      createdAt: input.createdAt || dateValue(now()),
+      updatedAt: dateValue(now())
+    };
+    const order = {
+      id: id('order'),
+      enquiryId: enquiry.id,
+      memberId: member.id,
+      externalInquiryId,
+      serviceType: input.serviceType || enquiry.serviceType,
+      totalAmount: money(input.totalAmount || input.budget),
+      sstAmount: money(input.sstAmount),
+      deliveryFee: money(input.deliveryFee),
+      extraLabourFee: money(input.extraLabourFee),
+      thirdPartyFee: money(input.thirdPartyFee),
+      couponDiscount: money(input.couponDiscount),
+      refundedAmount: 0,
+      status: input.status || 'confirmed',
+      source: input.source || 'whatsapp-inquiry',
+      createdAt: input.createdAt || dateValue(now()),
+      updatedAt: dateValue(now()),
+      completedAt: null
+    };
+
+    next.enquiries.unshift(enquiry);
+    next.orders.unshift(order);
+    audit(next, 'lead.order_imported', 'system', 'order', order.id, `Imported from ${externalInquiryId}`);
+    if (createdMember) audit(next, 'member.lead_created', 'system', 'member', member.id, externalInquiryId);
+    state = write(next);
+    return { ok: true, member: clone(member), enquiry: clone(enquiry), order: clone(order), referralCode: identity?.code?.code || '', createdMember, createdOrder: true };
+  }
+
   function submitPromoterApplication(memberId, input = {}) {
     const current = read();
     const member = findMember(current, memberId);
@@ -659,7 +780,7 @@ export function createGrowthApi(storage = defaultStorage(), options = {}) {
     return { ok: true, config: clone(next.config) };
   }
 
-  return { getState, captureReferralVisit, pendingReferral, registerMember, loginMember, logoutMember, currentMember, importMember, updateMemberProfile, submitPromoterApplication, reviewPromoterApplication, createEnquiry, createOrder, completeOrder, releaseCommissions, mockAdvanceCommissionObservation, refundOrder, submitWithdrawal, reviewWithdrawal, grantCoupon, summary, adminSnapshot, updateConfig, availableCommissionFor };
+  return { getState, captureReferralVisit, pendingReferral, registerMember, loginMember, logoutMember, currentMember, importMember, updateMemberProfile, upsertOrderLead, submitPromoterApplication, reviewPromoterApplication, createEnquiry, createOrder, completeOrder, releaseCommissions, mockAdvanceCommissionObservation, refundOrder, submitWithdrawal, reviewWithdrawal, grantCoupon, summary, adminSnapshot, updateConfig, availableCommissionFor };
 }
 
 export { COMMISSION_STATUSES, ORDER_STATUSES, WITHDRAWAL_STATUSES, money, normalizePhone };

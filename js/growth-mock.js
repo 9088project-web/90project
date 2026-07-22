@@ -4,6 +4,7 @@ import { createGrowthCloud } from './growth-cloud.mjs';
 const api = createGrowthApi();
 const cloud = createGrowthCloud();
 const LANG_KEY = 'np90_growth_language_v1';
+const GROWTH_ORDER_QUEUE_KEY = 'np90_growth_order_queue_v1';
 const translations = {
   zh: {
     language: '中文',
@@ -810,9 +811,38 @@ function bindReferralPage() {
   bindPromoterApplicationForm();
 }
 
+function readGrowthOrderQueue() {
+  try {
+    const queue = JSON.parse(localStorage.getItem(GROWTH_ORDER_QUEUE_KEY) || '[]');
+    return Array.isArray(queue) ? queue : [];
+  } catch (error) {
+    return [];
+  }
+}
+
+function writeGrowthOrderQueue(queue) {
+  localStorage.setItem(GROWTH_ORDER_QUEUE_KEY, JSON.stringify(queue.slice(0, 160)));
+}
+
+function importQueuedGrowthOrders() {
+  const queue = readGrowthOrderQueue();
+  if (!queue.length || typeof api.upsertOrderLead !== 'function') return 0;
+
+  let imported = 0;
+  const remaining = [];
+  queue.forEach(item => {
+    const result = api.upsertOrderLead(item);
+    if (result.ok) imported += result.createdOrder ? 1 : 0;
+    else remaining.push(item);
+  });
+  writeGrowthOrderQueue(remaining);
+  return imported;
+}
+
 function renderAdmin() {
   const root = document.querySelector('[data-growth-admin]');
   if (!root) return;
+  importQueuedGrowthOrders();
   const snapshot = api.adminSnapshot();
   const memberById = new Map(snapshot.members.map(member => [member.id, member]));
   const promoterById = new Map(snapshot.promoters.map(promoter => [promoter.id, promoter]));
@@ -1017,5 +1047,11 @@ if (page === 'member') {
 if (page === 'referral') bindReferralPage();
 bindAdmin();
 applyLanguage();
+importQueuedGrowthOrders();
+
+window.addEventListener('np90:growth-order-queued', () => {
+  const imported = importQueuedGrowthOrders();
+  if (imported && page === 'admin') renderAdmin();
+});
 
 window.NP90GrowthMock = api;

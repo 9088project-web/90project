@@ -206,6 +206,44 @@ test('admin snapshot exposes referral relations, completable orders and withdraw
   assert.equal(snapshot.withdrawalPayments[0].referenceNumber, 'BANK-REF-900');
 });
 
+test('whatsapp inquiry can be imported as one backend order lead', () => {
+  const { api } = setup();
+  const promoter = createMemberWithReferral(api);
+
+  const imported = api.upsertOrderLead({
+    externalInquiryId: 'inq-whatsapp-001',
+    name: 'WhatsApp Buyer',
+    phone: '011-3000 0001',
+    serviceType: 'Meal Plan',
+    packageName: 'RM300 package',
+    totalAmount: 300,
+    referralCode: promoter.code,
+    source: 'whatsapp-inquiry'
+  });
+
+  assert.equal(imported.ok, true);
+  assert.equal(imported.createdMember, true);
+  assert.equal(imported.createdOrder, true);
+  assert.equal(imported.order.status, 'confirmed');
+
+  const duplicate = api.upsertOrderLead({
+    externalInquiryId: 'inq-whatsapp-001',
+    name: 'WhatsApp Buyer',
+    phone: '011-3000 0001',
+    serviceType: 'Meal Plan',
+    totalAmount: 300,
+    referralCode: promoter.code
+  });
+
+  assert.equal(duplicate.ok, true);
+  assert.equal(duplicate.createdOrder, false);
+  const snapshot = api.adminSnapshot();
+  assert.equal(snapshot.orders.filter(item => item.externalInquiryId === 'inq-whatsapp-001').length, 1);
+  assert.equal(snapshot.enquiries.filter(item => item.externalInquiryId === 'inq-whatsapp-001').length, 1);
+  assert.equal(snapshot.relations.some(item => item.memberId === imported.member.id && item.promoterMemberId === promoter.member.id), true);
+  assert.equal(Boolean(snapshot.promoters.find(item => item.memberId === imported.member.id)), true);
+});
+
 test('cloud imported member can be used as the current member and updated locally', () => {
   const { api } = setup();
   const imported = api.importMember({
