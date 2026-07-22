@@ -8,212 +8,212 @@ const GROWTH_ORDER_QUEUE_KEY = 'np90_growth_order_queue_v1';
 const SUPABASE_ADMIN_SESSION_KEY = 'np90_supabase_session_v1';
 const translations = {
   zh: {
-    language: 'ä¸­æ–‡',
-    rewards: 'ä¼šå‘˜å¥–åŠ±',
-    referral: '90æŽ¨èå®˜',
-    member: 'ä¼šå‘˜ä¸­å¿ƒ',
-    home: 'è¿”å›žé¦–é¡µ',
-    login: 'ä¼šå‘˜ç™»å½•',
-    logout: 'é€€å‡ºç™»å½•',
-    register: 'æ³¨å†Œä¼šå‘˜',
-    name: 'å§“å',
+    language: '中文',
+    rewards: '会员奖励',
+    referral: '90推荐官',
+    member: '会员中心',
+    home: '返回首页',
+    login: '会员登录',
+    logout: '退出登录',
+    register: '注册会员',
+    name: '姓名',
     email: 'Email',
-    phone: 'æ‰‹æœºå·ç ',
-    password: 'å¯†ç ï¼ˆè‡³å°‘ 6 ä¸ªå­—ç¬¦ï¼‰',
-    loginAction: 'ç™»å½•',
-    registerAction: 'åˆ›å»ºä¼šå‘˜',
-    welcome: 'åˆ†äº«ä¹é›¶é£Ÿåˆ»ï¼ŒæŠŠç¾Žå¥½é£Ÿåˆ»ä»‹ç»ç»™æœ‹å‹ï¼Œä¹ŸèŽ·å¾—å±žäºŽä½ çš„æŽ¨èå¥–åŠ±ã€‚',
-    apply: 'æˆä¸º90æŽ¨èå®˜',
-    applyIntro: 'é€šè¿‡å®¡æ ¸åŽï¼Œä½ å¯ä»¥èŽ·å¾—ä¸“å±žæŽ¨èä»£ç ã€åˆ†äº«é“¾æŽ¥å’Œä½£é‡‘è®°å½•ã€‚',
-    pending: 'å®¡æ ¸ä¸­',
-    approved: 'å·²æ‰¹å‡†',
-    code: 'ä¸“å±žæŽ¨èä»£ç ',
-    share: 'åˆ†äº«é“¾æŽ¥',
-    points: 'ç§¯åˆ†ä½™é¢',
-    coupons: 'å¯ç”¨ä¼˜æƒ åˆ¸',
-    commissions: 'å¯æçŽ°ä½£é‡‘',
-    orders: 'æˆ‘çš„è®¢å•',
-    enquiries: 'æˆ‘çš„è¯¢ä»·',
-    applySubmit: 'æäº¤ç”³è¯·',
-    socialPlatform: 'ç¤¾äº¤å¹³å°',
-    socialAccount: 'ç¤¾äº¤è´¦å·',
-    region: 'æ‰€åœ¨åœ°åŒº',
-    method: 'æŽ¨èæ–¹å¼',
-    customerType: 'é¢„è®¡å®¢æˆ·ç±»åž‹',
-    agreeTerms: 'æˆ‘åŒæ„90æŽ¨èå®˜æ¡æ¬¾',
-    agreePrivacy: 'æˆ‘åŒæ„éšç§æ”¿ç­–',
-    enquiry: 'æ¨¡æ‹Ÿå»ºç«‹è¯¢ä»·',
-    complete: 'æ¨¡æ‹Ÿå®Œæˆè®¢å•',
-    refund: 'æ¨¡æ‹Ÿé€€æ¬¾',
-    release: 'é‡Šæ”¾å¯æçŽ°ä½£é‡‘',
-    withdrawal: 'æäº¤æçŽ°',
-    amount: 'æçŽ°é‡‘é¢',
-    bank: 'é“¶è¡Œåç§°',
-    account: 'é“¶è¡Œè´¦å·',
-    accountName: 'è´¦æˆ·å§“å',
-    mock: 'Mock æ¨¡å¼ï¼šä¸ä¼šçœŸå®žæ”¶æ¬¾ã€è½¬è´¦æˆ–å‘é€ API é€šçŸ¥ã€‚',
-    noData: 'ç›®å‰è¿˜æ²¡æœ‰è®°å½•ã€‚',
-    shareText: 'åˆ†äº«ä¹é›¶é£Ÿåˆ»ï¼ŒæŠŠç¾Žå¥½é£Ÿåˆ»ä»‹ç»ç»™æœ‹å‹ï¼š',
-    identity: 'Email / æ‰‹æœºå·ç ', copy: 'å¤åˆ¶é“¾æŽ¥', whatsapp: 'WhatsApp',
-    benefitsTitle: 'ä¼šå‘˜æƒç›Š', benefitsIntro: 'å¥–åŠ±é€æ˜Žã€è®°å½•æ¸…æ¥šï¼Œæ‰€æœ‰ç§¯åˆ†å’Œä½£é‡‘éƒ½ä»¥çœŸå®žè¯¢ä»·ä¸Žå®Œæˆè®¢å•ä¸ºä¾æ®ã€‚',
-    pointsTitle: 'ä¼šå‘˜ç§¯åˆ†', pointsDesc: 'æ³¨å†Œã€å®Œæˆè®¢å•å’ŒæŒ‡å®šæ´»åŠ¨éƒ½å¯ä»¥èŽ·å¾—ç§¯åˆ†ï¼Œè´¦æœ¬ä¼šè®°å½•æ¯ä¸€ç¬”å˜åŒ–ã€‚',
-    couponTitle: 'ä¸“å±žä¼˜æƒ ', couponDesc: 'æ–°äººåˆ¸ã€æœåŠ¡åˆ¸ã€ç”Ÿæ—¥åˆ¸å’Œé™æ—¶æ´»åŠ¨ç”±åŽå°è§„åˆ™æŽ§åˆ¶ï¼Œé¿å…ä¼˜æƒ é‡å¤å åŠ ã€‚',
-    rewardTitle: 'æŽ¨èå¥–åŠ±', rewardDesc: 'æ”¯æŒä¸‰å±‚çœŸå®žè®¢å•æŽ¨èï¼šç¬¬ä¸€ä»£3%ï¼Œç¬¬äºŒä»£1%ï¼Œç¬¬ä¸‰ä»£1%ï¼Œè®¢å•å®Œæˆå¹¶é€šè¿‡é€€æ¬¾è§‚å¯ŸæœŸåŽæ‰è¿›å…¥å¯æçŽ°çŠ¶æ€ã€‚',
-    pathTitle: 'æ¸…æ¥šçš„å¥–åŠ±è·¯å¾„', pathRegister: 'æ³¨å†Œä¼šå‘˜', pathWelcome: '+ æ¬¢è¿Žç§¯åˆ†', pathOrder: 'å®ŒæˆçœŸå®žè®¢å•', pathPoints: 'ç§¯åˆ†å…¥è´¦', pathRefer: 'æŽ¨èæœ‹å‹å®ŒæˆæœåŠ¡', pathCommission: 'ä½£é‡‘ç¡®è®¤', pathHold: 'é€šè¿‡é€€æ¬¾è§‚å¯ŸæœŸ', pathWithdraw: 'å¯ç”³è¯·æçŽ°', startTitle: 'ç«‹å³å¼€å§‹', startDesc: 'å…ˆæ³¨å†Œä¼šå‘˜ï¼Œä¹‹åŽå¯ä»¥åœ¨ä¼šå‘˜ä¸­å¿ƒæŸ¥çœ‹ç§¯åˆ†ã€ä¼˜æƒ åˆ¸ã€è®¢å•ã€æŽ¨èå’ŒæçŽ°è®°å½•ã€‚',
-    stepsTitle: 'ä¸‰æ­¥å¼€å§‹', stepsIntro: 'æœ€å¤šè¿½è¸ªä¸‰å±‚æŽ¨èå…³ç³»ï¼Œå¥–åŠ±åªæ¥è‡ªçœŸå®žå®Œæˆè®¢å•ï¼Œä¸æ”¶å–å…¥ä¼šè´¹ï¼Œä¸é æ‹‰äººæ”¶è´¹ã€‚',
-    stepApply: 'æ³¨å†Œæˆä¸º90æŽ¨èå®˜', stepApplyDesc: 'æäº¤ç¤¾äº¤å¹³å°ã€åœ°åŒºå’ŒæŽ¨èæ–¹å¼ï¼Œç­‰å¾…åŽå°å®¡æ ¸ã€‚', stepShare: 'åˆ†äº«ä¸“å±žé“¾æŽ¥æˆ–äºŒç»´ç ', stepShareDesc: 'ç³»ç»Ÿè®°å½•é¦–æ¬¡æœ‰æ•ˆè®¿é—®ï¼Œå·²ç»‘å®šçš„ä¼šå‘˜ä¸ä¼šè¢«å…¶ä»–æŽ¨èä»£ç è¦†ç›–ã€‚', stepEarn: 'è®¢å•å®ŒæˆåŽèŽ·å¾—å¥–åŠ±', stepEarnDesc: 'è®¢å•å®Œæˆå¹¶ç»è¿‡é€€æ¬¾è§‚å¯ŸæœŸï¼Œä½£é‡‘æ‰ä¼šå˜æˆå¯æçŽ°çŠ¶æ€ã€‚',
-    rulesTitle: 'é€æ˜Žè§„åˆ™', rulesMode: 'å¥–åŠ±æ¨¡å¼', rulesModeValue: 'ä¸‰å±‚æŽ¨èå¥–åŠ±', rulesRate: 'é»˜è®¤ä½£é‡‘', rulesRateValue: 'ç¬¬ä¸€ä»£3% Â· ç¬¬äºŒä»£1% Â· ç¬¬ä¸‰ä»£1%', rulesSettle: 'ç»“ç®—æ¡ä»¶', rulesSettleValue: 'å®Œæˆè®¢å• + è§‚å¯ŸæœŸ', rulesWithdraw: 'æçŽ°æ–¹å¼', rulesWithdrawValue: 'Mock äººå·¥å®¡æ ¸', notMemberTitle: 'è¿˜ä¸æ˜¯ä¼šå‘˜ï¼Ÿ', notMemberDesc: 'å…ˆæ³¨å†Œä¼šå‘˜ï¼Œå†åœ¨ä¼šå‘˜ä¸­å¿ƒæäº¤90æŽ¨èå®˜ç”³è¯·ã€‚å®¡æ ¸é€šè¿‡åŽæ‰ä¼šç”ŸæˆæŽ¨èä»£ç ã€‚',
-    mockTitle: 'Mock æµç¨‹æµ‹è¯•', mockDesc: 'ä»…ç”¨äºŽæœ¬åœ°éªŒæ”¶ï¼šåˆ›å»ºè¯¢ä»·ã€å®Œæˆè®¢å•ã€æ¨¡æ‹Ÿé€€æ¬¾å’Œé‡Šæ”¾è§‚å¯ŸæœŸä½£é‡‘ã€‚',
-    memberLevel: 'ä¼šå‘˜ç­‰çº§', commissionBook: 'ä½£é‡‘è´¦æœ¬', application: 'æˆä¸º90æŽ¨èå®˜', memberMock: 'Mock æ¨¡å¼ï¼šä¸ä¼šçœŸå®žæ”¶æ¬¾ã€è½¬è´¦æˆ–å‘é€ API é€šçŸ¥ã€‚'
+    phone: '手机号码',
+    password: '密码（至少 6 个字符）',
+    loginAction: '登录',
+    registerAction: '创建会员',
+    welcome: '分享九零食刻，把美好食刻介绍给朋友，也获得属于你的推荐奖励。',
+    apply: '成为90推荐官',
+    applyIntro: '通过审核后，你可以获得专属推荐代码、分享链接和佣金记录。',
+    pending: '审核中',
+    approved: '已批准',
+    code: '专属推荐代码',
+    share: '分享链接',
+    points: '积分余额',
+    coupons: '可用优惠券',
+    commissions: '可提现佣金',
+    orders: '我的订单',
+    enquiries: '我的询价',
+    applySubmit: '提交申请',
+    socialPlatform: '社交平台',
+    socialAccount: '社交账号',
+    region: '所在地区',
+    method: '推荐方式',
+    customerType: '预计客户类型',
+    agreeTerms: '我同意90推荐官条款',
+    agreePrivacy: '我同意隐私政策',
+    enquiry: '模拟建立询价',
+    complete: '模拟完成订单',
+    refund: '模拟退款',
+    release: '释放可提现佣金',
+    withdrawal: '提交提现',
+    amount: '提现金额',
+    bank: '银行名称',
+    account: '银行账号',
+    accountName: '账户姓名',
+    mock: 'Mock 模式：不会真实收款、转账或发送 API 通知。',
+    noData: '目前还没有记录。',
+    shareText: '分享九零食刻，把美好食刻介绍给朋友：',
+    identity: 'Email / 手机号码', copy: '复制链接', whatsapp: 'WhatsApp',
+    benefitsTitle: '会员权益', benefitsIntro: '奖励透明、记录清楚，所有积分和佣金都以真实询价与完成订单为依据。',
+    pointsTitle: '会员积分', pointsDesc: '注册、完成订单和指定活动都可以获得积分，账本会记录每一笔变化。',
+    couponTitle: '专属优惠', couponDesc: '新人券、服务券、生日券和限时活动由后台规则控制，避免优惠重复叠加。',
+    rewardTitle: '推荐奖励', rewardDesc: '支持三层真实订单推荐：第一代3%，第二代1%，第三代1%，订单完成并通过退款观察期后才进入可提现状态。',
+    pathTitle: '清楚的奖励路径', pathRegister: '注册会员', pathWelcome: '+ 欢迎积分', pathOrder: '完成真实订单', pathPoints: '积分入账', pathRefer: '推荐朋友完成服务', pathCommission: '佣金确认', pathHold: '通过退款观察期', pathWithdraw: '可申请提现', startTitle: '立即开始', startDesc: '先注册会员，之后可以在会员中心查看积分、优惠券、订单、推荐和提现记录。',
+    stepsTitle: '三步开始', stepsIntro: '最多追踪三层推荐关系，奖励只来自真实完成订单，不收取入会费，不靠拉人收费。',
+    stepApply: '注册成为90推荐官', stepApplyDesc: '提交社交平台、地区和推荐方式，等待后台审核。', stepShare: '分享专属链接或二维码', stepShareDesc: '系统记录首次有效访问，已绑定的会员不会被其他推荐代码覆盖。', stepEarn: '订单完成后获得奖励', stepEarnDesc: '订单完成并经过退款观察期，佣金才会变成可提现状态。',
+    rulesTitle: '透明规则', rulesMode: '奖励模式', rulesModeValue: '三层推荐奖励', rulesRate: '默认佣金', rulesRateValue: '第一代3% · 第二代1% · 第三代1%', rulesSettle: '结算条件', rulesSettleValue: '完成订单 + 观察期', rulesWithdraw: '提现方式', rulesWithdrawValue: 'Mock 人工审核', notMemberTitle: '还不是会员？', notMemberDesc: '先注册会员，再在会员中心提交90推荐官申请。审核通过后才会生成推荐代码。',
+    mockTitle: 'Mock 流程测试', mockDesc: '仅用于本地验收：创建询价、完成订单、模拟退款和释放观察期佣金。',
+    memberLevel: '会员等级', commissionBook: '佣金账本', application: '成为90推荐官', memberMock: 'Mock 模式：不会真实收款、转账或发送 API 通知。'
   },
   en: {
-    language: 'English', rewards: 'Member Rewards', referral: '90 Promoter', member: 'Member Centre', home: 'Home', login: 'Member Login', logout: 'Log out', register: 'Register', name: 'Name', email: 'Email', phone: 'Mobile number', password: 'Password (at least 6 characters)', loginAction: 'Log in', registerAction: 'Create member', welcome: 'Share 90 PROJECT with friends and earn transparent referral rewards.', apply: 'Become a 90 Promoter', applyIntro: 'After approval, you receive a referral code, share link and commission records.', pending: 'Under review', approved: 'Approved', code: 'Referral code', share: 'Share link', points: 'Points balance', coupons: 'Available coupons', commissions: 'Available commission', orders: 'My orders', enquiries: 'My enquiries', applySubmit: 'Submit application', socialPlatform: 'Social platform', socialAccount: 'Social account', region: 'Region', method: 'Promotion method', customerType: 'Expected customer type', agreeTerms: 'I agree to the promoter terms', agreePrivacy: 'I agree to the privacy policy', enquiry: 'Mock enquiry', complete: 'Mock complete order', refund: 'Mock refund', release: 'Release commission', withdrawal: 'Submit withdrawal', amount: 'Withdrawal amount', bank: 'Bank name', account: 'Bank account', accountName: 'Account name', mock: 'Mock mode: no real payment, bank transfer or API notification is used.', noData: 'No records yet.', shareText: 'Share 90 PROJECT with your friends:', identity: 'Email / mobile number', copy: 'Copy link', whatsapp: 'WhatsApp', benefitsTitle: 'Member benefits', benefitsIntro: 'Rewards are transparent and traceable, based on real enquiries and completed orders.', pointsTitle: 'Member points', pointsDesc: 'Earn points from registration, completed orders and selected campaigns. Every change is recorded.', couponTitle: 'Member coupons', couponDesc: 'Welcome, service, birthday and campaign coupons are controlled by admin rules.', rewardTitle: 'Referral rewards', rewardDesc: 'Supports three generations of real-order referrals: 3% for generation 1, 1% for generation 2 and 1% for generation 3. Commission becomes withdrawable after the refund observation period.', pathTitle: 'A clear reward path', pathRegister: 'Register as a member', pathWelcome: '+ Welcome points', pathOrder: 'Complete an eligible order', pathPoints: 'Points credited', pathRefer: 'Refer a friend who completes service', pathCommission: 'Commission confirmed', pathHold: 'Pass the refund observation period', pathWithdraw: 'Withdrawal available', startTitle: 'Start now', startDesc: 'Register first, then review points, coupons, orders, referrals and withdrawals in the member centre.', stepsTitle: 'Three simple steps', stepsIntro: 'The system tracks up to three referral generations. Rewards only come from completed real orders; there is no joining fee or recruitment-based payout.', stepApply: 'Register as a 90 Promoter', stepApplyDesc: 'Submit your platform, region and promotion method for admin review.', stepShare: 'Share your link or QR code', stepShareDesc: 'The first valid visit is recorded and an existing member binding cannot be overwritten.', stepEarn: 'Earn after the order is completed', stepEarnDesc: 'Commission becomes withdrawable after order completion and the refund observation period.', rulesTitle: 'Transparent rules', rulesMode: 'Reward model', rulesModeValue: 'Three-generation referral reward', rulesRate: 'Default commission', rulesRateValue: 'Gen 1 3% Â· Gen 2 1% Â· Gen 3 1%', rulesSettle: 'Settlement condition', rulesSettleValue: 'Completed order + hold period', rulesWithdraw: 'Withdrawal method', rulesWithdrawValue: 'Mock manual review', notMemberTitle: 'Not a member yet?', notMemberDesc: 'Register first, then submit the promoter application in the member centre. A referral code is created after approval.', mockTitle: 'Mock flow testing', mockDesc: 'For local acceptance only: create an enquiry, complete an order, simulate a refund and release held commission.', memberLevel: 'Member level', commissionBook: 'Commission ledger', application: 'Become a 90 Promoter', memberMock: 'Mock mode: no real payment, bank transfer or API notification is used.'
+    language: 'English', rewards: 'Member Rewards', referral: '90 Promoter', member: 'Member Centre', home: 'Home', login: 'Member Login', logout: 'Log out', register: 'Register', name: 'Name', email: 'Email', phone: 'Mobile number', password: 'Password (at least 6 characters)', loginAction: 'Log in', registerAction: 'Create member', welcome: 'Share 90 PROJECT with friends and earn transparent referral rewards.', apply: 'Become a 90 Promoter', applyIntro: 'After approval, you receive a referral code, share link and commission records.', pending: 'Under review', approved: 'Approved', code: 'Referral code', share: 'Share link', points: 'Points balance', coupons: 'Available coupons', commissions: 'Available commission', orders: 'My orders', enquiries: 'My enquiries', applySubmit: 'Submit application', socialPlatform: 'Social platform', socialAccount: 'Social account', region: 'Region', method: 'Promotion method', customerType: 'Expected customer type', agreeTerms: 'I agree to the promoter terms', agreePrivacy: 'I agree to the privacy policy', enquiry: 'Mock enquiry', complete: 'Mock complete order', refund: 'Mock refund', release: 'Release commission', withdrawal: 'Submit withdrawal', amount: 'Withdrawal amount', bank: 'Bank name', account: 'Bank account', accountName: 'Account name', mock: 'Mock mode: no real payment, bank transfer or API notification is used.', noData: 'No records yet.', shareText: 'Share 90 PROJECT with your friends:', identity: 'Email / mobile number', copy: 'Copy link', whatsapp: 'WhatsApp', benefitsTitle: 'Member benefits', benefitsIntro: 'Rewards are transparent and traceable, based on real enquiries and completed orders.', pointsTitle: 'Member points', pointsDesc: 'Earn points from registration, completed orders and selected campaigns. Every change is recorded.', couponTitle: 'Member coupons', couponDesc: 'Welcome, service, birthday and campaign coupons are controlled by admin rules.', rewardTitle: 'Referral rewards', rewardDesc: 'Supports three generations of real-order referrals: 3% for generation 1, 1% for generation 2 and 1% for generation 3. Commission becomes withdrawable after the refund observation period.', pathTitle: 'A clear reward path', pathRegister: 'Register as a member', pathWelcome: '+ Welcome points', pathOrder: 'Complete an eligible order', pathPoints: 'Points credited', pathRefer: 'Refer a friend who completes service', pathCommission: 'Commission confirmed', pathHold: 'Pass the refund observation period', pathWithdraw: 'Withdrawal available', startTitle: 'Start now', startDesc: 'Register first, then review points, coupons, orders, referrals and withdrawals in the member centre.', stepsTitle: 'Three simple steps', stepsIntro: 'The system tracks up to three referral generations. Rewards only come from completed real orders; there is no joining fee or recruitment-based payout.', stepApply: 'Register as a 90 Promoter', stepApplyDesc: 'Submit your platform, region and promotion method for admin review.', stepShare: 'Share your link or QR code', stepShareDesc: 'The first valid visit is recorded and an existing member binding cannot be overwritten.', stepEarn: 'Earn after the order is completed', stepEarnDesc: 'Commission becomes withdrawable after order completion and the refund observation period.', rulesTitle: 'Transparent rules', rulesMode: 'Reward model', rulesModeValue: 'Three-generation referral reward', rulesRate: 'Default commission', rulesRateValue: 'Gen 1 3% · Gen 2 1% · Gen 3 1%', rulesSettle: 'Settlement condition', rulesSettleValue: 'Completed order + hold period', rulesWithdraw: 'Withdrawal method', rulesWithdrawValue: 'Mock manual review', notMemberTitle: 'Not a member yet?', notMemberDesc: 'Register first, then submit the promoter application in the member centre. A referral code is created after approval.', mockTitle: 'Mock flow testing', mockDesc: 'For local acceptance only: create an enquiry, complete an order, simulate a refund and release held commission.', memberLevel: 'Member level', commissionBook: 'Commission ledger', application: 'Become a 90 Promoter', memberMock: 'Mock mode: no real payment, bank transfer or API notification is used.'
   }
 };
 
 Object.assign(translations.zh, {
-  rewards: 'ä¼šå‘˜å¥–åŠ±',
-  referral: '90æŽ¨èå®˜',
-  member: 'ä¼šå‘˜ä¸­å¿ƒ',
-  home: 'è¿”å›žé¦–é¡µ',
-  login: 'ä¼šå‘˜ç™»å½•',
-  logout: 'é€€å‡ºç™»å½•',
-  register: 'æ³¨å†Œä¼šå‘˜',
-  name: 'å§“å',
+  rewards: '会员奖励',
+  referral: '90推荐官',
+  member: '会员中心',
+  home: '返回首页',
+  login: '会员登录',
+  logout: '退出登录',
+  register: '注册会员',
+  name: '姓名',
   email: 'Email',
-  phone: 'æ‰‹æœºå·ç ',
-  password: 'å¯†ç ï¼ˆè‡³å°‘ 6 ä¸ªå­—ç¬¦ï¼‰',
-  loginAction: 'ç™»å½•',
-  registerAction: 'åˆ›å»ºä¼šå‘˜',
-  apply: 'æˆä¸º90æŽ¨èå®˜',
-  applyIntro: 'é€šè¿‡å®¡æ ¸åŽï¼Œä½ å¯ä»¥èŽ·å¾—ä¸“å±žæŽ¨èä»£ç ã€åˆ†äº«é“¾æŽ¥å’Œä½£é‡‘è®°å½•ã€‚',
-  pending: 'å®¡æ ¸ä¸­',
-  approved: 'å·²æ‰¹å‡†',
-  code: 'ä¸“å±žæŽ¨èä»£ç ',
-  share: 'åˆ†äº«é“¾æŽ¥',
-  points: 'ç§¯åˆ†ä½™é¢',
-  coupons: 'å¯ç”¨ä¼˜æƒ åˆ¸',
-  commissions: 'å¯æçŽ°ä½£é‡‘',
-  orders: 'æˆ‘çš„è®¢å•',
-  withdrawal: 'æäº¤æçŽ°',
-  amount: 'æçŽ°é‡‘é¢',
-  bank: 'é“¶è¡Œåç§°',
-  account: 'é“¶è¡Œè´¦å·',
-  accountName: 'è´¦æˆ·å§“å',
-  noData: 'ç›®å‰è¿˜æ²¡æœ‰è®°å½•ã€‚',
-  identity: 'Email / æ‰‹æœºå·ç ',
-  copy: 'å¤åˆ¶é“¾æŽ¥',
+  phone: '手机号码',
+  password: '密码（至少 6 个字符）',
+  loginAction: '登录',
+  registerAction: '创建会员',
+  apply: '成为90推荐官',
+  applyIntro: '通过审核后，你可以获得专属推荐代码、分享链接和佣金记录。',
+  pending: '审核中',
+  approved: '已批准',
+  code: '专属推荐代码',
+  share: '分享链接',
+  points: '积分余额',
+  coupons: '可用优惠券',
+  commissions: '可提现佣金',
+  orders: '我的订单',
+  withdrawal: '提交提现',
+  amount: '提现金额',
+  bank: '银行名称',
+  account: '银行账号',
+  accountName: '账户姓名',
+  noData: '目前还没有记录。',
+  identity: 'Email / 手机号码',
+  copy: '复制链接',
   whatsapp: 'WhatsApp',
-  memberLevel: 'ä¼šå‘˜ç­‰çº§',
-  commissionBook: 'ä½£é‡‘è´¦æœ¬',
-  application: 'æˆä¸º90æŽ¨èå®˜',
-  shareText: 'åˆ†äº«ä¹é›¶é£Ÿåˆ»ç»™æœ‹å‹ï¼š',
-  socialPlatform: 'ç¤¾äº¤å¹³å°',
-  socialAccount: 'ç¤¾äº¤è´¦å·',
-  region: 'æ‰€åœ¨åœ°åŒº',
-  method: 'æŽ¨èæ–¹å¼',
-  customerType: 'é¢„è®¡å®¢æˆ·ç±»åž‹',
-  agreeTerms: 'æˆ‘åŒæ„90æŽ¨èå®˜æ¡æ¬¾',
-  agreePrivacy: 'æˆ‘åŒæ„éšç§æ”¿ç­–',
-  applySubmit: 'æäº¤ç”³è¯·'
+  memberLevel: '会员等级',
+  commissionBook: '佣金账本',
+  application: '成为90推荐官',
+  shareText: '分享九零食刻给朋友：',
+  socialPlatform: '社交平台',
+  socialAccount: '社交账号',
+  region: '所在地区',
+  method: '推荐方式',
+  customerType: '预计客户类型',
+  agreeTerms: '我同意90推荐官条款',
+  agreePrivacy: '我同意隐私政策',
+  applySubmit: '提交申请'
 });
 
 Object.assign(translations.zh, {
-  memberMetaTitle: 'ä¼šå‘˜ä¸­å¿ƒ | 90 PROJECT',
-  memberHeroTitle: 'ä¹é›¶é£Ÿåˆ»ä¼šå‘˜ä¸­å¿ƒ',
-  memberHeroDesc: 'ç”¨æ‰‹æœºéªŒè¯å»ºç«‹ä¼šå‘˜èº«ä»½ï¼Œç»Ÿä¸€ç®¡ç†èµ„æ–™ã€è®¢å•è®°å½•ã€ç§¯åˆ†ä¼˜æƒ ã€æŽ¨èå¥–åŠ±å’ŒæçŽ°ç”³è¯·ã€‚',
-  cloudChecking: 'æ­£åœ¨æ£€æµ‹ä¼šå‘˜äº‘ç«¯...',
-  cloudConnected: 'Supabase å·²è¿žæŽ¥ï¼Œä¼šå‘˜èµ„æ–™ä¼šåŒæ­¥äº‘ç«¯ã€‚',
-  cloudLocal: 'æœ¬åœ°ä¼šå‘˜æ¨¡å¼ï¼šSupabase å°šæœªé…ç½®æˆ–æš‚ä¸å¯ç”¨ã€‚',
-  cloudReadFail: 'Supabase å·²é…ç½®ï¼Œä½†å½“å‰è¯»å–å¤±è´¥ï¼›é¡µé¢ç»§ç»­ä½¿ç”¨æœ¬åœ°è®°å½•ã€‚',
-  benefitOne: 'æ³¨å†Œæ¬¢è¿Žç§¯åˆ†',
-  benefitTwo: 'è®¢å•è®°å½•å½’æ¡£',
-  benefitThree: 'æŽ¨èå¥–åŠ±æŸ¥è¯¢',
-  memberStepPhone: 'æ‰‹æœºéªŒè¯',
-  memberStepPhoneDesc: 'æ³¨å†Œå‰å…ˆç¡®è®¤ç”µè¯å·ç ï¼Œå‡å°‘é‡å¤ä¼šå‘˜ä¸Žé”™è¯¯è®¢å•èµ„æ–™ã€‚',
-  memberStepProfile: 'ä¼šå‘˜èµ„æ–™',
-  memberStepProfileDesc: 'ä¿å­˜å¸¸ç”¨åœ°å€ã€äººæ•°å’Œå£å‘³å¤‡æ³¨ï¼Œä¸‹æ¬¡è¯¢é—®æ›´å¿«å¤„ç†ã€‚',
-  memberStepRewards: 'å¥–åŠ±è®°å½•',
-  memberStepRewardsDesc: 'ç§¯åˆ†ã€ä¼˜æƒ åˆ¸ã€æŽ¨èå¥–åŠ±å’ŒæçŽ°è®°å½•é›†ä¸­æŸ¥çœ‹ã€‚',
-  memberMiniStepVerify: 'éªŒè¯æ‰‹æœº',
-  memberMiniStepInfo: 'å¡«å†™èµ„æ–™',
-  memberMiniStepCreate: 'åˆ›å»ºä¼šå‘˜',
-  existingMember: 'å·²æœ‰ä¼šå‘˜',
-  loginIntro: 'ç™»å½•åŽå¯ä»¥æŸ¥çœ‹ç§¯åˆ†ã€ä¼˜æƒ åˆ¸ã€è®¢å•å’ŒæŽ¨èå¥–åŠ±ã€‚',
-  forgotLogin: 'å¿˜è®°å¯†ç æˆ–æ— æ³•ç™»å…¥ï¼Ÿ',
-  whatsappHelp: 'WhatsApp ååŠ©',
-  newMember: 'æ–°ä¼šå‘˜',
-  registerIntro: 'åˆ›å»ºä¼šå‘˜åŽä¼šè‡ªåŠ¨èŽ·å¾—æ¬¢è¿Žç§¯åˆ†å’Œæ–°ä¼šå‘˜ä¼˜æƒ åˆ¸ã€‚',
-  registerFootnote: 'æ³¨å†ŒåŽå¯æŸ¥çœ‹ç§¯åˆ†ã€ä¼˜æƒ åˆ¸ã€æŽ¨èå¥–åŠ±ä¸ŽæçŽ°è®°å½•ã€‚',
-  phoneCode: 'æ‰‹æœºéªŒè¯ç ',
-  sendPhoneCode: 'å‘é€éªŒè¯ç ',
-  resendPhoneCode: 'é‡æ–°å‘é€',
-  phoneVerifyHint: 'è¯·å…ˆéªŒè¯æ‰‹æœºå·ç ï¼ŒéªŒè¯æˆåŠŸåŽæ‰å¯ä»¥åˆ›å»ºä¼šå‘˜ã€‚',
-  phoneRequired: 'è¯·å…ˆå¡«å†™æ‰‹æœºå·ç ã€‚',
-  phoneCodeRequired: 'è¯·è¾“å…¥æ‰‹æœºéªŒè¯ç ã€‚',
-  phoneCodeSent: 'éªŒè¯ç å·²å‘é€ï¼Œè¯·æŸ¥çœ‹æ‰‹æœºçŸ­ä¿¡ã€‚',
-  phoneCodeLocal: 'æœ¬åœ°æµ‹è¯•éªŒè¯ç ï¼š',
-  phoneCodeSending: 'å‘é€ä¸­...',
-  phoneCodeChecking: 'éªŒè¯ä¸­...',
-  phoneVerified: 'æ‰‹æœºå·ç å·²éªŒè¯ï¼Œå¯ä»¥åˆ›å»ºä¼šå‘˜ã€‚',
-  phoneVerifyFailed: 'éªŒè¯ç ä¸æ­£ç¡®æˆ–å·²è¿‡æœŸï¼Œè¯·é‡æ–°å‘é€ã€‚',
-  phoneChanged: 'æ‰‹æœºå·ç å·²æ›´æ”¹ï¼Œè¯·é‡æ–°éªŒè¯ã€‚',
-  loggedIn: 'å·²ç™»å½•',
-  helloPrefix: 'ä½ å¥½ï¼Œ',
-  dashboardIntro: 'ä½ çš„ä¼šå‘˜èµ„æ–™ã€è¯¢é—®è®°å½•ã€ä¼˜æƒ å’ŒæŽ¨èå¥–åŠ±éƒ½åœ¨è¿™é‡Œã€‚',
-  profileTitle: 'ä¼šå‘˜èµ„æ–™',
-  saveProfile: 'ä¿å­˜ä¼šå‘˜èµ„æ–™',
-  companyLabel: 'å…¬å¸ / å®¶åº­åç§°',
-  addressLabel: 'å¸¸ç”¨åœ°å€',
-  preferenceLabel: 'å£å‘³å¤‡æ³¨',
-  birthday: 'ç”Ÿæ—¥',
-  estimatedPax: 'å¸¸ç”¨äººæ•°',
-  companyPlaceholder: 'å…¬å¸åã€å®¶åº­åæˆ–è”ç³»äººå¤‡æ³¨',
-  addressPlaceholder: 'æ–¹ä¾¿ä¸‹æ¬¡ä¸‹å•è‡ªåŠ¨å¸¦å…¥',
-  preferencePlaceholder: 'ä¾‹å¦‚ï¼šå°‘è¾£ã€ä¸è¦è‘±ã€ä¸è¦çŒªè‚‰ã€å–œæ¬¢æ¸…æ·¡',
-  promoterIntro: 'ç”³è¯·é€šè¿‡åŽï¼Œä½ ä¼šå¾—åˆ°ä¸“å±žæŽ¨èç ã€åˆ†äº«é“¾æŽ¥å’Œä½£é‡‘è®°å½•ã€‚',
-  couponListTitle: 'ä¼˜æƒ åˆ¸',
-  pointsListTitle: 'ç§¯åˆ†è®°å½•',
-  notificationTitle: 'ä¼šå‘˜é€šçŸ¥',
-  applicationTitle: 'ç”³è¯·æˆä¸º90æŽ¨èå®˜',
-  applicationIntro: 'é€‚åˆç»å¸¸ä»‹ç»æœ‹å‹ã€å…¬å¸ã€æ´»åŠ¨å®¢æˆ·çš„äººã€‚åŽå°å®¡æ ¸é€šè¿‡åŽæ‰ä¼šç”ŸæˆæŽ¨èç ã€‚',
-  withdrawalTitle: 'æçŽ°ç”³è¯·',
-  withdrawalIntro: 'ä½£é‡‘è¾¾åˆ°æœ€ä½ŽæçŽ°é‡‘é¢åŽï¼Œå¯ä»¥æäº¤åŽå°å®¡æ ¸ã€‚',
-  submitWithdrawal: 'æäº¤æçŽ°',
-  mockToolsTitle: 'æœ¬åœ°éªŒæ”¶å·¥å…·',
-  mockToolsIntro: 'åªç”¨äºŽæµ‹è¯•ä¼šå‘˜æµç¨‹ï¼Œä¸ä¼šçœŸå®žæ”¶æ¬¾ã€è½¬è´¦æˆ–é€šçŸ¥é¡¾å®¢ã€‚',
-  footerBack: 'è¿”å›žé¦–é¡µ',
-  loginHelpDuplicate: 'è¿™ä¸ª Email æˆ–æ‰‹æœºå·å·²ç»æ³¨å†Œï¼Œå¯ä»¥ç›´æŽ¥ç™»å½•ã€‚',
-  invalidRegister: 'è¯·å¡«å†™å®Œæ•´èµ„æ–™ï¼Œå¯†ç è‡³å°‘ 6 ä¸ªå­—ç¬¦ã€‚',
-  registerCloudOk: 'ä¼šå‘˜å·²åˆ›å»ºï¼Œå¹¶å·²åŒæ­¥ Supabaseã€‚',
-  registerCloudConfirm: 'ä¼šå‘˜å·²åˆ›å»ºã€‚Supabase å¯èƒ½éœ€è¦ Email ç¡®è®¤åŽæ‰ä¼šåŒæ­¥ã€‚',
-  registerCloudFail: 'ä¼šå‘˜å·²åˆ›å»ºï¼Œæœ¬åœ°å¯ç”¨ï¼›Supabase åŒæ­¥æš‚æ—¶å¤±è´¥ã€‚',
-  registerLocalOk: 'ä¼šå‘˜å·²åˆ›å»ºã€‚æ¬¢è¿Žç§¯åˆ†ä¸Žæ–°ä¼šå‘˜ä¼˜æƒ åˆ¸å·²åŠ å…¥ã€‚',
-  loginBusy: 'ç™»å½•ä¸­...',
-  registerBusy: 'åˆ›å»ºä¸­...',
-  saveBusy: 'ä¿å­˜ä¸­...',
-  submitBusy: 'æäº¤ä¸­...',
-  loginError: 'Email / æ‰‹æœºå·æˆ–å¯†ç ä¸æ­£ç¡®ã€‚å¦‚æžœåˆšæ³¨å†Œäº‘ç«¯è´¦å·ï¼Œè¯·ç¡®è®¤ Email åŽå†è¯•ã€‚',
-  loginOkCloud: 'ä¼šå‘˜å·²ç™»å½•ï¼Œæ­£åœ¨åŒæ­¥äº‘ç«¯èµ„æ–™ã€‚',
-  loginOk: 'ä¼šå‘˜å·²ç™»å½•ã€‚',
-  logoutOk: 'å·²é€€å‡ºä¼šå‘˜ä¸­å¿ƒã€‚',
-  loginRequired: 'è¯·å…ˆç™»å½•ä¼šå‘˜ã€‚',
-  profileSaveFail: 'ä¼šå‘˜èµ„æ–™ä¿å­˜å¤±è´¥ã€‚',
-  profileCloudOk: 'ä¼šå‘˜èµ„æ–™å·²ä¿å­˜ï¼Œå¹¶å·²åŒæ­¥äº‘ç«¯ã€‚',
-  profileCloudFail: 'ä¼šå‘˜èµ„æ–™å·²ä¿å­˜ï¼Œæœ¬æ¬¡äº‘ç«¯åŒæ­¥å¤±è´¥ã€‚',
-  profileLocalOk: 'ä¼šå‘˜èµ„æ–™å·²ä¿å­˜ã€‚',
-  applicationExists: 'ä½ å·²ç»æäº¤è¿‡æŽ¨èå®˜ç”³è¯·ï¼Œç­‰å¾…åŽå°å®¡æ ¸å³å¯ã€‚',
-  termsRequired: 'è¯·å…ˆåŒæ„æŽ¨èå®˜æ¡æ¬¾ä¸Žéšç§æ”¿ç­–ã€‚',
-  applicationCloudOk: 'æŽ¨èå®˜ç”³è¯·å·²æäº¤ï¼Œå¹¶å·²åŒæ­¥äº‘ç«¯ã€‚',
-  applicationCloudFail: 'æŽ¨èå®˜ç”³è¯·å·²ä¿å­˜åœ¨æœ¬åœ°ï¼Œäº‘ç«¯åŒæ­¥æš‚æ—¶å¤±è´¥ã€‚',
-  applicationLocalOk: 'æŽ¨èå®˜ç”³è¯·å·²æäº¤å®¡æ ¸ã€‚',
-  withdrawPromoterRequired: 'æŽ¨èå®˜é€šè¿‡å®¡æ ¸åŽæ‰å¯ä»¥ç”³è¯·æçŽ°ã€‚',
-  withdrawBelowMinimum: 'æçŽ°é‡‘é¢ä½ŽäºŽæœ€ä½ŽæçŽ°é‡‘é¢ã€‚',
-  withdrawPending: 'ä½ å·²ç»æœ‰ä¸€ç¬”æçŽ°åœ¨å¤„ç†ä¸­ã€‚',
-  withdrawInsufficient: 'å¯æçŽ°ä½£é‡‘ä½™é¢ä¸è¶³ã€‚',
-  withdrawCloudOk: 'æçŽ°ç”³è¯·å·²æäº¤ï¼Œå¹¶å·²åŒæ­¥äº‘ç«¯ã€‚',
-  withdrawCloudFail: 'æçŽ°ç”³è¯·å·²ä¿å­˜åœ¨æœ¬åœ°ï¼Œäº‘ç«¯åŒæ­¥æš‚æ—¶å¤±è´¥ã€‚',
-  withdrawLocalOk: 'æçŽ°ç”³è¯·å·²æäº¤åŽå°å®¡æ ¸ã€‚'
+  memberMetaTitle: '会员中心 | 90 PROJECT',
+  memberHeroTitle: '九零食刻会员中心',
+  memberHeroDesc: '用手机验证建立会员身份，统一管理资料、订单记录、积分优惠、推荐奖励和提现申请。',
+  cloudChecking: '正在检测会员云端...',
+  cloudConnected: 'Supabase 已连接，会员资料会同步云端。',
+  cloudLocal: '本地会员模式：Supabase 尚未配置或暂不可用。',
+  cloudReadFail: 'Supabase 已配置，但当前读取失败；页面继续使用本地记录。',
+  benefitOne: '注册欢迎积分',
+  benefitTwo: '订单记录归档',
+  benefitThree: '推荐奖励查询',
+  memberStepPhone: '手机验证',
+  memberStepPhoneDesc: '注册前先确认电话号码，减少重复会员与错误订单资料。',
+  memberStepProfile: '会员资料',
+  memberStepProfileDesc: '保存常用地址、人数和口味备注，下次询问更快处理。',
+  memberStepRewards: '奖励记录',
+  memberStepRewardsDesc: '积分、优惠券、推荐奖励和提现记录集中查看。',
+  memberMiniStepVerify: '验证手机',
+  memberMiniStepInfo: '填写资料',
+  memberMiniStepCreate: '创建会员',
+  existingMember: '已有会员',
+  loginIntro: '登录后可以查看积分、优惠券、订单和推荐奖励。',
+  forgotLogin: '忘记密码或无法登入？',
+  whatsappHelp: 'WhatsApp 协助',
+  newMember: '新会员',
+  registerIntro: '创建会员后会自动获得欢迎积分和新会员优惠券。',
+  registerFootnote: '注册后可查看积分、优惠券、推荐奖励与提现记录。',
+  phoneCode: '手机验证码',
+  sendPhoneCode: '发送验证码',
+  resendPhoneCode: '重新发送',
+  phoneVerifyHint: '请先验证手机号码，验证成功后才可以创建会员。',
+  phoneRequired: '请先填写手机号码。',
+  phoneCodeRequired: '请输入手机验证码。',
+  phoneCodeSent: '验证码已发送，请查看手机短信。',
+  phoneCodeLocal: '本地测试验证码：',
+  phoneCodeSending: '发送中...',
+  phoneCodeChecking: '验证中...',
+  phoneVerified: '手机号码已验证，可以创建会员。',
+  phoneVerifyFailed: '验证码不正确或已过期，请重新发送。',
+  phoneChanged: '手机号码已更改，请重新验证。',
+  loggedIn: '已登录',
+  helloPrefix: '你好，',
+  dashboardIntro: '你的会员资料、询问记录、优惠和推荐奖励都在这里。',
+  profileTitle: '会员资料',
+  saveProfile: '保存会员资料',
+  companyLabel: '公司 / 家庭名称',
+  addressLabel: '常用地址',
+  preferenceLabel: '口味备注',
+  birthday: '生日',
+  estimatedPax: '常用人数',
+  companyPlaceholder: '公司名、家庭名或联系人备注',
+  addressPlaceholder: '方便下次下单自动带入',
+  preferencePlaceholder: '例如：少辣、不要葱、不要猪肉、喜欢清淡',
+  promoterIntro: '申请通过后，你会得到专属推荐码、分享链接和佣金记录。',
+  couponListTitle: '优惠券',
+  pointsListTitle: '积分记录',
+  notificationTitle: '会员通知',
+  applicationTitle: '申请成为90推荐官',
+  applicationIntro: '适合经常介绍朋友、公司、活动客户的人。后台审核通过后才会生成推荐码。',
+  withdrawalTitle: '提现申请',
+  withdrawalIntro: '佣金达到最低提现金额后，可以提交后台审核。',
+  submitWithdrawal: '提交提现',
+  mockToolsTitle: '本地验收工具',
+  mockToolsIntro: '只用于测试会员流程，不会真实收款、转账或通知顾客。',
+  footerBack: '返回首页',
+  loginHelpDuplicate: '这个 Email 或手机号已经注册，可以直接登录。',
+  invalidRegister: '请填写完整资料，密码至少 6 个字符。',
+  registerCloudOk: '会员已创建，并已同步 Supabase。',
+  registerCloudConfirm: '会员已创建。Supabase 可能需要 Email 确认后才会同步。',
+  registerCloudFail: '会员已创建，本地可用；Supabase 同步暂时失败。',
+  registerLocalOk: '会员已创建。欢迎积分与新会员优惠券已加入。',
+  loginBusy: '登录中...',
+  registerBusy: '创建中...',
+  saveBusy: '保存中...',
+  submitBusy: '提交中...',
+  loginError: 'Email / 手机号或密码不正确。如果刚注册云端账号，请确认 Email 后再试。',
+  loginOkCloud: '会员已登录，正在同步云端资料。',
+  loginOk: '会员已登录。',
+  logoutOk: '已退出会员中心。',
+  loginRequired: '请先登录会员。',
+  profileSaveFail: '会员资料保存失败。',
+  profileCloudOk: '会员资料已保存，并已同步云端。',
+  profileCloudFail: '会员资料已保存，本次云端同步失败。',
+  profileLocalOk: '会员资料已保存。',
+  applicationExists: '你已经提交过推荐官申请，等待后台审核即可。',
+  termsRequired: '请先同意推荐官条款与隐私政策。',
+  applicationCloudOk: '推荐官申请已提交，并已同步云端。',
+  applicationCloudFail: '推荐官申请已保存在本地，云端同步暂时失败。',
+  applicationLocalOk: '推荐官申请已提交审核。',
+  withdrawPromoterRequired: '推荐官通过审核后才可以申请提现。',
+  withdrawBelowMinimum: '提现金额低于最低提现金额。',
+  withdrawPending: '你已经有一笔提现在处理中。',
+  withdrawInsufficient: '可提现佣金余额不足。',
+  withdrawCloudOk: '提现申请已提交，并已同步云端。',
+  withdrawCloudFail: '提现申请已保存在本地，云端同步暂时失败。',
+  withdrawLocalOk: '提现申请已提交后台审核。'
 });
 
 Object.assign(translations.en, {
@@ -315,30 +315,30 @@ Object.assign(translations.en, {
 });
 
 Object.assign(translations.zh, {
-  referral: 'ä¼šå‘˜æŽ¨è',
-  welcome: 'æ¯ä½ä¼šå‘˜éƒ½ä¼šè‡ªåŠ¨æ‹¥æœ‰è‡ªå·±çš„æŽ¨èç ã€‚åˆ†äº«ç»™æœ‹å‹åŽï¼Œç³»ç»Ÿä¼šè‡ªåŠ¨ç»‘å®šå…³ç³»å¹¶æŒ‰å®Œæˆè®¢å•è®¡ç®—ä¸‰ä»£ä½£é‡‘ã€‚',
-  apply: 'æˆ‘çš„æŽ¨èç ',
-  applyIntro: 'ä¼šå‘˜æ³¨å†ŒåŽè‡ªåŠ¨æ‹¥æœ‰æŽ¨èç ã€åˆ†äº«é“¾æŽ¥å’Œä½£é‡‘è®°å½•ã€‚',
-  code: 'æˆ‘çš„æŽ¨èç ',
-  shareText: 'è¿™æ˜¯æˆ‘çš„ä¹é›¶é£Ÿåˆ»ä¼šå‘˜æŽ¨èé“¾æŽ¥ï¼š',
-  application: 'ä¼šå‘˜æŽ¨è',
-  promoterIntro: 'æ¯ä½ä¼šå‘˜æ³¨å†ŒåŽè‡ªåŠ¨æ‹¥æœ‰æŽ¨èç ã€åˆ†äº«é“¾æŽ¥å’Œä½£é‡‘è®°å½•ã€‚',
-  applicationTitle: 'ä¼šå‘˜è‡ªåŠ¨æ‹¥æœ‰æŽ¨èç ',
-  applicationIntro: 'ç™»å½•ä¼šå‘˜ä¸­å¿ƒå³å¯å¤åˆ¶æŽ¨èç å’Œåˆ†äº«é“¾æŽ¥ã€‚æœ‹å‹é€šè¿‡ä½ çš„é“¾æŽ¥æ³¨å†ŒåŽï¼Œç³»ç»Ÿä¼šè‡ªåŠ¨è®°å½•æŽ¨èå…³ç³»ã€‚',
-  stepsTitle: 'ä¸‰æ­¥å¼€å§‹',
-  stepsIntro: 'æœ€å¤šè¿½è¸ªä¸‰å±‚æŽ¨èå…³ç³»ï¼Œå¥–åŠ±åªæ¥è‡ªçœŸå®žå®Œæˆè®¢å•ï¼Œä¸æ”¶å–å…¥ä¼šè´¹ï¼Œä¸é æ‹‰äººæ”¶è´¹ã€‚',
-  stepApply: 'æ³¨å†Œä¼šå‘˜',
-  stepApplyDesc: 'å®Œæˆä¼šå‘˜æ³¨å†ŒåŽï¼Œç³»ç»Ÿä¼šè‡ªåŠ¨ç”Ÿæˆä½ çš„ä¸“å±žæŽ¨èç å’Œåˆ†äº«é“¾æŽ¥ã€‚',
-  stepShare: 'åˆ†äº«æŽ¨èç ',
-  stepShareDesc: 'æœ‹å‹é€šè¿‡ä½ çš„é“¾æŽ¥è®¿é—®å¹¶æ³¨å†ŒåŽï¼Œç³»ç»Ÿè‡ªåŠ¨è®°å½•ç›´å±žä¸‹çº¿å…³ç³»ã€‚',
-  notMemberTitle: 'è¿˜ä¸æ˜¯ä¼šå‘˜ï¼Ÿ',
-  notMemberDesc: 'å…ˆæ³¨å†Œä¼šå‘˜ï¼Œç³»ç»Ÿä¼šè‡ªåŠ¨ä¸ºä½ å‡†å¤‡æŽ¨èç ã€‚ç™»å½•ä¼šå‘˜ä¸­å¿ƒå³å¯å¤åˆ¶æŽ¨èç ã€åˆ†äº«é“¾æŽ¥å’ŒæŸ¥çœ‹ä½£é‡‘è®°å½•ã€‚',
-  applicationExists: 'ä¼šå‘˜æŽ¨èèµ„æ–™å·²å­˜åœ¨ã€‚',
-  termsRequired: 'è¯·ç¡®è®¤ä¼šå‘˜æŽ¨èè§„åˆ™ã€‚',
-  applicationCloudOk: 'ä¼šå‘˜æŽ¨èèµ„æ–™å·²åŒæ­¥äº‘ç«¯ã€‚',
-  applicationCloudFail: 'ä¼šå‘˜æŽ¨èèµ„æ–™å·²ä¿å­˜åœ¨æœ¬åœ°ï¼Œäº‘ç«¯åŒæ­¥æš‚æ—¶å¤±è´¥ã€‚',
-  applicationLocalOk: 'ä¼šå‘˜æŽ¨èèµ„æ–™å·²ä¿å­˜ã€‚',
-  withdrawPromoterRequired: 'æŽ¨èç ç”ŸæˆåŽæ‰å¯ä»¥ç”³è¯·æçŽ°ã€‚'
+  referral: '会员推荐',
+  welcome: '每位会员都会自动拥有自己的推荐码。分享给朋友后，系统会自动绑定关系并按完成订单计算三代佣金。',
+  apply: '我的推荐码',
+  applyIntro: '会员注册后自动拥有推荐码、分享链接和佣金记录。',
+  code: '我的推荐码',
+  shareText: '这是我的九零食刻会员推荐链接：',
+  application: '会员推荐',
+  promoterIntro: '每位会员注册后自动拥有推荐码、分享链接和佣金记录。',
+  applicationTitle: '会员自动拥有推荐码',
+  applicationIntro: '登录会员中心即可复制推荐码和分享链接。朋友通过你的链接注册后，系统会自动记录推荐关系。',
+  stepsTitle: '三步开始',
+  stepsIntro: '最多追踪三层推荐关系，奖励只来自真实完成订单，不收取入会费，不靠拉人收费。',
+  stepApply: '注册会员',
+  stepApplyDesc: '完成会员注册后，系统会自动生成你的专属推荐码和分享链接。',
+  stepShare: '分享推荐码',
+  stepShareDesc: '朋友通过你的链接访问并注册后，系统自动记录直属下线关系。',
+  notMemberTitle: '还不是会员？',
+  notMemberDesc: '先注册会员，系统会自动为你准备推荐码。登录会员中心即可复制推荐码、分享链接和查看佣金记录。',
+  applicationExists: '会员推荐资料已存在。',
+  termsRequired: '请确认会员推荐规则。',
+  applicationCloudOk: '会员推荐资料已同步云端。',
+  applicationCloudFail: '会员推荐资料已保存在本地，云端同步暂时失败。',
+  applicationLocalOk: '会员推荐资料已保存。',
+  withdrawPromoterRequired: '推荐码生成后才可以申请提现。'
 });
 
 Object.assign(translations.en, {
@@ -400,7 +400,7 @@ function setBusy(form, busy, label = '') {
   if (!button) return;
   if (busy) {
     button.dataset.originalText = button.textContent;
-    button.textContent = label || 'å¤„ç†ä¸­...';
+    button.textContent = label || '处理中...';
     button.disabled = true;
   } else {
     button.textContent = button.dataset.originalText || button.textContent;
@@ -409,7 +409,7 @@ function setBusy(form, busy, label = '') {
 }
 
 function busyLabel(key) {
-  return t(key) || 'å¤„ç†ä¸­...';
+  return t(key) || '处理中...';
 }
 
 function downloadCsv(filename, rows) {
@@ -540,7 +540,7 @@ function renderMemberDashboard() {
   const allCommissions = cloudCommissions.length
     ? cloudCommissions.map(item => ({ status: item.status, orderId: item.order_id || item.orderId || 'cloud', generation: item.generation || 1, commissionAmount: item.commission_amount || item.commissionAmount }))
     : summary.commissions;
-  commissionList.innerHTML = allCommissions.length ? allCommissions.map(item => `<li><span>${esc(item.status)}<br><small>L${Number(item.generation || 1)} Â· ${esc(item.orderId)}</small></span><b>${formatMoney(item.commissionAmount)}</b></li>`).join('') : `<li>${esc(t('noData'))}</li>`;
+  commissionList.innerHTML = allCommissions.length ? allCommissions.map(item => `<li><span>${esc(item.status)}<br><small>L${Number(item.generation || 1)} · ${esc(item.orderId)}</small></span><b>${formatMoney(item.commissionAmount)}</b></li>`).join('') : `<li>${esc(t('noData'))}</li>`;
   const couponList = document.querySelector('[data-growth-coupon-list]');
   if (couponList) {
     const cloudCoupons = cloudGrowthSnapshot?.coupons || [];
@@ -549,9 +549,9 @@ function renderMemberDashboard() {
         const template = Array.isArray(coupon.growth_coupon_templates) ? coupon.growth_coupon_templates[0] : coupon.growth_coupon_templates;
         const name = template?.name?.zh || template?.name?.en || coupon.code;
         const value = template?.discount_type === 'percent' ? `${template.discount_value}%` : formatMoney(template?.discount_value || 0);
-        return `<li><span>${esc(name)}<br><small>${esc(coupon.code)} Â· ${coupon.expires_at ? new Date(coupon.expires_at).toLocaleDateString() : '-'}</small></span><b>${value}</b></li>`;
+        return `<li><span>${esc(name)}<br><small>${esc(coupon.code)} · ${coupon.expires_at ? new Date(coupon.expires_at).toLocaleDateString() : '-'}</small></span><b>${value}</b></li>`;
       }).join('')
-      : summary.coupons.length ? summary.coupons.map(coupon => `<li><span>${esc(coupon.name)}<br><small>${esc(coupon.code)} Â· ${new Date(coupon.expiresAt).toLocaleDateString()}</small></span><b>${coupon.discountType === 'percent' ? `${coupon.discountValue}%` : formatMoney(coupon.discountValue)}</b></li>`).join('') : `<li>${esc(t('noData'))}</li>`;
+      : summary.coupons.length ? summary.coupons.map(coupon => `<li><span>${esc(coupon.name)}<br><small>${esc(coupon.code)} · ${new Date(coupon.expiresAt).toLocaleDateString()}</small></span><b>${coupon.discountType === 'percent' ? `${coupon.discountValue}%` : formatMoney(coupon.discountValue)}</b></li>`).join('') : `<li>${esc(t('noData'))}</li>`;
   }
   const pointsList = document.querySelector('[data-growth-points-list]');
   if (pointsList) {
@@ -779,7 +779,7 @@ function bindMemberPage() {
         withdrawal_pending: t('withdrawPending'),
         insufficient_balance: t('withdrawInsufficient')
       };
-      return setMessage(reasons[result.reason] || `æçŽ°ç”³è¯·æ— æ³•æäº¤ï¼š${result.reason}`, true);
+      return setMessage(reasons[result.reason] || `提现申请无法提交：${result.reason}`, true);
     }
     if (cloudReady && cloud.getSession()?.access_token) {
       const cloudResult = await cloud.submitWithdrawal(data);
@@ -876,10 +876,10 @@ function cloudLeadToGrowthPayload(row) {
 
 function orderStatusOptions(status) {
   const labels = {
-    new: 'æ–°è®¢å•',
-    confirmed: 'å·²ç¡®è®¤',
-    deposit_paid: 'å·²ä»˜è®¢é‡‘',
-    cancelled: 'å·²å–æ¶ˆ'
+    new: '新订单',
+    confirmed: '已确认',
+    deposit_paid: '已付订金',
+    cancelled: '已取消'
   };
   return adminEditableOrderStatuses.map(value => `<option value="${value}" ${value === status ? 'selected' : ''}>${labels[value]}</option>`).join('');
 }
@@ -947,12 +947,12 @@ function renderAdmin() {
   const relationByMemberId = new Map(snapshot.relations.map(relation => [relation.memberId, relation]));
   const metricGrid = document.querySelector('.growth-admin-section .growth-metric-grid');
   if (metricGrid && !metricGrid.querySelector('[data-admin-growth="pending-commissions"]')) {
-    metricGrid.insertAdjacentHTML('beforeend', '<div class="growth-metric"><strong>ç¡®è®¤ä¸­ä½£é‡‘</strong><b data-admin-growth="pending-commissions">0</b></div><div class="growth-metric"><strong>å¼‚å¸¸è®°å½•</strong><b data-admin-growth="risk-flags">0</b></div>');
+    metricGrid.insertAdjacentHTML('beforeend', '<div class="growth-metric"><strong>确认中佣金</strong><b data-admin-growth="pending-commissions">0</b></div><div class="growth-metric"><strong>异常记录</strong><b data-admin-growth="risk-flags">0</b></div>');
   }
   const configForm = document.querySelector('[data-growth-config-form]');
   if (configForm && !configForm.querySelector('[data-growth-config-min-order]')) {
     const saveButton = configForm.querySelector('button[type="submit"]');
-    saveButton?.insertAdjacentHTML('beforebegin', '<div class="growth-form-grid"><label>æœ€ä½Žè®¡ä½£é‡‘é¢ RM<input data-growth-config-min-order type="number" min="0" step="0.01"></label><label>æ¯å•æ€»ä½£é‡‘å°é¡¶ %<input data-growth-config-cap type="number" min="0" max="100" step="0.1"></label></div>');
+    saveButton?.insertAdjacentHTML('beforebegin', '<div class="growth-form-grid"><label>最低计佣金额 RM<input data-growth-config-min-order type="number" min="0" step="0.01"></label><label>每单总佣金封顶 %<input data-growth-config-cap type="number" min="0" max="100" step="0.1"></label></div>');
   }
   snapshot.relations.forEach(relation => {
     if (relation.promoterId && relation.referralCode) codeByPromoterId.set(relation.promoterId, relation.referralCode);
@@ -964,7 +964,7 @@ function renderAdmin() {
   metric('[data-admin-growth="withdrawals"]', snapshot.withdrawals.filter(item => !['paid', 'rejected', 'cancelled'].includes(item.status)).length);
   metric('[data-admin-growth="pending-commissions"]', snapshot.commissions.filter(item => item.status === 'confirming').length);
   metric('[data-admin-growth="risk-flags"]', snapshot.riskFlags.length);
-  metric('[data-admin-growth="cloud-leads"]', cloudOrderLeadSync.loading ? 'åŒæ­¥ä¸­' : cloudOrderLeadSync.error ? 'æœªè¿žæŽ¥' : cloudOrderLeadSync.count);
+  metric('[data-admin-growth="cloud-leads"]', cloudOrderLeadSync.loading ? '同步中' : cloudOrderLeadSync.error ? '未连接' : cloudOrderLeadSync.count);
   const memberRows = document.querySelector('[data-growth-admin-members]');
   const visibleMembers = snapshot.members.filter(member => {
     const promoter = snapshot.promoters.find(item => item.memberId === member.id);
@@ -976,8 +976,8 @@ function renderAdmin() {
       const promoter = snapshot.promoters.find(item => item.memberId === member.id);
       const referralCode = promoter ? codeByPromoterId.get(promoter.id) || '-' : '-';
       const directCount = snapshot.relations.filter(relation => relation.promoterMemberId === member.id && relation.status === 'active').length;
-      return `<tr><td><strong>${esc(member.name || '90 Member')}</strong><br><small>${esc(member.phone || '-')} Â· ${esc(member.email || '-')}</small></td><td>${esc(member.levelId || 'member')}<br>${statusBadge(member.status || 'active')}</td><td>${promoter ? `${statusBadge(promoter.status)}<br><small>${esc(referralCode)}</small><br><small>ç›´å±žä¸‹çº¿ ${directCount}</small>` : '<span class="growth-muted">ç­‰å¾…ç”Ÿæˆ</span>'}</td><td>${formatMoney(member.totalSpend || 0)}<br><small>${Number(member.orderCount || 0)} orders</small></td><td><b>${Number(member.pointsBalance || 0)}</b></td></tr>`;
-    }).join('') : '<tr><td colspan="5">æ²¡æœ‰ç¬¦åˆç­›é€‰çš„ä¼šå‘˜ã€‚</td></tr>';
+      return `<tr><td><strong>${esc(member.name || '90 Member')}</strong><br><small>${esc(member.phone || '-')} · ${esc(member.email || '-')}</small></td><td>${esc(member.levelId || 'member')}<br>${statusBadge(member.status || 'active')}</td><td>${promoter ? `${statusBadge(promoter.status)}<br><small>${esc(referralCode)}</small><br><small>直属下线 ${directCount}</small>` : '<span class="growth-muted">等待生成</span>'}</td><td>${formatMoney(member.totalSpend || 0)}<br><small>${Number(member.orderCount || 0)} orders</small></td><td><b>${Number(member.pointsBalance || 0)}</b></td></tr>`;
+    }).join('') : '<tr><td colspan="5">没有符合筛选的会员。</td></tr>';
   }
   const relationRows = document.querySelector('[data-growth-admin-relations]');
   const visibleRelations = snapshot.relations.filter(item => {
@@ -989,8 +989,8 @@ function renderAdmin() {
     relationRows.innerHTML = visibleRelations.length ? visibleRelations.map(item => {
       const member = memberById.get(item.memberId);
       const parent = memberById.get(item.promoterMemberId);
-      return `<tr><td><strong>${esc(member?.name || item.memberId)}</strong><br><small>${esc(member?.phone || '-')} Â· ${esc(member?.email || '-')}</small></td><td><strong>${esc(parent?.name || '-')}</strong><br><small>${esc(parent?.phone || '-')} Â· ${esc(parent?.email || '-')}</small></td><td><code>${esc(item.referralCode || '-')}</code><br>${statusBadge(item.status)}</td><td>${new Date(item.boundAt).toLocaleDateString()}</td></tr>`;
-    }).join('') : '<tr><td colspan="4">æš‚æ—¶æ²¡æœ‰æŽ¨èå…³ç³»ã€‚</td></tr>';
+      return `<tr><td><strong>${esc(member?.name || item.memberId)}</strong><br><small>${esc(member?.phone || '-')} · ${esc(member?.email || '-')}</small></td><td><strong>${esc(parent?.name || '-')}</strong><br><small>${esc(parent?.phone || '-')} · ${esc(parent?.email || '-')}</small></td><td><code>${esc(item.referralCode || '-')}</code><br>${statusBadge(item.status)}</td><td>${new Date(item.boundAt).toLocaleDateString()}</td></tr>`;
+    }).join('') : '<tr><td colspan="4">暂时没有推荐关系。</td></tr>';
   }
   const orderRows = document.querySelector('[data-growth-admin-orders]');
   const visibleOrders = snapshot.orders.filter(item => {
@@ -1019,8 +1019,8 @@ function renderAdmin() {
     const promoter = promoterById.get(item.promoterId);
     const promoterMember = promoter ? memberById.get(promoter.memberId) : null;
     const buyer = memberById.get(item.memberId);
-    return `<tr><td>${esc(item.orderId)}<br><small>æŽ¨èäººï¼š${esc(promoterMember?.name || '-')} Â· L${Number(item.generation || 1)}</small><br><small>é¡¾å®¢ï¼š${esc(buyer?.name || item.memberId)}</small></td><td>${statusBadge(item.status)}<br><small>${item.availableAt ? `å¯æçŽ°æ—¥ ${new Date(item.availableAt).toLocaleDateString()}` : '-'}</small></td><td>${formatMoney(item.eligibleAmount)}</td><td><b>${formatMoney(item.commissionAmount)}</b><br><small>${esc(item.commissionType)} ${Number(item.commissionRate || 0)}%</small></td></tr>`;
-  }).join('') : '<tr><td colspan="4">æ²¡æœ‰ç¬¦åˆç­›é€‰çš„ä½£é‡‘è®°å½•ã€‚</td></tr>';
+    return `<tr><td>${esc(item.orderId)}<br><small>推荐人：${esc(promoterMember?.name || '-')} · L${Number(item.generation || 1)}</small><br><small>顾客：${esc(buyer?.name || item.memberId)}</small></td><td>${statusBadge(item.status)}<br><small>${item.availableAt ? `可提现日 ${new Date(item.availableAt).toLocaleDateString()}` : '-'}</small></td><td>${formatMoney(item.eligibleAmount)}</td><td><b>${formatMoney(item.commissionAmount)}</b><br><small>${esc(item.commissionType)} ${Number(item.commissionRate || 0)}%</small></td></tr>`;
+  }).join('') : '<tr><td colspan="4">没有符合筛选的佣金记录。</td></tr>';
   const withdrawalRows = document.querySelector('[data-growth-admin-withdrawals]');
   const visibleWithdrawals = snapshot.withdrawals.filter(item => {
     const statusOk = adminGrowthFilters.withdrawal === 'all' || item.status === adminGrowthFilters.withdrawal;
@@ -1030,8 +1030,8 @@ function renderAdmin() {
   withdrawalRows.innerHTML = visibleWithdrawals.length ? visibleWithdrawals.map(item => {
     const member = memberById.get(item.memberId);
     const payment = snapshot.withdrawalPayments.find(paymentItem => paymentItem.withdrawalId === item.id);
-    return `<tr><td><strong>${esc(member?.name || item.memberId)}</strong><br><small>${esc(item.bankName || '-')} Â· ${esc(item.accountName || '-')}</small><br><small>${esc(item.bankAccount || item.duitNowNumber || '-')}</small></td><td><b>${formatMoney(item.amount)}</b><br><small>${new Date(item.createdAt).toLocaleDateString()}</small>${payment ? `<br><small>ä»˜æ¬¾ç¼–å· ${esc(payment.referenceNumber || '-')}</small>` : ''}</td><td>${statusBadge(item.status)}</td><td><div class="growth-admin-actions"><button class="growth-button" data-review-withdrawal="${item.id}" data-decision="approve">æ‰¹å‡†</button><button class="growth-button secondary" data-review-withdrawal="${item.id}" data-decision="processing">å¤„ç†ä¸­</button><button class="growth-button" data-review-withdrawal="${item.id}" data-decision="paid">æ ‡è®°å·²ä»˜æ¬¾</button><button class="growth-button secondary" data-review-withdrawal="${item.id}" data-decision="reject">æ‹’ç»</button></div></td></tr>`;
-  }).join('') : '<tr><td colspan="4">æ²¡æœ‰ç¬¦åˆç­›é€‰çš„æçŽ°è¯·æ±‚ã€‚</td></tr>';
+    return `<tr><td><strong>${esc(member?.name || item.memberId)}</strong><br><small>${esc(item.bankName || '-')} · ${esc(item.accountName || '-')}</small><br><small>${esc(item.bankAccount || item.duitNowNumber || '-')}</small></td><td><b>${formatMoney(item.amount)}</b><br><small>${new Date(item.createdAt).toLocaleDateString()}</small>${payment ? `<br><small>付款编号 ${esc(payment.referenceNumber || '-')}</small>` : ''}</td><td>${statusBadge(item.status)}</td><td><div class="growth-admin-actions"><button class="growth-button" data-review-withdrawal="${item.id}" data-decision="approve">批准</button><button class="growth-button secondary" data-review-withdrawal="${item.id}" data-decision="processing">处理中</button><button class="growth-button" data-review-withdrawal="${item.id}" data-decision="paid">标记已付款</button><button class="growth-button secondary" data-review-withdrawal="${item.id}" data-decision="reject">拒绝</button></div></td></tr>`;
+  }).join('') : '<tr><td colspan="4">没有符合筛选的提现请求。</td></tr>';
   const config = snapshot.config;
   document.querySelector('[data-growth-config-percent]').value = config.defaultCommission.value;
   document.querySelector('[data-growth-config-hold]').value = config.refundObservationDays;
@@ -1077,7 +1077,7 @@ function bindAdmin() {
     const syncButton = event.target.closest('[data-growth-sync-leads]');
     if (syncButton) {
       syncCloudOrderLeads(true);
-      setMessage('æ­£åœ¨åŒæ­¥çº¿ä¸Šè®¢å•çº¿ç´¢...');
+      setMessage('正在同步线上订单线索...');
       return;
     }
     const saveOrderButton = event.target.closest('[data-save-order]');
@@ -1098,7 +1098,7 @@ function bindAdmin() {
     const appButton = event.target.closest('[data-review-app]');
     if (appButton) {
       api.reviewPromoterApplication(appButton.dataset.reviewApp, appButton.dataset.decision, 'mock-admin', appButton.dataset.decision === 'reject' ? 'Mock review rejection' : 'Mock review approval');
-      setMessage('ä¼šå‘˜æŽ¨èçŠ¶æ€å·²æ›´æ–°ã€‚');
+      setMessage('会员推荐状态已更新。');
       renderAdmin();
       return;
     }
@@ -1109,7 +1109,7 @@ function bindAdmin() {
       if (input) api.updateOrder(orderId, input, 'mock-admin');
       const result = api.completeOrder(orderId, 'mock-admin');
       if (result.ok) await syncOrderUpdateToCloud(result.order, { ...(input || {}), status: result.order.status });
-      setMessage(result.ok ? 'è®¢å•å·²ç¡®è®¤å®Œæˆï¼Œç³»ç»Ÿå·²è‡ªåŠ¨è®¡ç®—ç¬¦åˆæ¡ä»¶çš„æŽ¨èä½£é‡‘ã€‚' : `è®¢å•æ— æ³•å®Œæˆï¼š${result.reason}`, !result.ok);
+      setMessage(result.ok ? '订单已确认完成，系统已自动计算符合条件的推荐佣金。' : `订单无法完成：${result.reason}`, !result.ok);
       renderAdmin();
       return;
     }
@@ -1117,13 +1117,13 @@ function bindAdmin() {
     if (withdrawalButton) {
       const payment = withdrawalButton.dataset.decision === 'paid'
         ? {
-            referenceNumber: window.prompt('è¯·è¾“å…¥ä»˜æ¬¾ç¼–å· / é“¶è¡Œäº¤æ˜“ç¼–å·', `PAY-${Date.now()}`) || `PAY-${Date.now()}`,
+            referenceNumber: window.prompt('请输入付款编号 / 银行交易编号', `PAY-${Date.now()}`) || `PAY-${Date.now()}`,
             method: 'Manual bank transfer'
           }
         : { referenceNumber: `MOCK-${Date.now()}` };
       const result = api.reviewWithdrawal(withdrawalButton.dataset.reviewWithdrawal, withdrawalButton.dataset.decision, 'mock-admin', payment);
-      if (!result.ok) setMessage(`æçŽ°è¯·æ±‚æ— æ³•æ›´æ–°ï¼š${result.reason}`, true);
-      else setMessage(withdrawalButton.dataset.decision === 'paid' ? 'æçŽ°å·²æ ‡è®°ä»˜æ¬¾ï¼Œå¹¶è®°å½•ä»˜æ¬¾ç¼–å·ã€‚' : 'æçŽ°è¯·æ±‚çŠ¶æ€å·²æ›´æ–°ã€‚');
+      if (!result.ok) setMessage(`提现请求无法更新：${result.reason}`, true);
+      else setMessage(withdrawalButton.dataset.decision === 'paid' ? '提现已标记付款，并记录付款编号。' : '提现请求状态已更新。');
       renderAdmin();
       return;
     }
@@ -1142,7 +1142,7 @@ function bindAdmin() {
     config.minimumCommissionEligibleAmount = Number(document.querySelector('[data-growth-config-min-order]')?.value) || 0;
     config.maxCommissionPercentPerOrder = Number(document.querySelector('[data-growth-config-cap]')?.value) || 5;
     api.updateConfig(config, 'mock-admin');
-    setMessage('å¢žé•¿ç³»ç»Ÿè§„åˆ™å·²ä¿å­˜ã€‚');
+    setMessage('增长系统规则已保存。');
     renderAdmin();
   });
   renderAdmin();
