@@ -424,7 +424,8 @@ body[data-language="en"] .weekly-reference-grid span {
   box-shadow: none;
 }
 
-.brand-story-collage img {
+.brand-story-collage img,
+.brand-story-collage video {
   position: absolute;
   inset: 0;
   width: 100%;
@@ -445,7 +446,7 @@ body[data-language="en"] .weekly-reference-grid span {
   animation-delay: 5s;
 }
 
-.brand-story-collage img:nth-child(3) {
+.brand-story-collage video:nth-child(3) {
   animation-delay: 10s;
 }
 
@@ -565,14 +566,22 @@ body[data-language="en"] .weekly-reference-grid span {
     min-height: 300px;
   }
 
-  .brand-story-collage img {
+  .brand-story-collage img,
+  .brand-story-collage video {
     width: 100%;
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .brand-story-collage img {
+  .brand-story-collage img,
+  .brand-story-collage video {
     animation: none;
+    opacity: 0;
+    transform: none;
+  }
+
+  .brand-story-collage video {
+    opacity: 1;
   }
 
   .hero-media picture {
