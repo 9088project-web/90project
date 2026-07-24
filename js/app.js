@@ -233,13 +233,6 @@ const CATERING_MENU = [
     items: ['炸鱼饼', '韩式鱼饼', '炸豆腐', '春卷', '迷你咖喱角']
   },
   {
-    id: 'flavour',
-    title: '风味搭配（鸡 / 猪 / 鱼 / 虾）',
-    label: 'Sauce Style',
-    rate: 0,
-    items: ['咖喱 Curry', 'Sambal', '咸蛋奶油 Salted Egg Butter', '宫保 Kung Pao', '泰式酸辣 Thai Style', 'Sweet & Sour', '姜葱 Ginger Onion', '麦片 Cereal', '椒盐 Salt & Pepper']
-  },
-  {
     id: 'dessert',
     title: '甜品',
     label: 'Dessert',
