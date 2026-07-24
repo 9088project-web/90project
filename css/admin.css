@@ -13,3 +13,61 @@ body.admin-page{min-height:100vh;background:radial-gradient(circle at 50% 0,rgba
 .admin-weekly-row{grid-template-columns:repeat(6,minmax(0,1fr))}
  .admin-weekly-row textarea{min-height:88px}
 @media (max-width:800px){.admin-topbar{align-items:flex-start}.admin-topbar-actions{flex-direction:column;align-items:flex-end;gap:8px}.admin-status-dot{font-size:11px}.admin-nav{top:71px}.admin-asset-row,.admin-detail-grid,.admin-detail-gallery-row,.admin-weekly-row{grid-template-columns:1fr}.admin-detail-gallery-row>strong{margin-bottom:-4px}.admin-actions{position:sticky;bottom:12px;z-index:4;padding:10px;border:1px solid var(--admin-line);border-radius:14px;background:rgba(8,7,5,.95)}}
+
+.admin-weekly-row{
+  grid-template-columns:120px minmax(210px,.85fr) minmax(190px,.8fr) minmax(220px,1fr) minmax(220px,1fr);
+  grid-template-areas:
+    "day preset preview zh en"
+    "image image preview alt alt";
+  align-items:stretch;
+}
+.admin-weekly-day{grid-area:day}
+.admin-weekly-preset{grid-area:preset}
+.admin-weekly-preview{grid-area:preview}
+.admin-weekly-zh{grid-area:zh}
+.admin-weekly-en{grid-area:en}
+.admin-weekly-image{grid-area:image}
+.admin-weekly-alt{grid-area:alt}
+.admin-weekly-preview{
+  display:grid;
+  gap:8px;
+  align-self:stretch;
+  min-height:112px;
+  padding:9px;
+  border:1px solid rgba(255,223,154,.24);
+  border-radius:14px;
+  background:rgba(255,247,232,.06);
+}
+.admin-weekly-preview img{
+  width:100%;
+  aspect-ratio:1.55/1;
+  object-fit:cover;
+  border-radius:10px;
+  background:rgba(255,247,232,.12);
+}
+.admin-weekly-preview span{
+  color:#ffdf9a;
+  font-size:12px;
+  font-weight:900;
+  line-height:1.35;
+}
+.admin-weekly-preview.is-empty{opacity:.74}
+.admin-weekly-row [readonly]{
+  cursor:not-allowed;
+  background:#f8ecd9;
+}
+@media (max-width:980px){
+  .admin-weekly-row{
+    grid-template-columns:1fr;
+    grid-template-areas:none;
+  }
+  .admin-weekly-day,
+  .admin-weekly-preset,
+  .admin-weekly-preview,
+  .admin-weekly-zh,
+  .admin-weekly-en,
+  .admin-weekly-image,
+  .admin-weekly-alt{
+    grid-area:auto;
+  }
+}
