@@ -134,7 +134,7 @@ http://127.0.0.1:3040/ads/video-ad-15s.html
 按钮会打开：
 
 ```text
-https://wa.me/60189490909?text=编码后的订单内容
+https://wa.me/60189490908?text=编码后的订单内容
 ```
 
 JavaScript 使用 `encodeURIComponent` 处理中文内容。

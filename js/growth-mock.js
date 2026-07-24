@@ -576,7 +576,7 @@ function renderMemberDashboard() {
   const promoterBox = document.querySelector('[data-growth-promoter-box]');
   if (!promoterBox) return;
   if (promoter && code) {
-    promoterBox.innerHTML = `<span class="growth-badge">${esc(t('approved'))}</span><h3>${esc(t('code'))}</h3><code class="growth-code">${esc(code)}</code><p>${esc(t('share'))}:<br><a href="${esc(shareUrl(code))}">${esc(shareUrl(code))}</a></p><div class="growth-actions"><button class="growth-button" type="button" data-copy-growth="${esc(shareUrl(code))}">${esc(t('copy'))}</button><a class="growth-button secondary" target="_blank" rel="noopener" href="https://wa.me/60189490909?text=${encodeURIComponent(`${t('shareText')} ${shareUrl(code)}`)}">${esc(t('whatsapp'))}</a></div>`;
+    promoterBox.innerHTML = `<span class="growth-badge">${esc(t('approved'))}</span><h3>${esc(t('code'))}</h3><code class="growth-code">${esc(code)}</code><p>${esc(t('share'))}:<br><a href="${esc(shareUrl(code))}">${esc(shareUrl(code))}</a></p><div class="growth-actions"><button class="growth-button" type="button" data-copy-growth="${esc(shareUrl(code))}">${esc(t('copy'))}</button><a class="growth-button secondary" target="_blank" rel="noopener" href="https://wa.me/60189490908?text=${encodeURIComponent(`${t('shareText')} ${shareUrl(code)}`)}">${esc(t('whatsapp'))}</a></div>`;
   } else {
     promoterBox.innerHTML = `<h3>${esc(t('code'))}</h3><p>${esc(t('noData'))}</p>`;
   }

@@ -9,7 +9,7 @@
 - 主版本：9:16 竖版，1080 x 1920，15 秒
 - 平台：Facebook Reels、Instagram Reels、TikTok、WhatsApp Status
 - CTA：WhatsApp 立即询问
-- 链接：`https://wa.me/60189490909`
+- 链接：`https://wa.me/60189490908`
 
 ## 15 秒脚本
 
@@ -27,7 +27,7 @@ ads/media/your-video.mp4
 | 3-6s | 主菜、配菜、白饭扫过 | 包伙食 RM300/月，20 餐 | RM300 起，每月 20 餐，日常也能吃得有质感。 |
 | 6-9s | 打包、装袋或出餐动作 | 1 主菜 + 配菜 + 白饭 | 适合上班族、学生、家庭长期订餐。 |
 | 9-12s | 送餐 / 活动餐桌 / 餐盒排列 | 外餐 · 活动餐饮 · 布置设计 | 生日、公司聚餐、家庭聚会，也可以一站式安排。 |
-| 12-15s | 餐盒定格，留给 WhatsApp CTA | WhatsApp 立即询问 018-949 0909 | 现在 WhatsApp 九零食刻，获取报价。 |
+| 12-15s | 餐盒定格，留给 WhatsApp CTA | WhatsApp 立即询问 018-949 0908 | 现在 WhatsApp 九零食刻，获取报价。 |
 
 ## 广告主文案
 
