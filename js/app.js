@@ -142,7 +142,8 @@ const REFERRAL_REWARD_STATUSES = ['pending', 'approved', 'redeemed', 'cancelled'
 const MEMBER_STATUSES = ['active', 'vip', 'blocked'];
 const MEMBER_TIERS = ['Classic', 'Gold', 'Black Gold'];
 const REFERRAL_LEVEL_RATES = [3, 1, 1];
-const CATERING_MINIMUM_TOTAL = 300;
+const CATERING_MINIMUM_PAX = 15;
+const CATERING_MINIMUM_TOTAL = 0;
 const STYLING_CASE_DELAY = 5200;
 const prefersReducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches || false;
 let activeStylingCase = 0;
@@ -168,6 +169,7 @@ const CATERING_SELECTION_LABELS = {
 };
 const CATERING_MARKET_PRICE_ITEMS = new Set(['香煎鳕鱼']);
 let cateringMenuMode = 'buffet';
+let activeCateringComboId = '';
 const CATERING_MENU = [
   {
     id: 'staple',
@@ -1103,6 +1105,15 @@ function formatCurrency(value) {
   })}`;
 }
 
+function roundMoney(value) {
+  return Math.round((Number(value || 0) + Number.EPSILON) * 100) / 100;
+}
+
+function parseCateringComboPrice(value) {
+  const amount = Number.parseFloat(String(value || '').replace(/[^\d.]/g, ''));
+  return Number.isFinite(amount) ? amount : 0;
+}
+
 function cateringSelectionGroup(categoryId) {
   if (['staple', 'porridge'].includes(categoryId)) return 'staple';
   if (['vegetable', 'tofu', 'fried'].includes(categoryId)) return 'vegetable';
@@ -1220,6 +1231,7 @@ function applyCateringCombo(comboId) {
   const combo = CATERING_COMBOS.find(item => item.id === comboId);
   if (!combo || !cateringMenuGrid) return;
 
+  activeCateringComboId = combo.id;
   const wanted = new Set(combo.items);
   cateringMenuGrid.querySelectorAll('input[type="checkbox"]').forEach(input => {
     input.checked = wanted.has(input.value);
@@ -1245,6 +1257,31 @@ function selectedCateringItems() {
   }));
 }
 
+function selectedCateringValueSet(items = selectedCateringItems()) {
+  return new Set(items.map(item => item.name));
+}
+
+function selectedItemsMatchCombo(combo, selectedSet) {
+  if (!combo || !selectedSet || selectedSet.size !== combo.items.length) return false;
+  return combo.items.every(item => selectedSet.has(item));
+}
+
+function currentCateringCombo(items = selectedCateringItems()) {
+  const selectedSet = selectedCateringValueSet(items);
+  const preferred = CATERING_COMBOS.find(combo => combo.id === activeCateringComboId);
+  if (selectedItemsMatchCombo(preferred, selectedSet)) return preferred;
+  return CATERING_COMBOS.find(combo => selectedItemsMatchCombo(combo, selectedSet)) || null;
+}
+
+function syncCateringComboState() {
+  const combo = currentCateringCombo();
+  activeCateringComboId = combo?.id || '';
+  cateringComboPresets?.querySelectorAll('[data-catering-combo]').forEach(button => {
+    button.classList.toggle('is-active', Boolean(combo) && button.dataset.cateringCombo === combo.id);
+  });
+  return combo;
+}
+
 function groupedCateringItems(items) {
   return items.reduce((groups, item) => {
     if (!groups[item.categoryTitle]) groups[item.categoryTitle] = [];
@@ -1257,23 +1294,30 @@ function calculateCateringEstimate() {
   const pax = Math.max(Number.parseInt(cateringPax?.value || '0', 10) || 0, 0);
   const service = CATERING_SERVICE_STYLES[cateringServiceStyle?.value] || CATERING_SERVICE_STYLES.packed;
   const items = selectedCateringItems();
+  const combo = syncCateringComboState();
   const pricedItems = items.filter(item => item.rate > 0);
   const marketPriceItems = items.filter(item => item.marketPrice);
-  const perPax = pricedItems.reduce((sum, item) => sum + item.rate, 0);
-  const subtotal = pax && perPax ? pax * perPax * service.multiplier : 0;
+  const comboPerPax = combo ? parseCateringComboPrice(combo.price) : 0;
+  const itemPerPax = pricedItems.reduce((sum, item) => sum + item.rate, 0);
+  const perPax = roundMoney(comboPerPax || itemPerPax);
+  const meetsMinimumPax = pax >= CATERING_MINIMUM_PAX;
+  const subtotal = meetsMinimumPax && perPax ? roundMoney(pax * perPax * service.multiplier) : 0;
   const minimumTotal = editableCateringConfig().minimumTotal || CATERING_MINIMUM_TOTAL;
-  const total = subtotal ? Math.max(subtotal, minimumTotal) : 0;
+  const total = subtotal;
 
   return {
     pax,
     service,
+    combo,
     items,
     pricedItems,
     marketPriceItems,
     perPax,
     subtotal,
     total,
-    minimumTotal
+    minimumTotal,
+    minimumPax: CATERING_MINIMUM_PAX,
+    meetsMinimumPax
   };
 }
 
@@ -1283,6 +1327,10 @@ function buildCateringMessage(estimate) {
     `${category}：${items.map(item => item.marketPrice ? `${item.name}（按时价）` : item.name).join('、')}`
   )).join('\n') || '还没有选择菜式';
   const hasMarketPriceItems = estimate.marketPriceItems.length > 0;
+  const pricingLabel = estimate.combo ? `${estimate.combo.label} ${estimate.combo.price}` : '自由搭配单项计算';
+  const totalLabel = estimate.meetsMinimumPax
+    ? `${estimate.total ? formatCurrency(estimate.total) : '-'}${hasMarketPriceItems ? ' + 按时价菜式' : ''}`
+    : `少于 ${estimate.minimumPax} pax，暂不计算`;
 
   return `你好，我想询问九零食刻 90 PROJECT 外餐菜单。
 
@@ -1292,13 +1340,16 @@ ${estimate.pax || '-'} pax
 【服务形式】
 ${estimate.service.label}
 
+【计价方式】
+${pricingLabel}
+
 【选择菜单】
 ${menuLines}
 
 【系统初步预算】
 每人约：${formatCurrency(estimate.perPax)}${hasMarketPriceItems ? ' + 按时价菜式' : ''}
-总预算约：${estimate.total ? formatCurrency(estimate.total) : '-'}${hasMarketPriceItems ? ' + 按时价菜式' : ''}
-最低预算：${formatCurrency(estimate.minimumTotal)}
+总预算约：${totalLabel}
+计算规则：${estimate.minimumPax} pax 或以上开始计算
 
 请帮我确认实际报价、配送、餐具和现场服务安排。`;
 }
@@ -1308,11 +1359,21 @@ function renderCateringEstimate() {
 
   const estimate = calculateCateringEstimate();
   const hasMarketPriceItems = estimate.marketPriceItems.length > 0;
+  const pricingLabel = estimate.combo ? `${estimate.combo.label} ${estimate.combo.price}` : '自由搭配';
   renderCateringSelectionGuide();
-  cateringEstimateTotal.textContent = estimate.total ? formatCurrency(estimate.total) : hasMarketPriceItems ? '按时价' : 'RM0';
-  cateringEstimateMeta.textContent = estimate.total
-    ? `${estimate.pax} pax · 每人约 ${formatCurrency(estimate.perPax)} · ${estimate.service.label}${hasMarketPriceItems ? ' · 含按时价菜式' : ''}`
-    : hasMarketPriceItems ? `${estimate.pax || '-'} pax · 含按时价菜式，请 WhatsApp 确认报价。` : '请选择菜式开始计算。';
+  if (!estimate.items.length) {
+    cateringEstimateTotal.textContent = 'RM0';
+    cateringEstimateMeta.textContent = '请选择菜式开始计算。';
+  } else if (!estimate.meetsMinimumPax) {
+    cateringEstimateTotal.textContent = `${estimate.minimumPax} pax 起`;
+    cateringEstimateMeta.textContent = `外餐预算从 ${estimate.minimumPax} pax 开始计算，请输入 ${estimate.minimumPax} 或以上人数。`;
+  } else if (estimate.total) {
+    cateringEstimateTotal.textContent = formatCurrency(estimate.total);
+    cateringEstimateMeta.textContent = `${estimate.pax} pax · ${pricingLabel} · 每人约 ${formatCurrency(estimate.perPax)} · ${estimate.service.label}${hasMarketPriceItems ? ' · 含按时价菜式' : ''}`;
+  } else {
+    cateringEstimateTotal.textContent = hasMarketPriceItems ? '按时价' : 'RM0';
+    cateringEstimateMeta.textContent = hasMarketPriceItems ? `${estimate.pax || '-'} pax · 含按时价菜式，请 WhatsApp 确认报价。` : '请选择菜式开始计算。';
+  }
 
   if (!estimate.items.length) {
     selectedCateringSummary.textContent = '还没有选择菜式。';
