@@ -166,6 +166,7 @@ const CATERING_SELECTION_LABELS = {
   protein: '肉类 / 鱼虾',
   dessert: '甜品'
 };
+const CATERING_MARKET_PRICE_ITEMS = new Set(['香煎鳕鱼']);
 let cateringMenuMode = 'buffet';
 const CATERING_MENU = [
   {
@@ -187,7 +188,7 @@ const CATERING_MENU = [
     title: '蔬菜类',
     label: 'Vegetables',
     rate: 4.5,
-    items: ['炒什锦菜', '干煸四季豆', 'Salad', '娘惹阿杂', '蒜蓉西兰花', '清炒小白菜', '蒜蓉小白菜', '奶油杂菜', '蚝油生菜', '蒜蓉菠菜', '炒高丽菜']
+    items: ['炒什锦菜', '干煸四季豆', 'Salad', '娘惹阿杂', '蒜蓉西兰花', '清炒小白菜', '蒜蓉小白菜', '蒜蓉菜心', '奶油杂菜', '蚝油生菜', '蒜蓉菠菜', '炒高丽菜']
   },
   {
     id: 'chicken',
@@ -223,6 +224,13 @@ const CATERING_MENU = [
     label: 'Tofu',
     rate: 4.5,
     items: ['泰式豆腐', '红烧豆腐', '麻婆豆腐', '家常豆腐']
+  },
+  {
+    id: 'fried',
+    title: '炸料类',
+    label: 'Fried Items',
+    rate: 4.5,
+    items: ['炸鱼饼', '韩式鱼饼', '炸豆腐', '春卷', '迷你咖喱角']
   },
   {
     id: 'flavour',
@@ -1104,7 +1112,7 @@ function formatCurrency(value) {
 
 function cateringSelectionGroup(categoryId) {
   if (['staple', 'porridge'].includes(categoryId)) return 'staple';
-  if (['vegetable', 'tofu'].includes(categoryId)) return 'vegetable';
+  if (['vegetable', 'tofu', 'fried'].includes(categoryId)) return 'vegetable';
   if (['chicken', 'pork', 'fish', 'prawn'].includes(categoryId)) return 'protein';
   if (categoryId === 'dessert') return 'dessert';
   return 'optional';
@@ -1158,8 +1166,19 @@ function renderCateringSelectionGuide() {
 }
 
 function cateringItemRate(category, item) {
+  if (cateringItemIsMarketPrice(item)) return 0;
   if (item === '香煎三文鱼配 Tartar Sauce') return 11;
   return Number.parseFloat(category?.rate || '0') || 0;
+}
+
+function cateringItemIsMarketPrice(item) {
+  return CATERING_MARKET_PRICE_ITEMS.has(String(item || '').trim());
+}
+
+function cateringItemPriceLabel(category, item) {
+  if (cateringItemIsMarketPrice(item)) return '按时价';
+  const itemRate = cateringItemRate(category, item);
+  return itemRate ? formatCurrency(itemRate) : '';
 }
 
 function renderCateringMenu() {
@@ -1178,11 +1197,12 @@ function renderCateringMenu() {
       <div class="menu-options">
         ${category.items.map(item => {
           const itemRate = cateringItemRate(category, item);
+          const priceLabel = cateringItemPriceLabel(category, item);
           return `
           <label class="menu-option">
-          <input type="checkbox" data-menu-category="${escapeHtml(category.id)}" data-menu-group="${cateringSelectionGroup(category.id)}" data-menu-title="${escapeHtml(category.title)}" data-menu-rate="${itemRate}" value="${escapeHtml(item)}">
+          <input type="checkbox" data-menu-category="${escapeHtml(category.id)}" data-menu-group="${cateringSelectionGroup(category.id)}" data-menu-title="${escapeHtml(category.title)}" data-menu-rate="${itemRate}" data-menu-market-price="${cateringItemIsMarketPrice(item) ? 'true' : 'false'}" value="${escapeHtml(item)}">
             <span class="menu-option-name">${escapeHtml(item)}</span>
-            ${itemRate ? `<small class="menu-option-price">${formatCurrency(itemRate)}</small>` : ''}
+            ${priceLabel ? `<small class="menu-option-price">${escapeHtml(priceLabel)}</small>` : ''}
           </label>
         `;
         }).join('')}
@@ -1227,7 +1247,8 @@ function selectedCateringItems() {
     name: input.value,
     categoryId: input.dataset.menuCategory || '',
     categoryTitle: input.dataset.menuTitle || '',
-    rate: Number.parseFloat(input.dataset.menuRate || '0') || 0
+    rate: Number.parseFloat(input.dataset.menuRate || '0') || 0,
+    marketPrice: input.dataset.menuMarketPrice === 'true'
   }));
 }
 
@@ -1244,6 +1265,7 @@ function calculateCateringEstimate() {
   const service = CATERING_SERVICE_STYLES[cateringServiceStyle?.value] || CATERING_SERVICE_STYLES.packed;
   const items = selectedCateringItems();
   const pricedItems = items.filter(item => item.rate > 0);
+  const marketPriceItems = items.filter(item => item.marketPrice);
   const perPax = pricedItems.reduce((sum, item) => sum + item.rate, 0);
   const subtotal = pax && perPax ? pax * perPax * service.multiplier : 0;
   const minimumTotal = editableCateringConfig().minimumTotal || CATERING_MINIMUM_TOTAL;
@@ -1254,6 +1276,7 @@ function calculateCateringEstimate() {
     service,
     items,
     pricedItems,
+    marketPriceItems,
     perPax,
     subtotal,
     total,
@@ -1264,8 +1287,9 @@ function calculateCateringEstimate() {
 function buildCateringMessage(estimate) {
   const grouped = groupedCateringItems(estimate.items);
   const menuLines = Object.entries(grouped).map(([category, items]) => (
-    `${category}：${items.map(item => item.name).join('、')}`
+    `${category}：${items.map(item => item.marketPrice ? `${item.name}（按时价）` : item.name).join('、')}`
   )).join('\n') || '还没有选择菜式';
+  const hasMarketPriceItems = estimate.marketPriceItems.length > 0;
 
   return `你好，我想询问九零食刻 90 PROJECT 外餐菜单。
 
@@ -1279,8 +1303,8 @@ ${estimate.service.label}
 ${menuLines}
 
 【系统初步预算】
-每人约：${formatCurrency(estimate.perPax)}
-总预算约：${estimate.total ? formatCurrency(estimate.total) : '-'}
+每人约：${formatCurrency(estimate.perPax)}${hasMarketPriceItems ? ' + 按时价菜式' : ''}
+总预算约：${estimate.total ? formatCurrency(estimate.total) : '-'}${hasMarketPriceItems ? ' + 按时价菜式' : ''}
 最低预算：${formatCurrency(estimate.minimumTotal)}
 
 请帮我确认实际报价、配送、餐具和现场服务安排。`;
@@ -1290,18 +1314,19 @@ function renderCateringEstimate() {
   if (!cateringEstimateTotal || !cateringEstimateMeta || !selectedCateringSummary || !cateringWhatsApp) return;
 
   const estimate = calculateCateringEstimate();
+  const hasMarketPriceItems = estimate.marketPriceItems.length > 0;
   renderCateringSelectionGuide();
-  cateringEstimateTotal.textContent = estimate.total ? formatCurrency(estimate.total) : 'RM0';
+  cateringEstimateTotal.textContent = estimate.total ? formatCurrency(estimate.total) : hasMarketPriceItems ? '按时价' : 'RM0';
   cateringEstimateMeta.textContent = estimate.total
-    ? `${estimate.pax} pax · 每人约 ${formatCurrency(estimate.perPax)} · ${estimate.service.label}`
-    : '请选择菜式开始计算。';
+    ? `${estimate.pax} pax · 每人约 ${formatCurrency(estimate.perPax)} · ${estimate.service.label}${hasMarketPriceItems ? ' · 含按时价菜式' : ''}`
+    : hasMarketPriceItems ? `${estimate.pax || '-'} pax · 含按时价菜式，请 WhatsApp 确认报价。` : '请选择菜式开始计算。';
 
   if (!estimate.items.length) {
     selectedCateringSummary.textContent = '还没有选择菜式。';
   } else {
     const grouped = groupedCateringItems(estimate.items);
     selectedCateringSummary.innerHTML = Object.entries(grouped).map(([category, items]) => (
-      `<p><b>${escapeHtml(category)}</b>：${items.map(item => escapeHtml(item.name)).join('、')}</p>`
+      `<p><b>${escapeHtml(category)}</b>：${items.map(item => escapeHtml(item.marketPrice ? `${item.name}（按时价）` : item.name)).join('、')}</p>`
     )).join('');
   }
 
@@ -1661,10 +1686,13 @@ async function fetchSupabaseConfig(path) {
 }
 
 async function loadSupabaseRuntimeConfig() {
-  const apiConfig = await fetchSupabaseConfig('/api/supabase-config');
-  if (apiConfig?.url && apiConfig?.anonKey) {
-    supabaseRuntimeConfig = { ...supabaseRuntimeConfig, ...apiConfig };
-    return;
+  const localStaticPreview = /^(localhost|127\.0\.0\.1|\[::1\])$/i.test(window.location.hostname);
+  if (!localStaticPreview) {
+    const apiConfig = await fetchSupabaseConfig('/api/supabase-config');
+    if (apiConfig?.url && apiConfig?.anonKey) {
+      supabaseRuntimeConfig = { ...supabaseRuntimeConfig, ...apiConfig };
+      return;
+    }
   }
 
   const localConfig = await fetchSupabaseConfig('js/supabase-config.local.json?v=20260713-supabase');
@@ -5810,21 +5838,7 @@ document.addEventListener('click', event => {
   }
 });
 
-cateringMenuGrid?.addEventListener('change', event => {
-  const input = event.target;
-  if (input instanceof HTMLInputElement && input.type === 'checkbox' && input.checked && cateringMenuMode === 'buffet') {
-    const group = input.dataset.menuGroup || 'optional';
-    const limit = CATERING_SELECTION_LIMITS[group];
-    if (limit) {
-      const count = Array.from(cateringMenuGrid.querySelectorAll(`input[data-menu-group="${group}"]:checked`)).length;
-      if (count > limit) {
-        input.checked = false;
-        if (cateringSelectionNotice) {
-          cateringSelectionNotice.textContent = `${CATERING_SELECTION_LABELS[group]}最多选择 ${limit} 项；如需更多，请切换到自由搭配。`;
-        }
-      }
-    }
-  }
+cateringMenuGrid?.addEventListener('change', () => {
   renderCateringEstimate();
 });
 cateringPax?.addEventListener('input', renderCateringEstimate);
