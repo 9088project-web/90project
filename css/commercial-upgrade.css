@@ -478,13 +478,23 @@ body[data-language="en"] .weekly-reference-grid span {
 @media (max-width: 640px) {
   .nav-member-quick {
     position: fixed;
-    top: clamp(63px, 14vw, 70px);
-    right: clamp(86px, 21vw, 104px);
+    top: clamp(29px, 7vw, 36px);
+    right: clamp(166px, 38vw, 194px);
     z-index: 1005;
-    min-height: 30px;
-    padding: 5px 10px;
-    font-size: 11px;
-    box-shadow: 0 8px 22px rgba(0, 0, 0, .28);
+    width: clamp(72px, 17vw, 88px);
+    min-height: 32px;
+    padding: 5px 8px;
+    gap: 4px;
+    border-color: rgba(255, 223, 154, .68);
+    color: #17120d;
+    background: linear-gradient(135deg, #ffdf9a, #d8aa60);
+    font-size: 0;
+    line-height: 1;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, .28);
+  }
+
+  .nav-member-quick i {
+    font-size: 15px;
   }
 
   .nav-member-quick span {
@@ -492,8 +502,9 @@ body[data-language="en"] .weekly-reference-grid span {
   }
 
   .nav-member-quick span::after {
-    content: "会员";
-    font-size: 11px;
+    content: "\4F1A\5458";
+    font-size: 12px;
+    font-weight: 950;
   }
 
   .weekly-reference-grid {

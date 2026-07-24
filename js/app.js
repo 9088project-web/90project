@@ -1457,6 +1457,11 @@ function renderVideoSpot(videoContent = DEFAULT_VIDEO_CONTENT) {
   if (videoPlaceholder) videoPlaceholder.hidden = true;
 
   if (!hasPublicVideo) {
+    const source = brandVideo?.querySelector('source');
+    if (source?.getAttribute('src')) {
+      source.setAttribute('src', '');
+      brandVideo?.load();
+    }
     brandVideo?.classList.remove('has-video');
     return;
   }

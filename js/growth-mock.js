@@ -62,16 +62,23 @@ const translations = {
     pathTitle: '清楚的奖励路径', pathRegister: '注册会员', pathWelcome: '+ 欢迎积分', pathOrder: '完成真实订单', pathPoints: '积分入账', pathRefer: '推荐朋友完成服务', pathCommission: '佣金确认', pathHold: '通过退款观察期', pathWithdraw: '可申请提现', startTitle: '立即开始', startDesc: '先注册会员，之后可以在会员中心查看积分、优惠券、订单、推荐和提现记录。',
     stepsTitle: '三步开始', stepsIntro: '最多追踪三层推荐关系，奖励只来自真实完成订单，不收取入会费，不靠拉人收费。',
     stepApply: '注册成为90推荐官', stepApplyDesc: '提交社交平台、地区和推荐方式，等待后台审核。', stepShare: '分享专属链接或二维码', stepShareDesc: '系统记录首次有效访问，已绑定的会员不会被其他推荐代码覆盖。', stepEarn: '订单完成后获得奖励', stepEarnDesc: '订单完成并经过退款观察期，佣金才会变成可提现状态。',
-    rulesTitle: '透明规则', rulesMode: '奖励模式', rulesModeValue: '三层推荐奖励', rulesRate: '默认佣金', rulesRateValue: '第一代3% · 第二代1% · 第三代1%', rulesSettle: '结算条件', rulesSettleValue: '完成订单 + 观察期', rulesWithdraw: '提现方式', rulesWithdrawValue: 'Mock 人工审核', notMemberTitle: '还不是会员？', notMemberDesc: '先注册会员，再在会员中心提交90推荐官申请。审核通过后才会生成推荐代码。',
+    rulesTitle: '透明规则', rulesMode: '奖励模式', rulesModeValue: '三层推荐奖励', rulesRate: '默认佣金', rulesRateValue: '第一代3% · 第二代1% · 第三代1%', rulesSettle: '结算条件', rulesSettleValue: '完成订单 + 观察期', rulesWithdraw: '提现方式', rulesWithdrawValue: '后台审核', notMemberTitle: '还不是会员？', notMemberDesc: '先注册会员，再在会员中心提交90推荐官申请。审核通过后才会生成推荐代码。',
     mockTitle: 'Mock 流程测试', mockDesc: '仅用于本地验收：创建询价、完成订单、模拟退款和释放观察期佣金。',
     memberLevel: '会员等级', commissionBook: '佣金账本', application: '成为90推荐官', memberMock: 'Mock 模式：不会真实收款、转账或发送 API 通知。'
   },
   en: {
-    language: 'English', rewards: 'Member Rewards', referral: '90 Promoter', member: 'Member Centre', home: 'Home', login: 'Member Login', logout: 'Log out', register: 'Register', name: 'Name', email: 'Email', phone: 'Mobile number', password: 'Password (at least 6 characters)', loginAction: 'Log in', registerAction: 'Create member', welcome: 'Share 90 PROJECT with friends and earn transparent referral rewards.', apply: 'Become a 90 Promoter', applyIntro: 'After approval, you receive a referral code, share link and commission records.', pending: 'Under review', approved: 'Approved', code: 'Referral code', share: 'Share link', points: 'Points balance', coupons: 'Available coupons', commissions: 'Available commission', orders: 'My orders', enquiries: 'My enquiries', applySubmit: 'Submit application', socialPlatform: 'Social platform', socialAccount: 'Social account', region: 'Region', method: 'Promotion method', customerType: 'Expected customer type', agreeTerms: 'I agree to the promoter terms', agreePrivacy: 'I agree to the privacy policy', enquiry: 'Mock enquiry', complete: 'Mock complete order', refund: 'Mock refund', release: 'Release commission', withdrawal: 'Submit withdrawal', amount: 'Withdrawal amount', bank: 'Bank name', account: 'Bank account', accountName: 'Account name', mock: 'Mock mode: no real payment, bank transfer or API notification is used.', noData: 'No records yet.', shareText: 'Share 90 PROJECT with your friends:', identity: 'Email / mobile number', copy: 'Copy link', whatsapp: 'WhatsApp', benefitsTitle: 'Member benefits', benefitsIntro: 'Rewards are transparent and traceable, based on real enquiries and completed orders.', pointsTitle: 'Member points', pointsDesc: 'Earn points from registration, completed orders and selected campaigns. Every change is recorded.', couponTitle: 'Member coupons', couponDesc: 'Welcome, service, birthday and campaign coupons are controlled by admin rules.', rewardTitle: 'Referral rewards', rewardDesc: 'Supports three generations of real-order referrals: 3% for generation 1, 1% for generation 2 and 1% for generation 3. Commission becomes withdrawable after the refund observation period.', pathTitle: 'A clear reward path', pathRegister: 'Register as a member', pathWelcome: '+ Welcome points', pathOrder: 'Complete an eligible order', pathPoints: 'Points credited', pathRefer: 'Refer a friend who completes service', pathCommission: 'Commission confirmed', pathHold: 'Pass the refund observation period', pathWithdraw: 'Withdrawal available', startTitle: 'Start now', startDesc: 'Register first, then review points, coupons, orders, referrals and withdrawals in the member centre.', stepsTitle: 'Three simple steps', stepsIntro: 'The system tracks up to three referral generations. Rewards only come from completed real orders; there is no joining fee or recruitment-based payout.', stepApply: 'Register as a 90 Promoter', stepApplyDesc: 'Submit your platform, region and promotion method for admin review.', stepShare: 'Share your link or QR code', stepShareDesc: 'The first valid visit is recorded and an existing member binding cannot be overwritten.', stepEarn: 'Earn after the order is completed', stepEarnDesc: 'Commission becomes withdrawable after order completion and the refund observation period.', rulesTitle: 'Transparent rules', rulesMode: 'Reward model', rulesModeValue: 'Three-generation referral reward', rulesRate: 'Default commission', rulesRateValue: 'Gen 1 3% · Gen 2 1% · Gen 3 1%', rulesSettle: 'Settlement condition', rulesSettleValue: 'Completed order + hold period', rulesWithdraw: 'Withdrawal method', rulesWithdrawValue: 'Mock manual review', notMemberTitle: 'Not a member yet?', notMemberDesc: 'Register first, then submit the promoter application in the member centre. A referral code is created after approval.', mockTitle: 'Mock flow testing', mockDesc: 'For local acceptance only: create an enquiry, complete an order, simulate a refund and release held commission.', memberLevel: 'Member level', commissionBook: 'Commission ledger', application: 'Become a 90 Promoter', memberMock: 'Mock mode: no real payment, bank transfer or API notification is used.'
+    language: 'English', rewards: 'Member Rewards', referral: '90 Promoter', member: 'Member Centre', home: 'Home', login: 'Member Login', logout: 'Log out', register: 'Register', name: 'Name', email: 'Email', phone: 'Mobile number', password: 'Password (at least 6 characters)', loginAction: 'Log in', registerAction: 'Create member', welcome: 'Share 90 PROJECT with friends and earn transparent referral rewards.', apply: 'Become a 90 Promoter', applyIntro: 'After approval, you receive a referral code, share link and commission records.', pending: 'Under review', approved: 'Approved', code: 'Referral code', share: 'Share link', points: 'Points balance', coupons: 'Available coupons', commissions: 'Available commission', orders: 'My orders', enquiries: 'My enquiries', applySubmit: 'Submit application', socialPlatform: 'Social platform', socialAccount: 'Social account', region: 'Region', method: 'Promotion method', customerType: 'Expected customer type', agreeTerms: 'I agree to the promoter terms', agreePrivacy: 'I agree to the privacy policy', enquiry: 'Mock enquiry', complete: 'Mock complete order', refund: 'Mock refund', release: 'Release commission', withdrawal: 'Submit withdrawal', amount: 'Withdrawal amount', bank: 'Bank name', account: 'Bank account', accountName: 'Account name', mock: 'Mock mode: no real payment, bank transfer or API notification is used.', noData: 'No records yet.', shareText: 'Share 90 PROJECT with your friends:', identity: 'Email / mobile number', copy: 'Copy link', whatsapp: 'WhatsApp', benefitsTitle: 'Member benefits', benefitsIntro: 'Rewards are transparent and traceable, based on real enquiries and completed orders.', pointsTitle: 'Member points', pointsDesc: 'Earn points from registration, completed orders and selected campaigns. Every change is recorded.', couponTitle: 'Member coupons', couponDesc: 'Welcome, service, birthday and campaign coupons are controlled by admin rules.', rewardTitle: 'Referral rewards', rewardDesc: 'Supports three generations of real-order referrals: 3% for generation 1, 1% for generation 2 and 1% for generation 3. Commission becomes withdrawable after the refund observation period.', pathTitle: 'A clear reward path', pathRegister: 'Register as a member', pathWelcome: '+ Welcome points', pathOrder: 'Complete an eligible order', pathPoints: 'Points credited', pathRefer: 'Refer a friend who completes service', pathCommission: 'Commission confirmed', pathHold: 'Pass the refund observation period', pathWithdraw: 'Withdrawal available', startTitle: 'Start now', startDesc: 'Register first, then review points, coupons, orders, referrals and withdrawals in the member centre.', stepsTitle: 'Three simple steps', stepsIntro: 'The system tracks up to three referral generations. Rewards only come from completed real orders; there is no joining fee or recruitment-based payout.', stepApply: 'Register as a 90 Promoter', stepApplyDesc: 'Submit your platform, region and promotion method for admin review.', stepShare: 'Share your link or QR code', stepShareDesc: 'The first valid visit is recorded and an existing member binding cannot be overwritten.', stepEarn: 'Earn after the order is completed', stepEarnDesc: 'Commission becomes withdrawable after order completion and the refund observation period.', rulesTitle: 'Transparent rules', rulesMode: 'Reward model', rulesModeValue: 'Three-generation referral reward', rulesRate: 'Default commission', rulesRateValue: 'Gen 1 3% · Gen 2 1% · Gen 3 1%', rulesSettle: 'Settlement condition', rulesSettleValue: 'Completed order + hold period', rulesWithdraw: 'Withdrawal method', rulesWithdrawValue: 'Manual review', notMemberTitle: 'Not a member yet?', notMemberDesc: 'Register first, then submit the promoter application in the member centre. A referral code is created after approval.', mockTitle: 'Mock flow testing', mockDesc: 'For local acceptance only: create an enquiry, complete an order, simulate a refund and release held commission.', memberLevel: 'Member level', commissionBook: 'Commission ledger', application: 'Become a 90 Promoter', memberMock: 'Mock mode: no real payment, bank transfer or API notification is used.'
   }
 };
 
 Object.assign(translations.zh, {
+  referralStatsTitle: '\u6211\u7684\u63a8\u8350\u4f1a\u5458',
+  referralStatsIntro: '\u7cfb\u7edf\u4f1a\u81ea\u52a8\u7edf\u8ba1\u4f60\u7684\u4e09\u5c42\u63a8\u8350\u4f1a\u5458\u548c\u5b8c\u6210\u8ba2\u5355\u4eba\u6570\u3002',
+  referralTotal: '\u63a8\u8350\u4f1a\u5458\u603b\u6570',
+  referralLevelOne: '\u7b2c\u4e00\u4ee3',
+  referralLevelTwo: '\u7b2c\u4e8c\u4ee3',
+  referralLevelThree: '\u7b2c\u4e09\u4ee3',
+  referralCompleted: '\u5df2\u5b8c\u6210\u8ba2\u5355\u4f1a\u5458',
   rewards: '会员奖励',
   referral: '90推荐官',
   member: '会员中心',
@@ -217,6 +224,13 @@ Object.assign(translations.zh, {
 });
 
 Object.assign(translations.en, {
+  referralStatsTitle: 'My referred members',
+  referralStatsIntro: 'The system counts your three referral levels and completed-order members automatically.',
+  referralTotal: 'Total referred',
+  referralLevelOne: 'Level 1',
+  referralLevelTwo: 'Level 2',
+  referralLevelThree: 'Level 3',
+  referralCompleted: 'Completed-order members',
   memberMetaTitle: 'Member Centre | 90 PROJECT',
   memberHeroTitle: '90 PROJECT Member Centre',
   memberHeroDesc: 'Verify by mobile number, then manage profile details, order records, points, coupons, referral rewards and withdrawal requests in one place.',
@@ -507,6 +521,38 @@ function renderAuthState() {
   document.querySelectorAll('[data-growth-member-name]').forEach(element => { element.textContent = member?.name || ''; });
 }
 
+function calculateReferralStats(memberId, state) {
+  const activeRelations = (state.referralRelations || []).filter(item => item.status !== 'inactive' && item.status !== 'cancelled');
+  const childrenOf = parentIds => new Set(activeRelations
+    .filter(item => parentIds.has(item.promoterMemberId || item.parentMemberId))
+    .map(item => item.memberId)
+    .filter(Boolean));
+  const levelOne = childrenOf(new Set([memberId]));
+  const levelTwo = childrenOf(levelOne);
+  const levelThree = childrenOf(levelTwo);
+  const referredMembers = new Set([...levelOne, ...levelTwo, ...levelThree]);
+  const completedMembers = new Set((state.orders || [])
+    .filter(order => referredMembers.has(order.memberId) && ['service_completed', 'fully_paid', 'completed'].includes(String(order.status || '').toLowerCase()))
+    .map(order => order.memberId));
+  return {
+    total: referredMembers.size,
+    levelOne: levelOne.size,
+    levelTwo: levelTwo.size,
+    levelThree: levelThree.size,
+    completed: completedMembers.size
+  };
+}
+
+function renderReferralStats(memberId, state) {
+  const box = document.querySelector('[data-member-referral-stats]');
+  if (!box) return;
+  const stats = calculateReferralStats(memberId, state);
+  Object.entries(stats).forEach(([key, value]) => {
+    const target = box.querySelector(`[data-referral-stat="${key}"]`);
+    if (target) target.textContent = String(value);
+  });
+}
+
 function renderMemberDashboard() {
   const member = currentMember();
   const dashboard = document.querySelector('[data-growth-dashboard]');
@@ -515,6 +561,7 @@ function renderMemberDashboard() {
   const promoter = summary.promoter;
   const code = summary.referralCode;
   const state = api.getState();
+  renderReferralStats(member.id, state);
   document.querySelector('[data-growth-points]').textContent = String(summary.points);
   document.querySelector('[data-growth-coupons]').textContent = String(summary.coupons.length);
   document.querySelector('[data-growth-commission]').textContent = formatMoney(summary.availableCommission);

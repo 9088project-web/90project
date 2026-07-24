@@ -517,6 +517,23 @@ body.growth-page {
   line-height: 1.6;
 }
 
+.member-referral-stats {
+  margin-bottom: 18px;
+  background:
+    linear-gradient(135deg, rgba(255, 252, 245, .98), rgba(246, 231, 204, .88));
+}
+
+.member-referral-stat-grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.member-referral-stat-grid .growth-metric {
+  background: rgba(255, 255, 255, .72);
+}
+
 .member-profile-layout {
   display: grid;
   grid-template-columns: minmax(0, 1.25fr) minmax(280px, .75fr);
@@ -601,6 +618,8 @@ body.growth-page {
   .growth-admin-toolbar { grid-template-columns: 1fr 1fr; }
   .growth-admin-toolbar label:first-child { grid-column: 1 / -1; }
   .growth-metric-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .member-referral-stat-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .member-referral-stat-wide { grid-column: 1 / -1; }
   .member-hero,
   .member-auth-grid,
   .member-trust-row,

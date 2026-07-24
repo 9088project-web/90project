@@ -34,7 +34,6 @@
         <span class="growth-kicker">90 MEMBER SYSTEM</span>
         <h1 data-i18n="memberHeroTitle">九零食刻会员中心</h1>
         <p data-i18n="memberHeroDesc">用手机验证建立会员身份，统一管理资料、订单记录、积分优惠、推荐奖励和提现申请。</p>
-        <span class="growth-badge member-cloud-status" data-growth-cloud-status data-i18n="cloudChecking">正在检测会员云端...</span>
       </div>
       <div class="member-hero-card">
         <strong data-i18n="benefitsTitle">会员权益</strong>
@@ -127,6 +126,21 @@
         <div class="growth-metric"><strong data-i18n="memberLevel">会员等级</strong><b data-growth-level>90 Member</b></div>
       </div>
 
+      <section class="growth-panel member-referral-stats" data-member-referral-stats>
+        <div class="member-section-title">
+          <span class="growth-badge">REFERRAL</span>
+          <h3 data-i18n="referralStatsTitle">我的推荐会员</h3>
+        </div>
+        <p data-i18n="referralStatsIntro">系统会自动统计你的三层推荐会员和完成订单人数。</p>
+        <div class="member-referral-stat-grid">
+          <div class="growth-metric"><strong data-i18n="referralTotal">推荐会员总数</strong><b data-referral-stat="total">0</b></div>
+          <div class="growth-metric"><strong data-i18n="referralLevelOne">第一代</strong><b data-referral-stat="levelOne">0</b></div>
+          <div class="growth-metric"><strong data-i18n="referralLevelTwo">第二代</strong><b data-referral-stat="levelTwo">0</b></div>
+          <div class="growth-metric"><strong data-i18n="referralLevelThree">第三代</strong><b data-referral-stat="levelThree">0</b></div>
+          <div class="growth-metric member-referral-stat-wide"><strong data-i18n="referralCompleted">已完成订单会员</strong><b data-referral-stat="completed">0</b></div>
+        </div>
+      </section>
+
       <section class="member-profile-layout">
         <article class="growth-panel">
           <div class="member-section-title">
@@ -192,18 +206,6 @@
           <ul class="growth-list" data-growth-notification-list></ul>
         </article>
       </section>
-
-      <section class="growth-panel growth-section member-mock-tools">
-        <h3 data-i18n="mockToolsTitle">本地验收工具</h3>
-        <p data-i18n="mockToolsIntro">只用于测试会员流程，不会真实收款、转账或通知顾客。</p>
-        <div class="growth-actions">
-          <button class="growth-button secondary" type="button" data-growth-mock="enquiry" data-i18n="enquiry">模拟建立询价</button>
-          <button class="growth-button secondary" type="button" data-growth-mock="complete" data-i18n="complete">模拟完成订单</button>
-          <button class="growth-button secondary" type="button" data-growth-mock="refund" data-i18n="refund">模拟退款</button>
-          <button class="growth-button secondary" type="button" data-growth-mock="release" data-i18n="release">释放可提现佣金</button>
-        </div>
-      </section>
-
       <p class="growth-message member-message-line" data-growth-message aria-live="polite"></p>
     </section>
   </main>
