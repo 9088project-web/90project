@@ -402,11 +402,22 @@ function setText(selector, value) {
   document.querySelectorAll(selector).forEach(element => { element.textContent = value; });
 }
 
-function setMessage(message, error = false) {
-  document.querySelectorAll('[data-growth-message]').forEach(element => {
-    element.textContent = message;
-    element.classList.toggle('error', error);
-  });
+function updateMessageElement(element, message, error = false) {
+  if (!element) return;
+  element.textContent = message || '';
+  element.classList.toggle('error', error);
+  element.hidden = !message;
+}
+
+function setMessage(message, error = false, target = 'general') {
+  const loginMessage = document.querySelector('[data-growth-login-message]');
+  if (target === 'login' && loginMessage) {
+    updateMessageElement(loginMessage, message, error);
+    document.querySelectorAll('[data-growth-message]').forEach(element => updateMessageElement(element, '', false));
+    return;
+  }
+  updateMessageElement(loginMessage, '', false);
+  document.querySelectorAll('[data-growth-message]').forEach(element => updateMessageElement(element, message, error));
 }
 
 function setBusy(form, busy, label = '') {
@@ -776,7 +787,7 @@ function bindMemberPage() {
     }
     if (!result.ok) {
       setBusy(loginForm, false);
-      return setMessage(t('loginError'), true);
+      return setMessage(t('loginError'), true, 'login');
     }
     setMessage(cloudReady ? t('loginOkCloud') : t('loginOk'));
     await syncCloudDashboard(result.member);

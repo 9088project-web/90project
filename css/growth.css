@@ -429,6 +429,16 @@ body.growth-page {
   grid-column: 1 / -1;
 }
 
+.member-login-message {
+  margin-top: 2px;
+  padding: 10px 12px;
+  border: 1px solid rgba(154, 63, 47, .24);
+  border-radius: 8px;
+  color: #8f3528;
+  background: rgba(255, 238, 229, .88);
+  line-height: 1.45;
+}
+
 .is-member-logged-in [data-growth-auth] {
   display: none !important;
 }

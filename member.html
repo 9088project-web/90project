@@ -6,7 +6,7 @@
   <meta name="description" content="90 PROJECT 会员中心：会员资料、积分、优惠券、订单、推荐码、佣金与提现记录。" />
   <title>会员中心 | 90 PROJECT</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/remixicon@4.6.0/fonts/remixicon.css" />
-  <link rel="stylesheet" href="css/growth.css?v=20260718-member-pro" />
+  <link rel="stylesheet" href="css/growth.css?v=20260724-member-login-message" />
 </head>
 <body class="growth-page member-system-page" data-growth-page="member">
   <header class="growth-header">
@@ -70,6 +70,7 @@
           <label data-i18n="identity">Email / 手机号码<input name="identity" required autocomplete="username" placeholder="member@example.com / 011xxxxxxx"></label>
           <label data-i18n="password">密码<input name="password" type="password" required autocomplete="current-password" placeholder="请输入密码"></label>
           <button class="growth-button" type="submit" data-i18n="loginAction">登录会员</button>
+          <p class="growth-message member-login-message" data-growth-login-message aria-live="polite" hidden></p>
         </form>
         <div class="member-form-help">
           <span data-i18n="forgotLogin">忘记密码或无法登入？</span>
@@ -213,6 +214,6 @@
   <footer class="growth-footer">
     <div class="growth-shell">90 PROJECT Member System · <a href="index.html#top" data-i18n="footerBack">返回首页</a></div>
   </footer>
-  <script type="module" src="js/growth-mock.js?v=20260718-member-pro"></script>
+  <script type="module" src="js/growth-mock.js?v=20260724-member-login-message"></script>
 </body>
 </html>
