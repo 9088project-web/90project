@@ -151,8 +151,6 @@ let stylingCaseTimer = null;
 let stylingCaseProgressFrame = null;
 let stylingCasePlaying = !prefersReducedMotion;
 const CATERING_SERVICE_STYLES = {
-  packed: { label: '餐盒 / Packed Meal', multiplier: 1 },
-  buffet: { label: '小型 Buffet / Setup', multiplier: 1.12 },
   event: { label: '活动餐饮 / Event Catering', multiplier: 1.18 }
 };
 const CATERING_SELECTION_LIMITS = {
@@ -265,7 +263,7 @@ const CATERING_COMBOS = [
     price: 'RM29.90',
     desc: '主食 2 · 肉类 2 · 菜类 / 豆腐 / 炸料 2',
     pax: 30,
-    service: 'packed',
+    service: 'event',
     items: ['腊肠炒饭', '炒米粉', '咖喱鸡', '黑胡椒鸡扒', '蒜蓉小白菜', '泰式豆腐']
   },
   {
@@ -275,7 +273,7 @@ const CATERING_COMBOS = [
     price: 'RM32.90',
     desc: '主食 2 · 肉类 1 · 菜类 / 炸料 / 豆腐 2 · 海鲜 1',
     pax: 30,
-    service: 'packed',
+    service: 'event',
     items: ['蛋炒饭', '福建面', 'Ginger Onion Chicken', '蒜蓉西兰花', '红烧豆腐', '炸鱼柳']
   },
   {
@@ -285,7 +283,7 @@ const CATERING_COMBOS = [
     price: 'RM39.90',
     desc: '主食 2 · 肉类 2 · 菜类 / 炸料 / 豆腐 2 · 海鲜 1',
     pax: 30,
-    service: 'packed',
+    service: 'event',
     items: ['扬州炒饭', '干炒河粉', '香料炸鸡', '糖醋肉', '炒高丽菜', '蒜蓉菠菜', '麦片虾']
   },
   {
@@ -295,7 +293,7 @@ const CATERING_COMBOS = [
     price: 'RM43.90',
     desc: '主食 2 · 肉类 2 · 海鲜 1 · 菜类 / 炸料 / 豆腐 3',
     pax: 30,
-    service: 'packed',
+    service: 'event',
     items: ['白饭', '炒米粉', '姜葱肉片', '黑胡椒鸡扒', '咸蛋奶油虾', '奶油杂菜', '蚝油生菜', '蒜蓉菜心']
   }
 ];
@@ -1292,7 +1290,7 @@ function groupedCateringItems(items) {
 
 function calculateCateringEstimate() {
   const pax = Math.max(Number.parseInt(cateringPax?.value || '0', 10) || 0, 0);
-  const service = CATERING_SERVICE_STYLES[cateringServiceStyle?.value] || CATERING_SERVICE_STYLES.packed;
+  const service = CATERING_SERVICE_STYLES[cateringServiceStyle?.value] || CATERING_SERVICE_STYLES.event;
   const items = selectedCateringItems();
   const combo = syncCateringComboState();
   const pricedItems = items.filter(item => item.rate > 0);
