@@ -1,4 +1,5 @@
 const SUPABASE_MEMBER_SESSION_KEY = 'np90_supabase_member_session_v1';
+const MEMBER_SYNC_API_PATH = '/api/member-sync';
 
 const normalize = value => String(value || '').trim();
 const normalizeEmail = value => normalize(value).toLowerCase();
@@ -202,9 +203,31 @@ export function createGrowthCloud() {
     };
   }
 
+  async function syncProfileThroughApi(member, session = getSession()) {
+    if (!member || !session?.access_token) return { ok: false, skipped: true };
+    try {
+      const response = await fetch(MEMBER_SYNC_API_PATH, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${session.access_token}`
+        },
+        body: JSON.stringify({ action: 'upsert-profile', member })
+      });
+      if (response.status === 404) return { ok: false, skipped: true };
+      if (!response.ok) return { ok: false, message: await response.text() };
+      const payload = await response.json();
+      return { ok: Boolean(payload?.ok), data: payload };
+    } catch (error) {
+      return { ok: false, message: error instanceof Error ? error.message : 'member_sync_failed' };
+    }
+  }
+
   async function updateProfile(member, session = getSession()) {
     const userId = session?.user?.id;
     if (!userId || !session?.access_token) return { ok: false, skipped: true };
+    const apiResult = await syncProfileThroughApi(member, session);
+    if (apiResult.ok) return apiResult;
     return request(`/rest/v1/profiles?user_id=eq.${encodeURIComponent(userId)}`, {
       method: 'PATCH',
       token: session.access_token,

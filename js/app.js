@@ -132,6 +132,7 @@ const GROWTH_ORDER_QUEUE_KEY = 'np90_growth_order_queue_v1';
 const LANG_KEY = 'np90_language_v1';
 const ADMIN_CONTENT_KEY = 'np90_admin_content_v1';
 const ADMIN_SESSION_KEY = 'np90_admin_session_v1';
+const ADMIN_CLOUD_PASSWORD_SESSION_KEY = 'np90_admin_cloud_password_session_v1';
 const ADMIN_ATTEMPTS_KEY = 'np90_admin_attempts_v1';
 const ADMIN_LOCK_KEY = 'np90_admin_lock_until_v1';
 const SUPABASE_SESSION_KEY = 'np90_supabase_session_v1';
@@ -140,6 +141,7 @@ const CONVERSION_EVENTS_KEY = 'np90_conversion_events_v1';
 const LEAD_SOURCE_KEY = 'np90_lead_source_v1';
 const ADMIN_CONTENT_SETTING_KEY = 'admin_content';
 const ADMIN_CONTENT_API_PATH = '/api/admin-content';
+const MEMBER_SYNC_API_PATH = '/api/member-sync';
 const ADMIN_EMAIL = '9088project@gmail.com';
 const ADMIN_PASSWORD_HASH = '3b523443';
 const WHATSAPP_NUMBER = '60189490908';
@@ -2049,6 +2051,9 @@ async function updateSupabaseMemberProfile(member, session = getSupabaseMemberSe
   const userId = session?.user?.id;
   if (!userId || !session?.access_token || !member) return false;
 
+  const apiSynced = await syncMemberProfileToCloudApi(member, session);
+  if (apiSynced) return true;
+
   await supabaseFetch(`/rest/v1/profiles?user_id=eq.${encodeURIComponent(userId)}`, {
     method: 'PATCH',
     token: session.access_token,
@@ -2740,6 +2745,111 @@ async function saveAdminContentToSupabase(content) {
 
 async function saveAdminContentToCloud(content) {
   return (await saveAdminContentToCloudApi(content)) || (await saveAdminContentToSupabase(content));
+}
+
+function adminSyncPassword() {
+  let sessionPassword = '';
+  try {
+    sessionPassword = sessionStorage.getItem(ADMIN_CLOUD_PASSWORD_SESSION_KEY) || '';
+  } catch (error) {
+    sessionPassword = '';
+  }
+  return adminCloudPassword || sessionPassword || adminPassword?.value || '';
+}
+
+function adminSyncHeaders(extra = {}) {
+  const password = adminSyncPassword();
+  if (!password) return null;
+  return {
+    'X-Admin-Email': ADMIN_EMAIL,
+    'X-Admin-Password': password,
+    ...extra
+  };
+}
+
+async function loadCloudMembersForAdmin() {
+  const headers = adminSyncHeaders();
+  if (!headers) return false;
+
+  try {
+    const response = await fetch(`${MEMBER_SYNC_API_PATH}?v=${Date.now()}`, {
+      cache: 'no-store',
+      headers
+    });
+    if (response.status === 404) return false;
+    if (!response.ok) throw new Error(await response.text());
+
+    const result = await response.json();
+    if (!result?.ok) return false;
+    supabaseProfilesCache = Array.isArray(result.profiles) ? result.profiles : [];
+    supabaseRewardsCache = Array.isArray(result.rewards) ? result.rewards : [];
+    return true;
+  } catch (error) {
+    console.warn('Member cloud sync load failed', error);
+    return false;
+  }
+}
+
+async function syncMemberProfileToCloudApi(member, session = getSupabaseMemberSession()) {
+  if (!member || !session?.access_token) return false;
+
+  try {
+    const response = await fetch(MEMBER_SYNC_API_PATH, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${session.access_token}`
+      },
+      body: JSON.stringify({ action: 'upsert-profile', member })
+    });
+    if (response.status === 404) return false;
+    if (!response.ok) throw new Error(await response.text());
+    const result = await response.json();
+    return Boolean(result?.ok);
+  } catch (error) {
+    console.warn('Member cloud profile sync failed', error);
+    return false;
+  }
+}
+
+async function updateCloudMemberAdminField(userId, field, value) {
+  const headers = adminSyncHeaders({ 'Content-Type': 'application/json' });
+  if (!headers || !userId) return false;
+
+  try {
+    const response = await fetch(MEMBER_SYNC_API_PATH, {
+      method: 'PATCH',
+      headers,
+      body: JSON.stringify({ action: 'update-profile-field', userId, field, value })
+    });
+    if (response.status === 404) return false;
+    if (!response.ok) throw new Error(await response.text());
+    const result = await response.json();
+    return Boolean(result?.ok);
+  } catch (error) {
+    console.warn('Member cloud field update failed', error);
+    return false;
+  }
+}
+
+async function updateCloudReferralRewardStatusApi(rewardId, status) {
+  const headers = adminSyncHeaders({ 'Content-Type': 'application/json' });
+  if (!headers || !rewardId) return false;
+
+  try {
+    const response = await fetch(MEMBER_SYNC_API_PATH, {
+      method: 'PATCH',
+      headers,
+      body: JSON.stringify({ action: 'update-reward-status', rewardId, status })
+    });
+    if (response.status === 404) return false;
+    if (!response.ok) throw new Error(await response.text());
+    const result = await response.json();
+    return Boolean(result?.ok);
+  } catch (error) {
+    console.warn('Member cloud reward status update failed', error);
+    return false;
+  }
 }
 
 function editableContentForLanguage() {
@@ -4214,12 +4324,19 @@ function profileToAdminMember(profile) {
   return {
     source: 'supabase',
     name: profile.full_name || profile.user_id || '-',
-    phone: profile.phone || '-',
+    phone: profile.phone || profile.auth_phone || '-',
     email: profile.email || '',
     referralCode: normalizeReferralCode(profile.referral_code),
     referredByCode: normalizeReferralCode(profile.referred_by_code),
     role: profile.role || 'member',
-    status: profile.status || 'active',
+    status: profile.status === 'inactive' ? 'blocked' : (profile.status || 'active'),
+    tier: profile.member_tier || 'Classic',
+    adminNote: profile.notes || '',
+    profile: {
+      area: profile.default_area || profile.address || profile.city || '',
+      defaultPackage: profile.default_package || '',
+      preference: profile.taste_preference || ''
+    },
     supabaseUserId: profile.user_id,
     records: [],
     referralRewards: [],
@@ -4238,10 +4355,15 @@ function combinedAdminMembers() {
 }
 
 async function refreshSupabaseMembers() {
-  if (!isSupabaseConfigured() || !getSupabaseSession()?.access_token || supabaseMembersFetchInProgress) return;
+  if (supabaseMembersFetchInProgress) return;
 
   supabaseMembersFetchInProgress = true;
   try {
+    const cloudLoaded = await loadCloudMembersForAdmin();
+    if (cloudLoaded) return;
+
+    if (!isSupabaseConfigured() || !getSupabaseSession()?.access_token) return;
+
     const [profiles, rewards] = await Promise.all([
       supabaseFetch('/rest/v1/profiles?select=*&order=created_at.desc&limit=120'),
       supabaseFetch('/rest/v1/referral_rewards?select=*&order=created_at.desc&limit=160')
@@ -4305,7 +4427,15 @@ function renderAdminMembers(refreshRemote = true) {
   const cloudRewards = supabaseRewardsCache.length;
 
   if (adminMemberStatus) {
-    if (isSupabaseConfigured() && getSupabaseSession()?.access_token) {
+    if (supabaseProfilesCache.length || cloudRewards) {
+      adminMemberStatus.textContent = currentLanguage === 'en'
+        ? `${members.length} members shown. Cloud member sync is active.`
+        : `目前显示 ${members.length} 位会员，云端会员同步已开启。`;
+    } else if (adminSyncPassword()) {
+      adminMemberStatus.textContent = currentLanguage === 'en'
+        ? `${members.length} members shown. Cloud member sync is ready.`
+        : `目前显示 ${members.length} 位会员，云端会员同步已准备好。`;
+    } else if (isSupabaseConfigured() && getSupabaseSession()?.access_token) {
       adminMemberStatus.textContent = currentLanguage === 'en'
         ? `${members.length} members shown.`
         : `目前显示 ${members.length} 位会员。`;
@@ -4327,8 +4457,9 @@ function renderAdminMembers(refreshRemote = true) {
 
   const memberCards = members.map(member => {
     const memberEmail = String(member.email || '').toLowerCase();
+    const memberUserId = member.supabaseUserId || '';
     return `
-      <article class="admin-member-card">
+      <article class="admin-member-card" data-member-user-id="${escapeHtml(memberUserId)}">
         <div>
           <strong>${escapeHtml(member.name || member.email || (currentLanguage === 'en' ? 'Member' : '会员'))}</strong>
           <p>${currentLanguage === 'en' ? 'Phone' : '电话'}：${escapeHtml(member.phone || '-')}</p>
@@ -4341,10 +4472,10 @@ function renderAdminMembers(refreshRemote = true) {
         </div>
         <div class="admin-reward-list">
           <label>${currentLanguage === 'en' ? 'Member status' : '会员状态'}
-            <select data-member-admin-field="status" data-member-email="${escapeHtml(memberEmail)}">${memberStatusOptions(member.status)}</select>
+            <select data-member-admin-field="status" data-member-email="${escapeHtml(memberEmail)}" data-member-user-id="${escapeHtml(memberUserId)}">${memberStatusOptions(member.status)}</select>
           </label>
           <label>${currentLanguage === 'en' ? 'Member tier' : '会员等级'}
-            <select data-member-admin-field="tier" data-member-email="${escapeHtml(memberEmail)}">${memberTierOptions(member.tier)}</select>
+            <select data-member-admin-field="tier" data-member-email="${escapeHtml(memberEmail)}" data-member-user-id="${escapeHtml(memberUserId)}">${memberTierOptions(member.tier)}</select>
           </label>
           <label>${currentLanguage === 'en' ? 'Admin note' : '后台备注'}
             <textarea data-member-admin-field="adminNote" data-member-email="${escapeHtml(memberEmail)}" rows="3" placeholder="${currentLanguage === 'en' ? 'Follow-up notes' : '例如：已联系、偏好清淡、VIP 客户'}">${escapeHtml(member.adminNote || '')}</textarea>
@@ -4395,8 +4526,56 @@ function setMemberAdminField(memberEmail, field, value) {
   showAdminMessage(currentLanguage === 'en' ? 'Member setting saved.' : '会员设定已保存。');
 }
 
+async function setMemberAdminFieldSynced(memberEmail, field, value, userId = '') {
+  if (!['status', 'tier', 'adminNote'].includes(field)) return;
+
+  const members = loadMembers();
+  const member = members.find(item => String(item.email || '').toLowerCase() === String(memberEmail || '').toLowerCase());
+  let changed = false;
+
+  if (member) {
+    if (field === 'status' && MEMBER_STATUSES.includes(value)) {
+      member.status = value;
+    } else if (field === 'tier' && MEMBER_TIERS.includes(value)) {
+      member.tier = value;
+    } else if (field === 'adminNote') {
+      member.adminNote = value;
+    }
+    member.updatedAt = new Date().toISOString();
+    saveMembers(members);
+    changed = true;
+  }
+
+  if (userId) {
+    const cloudSynced = await updateCloudMemberAdminField(userId, field, value);
+    const profile = supabaseProfilesCache.find(item => item.user_id === userId);
+    if (profile) {
+      if (field === 'status') profile.status = value === 'blocked' ? 'inactive' : 'active';
+      if (field === 'tier') profile.member_tier = value;
+      if (field === 'adminNote') profile.notes = value;
+      changed = true;
+    }
+    if (!cloudSynced && !member) {
+      showAdminMessage(currentLanguage === 'en' ? 'Cloud member setting could not be saved.' : '云端会员设定暂时无法保存。', true);
+      return;
+    }
+  }
+
+  if (!changed) return;
+  renderAdminMembers(false);
+  renderMemberState();
+  showAdminMessage(currentLanguage === 'en' ? 'Member setting saved.' : '会员设定已保存。');
+}
+
 async function setCloudReferralRewardStatus(rewardId, status) {
   if (!rewardId || !REFERRAL_REWARD_STATUSES.includes(status)) return;
+  const apiSynced = await updateCloudReferralRewardStatusApi(rewardId, status);
+  if (apiSynced) {
+    const reward = supabaseRewardsCache.find(item => item.id === rewardId);
+    if (reward) reward.status = status;
+    renderAdminMembers(false);
+    return;
+  }
   if (!isSupabaseConfigured() || !getSupabaseSession()?.access_token) {
     showAdminMessage(currentLanguage === 'en' ? 'Supabase admin is not connected.' : 'Supabase admin 尚未连接。', true);
     return;
@@ -4589,6 +4768,9 @@ function setAdminLoggedIn(value) {
   } else {
     localStorage.removeItem(ADMIN_SESSION_KEY);
     adminCloudPassword = '';
+    try {
+      sessionStorage.removeItem(ADMIN_CLOUD_PASSWORD_SESSION_KEY);
+    } catch (error) {}
   }
 }
 
@@ -5844,7 +6026,7 @@ clearReferralRewards?.addEventListener('click', () => {
   renderMemberState();
 });
 
-memberProfileForm?.addEventListener('submit', event => {
+memberProfileForm?.addEventListener('submit', async event => {
   event.preventDefault();
   const email = currentMemberEmail();
   if (!email) return;
@@ -5864,6 +6046,7 @@ memberProfileForm?.addEventListener('submit', event => {
   saveMembers(members);
   fillMemberToOrder(member);
   applyMemberProfileToOrder(member);
+  await updateSupabaseMemberProfile(member);
   renderMemberState();
   showMemberMessage(languageText().member.profileSaved);
   if (isAdminLoggedIn()) renderAdminMembers(false);
@@ -5918,6 +6101,9 @@ adminLoginForm?.addEventListener('submit', async event => {
   if (email === ADMIN_EMAIL && hashLocalSecret(password) === ADMIN_PASSWORD_HASH) {
     clearAdminLoginGuard();
     adminCloudPassword = password;
+    try {
+      sessionStorage.setItem(ADMIN_CLOUD_PASSWORD_SESSION_KEY, password);
+    } catch (error) {}
     const cloudLogin = await supabaseAdminSignIn(email, password);
     setAdminLoggedIn(true);
     adminLoginForm.reset();
@@ -6079,12 +6265,14 @@ adminInquiries?.addEventListener('change', event => {
 
 adminMembers?.addEventListener('change', event => {
   if (event.target instanceof HTMLSelectElement && event.target.matches('[data-member-admin-field]')) {
-    setMemberAdminField(event.target.dataset.memberEmail || '', event.target.dataset.memberAdminField || '', event.target.value);
+    const userId = event.target.dataset.memberUserId || event.target.closest('[data-member-user-id]')?.dataset.memberUserId || '';
+    setMemberAdminFieldSynced(event.target.dataset.memberEmail || '', event.target.dataset.memberAdminField || '', event.target.value, userId);
     return;
   }
 
   if (event.target instanceof HTMLTextAreaElement && event.target.matches('[data-member-admin-field]')) {
-    setMemberAdminField(event.target.dataset.memberEmail || '', event.target.dataset.memberAdminField || '', event.target.value);
+    const userId = event.target.dataset.memberUserId || event.target.closest('[data-member-user-id]')?.dataset.memberUserId || '';
+    setMemberAdminFieldSynced(event.target.dataset.memberEmail || '', event.target.dataset.memberAdminField || '', event.target.value, userId);
     return;
   }
 
