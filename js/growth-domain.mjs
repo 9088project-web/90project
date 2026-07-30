@@ -375,17 +375,18 @@ export function createGrowthApi(storage = defaultStorage(), options = {}) {
       memberId: member.id,
       referralCode: relation?.referralCode || referralCode || null,
       externalInquiryId,
+      invoiceNo: input.invoiceNo || externalInquiryId,
       serviceType: input.serviceType || '',
       packageName: input.packageName || '',
       eventDate: input.eventDate || '',
       eventTime: input.eventTime || '',
       location: input.location || '',
       pax: Number(input.pax) || 0,
-      foodChoice: input.foodChoice || '',
+      foodChoice: input.foodChoice || input.itemsSummary || '',
       stylingNeeds: input.stylingNeeds || '',
       beverageNeeds: input.beverageNeeds || '',
       budget: money(input.budget || input.totalAmount),
-      notes: input.notes || '',
+      notes: input.notes || input.adminNotes || '',
       referenceImages: Array.isArray(input.referenceImages) ? input.referenceImages : [],
       status: 'new',
       source: input.source || 'whatsapp-inquiry',
@@ -397,14 +398,27 @@ export function createGrowthApi(storage = defaultStorage(), options = {}) {
       enquiryId: enquiry.id,
       memberId: member.id,
       externalInquiryId,
+      invoiceNo: input.invoiceNo || externalInquiryId,
       serviceType: input.serviceType || enquiry.serviceType,
       totalAmount: money(input.totalAmount || input.budget),
+      originalAmount: money(input.originalAmount || input.totalAmount || input.budget),
+      discountAmount: money(input.discountAmount),
+      depositAmount: money(input.depositAmount),
+      balanceAmount: money(input.balanceAmount),
       sstAmount: money(input.sstAmount),
       deliveryFee: money(input.deliveryFee),
       extraLabourFee: money(input.extraLabourFee),
       thirdPartyFee: money(input.thirdPartyFee),
       couponDiscount: money(input.couponDiscount),
       refundedAmount: 0,
+      eventDate: input.eventDate || enquiry.eventDate,
+      eventTime: input.eventTime || enquiry.eventTime,
+      location: input.location || enquiry.location,
+      pax: Number(input.pax) || Number(enquiry.pax) || 0,
+      itemsSummary: input.itemsSummary || input.foodChoice || '',
+      adminNotes: input.adminNotes || '',
+      whatsappMessage: input.whatsappMessage || '',
+      sentAt: input.sentAt || null,
       status: input.status || 'confirmed',
       source: input.source || 'whatsapp-inquiry',
       createdAt: input.createdAt || dateValue(now()),
@@ -480,7 +494,7 @@ export function createGrowthApi(storage = defaultStorage(), options = {}) {
     const current = read();
     const enquiry = current.enquiries.find(item => item.id === enquiryId && item.memberId === memberId);
     if (!enquiry) return { ok: false, reason: 'enquiry_not_found' };
-    const order = { id: id('order'), enquiryId, memberId, serviceType: input.serviceType || enquiry.serviceType, totalAmount: money(input.totalAmount), sstAmount: money(input.sstAmount), deliveryFee: money(input.deliveryFee), extraLabourFee: money(input.extraLabourFee), thirdPartyFee: money(input.thirdPartyFee), couponDiscount: money(input.couponDiscount), refundedAmount: 0, status: input.status || 'confirmed', createdAt: dateValue(now()), updatedAt: dateValue(now()), completedAt: null };
+    const order = { id: id('order'), enquiryId, memberId, externalInquiryId: input.externalInquiryId || enquiry.externalInquiryId || '', invoiceNo: input.invoiceNo || input.externalInquiryId || enquiry.invoiceNo || enquiry.externalInquiryId || '', serviceType: input.serviceType || enquiry.serviceType, totalAmount: money(input.totalAmount), originalAmount: money(input.originalAmount || input.totalAmount), discountAmount: money(input.discountAmount), depositAmount: money(input.depositAmount), balanceAmount: money(input.balanceAmount), sstAmount: money(input.sstAmount), deliveryFee: money(input.deliveryFee), extraLabourFee: money(input.extraLabourFee), thirdPartyFee: money(input.thirdPartyFee), couponDiscount: money(input.couponDiscount), refundedAmount: 0, eventDate: input.eventDate || enquiry.eventDate || '', eventTime: input.eventTime || enquiry.eventTime || '', location: input.location || enquiry.location || '', pax: Number(input.pax) || Number(enquiry.pax) || 0, itemsSummary: input.itemsSummary || enquiry.foodChoice || '', adminNotes: input.adminNotes || '', whatsappMessage: input.whatsappMessage || '', sentAt: input.sentAt || null, status: input.status || 'confirmed', source: input.source || 'manual-order', createdAt: dateValue(now()), updatedAt: dateValue(now()), completedAt: null };
     const next = clone(current);
     next.orders.unshift(order);
     audit(next, 'order.created', memberId, 'order', order.id, 'MOCK order');
@@ -498,10 +512,10 @@ export function createGrowthApi(storage = defaultStorage(), options = {}) {
 
     const next = clone(current);
     const target = next.orders.find(item => item.id === orderId);
-    ['serviceType', 'source'].forEach(field => {
+    ['serviceType', 'source', 'invoiceNo', 'eventDate', 'eventTime', 'location', 'itemsSummary', 'whatsappMessage', 'sentAt', 'paymentStatus'].forEach(field => {
       if (input[field] !== undefined) target[field] = String(input[field] || '').trim();
     });
-    ['totalAmount', 'sstAmount', 'deliveryFee', 'extraLabourFee', 'thirdPartyFee', 'couponDiscount'].forEach(field => {
+    ['totalAmount', 'sstAmount', 'deliveryFee', 'extraLabourFee', 'thirdPartyFee', 'couponDiscount', 'originalAmount', 'discountAmount', 'depositAmount', 'balanceAmount', 'pax'].forEach(field => {
       if (input[field] !== undefined) target[field] = money(input[field]);
     });
     if (input.status !== undefined && ORDER_STATUSES.includes(input.status)) target.status = input.status;
@@ -514,6 +528,12 @@ export function createGrowthApi(storage = defaultStorage(), options = {}) {
       if (input.serviceType !== undefined) enquiry.serviceType = target.serviceType;
       if (input.totalAmount !== undefined) enquiry.budget = target.totalAmount;
       if (input.adminNotes !== undefined) enquiry.adminNotes = target.adminNotes;
+      if (input.invoiceNo !== undefined) enquiry.invoiceNo = target.invoiceNo;
+      if (input.eventDate !== undefined) enquiry.eventDate = target.eventDate;
+      if (input.eventTime !== undefined) enquiry.eventTime = target.eventTime;
+      if (input.location !== undefined) enquiry.location = target.location;
+      if (input.pax !== undefined) enquiry.pax = Number(target.pax) || 0;
+      if (input.itemsSummary !== undefined) enquiry.foodChoice = target.itemsSummary;
       enquiry.updatedAt = target.updatedAt;
     }
 

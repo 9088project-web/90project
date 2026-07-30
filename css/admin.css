@@ -56,6 +56,79 @@ body.admin-page{min-height:100vh;background:radial-gradient(circle at 50% 0,rgba
   cursor:not-allowed;
   background:#f8ecd9;
 }
+
+.admin-invoice-panel{
+  display:grid;
+  gap:18px;
+}
+.admin-invoice-head,
+.admin-invoice-preview,
+.admin-invoice-actions{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:18px;
+}
+.admin-invoice-head span,
+.admin-invoice-preview span{
+  display:block;
+  margin-bottom:7px;
+  color:#d8a34d;
+  font-size:12px;
+  font-weight:900;
+  letter-spacing:.22em;
+}
+.admin-invoice-head h3,
+.admin-invoice-preview h3{
+  margin:0 0 6px;
+  color:#ffdf9a;
+  font-size:24px;
+}
+.admin-invoice-head p{
+  margin:0;
+  max-width:680px;
+  color:#f3dec0;
+}
+.admin-invoice-grid{
+  grid-template-columns:repeat(4,minmax(0,1fr));
+}
+.admin-invoice-grid .admin-wide-field{
+  grid-column:span 2;
+}
+.admin-invoice-preview{
+  display:grid;
+  grid-template-columns:minmax(180px,.38fr) minmax(0,1fr);
+  padding:16px;
+  border:1px solid rgba(214,168,92,.22);
+  border-radius:16px;
+  background:linear-gradient(135deg,rgba(255,247,232,.07),rgba(0,0,0,.16));
+}
+.admin-invoice-preview textarea{
+  width:100%;
+  min-height:220px;
+  border:1px solid rgba(214,168,92,.22);
+  border-radius:12px;
+  padding:14px;
+  color:#21170e;
+  background:#fffaf1;
+  font:inherit;
+  line-height:1.55;
+  resize:vertical;
+}
+.admin-invoice-actions{
+  flex-wrap:wrap;
+}
+.admin-invoice-actions .growth-button{
+  flex:1 1 180px;
+}
+.growth-table .admin-order-invoice small{
+  display:block;
+  margin-top:3px;
+}
+.growth-table .admin-order-invoice code{
+  color:#8a581f;
+  font-weight:900;
+}
 @media (max-width:980px){
   .admin-weekly-row{
     grid-template-columns:1fr;
@@ -69,5 +142,18 @@ body.admin-page{min-height:100vh;background:radial-gradient(circle at 50% 0,rgba
   .admin-weekly-image,
   .admin-weekly-alt{
     grid-area:auto;
+  }
+  .admin-invoice-grid{
+    grid-template-columns:1fr;
+  }
+  .admin-invoice-grid .admin-wide-field{
+    grid-column:auto;
+  }
+  .admin-invoice-preview{
+    grid-template-columns:1fr;
+  }
+  .admin-invoice-head,
+  .admin-invoice-actions{
+    display:grid;
   }
 }

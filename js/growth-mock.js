@@ -6,6 +6,8 @@ const cloud = createGrowthCloud();
 const LANG_KEY = 'np90_growth_language_v1';
 const GROWTH_ORDER_QUEUE_KEY = 'np90_growth_order_queue_v1';
 const SUPABASE_ADMIN_SESSION_KEY = 'np90_supabase_session_v1';
+const ADMIN_INVOICE_DRAFT_KEY = 'np90_admin_invoice_draft_v1';
+const BUSINESS_WHATSAPP = '018-949 0908';
 const translations = {
   zh: {
     language: '中文',
@@ -419,6 +421,10 @@ function setMessage(message, error = false, target = 'general') {
   }
   updateMessageElement(loginMessage, '', false);
   document.querySelectorAll('[data-growth-message]').forEach(element => updateMessageElement(element, message, error));
+}
+
+function setInvoiceMessage(message, error = false) {
+  updateMessageElement(document.querySelector('[data-admin-invoice-message]'), message, error);
 }
 
 function setBusy(form, busy, label = '') {
@@ -949,6 +955,271 @@ function cloudLeadToGrowthPayload(row) {
   };
 }
 
+function generateInvoiceNo() {
+  const date = new Date();
+  const stamp = [
+    date.getFullYear(),
+    String(date.getMonth() + 1).padStart(2, '0'),
+    String(date.getDate()).padStart(2, '0')
+  ].join('');
+  return `90-${stamp}-${String(Date.now()).slice(-5)}`;
+}
+
+function invoiceField(name) {
+  return document.querySelector(`[data-invoice-field="${name}"]`);
+}
+
+function invoiceValue(name) {
+  return invoiceField(name)?.value?.trim() || '';
+}
+
+function invoiceNumber(name) {
+  return money(Number(invoiceValue(name)) || 0);
+}
+
+function adminWhatsAppNumber(phone) {
+  const digits = String(phone || '').replace(/\D/g, '');
+  if (!digits) return '';
+  if (digits.startsWith('60')) return digits;
+  if (digits.startsWith('0')) return `60${digits.slice(1)}`;
+  return digits;
+}
+
+function adminWhatsAppUrl(phone, message) {
+  const normalized = adminWhatsAppNumber(phone);
+  return normalized ? `https://wa.me/${normalized}?text=${encodeURIComponent(message || '')}` : '';
+}
+
+function formatInvoiceDate(value) {
+  if (!value) return '';
+  const date = new Date(`${value}T00:00:00`);
+  return Number.isNaN(date.getTime()) ? value : date.toLocaleDateString('zh-MY', { year: 'numeric', month: 'short', day: 'numeric' });
+}
+
+function formatInvoiceTime(value) {
+  if (!value) return '';
+  const [hour, minute] = String(value).split(':');
+  if (!hour || !minute) return value;
+  const date = new Date();
+  date.setHours(Number(hour), Number(minute), 0, 0);
+  return date.toLocaleTimeString('zh-MY', { hour: 'numeric', minute: '2-digit' });
+}
+
+function collectAdminInvoiceInput() {
+  const invoiceNo = invoiceValue('invoiceNo') || generateInvoiceNo();
+  const originalAmount = invoiceNumber('originalAmount');
+  const discountAmount = invoiceNumber('discountAmount');
+  const depositAmount = invoiceNumber('depositAmount');
+  const totalAmount = money(Math.max(0, originalAmount - discountAmount));
+  const balanceAmount = money(Math.max(0, totalAmount - depositAmount));
+  return {
+    invoiceNo,
+    name: invoiceValue('name'),
+    phone: invoiceValue('phone'),
+    email: invoiceValue('email'),
+    serviceType: invoiceValue('serviceType') || 'Event Catering',
+    status: invoiceValue('status') || 'confirmed',
+    eventDate: invoiceValue('eventDate'),
+    eventTime: invoiceValue('eventTime'),
+    pax: Number(invoiceValue('pax')) || 0,
+    referralCode: invoiceValue('referralCode').toUpperCase(),
+    location: invoiceValue('location'),
+    itemsSummary: invoiceValue('itemsSummary'),
+    originalAmount,
+    discountAmount,
+    depositAmount,
+    totalAmount,
+    balanceAmount,
+    adminNotes: invoiceValue('adminNotes')
+  };
+}
+
+function buildAdminInvoiceMessage(data = collectAdminInvoiceInput()) {
+  const serviceLabels = {
+    'Meal Plan': '包伙食',
+    'Event Catering': '活动餐饮',
+    'Event Styling': '场地布置',
+    'Cocktail Service': '鸡尾酒服务',
+    Other: '其他服务'
+  };
+  const lines = [
+    '九零食刻 90 PROJECT',
+    '',
+    `开单编号：${data.invoiceNo || '-'}`,
+    `顾客：${data.name || '-'}`,
+    `服务：${serviceLabels[data.serviceType] || data.serviceType || '-'}`,
+    data.eventDate ? `日期：${formatInvoiceDate(data.eventDate)}` : null,
+    data.eventTime ? `时间：${formatInvoiceTime(data.eventTime)}` : null,
+    data.location ? `地点：${data.location}` : null,
+    data.pax ? `人数：${data.pax} pax` : null,
+    '',
+    '菜单 / 项目：',
+    data.itemsSummary || '-',
+    '',
+    '费用：',
+    `项目原额：${formatMoney(data.originalAmount)}`,
+    data.discountAmount ? `优惠 / 调整：-${formatMoney(data.discountAmount)}` : null,
+    `应付总额：${formatMoney(data.totalAmount)}`,
+    data.depositAmount ? `已付订金：${formatMoney(data.depositAmount)}` : null,
+    `余额：${formatMoney(data.balanceAmount)}`,
+    data.referralCode ? `推荐码：${data.referralCode}` : null,
+    '',
+    '请回复“确认订单”，我们会为你保留安排。',
+    `WhatsApp：${BUSINESS_WHATSAPP}`
+  ];
+  return lines.filter(line => line !== null).join('\n');
+}
+
+function updateAdminInvoicePreview() {
+  const form = document.querySelector('[data-admin-invoice-form]');
+  if (!form) return null;
+  if (!invoiceValue('invoiceNo')) invoiceField('invoiceNo').value = generateInvoiceNo();
+  const data = collectAdminInvoiceInput();
+  const balanceField = invoiceField('balanceAmount');
+  if (balanceField) balanceField.value = data.balanceAmount.toFixed(2);
+  const preview = document.querySelector('[data-admin-invoice-preview]');
+  const message = buildAdminInvoiceMessage(data);
+  if (preview) preview.value = message;
+  localStorage.setItem(ADMIN_INVOICE_DRAFT_KEY, JSON.stringify(data));
+  return { data, message };
+}
+
+function renderAdminInvoiceForm() {
+  const form = document.querySelector('[data-admin-invoice-form]');
+  if (!form || form.dataset.invoiceReady === '1') return;
+  try {
+    const draft = JSON.parse(localStorage.getItem(ADMIN_INVOICE_DRAFT_KEY) || 'null');
+    if (draft && typeof draft === 'object') {
+      Object.entries(draft).forEach(([key, value]) => {
+        const field = invoiceField(key);
+        if (field && value !== undefined && value !== null) field.value = value;
+      });
+    }
+  } catch {
+    localStorage.removeItem(ADMIN_INVOICE_DRAFT_KEY);
+  }
+  if (!invoiceValue('invoiceNo')) invoiceField('invoiceNo').value = generateInvoiceNo();
+  form.dataset.invoiceReady = '1';
+  updateAdminInvoicePreview();
+}
+
+function resetAdminInvoiceForm() {
+  const form = document.querySelector('[data-admin-invoice-form]');
+  if (!form) return;
+  form.reset();
+  invoiceField('invoiceNo').value = generateInvoiceNo();
+  invoiceField('discountAmount').value = '0';
+  invoiceField('depositAmount').value = '0';
+  invoiceField('status').value = 'confirmed';
+  localStorage.removeItem(ADMIN_INVOICE_DRAFT_KEY);
+  updateAdminInvoicePreview();
+  setInvoiceMessage('已准备新开单。');
+}
+
+async function copyText(value) {
+  if (navigator.clipboard?.writeText) {
+    await navigator.clipboard.writeText(value);
+    return true;
+  }
+  const textarea = document.createElement('textarea');
+  textarea.value = value;
+  textarea.setAttribute('readonly', '');
+  textarea.style.position = 'fixed';
+  textarea.style.opacity = '0';
+  document.body.appendChild(textarea);
+  textarea.select();
+  const ok = document.execCommand('copy');
+  textarea.remove();
+  return ok;
+}
+
+async function saveAdminInvoice(options = {}) {
+  const form = document.querySelector('[data-admin-invoice-form]');
+  if (!form) return { ok: false, reason: 'form_not_found' };
+  if (!form.reportValidity()) return { ok: false, reason: 'invalid_form' };
+  const preview = updateAdminInvoicePreview();
+  const data = preview?.data;
+  const message = preview?.message || '';
+  if (!data?.originalAmount) {
+    setInvoiceMessage('请填写项目金额，系统才可以准确开单。', true);
+    return { ok: false, reason: 'missing_amount' };
+  }
+  const payload = {
+    externalInquiryId: data.invoiceNo,
+    sourceInquiryId: data.invoiceNo,
+    invoiceNo: data.invoiceNo,
+    name: data.name,
+    phone: data.phone,
+    email: data.email,
+    serviceType: data.serviceType,
+    eventDate: data.eventDate,
+    eventTime: data.eventTime,
+    location: data.location,
+    pax: data.pax,
+    foodChoice: data.itemsSummary,
+    itemsSummary: data.itemsSummary,
+    budget: data.totalAmount,
+    totalAmount: data.totalAmount,
+    originalAmount: data.originalAmount,
+    discountAmount: data.discountAmount,
+    depositAmount: data.depositAmount,
+    balanceAmount: data.balanceAmount,
+    adminNotes: data.adminNotes,
+    referralCode: data.referralCode,
+    status: data.status,
+    whatsappMessage: message,
+    sentAt: options.sent ? new Date().toISOString() : '',
+    source: 'admin-whatsapp-invoice'
+  };
+  const lead = api.upsertOrderLead(payload);
+  if (!lead.ok) {
+    setInvoiceMessage(`订单无法保存：${lead.reason}`, true);
+    return lead;
+  }
+  const updated = api.updateOrder(lead.order.id, payload, 'admin-whatsapp-invoice');
+  if (!updated.ok) {
+    setInvoiceMessage(`订单无法更新：${updated.reason}`, true);
+    renderAdmin();
+    return updated;
+  }
+  const cloudResult = await syncOrderUpdateToCloud(updated.order, payload);
+  const stateResult = await saveSharedGrowthStateForAdmin();
+  const fullySynced = cloudSyncOk(cloudResult) && cloudSyncOk(stateResult, false);
+  setInvoiceMessage(fullySynced ? '开单已保存，并已同步云端。' : '开单已保存；云端同步需要后台重新登录后再保存一次。', !fullySynced);
+  renderAdmin();
+  return { ok: true, data, message, order: updated.order, cloudResult, stateResult };
+}
+
+function findAdminOrderWhatsApp(orderId) {
+  const snapshot = api.adminSnapshot();
+  const order = snapshot.orders.find(item => item.id === orderId);
+  if (!order) return null;
+  const member = snapshot.members.find(item => item.id === order.memberId);
+  const relation = snapshot.relations.find(item => item.memberId === order.memberId);
+  const data = {
+    invoiceNo: order.invoiceNo || order.externalInquiryId || order.id,
+    name: member?.name || '顾客',
+    phone: member?.phone || '',
+    email: member?.email || '',
+    serviceType: order.serviceType || 'Event Catering',
+    status: order.status || 'confirmed',
+    eventDate: order.eventDate || '',
+    eventTime: order.eventTime || '',
+    pax: Number(order.pax) || 0,
+    referralCode: relation?.referralCode || '',
+    location: order.location || '',
+    itemsSummary: order.itemsSummary || '',
+    originalAmount: money(order.originalAmount || order.totalAmount),
+    discountAmount: money(order.discountAmount),
+    depositAmount: money(order.depositAmount),
+    totalAmount: money(order.totalAmount),
+    balanceAmount: money(order.balanceAmount ?? Math.max(0, Number(order.totalAmount || 0) - Number(order.depositAmount || 0))),
+    adminNotes: order.adminNotes || ''
+  };
+  const message = order.whatsappMessage || buildAdminInvoiceMessage(data);
+  return { order, member, data, message, url: adminWhatsAppUrl(member?.phone, message) };
+}
+
 function orderStatusOptions(status) {
   const labels = {
     new: '新订单',
@@ -979,7 +1250,18 @@ async function syncOrderUpdateToCloud(order, input = {}) {
     serviceType: input.serviceType ?? order.serviceType,
     totalAmount: input.totalAmount ?? order.totalAmount,
     status: input.status ?? order.status,
-    adminNotes: input.adminNotes ?? order.adminNotes ?? ''
+    adminNotes: input.adminNotes ?? order.adminNotes ?? '',
+    invoiceNo: input.invoiceNo ?? order.invoiceNo ?? '',
+    eventDate: input.eventDate ?? order.eventDate ?? '',
+    eventTime: input.eventTime ?? order.eventTime ?? '',
+    location: input.location ?? order.location ?? '',
+    pax: input.pax ?? order.pax ?? 0,
+    itemsSummary: input.itemsSummary ?? order.itemsSummary ?? '',
+    originalAmount: input.originalAmount ?? order.originalAmount ?? order.totalAmount ?? 0,
+    discountAmount: input.discountAmount ?? order.discountAmount ?? 0,
+    depositAmount: input.depositAmount ?? order.depositAmount ?? 0,
+    balanceAmount: input.balanceAmount ?? order.balanceAmount ?? 0,
+    whatsappMessage: input.whatsappMessage ?? order.whatsappMessage ?? ''
   }, token);
 }
 
@@ -1060,6 +1342,7 @@ async function syncCloudOrderLeads(force = false) {
 function renderAdmin() {
   const root = document.querySelector('[data-growth-admin]');
   if (!root) return;
+  renderAdminInvoiceForm();
   const queuedImportCount = importQueuedGrowthOrders();
   if (queuedImportCount) saveSharedGrowthStateForAdmin();
   syncCloudOrderLeads(false);
@@ -1120,7 +1403,7 @@ function renderAdmin() {
     const statusOk = adminGrowthFilters.order === 'all' || item.status === adminGrowthFilters.order;
     const member = memberById.get(item.memberId);
     const relation = relationByMemberId.get(item.memberId);
-    return statusOk && matchesAdminSearch([item.id, item.status, item.serviceType, member?.name, member?.email, member?.phone, relation?.referralCode]);
+    return statusOk && matchesAdminSearch([item.id, item.invoiceNo, item.externalInquiryId, item.status, item.serviceType, item.location, item.itemsSummary, member?.name, member?.email, member?.phone, relation?.referralCode]);
   });
   if (orderRows) {
     orderRows.innerHTML = visibleOrders.length ? visibleOrders.map(item => {
@@ -1128,7 +1411,11 @@ function renderAdmin() {
       const relation = relationByMemberId.get(item.memberId);
       const canComplete = ['confirmed', 'deposit_paid'].includes(item.status);
       const locked = !adminEditableOrderStatuses.includes(item.status);
-      return `<tr data-admin-order-row="${esc(item.id)}"><td><strong>${esc(item.id)}</strong><br><small>${esc(member?.name || item.memberId)} · ${esc(member?.phone || '-')}</small><br><small>${esc(item.externalInquiryId || item.source || '-')}</small></td><td><label class="growth-inline-field">服务<input data-order-field="serviceType" value="${esc(item.serviceType || '')}" ${locked ? 'disabled' : ''}></label><label class="growth-inline-field">状态<select data-order-field="status" ${locked ? 'disabled' : ''}>${orderStatusOptions(item.status)}</select></label>${relation ? `<small>推荐码 ${esc(relation.referralCode)}</small>` : ''}</td><td><label class="growth-inline-field">金额 RM<input data-order-field="totalAmount" type="number" min="0" step="0.01" value="${Number(item.totalAmount || 0).toFixed(2)}" ${locked ? 'disabled' : ''}></label><small>合资格 ${formatMoney(eligibleAmountForAdmin(item))}</small><label class="growth-inline-field">备注<textarea data-order-field="adminNotes" rows="2" ${locked ? 'disabled' : ''}>${esc(item.adminNotes || '')}</textarea></label></td><td><div class="growth-admin-actions">${locked ? '<span class="growth-muted">已锁定</span>' : `<button class="growth-button secondary" data-save-order="${esc(item.id)}">保存订单</button>${canComplete ? `<button class="growth-button" data-complete-order="${esc(item.id)}">确认完成并计佣</button>` : ''}`}</div></td></tr>`;
+      const invoiceNo = item.invoiceNo || item.externalInquiryId || item.id;
+      const eventLine = [item.eventDate, item.eventTime].filter(Boolean).join(' ');
+      const balanceAmount = money(item.balanceAmount ?? Math.max(0, Number(item.totalAmount || 0) - Number(item.depositAmount || 0)));
+      const whatsappActions = `<button class="growth-button secondary" data-copy-order-whatsapp="${esc(item.id)}">复制开单</button>${member?.phone ? `<button class="growth-button secondary" data-open-order-whatsapp="${esc(item.id)}">WhatsApp</button>` : ''}`;
+      return `<tr data-admin-order-row="${esc(item.id)}"><td class="admin-order-invoice"><strong>${esc(invoiceNo)}</strong><br><small>${esc(member?.name || item.memberId)} · ${esc(member?.phone || '-')}</small><br><small>${esc(item.externalInquiryId || item.source || '-')}</small></td><td><label class="growth-inline-field">服务<input data-order-field="serviceType" value="${esc(item.serviceType || '')}" ${locked ? 'disabled' : ''}></label><label class="growth-inline-field">状态<select data-order-field="status" ${locked ? 'disabled' : ''}>${orderStatusOptions(item.status)}</select></label>${relation ? `<small>推荐码 ${esc(relation.referralCode)}</small>` : ''}${eventLine ? `<br><small>${esc(eventLine)}</small>` : ''}${item.location ? `<br><small>${esc(item.location)}</small>` : ''}</td><td><label class="growth-inline-field">金额 RM<input data-order-field="totalAmount" type="number" min="0" step="0.01" value="${Number(item.totalAmount || 0).toFixed(2)}" ${locked ? 'disabled' : ''}></label><small>订金 ${formatMoney(item.depositAmount || 0)} · 余额 ${formatMoney(balanceAmount)}</small><br><small>合资格 ${formatMoney(eligibleAmountForAdmin(item))}</small><label class="growth-inline-field">备注<textarea data-order-field="adminNotes" rows="2" ${locked ? 'disabled' : ''}>${esc(item.adminNotes || '')}</textarea></label></td><td><div class="growth-admin-actions">${whatsappActions}${locked ? '<span class="growth-muted">已锁定</span>' : `<button class="growth-button secondary" data-save-order="${esc(item.id)}">保存订单</button>${canComplete ? `<button class="growth-button" data-complete-order="${esc(item.id)}">确认完成并计佣</button>` : ''}`}</div></td></tr>`;
     }).join('') : '<tr><td colspan="4">没有符合筛选的订单。</td></tr>';
   }
   const commissionRows = document.querySelector('[data-growth-admin-commissions]');
@@ -1190,6 +1477,66 @@ function bindAdmin() {
     });
   });
   document.addEventListener('click', async event => {
+    const newInvoiceButton = event.target.closest('[data-admin-new-invoice]');
+    if (newInvoiceButton) {
+      resetAdminInvoiceForm();
+      return;
+    }
+    const previewInvoiceButton = event.target.closest('[data-admin-invoice-preview-button]');
+    if (previewInvoiceButton) {
+      updateAdminInvoicePreview();
+      setInvoiceMessage('WhatsApp 文案已生成。');
+      return;
+    }
+    const copyInvoiceButton = event.target.closest('[data-admin-invoice-copy]');
+    if (copyInvoiceButton) {
+      const result = await saveAdminInvoice();
+      if (result.ok) {
+        await copyText(result.message);
+        setInvoiceMessage('开单已保存，WhatsApp 文案已复制。');
+      }
+      return;
+    }
+    const openInvoiceButton = event.target.closest('[data-admin-invoice-open]');
+    if (openInvoiceButton) {
+      const result = await saveAdminInvoice({ sent: true });
+      if (result.ok) {
+        const url = adminWhatsAppUrl(result.data.phone, result.message);
+        if (!url) {
+          setInvoiceMessage('请填写顾客手机号，才可以打开 WhatsApp。', true);
+          return;
+        }
+        window.open(url, '_blank', 'noopener');
+        setInvoiceMessage('已打开 WhatsApp，开单也已保存。');
+      }
+      return;
+    }
+    const copyOrderWhatsAppButton = event.target.closest('[data-copy-order-whatsapp]');
+    if (copyOrderWhatsAppButton) {
+      const result = findAdminOrderWhatsApp(copyOrderWhatsAppButton.dataset.copyOrderWhatsapp);
+      if (!result) {
+        setMessage('找不到这张订单。', true);
+        return;
+      }
+      await copyText(result.message);
+      setMessage('这张订单的 WhatsApp 文案已复制。');
+      return;
+    }
+    const openOrderWhatsAppButton = event.target.closest('[data-open-order-whatsapp]');
+    if (openOrderWhatsAppButton) {
+      const result = findAdminOrderWhatsApp(openOrderWhatsAppButton.dataset.openOrderWhatsapp);
+      if (!result) {
+        setMessage('找不到这张订单。', true);
+        return;
+      }
+      if (!result.url) {
+        setMessage('这张订单没有顾客手机号，不能直接打开 WhatsApp。', true);
+        return;
+      }
+      window.open(result.url, '_blank', 'noopener');
+      setMessage('已打开这张订单的 WhatsApp。');
+      return;
+    }
     const exportButton = event.target.closest('[data-growth-export]');
     if (exportButton) {
       const snapshot = api.adminSnapshot();
@@ -1277,6 +1624,13 @@ function bindAdmin() {
     const copyButton = event.target.closest('[data-copy-growth]');
     if (copyButton) navigator.clipboard?.writeText(copyButton.dataset.copyGrowth);
   });
+  const invoiceForm = document.querySelector('[data-admin-invoice-form]');
+  invoiceForm?.addEventListener('submit', async event => {
+    event.preventDefault();
+    await saveAdminInvoice();
+  });
+  invoiceForm?.addEventListener('input', () => updateAdminInvoicePreview());
+  invoiceForm?.addEventListener('change', () => updateAdminInvoicePreview());
   document.querySelector('[data-growth-config-form]')?.addEventListener('submit', async event => {
     event.preventDefault();
     const config = api.getState().config;

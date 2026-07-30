@@ -383,6 +383,18 @@ export function createGrowthCloud() {
 
   async function updateOrderLead(sourceInquiryId, input = {}, token) {
     if (!configured() || !sourceInquiryId) return { ok: false, skipped: true };
+    const notes = [
+      input.adminNotes || input.notes || '',
+      input.invoiceNo ? `Invoice No: ${input.invoiceNo}` : '',
+      input.eventDate || input.eventTime ? `Event: ${[input.eventDate, input.eventTime].filter(Boolean).join(' ')}` : '',
+      input.location ? `Location: ${input.location}` : '',
+      input.pax ? `Pax: ${input.pax}` : '',
+      input.itemsSummary ? `Items:\n${input.itemsSummary}` : '',
+      input.originalAmount !== undefined ? `Original: RM${Number(input.originalAmount || 0).toFixed(2)}` : '',
+      input.discountAmount ? `Discount: RM${Number(input.discountAmount || 0).toFixed(2)}` : '',
+      input.depositAmount ? `Deposit: RM${Number(input.depositAmount || 0).toFixed(2)}` : '',
+      input.balanceAmount !== undefined ? `Balance: RM${Number(input.balanceAmount || 0).toFixed(2)}` : ''
+    ].filter(Boolean).join('\n');
     return request(`/rest/v1/growth_order_leads?source_inquiry_id=eq.${encodeURIComponent(sourceInquiryId)}`, {
       method: 'PATCH',
       token,
@@ -391,7 +403,7 @@ export function createGrowthCloud() {
         service_type: input.serviceType || null,
         estimated_amount: Number(input.totalAmount) || 0,
         status: input.status === 'service_completed' || input.status === 'fully_paid' ? 'completed' : input.status === 'cancelled' ? 'cancelled' : 'confirmed',
-        notes: input.adminNotes || input.notes || null,
+        notes: notes || null,
         updated_at: new Date().toISOString()
       }
     });
