@@ -18,7 +18,7 @@
     </a>
     <div class="admin-topbar-actions">
       <a class="btn btn-outline" href="index.html#top"><i class="ri-external-link-line" aria-hidden="true"></i>查看网站</a>
-      <span class="admin-status-dot"><i class="ri-shield-check-line" aria-hidden="true"></i> 本地内容后台</span>
+      <span class="admin-status-dot"><i class="ri-cloud-line" aria-hidden="true"></i> 云端内容后台</span>
     </div>
   </header>
 
@@ -42,21 +42,37 @@
         <div>
           <span>CONTENT ADMIN</span>
           <h1>全站内容控制中心</h1>
-          <p>所有修改先保存在本机；如果项目已配置 Supabase，登录成功后也会尝试同步云端。</p>
+          <p>后台修改会同步到 Supabase 云端；本机只保留离线备份，网站会读取同一份云端内容。</p>
         </div>
         <button class="btn btn-outline" id="adminLogout" type="button"><i class="ri-logout-box-r-line" aria-hidden="true"></i>退出后台</button>
       </div>
 
-      <div class="admin-nav" aria-label="后台分类">
-        <button type="button" class="active" data-admin-panel-tab="site">全站文字</button>
-        <button type="button" data-admin-panel-tab="meal">包伙食菜单</button>
-        <button type="button" data-admin-panel-tab="catering">外餐算法</button>
-        <button type="button" data-admin-panel-tab="media">首页媒体</button>
-        <button type="button" data-admin-panel-tab="pages">独立服务页</button>
-        <button type="button" data-admin-panel-tab="inquiries">顾客询问</button>
-        <button type="button" data-admin-panel-tab="members">会员资料</button>
-        <button type="button" data-admin-panel-tab="tracking">转化追踪</button>
-        <button type="button" data-admin-panel-tab="growth">增长系统</button>
+      <div class="admin-nav admin-nav-grouped" aria-label="后台分类">
+        <div class="admin-nav-cluster admin-nav-cluster-primary">
+          <div class="admin-nav-cluster-head">
+            <span>网站内容</span>
+            <small>文字 / 菜单 / 媒体 / 页面</small>
+          </div>
+          <div class="admin-nav-tabs">
+            <button type="button" class="active" data-admin-panel-tab="site">全站文字</button>
+            <button type="button" data-admin-panel-tab="meal">包伙食菜单</button>
+            <button type="button" data-admin-panel-tab="catering">外餐算法</button>
+            <button type="button" data-admin-panel-tab="media">首页媒体</button>
+            <button type="button" data-admin-panel-tab="pages">独立服务页</button>
+          </div>
+        </div>
+        <div class="admin-nav-cluster">
+          <div class="admin-nav-cluster-head">
+            <span>运营管理</span>
+            <small>顾客 / 会员 / 增长</small>
+          </div>
+          <div class="admin-nav-tabs">
+            <button type="button" data-admin-panel-tab="inquiries">顾客询问</button>
+            <button type="button" data-admin-panel-tab="members">会员资料</button>
+            <button type="button" data-admin-panel-tab="tracking">转化追踪</button>
+            <button type="button" data-admin-panel-tab="growth">增长系统</button>
+          </div>
+        </div>
       </div>
 
       <section class="admin-section" data-admin-panel="site">

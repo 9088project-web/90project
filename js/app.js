@@ -139,6 +139,7 @@ const SUPABASE_MEMBER_SESSION_KEY = 'np90_supabase_member_session_v1';
 const CONVERSION_EVENTS_KEY = 'np90_conversion_events_v1';
 const LEAD_SOURCE_KEY = 'np90_lead_source_v1';
 const ADMIN_CONTENT_SETTING_KEY = 'admin_content';
+const ADMIN_CONTENT_API_PATH = '/api/admin-content';
 const ADMIN_EMAIL = '9088project@gmail.com';
 const ADMIN_PASSWORD_HASH = '3b523443';
 const WHATSAPP_NUMBER = '60189490908';
@@ -172,6 +173,11 @@ const CATERING_SELECTION_LABELS = {
   dessert: '甜品'
 };
 const CATERING_MARKET_PRICE_ITEMS = new Set(['香煎鳕鱼']);
+const CATERING_REMOVED_CATEGORY_IDS = new Set(['sauce', 'sauce-style', 'sauce_style']);
+const CATERING_REMOVED_SERVICE_IDS = new Set(['packed', 'setup', 'buffet', 'small-buffet']);
+const CATERING_SPECIAL_ITEM_RATES = [
+  { pattern: /三文鱼|salmon/i, rate: 11 }
+];
 let cateringMenuMode = 'buffet';
 let activeCateringComboId = '';
 const CATERING_MENU = [
@@ -422,12 +428,12 @@ const DEFAULT_DETAIL_CONTENT = {
   catering: {
     eyebrow: 'FAMILY BUFFET · CUSTOM CATERING',
     title: '家庭式 Buffet，轻松搭配一份完整菜单。',
-    heroDesc: '先选 1 主食、4 菜、2 肉和 1 甜品，再按需要加上酱料与饮料；人数和服务形式会同步计算参考预算。',
+    heroDesc: '先选择 Set A-D，或自由搭配菜式；10 pax 起开始计算，时价菜式会另外确认。',
     heroImage: 'assets/images/reference-series/service-catering.png',
     heroAlt: '活动餐饮自助餐台',
     kicker: 'EASY BUFFET BUILDER',
     introTitle: '',
-    introDesc: '适合家庭聚会、生日会、公司活动和小型 Buffet。先用套餐模式快速配好菜，再切换自由搭配，直接把菜单发送给我们确认。',
+    introDesc: '适合家庭聚会、生日会、公司活动和小型 Buffet。先用推荐 Set 快速配好菜，也可以自由搭配后直接发送给我们确认。',
     contactTitle: '需要我们帮你配？',
     contactDesc: '把日期、地点和人数发给我们。',
     panelTitle: '菜单选择与预算',
@@ -584,6 +590,7 @@ let supabaseMembersFetchInProgress = false;
 let supabaseConversionsCache = [];
 let supabaseConversionsFetchInProgress = false;
 let supabaseRuntimeConfig = { ...(window.NP90_SUPABASE || {}) };
+let adminCloudPassword = '';
 
 const translations = {
   zh: {
@@ -1141,7 +1148,7 @@ function normalizeCateringServiceStyles(serviceStyles) {
       label,
       multiplier: Number.isFinite(multiplier) && multiplier > 0 ? multiplier : 1
     };
-  }).filter(style => style.id && style.label);
+  }).filter(style => style.id && style.label && !CATERING_REMOVED_SERVICE_IDS.has(style.id));
   return normalized.length ? normalized : defaultCateringServiceStyles();
 }
 
@@ -1227,8 +1234,8 @@ function setCateringMenuMode(mode) {
   });
   if (cateringSelectionNotice) {
     cateringSelectionNotice.textContent = cateringMenuMode === 'buffet'
-      ? '套餐模式：主食 1、蔬菜 / 豆腐 4、肉类 / 鱼虾 2、甜品 1；饮料和酱料可自由加购。'
-      : '自由搭配模式：不限制分类数量，适合定制菜单与大型活动。';
+      ? '套餐模式：Set A-D 按固定每人价格计算；10 pax 起开始计算。'
+      : '自由搭配模式：按所选菜式分类单价相加；时价菜式另外确认。';
   }
   renderCateringEstimate();
 }
@@ -1250,12 +1257,14 @@ function renderCateringSelectionGuide() {
 
 function cateringItemRate(category, item) {
   if (cateringItemIsMarketPrice(item)) return 0;
-  if (item === '香煎三文鱼配 Tartar Sauce') return 11;
+  const specialRate = CATERING_SPECIAL_ITEM_RATES.find(rule => rule.pattern.test(String(item || '')));
+  if (specialRate) return specialRate.rate;
   return Number.parseFloat(category?.rate || '0') || 0;
 }
 
 function cateringItemIsMarketPrice(item) {
-  return editableMarketPriceItems().has(String(item || '').trim());
+  const normalizedItem = String(item || '').trim();
+  return editableMarketPriceItems().has(normalizedItem) || normalizedItem.includes('鳕鱼');
 }
 
 function cateringItemPriceLabel(category, item) {
@@ -1385,8 +1394,9 @@ function calculateCateringEstimate() {
   const minimumPax = Math.max(Number.parseInt(config.minimumPax || CATERING_MINIMUM_PAX, 10) || CATERING_MINIMUM_PAX, 1);
   const meetsMinimumPax = pax >= minimumPax;
   const subtotal = meetsMinimumPax && perPax ? roundMoney(pax * perPax * service.multiplier) : 0;
-  const minimumTotal = config.minimumTotal || CATERING_MINIMUM_TOTAL;
-  const total = subtotal;
+  const minimumTotal = Math.max(Number.parseFloat(config.minimumTotal || CATERING_MINIMUM_TOTAL) || 0, 0);
+  const total = subtotal && minimumTotal ? Math.max(subtotal, minimumTotal) : subtotal;
+  const minimumTotalApplied = Boolean(subtotal && minimumTotal && total > subtotal);
 
   return {
     pax,
@@ -1399,6 +1409,7 @@ function calculateCateringEstimate() {
     subtotal,
     total,
     minimumTotal,
+    minimumTotalApplied,
     minimumPax,
     meetsMinimumPax
   };
@@ -1411,6 +1422,9 @@ function buildCateringMessage(estimate) {
   )).join('\n') || '还没有选择菜式';
   const hasMarketPriceItems = estimate.marketPriceItems.length > 0;
   const pricingLabel = estimate.combo ? `${estimate.combo.label} ${estimate.combo.price}` : '自由搭配单项计算';
+  const minimumNote = estimate.minimumTotalApplied
+    ? `\n已套用最低预算：${formatCurrency(estimate.minimumTotal)}`
+    : '';
   const totalLabel = estimate.meetsMinimumPax
     ? `${estimate.total ? formatCurrency(estimate.total) : '-'}${hasMarketPriceItems ? ' + 按时价菜式' : ''}`
     : `少于 ${estimate.minimumPax} pax，暂不计算`;
@@ -1432,6 +1446,7 @@ ${menuLines}
 【系统初步预算】
 每人约：${formatCurrency(estimate.perPax)}${hasMarketPriceItems ? ' + 按时价菜式' : ''}
 总预算约：${totalLabel}
+${minimumNote}
 计算规则：${estimate.minimumPax} pax 或以上开始计算
 
 请帮我确认实际报价、配送、餐具和现场服务安排。`;
@@ -1443,6 +1458,9 @@ function renderCateringEstimate() {
   const estimate = calculateCateringEstimate();
   const hasMarketPriceItems = estimate.marketPriceItems.length > 0;
   const pricingLabel = estimate.combo ? `${estimate.combo.label} ${estimate.combo.price}` : '自由搭配';
+  const fixedTotalLabel = estimate.total ? formatCurrency(estimate.total) : '';
+  const totalLabel = hasMarketPriceItems && fixedTotalLabel ? `${fixedTotalLabel} + 时价` : fixedTotalLabel;
+  const minimumNote = estimate.minimumTotalApplied ? ` · 已套用最低预算 ${formatCurrency(estimate.minimumTotal)}` : '';
   renderCateringSelectionGuide();
   if (!estimate.items.length) {
     cateringEstimateTotal.textContent = 'RM0';
@@ -1451,8 +1469,8 @@ function renderCateringEstimate() {
     cateringEstimateTotal.textContent = `${estimate.minimumPax} pax 起`;
     cateringEstimateMeta.textContent = `外餐预算从 ${estimate.minimumPax} pax 开始计算，请输入 ${estimate.minimumPax} 或以上人数。`;
   } else if (estimate.total) {
-    cateringEstimateTotal.textContent = formatCurrency(estimate.total);
-    cateringEstimateMeta.textContent = `${estimate.pax} pax · ${pricingLabel} · 每人约 ${formatCurrency(estimate.perPax)} · ${estimate.service.label}${hasMarketPriceItems ? ' · 含按时价菜式' : ''}`;
+    cateringEstimateTotal.textContent = totalLabel;
+    cateringEstimateMeta.textContent = `${estimate.pax} pax · ${pricingLabel} · 固定价每人 ${formatCurrency(estimate.perPax)} · ${estimate.service.label}${hasMarketPriceItems ? ' · 时价菜另行确认' : ''}${minimumNote}`;
   } else {
     cateringEstimateTotal.textContent = hasMarketPriceItems ? '按时价' : 'RM0';
     cateringEstimateMeta.textContent = hasMarketPriceItems ? `${estimate.pax || '-'} pax · 含按时价菜式，请 WhatsApp 确认报价。` : '请选择菜式开始计算。';
@@ -1462,9 +1480,12 @@ function renderCateringEstimate() {
     selectedCateringSummary.textContent = '还没有选择菜式。';
   } else {
     const grouped = groupedCateringItems(estimate.items);
+    const formula = estimate.meetsMinimumPax && estimate.perPax
+      ? `<p><b>计算</b>：${estimate.pax} pax × ${formatCurrency(estimate.perPax)} / pax = ${escapeHtml(totalLabel || '按时价')}${estimate.minimumTotalApplied ? `（最低预算 ${formatCurrency(estimate.minimumTotal)}）` : ''}</p>`
+      : `<p><b>计算</b>：${estimate.minimumPax} pax 起开始计算。</p>`;
     selectedCateringSummary.innerHTML = Object.entries(grouped).map(([category, items]) => (
       `<p><b>${escapeHtml(category)}</b>：${items.map(item => escapeHtml(item.marketPrice ? `${item.name}（按时价）` : item.name)).join('、')}</p>`
-    )).join('');
+    )).join('') + formula;
   }
 
   cateringWhatsApp.href = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(buildCateringMessage(estimate))}`;
@@ -2226,7 +2247,15 @@ function siteContentDefaults(language) {
 }
 
 function normalizeCateringMenu(menu) {
-  const source = Array.isArray(menu) && menu.length ? menu : CATERING_MENU;
+  const source = Array.isArray(menu) && menu.length
+    ? menu.filter(category => {
+      const id = String(category?.id || '').trim().toLowerCase();
+      const title = String(category?.title || '').trim();
+      const label = String(category?.label || '').trim();
+      return !CATERING_REMOVED_CATEGORY_IDS.has(id)
+        && !/风味搭配|酱料|sauce/i.test(`${title} ${label}`);
+    })
+    : CATERING_MENU;
   const missingDefaults = CATERING_MENU.filter(defaultCategory => (
     !source.some(category => category?.id === defaultCategory.id)
   ));
@@ -2637,6 +2666,20 @@ function parseRemoteAdminContent(value) {
   }
 }
 
+async function loadAdminContentFromCloudApi() {
+  try {
+    const response = await fetch(`${ADMIN_CONTENT_API_PATH}?v=${Date.now()}`, { cache: 'no-store' });
+    if (!response.ok) return false;
+    const result = await response.json();
+    const content = parseRemoteAdminContent(result?.content);
+    if (!content) return false;
+    saveEditableContent(content);
+    return true;
+  } catch (error) {
+    return false;
+  }
+}
+
 async function loadAdminContentFromSupabase() {
   if (!isSupabaseConfigured()) return false;
 
@@ -2655,6 +2698,32 @@ async function loadAdminContentFromSupabase() {
   }
 }
 
+async function loadAdminContentFromCloud() {
+  return (await loadAdminContentFromCloudApi()) || (await loadAdminContentFromSupabase());
+}
+
+async function saveAdminContentToCloudApi(content) {
+  const password = adminCloudPassword || adminPassword?.value || '';
+  if (!password) return false;
+
+  const response = await fetch(ADMIN_CONTENT_API_PATH, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-Admin-Email': ADMIN_EMAIL,
+      'X-Admin-Password': password
+    },
+    body: JSON.stringify({ content: normalizeAdminContent(content) })
+  });
+
+  if (response.status === 404) return false;
+  if (!response.ok) {
+    const message = await response.text();
+    throw new Error(message || `Cloud admin content save failed: ${response.status}`);
+  }
+  return true;
+}
+
 async function saveAdminContentToSupabase(content) {
   if (!isSupabaseConfigured() || !getSupabaseSession()?.access_token) return false;
 
@@ -2667,6 +2736,10 @@ async function saveAdminContentToSupabase(content) {
     }
   });
   return true;
+}
+
+async function saveAdminContentToCloud(content) {
+  return (await saveAdminContentToCloudApi(content)) || (await saveAdminContentToSupabase(content));
 }
 
 function editableContentForLanguage() {
@@ -4515,6 +4588,7 @@ function setAdminLoggedIn(value) {
     localStorage.setItem(ADMIN_SESSION_KEY, '1');
   } else {
     localStorage.removeItem(ADMIN_SESSION_KEY);
+    adminCloudPassword = '';
   }
 }
 
@@ -5840,14 +5914,16 @@ adminLoginForm?.addEventListener('submit', async event => {
   }
 
   const email = adminEmail?.value?.trim().toLowerCase();
-  if (email === ADMIN_EMAIL && hashLocalSecret(adminPassword?.value || '') === ADMIN_PASSWORD_HASH) {
+  const password = adminPassword?.value || '';
+  if (email === ADMIN_EMAIL && hashLocalSecret(password) === ADMIN_PASSWORD_HASH) {
     clearAdminLoginGuard();
-    const cloudLogin = await supabaseAdminSignIn(email, adminPassword?.value || '');
+    adminCloudPassword = password;
+    const cloudLogin = await supabaseAdminSignIn(email, password);
     setAdminLoggedIn(true);
     adminLoginForm.reset();
     showAdminMessage(cloudLogin.ok
       ? '登录成功，Supabase 云端也已连接。'
-      : '登录成功，可以开始编辑内容。Supabase 尚未连接，会继续使用本地记录。');
+      : '登录成功，可以开始编辑内容。保存时会同步到云端内容接口。');
     renderAdminState();
     return;
   }
@@ -6030,13 +6106,13 @@ saveAdminContent?.addEventListener('click', async () => {
   renderManagedContent(content);
   renderAdminEditor();
   try {
-    const cloudSaved = await saveAdminContentToSupabase(content);
+    const cloudSaved = await saveAdminContentToCloud(content);
     showAdminMessage(cloudSaved
-      ? '内容已保存，首页已更新，并已同步 Supabase。'
-      : '内容已保存，首页已更新。Supabase 尚未连接管理员权限，所以先保存在本地。');
+      ? '内容已保存到云端，网站会读取同一份最新内容。'
+      : '内容已更新并保留本地备份；云端暂时未连接。请重新登录后台后再保存一次。');
   } catch (error) {
     console.warn('Supabase admin content save failed', error);
-    showAdminMessage('内容已保存到本地，但暂时无法同步 Supabase。请检查 Supabase admin 权限。', true);
+    showAdminMessage('内容已保留本地备份，但云端同步失败。请重新登录后台；如果仍失败，再确认 Supabase 表和 Vercel 环境变量。', true);
   }
 });
 
@@ -6049,13 +6125,13 @@ resetAdminContent?.addEventListener('click', async () => {
   renderManagedContent(defaults);
   renderAdminEditor();
   try {
-    const cloudSaved = await saveAdminContentToSupabase(defaults);
+    const cloudSaved = await saveAdminContentToCloud(defaults);
     showAdminMessage(cloudSaved
-      ? '已恢复默认菜单内容，并已同步 Supabase。'
-      : '已恢复默认菜单内容。Supabase 尚未连接管理员权限，所以先保存在本地。');
+      ? '默认内容已保存到云端，网站会读取同一份内容。'
+      : '已恢复默认内容并保留本地备份；云端暂时未连接。请重新登录后台后再保存一次。');
   } catch (error) {
     console.warn('Supabase admin content reset failed', error);
-    showAdminMessage('已恢复本地默认内容，但暂时无法同步 Supabase。请检查 Supabase admin 权限。', true);
+    showAdminMessage('已恢复本地默认内容，但云端同步失败。请重新登录后台；如果仍失败，再确认 Supabase 表和 Vercel 环境变量。', true);
   }
 });
 
@@ -6276,7 +6352,7 @@ form?.addEventListener('submit', event => {
 
 async function initializeApp() {
   await loadSupabaseRuntimeConfig();
-  await loadAdminContentFromSupabase();
+  await loadAdminContentFromCloud();
   initializeMealPlanDates();
   refreshCateringInterface();
   if (document.body?.dataset.detailPage === 'catering') {
