@@ -809,7 +809,7 @@ export function createGrowthApi(storage = defaultStorage(), options = {}) {
     const current = read();
     const next = clone(current);
     next.config = withDefaults({ config }).config;
-    audit(next, 'growth.config_updated', actorId, 'config', 'growth', 'Mock configuration updated');
+    audit(next, 'growth.config_updated', actorId, 'config', 'growth', 'Growth configuration updated');
     state = write(next);
     return { ok: true, config: clone(next.config) };
   }

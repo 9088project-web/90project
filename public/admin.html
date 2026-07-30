@@ -6,9 +6,9 @@
   <meta name="robots" content="noindex, nofollow" />
   <title>内容管理后台｜九零食刻 90 PROJECT</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/remixicon@4.6.0/fonts/remixicon.css" />
-  <link rel="stylesheet" href="css/style.css?v=20260702-admin-video-only" />
-  <link rel="stylesheet" href="css/admin.css?v=20260710-content-admin" />
-  <link rel="stylesheet" href="css/growth.css?v=20260713-growth" />
+  <link rel="stylesheet" href="css/style.css?v=20260730-admin-sync" />
+  <link rel="stylesheet" href="css/admin.css?v=20260730-admin-sync" />
+  <link rel="stylesheet" href="css/growth.css?v=20260730-admin-sync" />
 </head>
 <body class="admin-page">
   <header class="admin-topbar">
@@ -76,8 +76,22 @@
       </section>
 
       <section class="admin-section" data-admin-panel="catering" hidden>
-        <div class="admin-section-head"><div><h2>外餐菜单与价格算法</h2><p>修改每个分类、每人价格和菜式列表，前台计算器会实时读取这里的内容。</p></div><button type="button" id="addCateringRow">新增分类</button></div>
-        <div class="admin-note-grid"><label>最低预算 RM<input id="adminCateringMinimum" type="number" min="0" step="1"></label></div>
+        <div class="admin-section-head"><div><h2>外餐菜单与价格算法</h2><p>最少人数、服务形式、套餐 Set、时价菜和每个分类价格都会同步到前台外餐计算器。</p></div><button type="button" id="addCateringRow">新增分类</button></div>
+        <div class="admin-note-grid admin-catering-settings">
+          <label>最少计算人数 Pax<input id="adminCateringMinimumPax" type="number" min="1" step="1"></label>
+          <label>最低预算 RM<input id="adminCateringMinimum" type="number" min="0" step="1"></label>
+          <label class="admin-wide-field">时价菜式（一行一个）
+            <textarea id="adminCateringMarketItems" rows="3" placeholder="香煎鳕鱼"></textarea>
+          </label>
+        </div>
+        <div class="admin-media-block">
+          <div class="admin-section-head admin-subhead"><div><h3>服务形式</h3><p>前台下拉选项会读取这里。现在默认只保留活动餐饮。</p></div><button type="button" id="addCateringServiceRow">新增服务形式</button></div>
+          <div class="admin-rows" id="adminCateringServiceRows"></div>
+        </div>
+        <div class="admin-media-block">
+          <div class="admin-section-head admin-subhead"><div><h3>推荐套餐 Set A-D</h3><p>顾客点击套餐卡片时，会自动套用这里设置的菜式、价格和人数。</p></div><button type="button" id="addCateringComboRow">新增套餐</button></div>
+          <div class="admin-rows" id="adminCateringComboRows"></div>
+        </div>
         <div class="admin-rows" id="adminCateringRows"></div>
       </section>
 
@@ -118,7 +132,7 @@
       </section>
 
       <section class="admin-section growth-admin-section" data-admin-panel="growth" hidden>
-        <div class="admin-section-head"><div><h2>会员推荐与会员奖励</h2><p>本地 Mock 管理区：查看会员推荐码、佣金、提现和默认规则。真实付款与通知 API 尚未接入。</p></div></div>
+        <div class="admin-section-head"><div><h2>会员推荐与会员奖励</h2><p>查看会员推荐码、三层佣金、订单完成确认、提现审核和默认规则。</p></div></div>
         <div data-growth-admin>
           <div class="growth-admin-toolbar">
             <label>搜索会员 / 推荐码
@@ -150,7 +164,7 @@
           </div>
           <div class="growth-metric-grid">
             <div class="growth-metric"><strong>待完成订单</strong><b data-admin-growth="orders">0</b></div>
-            <div class="growth-metric"><strong>有推荐码会员</strong><b data-admin-growth="promoters">0</b></div>
+            <div class="growth-metric"><strong>推荐会员</strong><b data-admin-growth="promoters">0</b></div>
             <div class="growth-metric"><strong>佣金总额</strong><b data-admin-growth="commission">RM0.00</b></div>
             <div class="growth-metric"><strong>待处理提现</strong><b data-admin-growth="withdrawals">0</b></div>
             <div class="growth-metric"><strong>线上订单线索</strong><b data-admin-growth="cloud-leads">0</b></div>
@@ -176,10 +190,43 @@
             <div class="growth-table-wrap"><table class="growth-table"><thead><tr><th>会员 / 银行</th><th>金额</th><th>状态</th><th>操作</th></tr></thead><tbody data-growth-admin-withdrawals></tbody></table></div>
           </div>
           <form class="growth-form growth-panel" data-growth-config-form>
-            <h3>默认规则</h3>
-            <div class="growth-form-grid"><label>直推佣金 %<input data-growth-config-percent type="number" min="0" max="100" step="0.1"></label><label>退款观察期（天）<input data-growth-config-hold type="number" min="0" step="1"></label></div>
-            <label>最低提现金额 RM<input data-growth-config-min type="number" min="0" step="0.01"></label>
-            <button class="growth-button" type="submit">保存 Mock 规则</button>
+            <h3>三层推荐佣金规则</h3>
+            <p>每个会员都有自己的推荐码。订单完成后，系统按三代关系自动记录佣金。</p>
+            <div class="growth-form-grid">
+              <label>第一代佣金 %<input data-growth-config-rate="0" data-growth-config-percent type="number" min="0" max="100" step="0.1"></label>
+              <label>第二代佣金 %<input data-growth-config-rate="1" type="number" min="0" max="100" step="0.1"></label>
+              <label>第三代佣金 %<input data-growth-config-rate="2" type="number" min="0" max="100" step="0.1"></label>
+              <label>退款观察期（天）<input data-growth-config-hold type="number" min="0" step="1"></label>
+            </div>
+            <div class="growth-form-grid">
+              <label>最低提现金额 RM<input data-growth-config-min type="number" min="0" step="0.01"></label>
+              <label>最低计佣金额 RM<input data-growth-config-min-order type="number" min="0" step="0.01"></label>
+              <label>每单总佣金封顶 %<input data-growth-config-cap type="number" min="0" max="100" step="0.1"></label>
+            </div>
+            <h3>会员积分与等级</h3>
+            <p>会员完成订单后会累计积分；等级门槛会影响后台识别和后续优惠安排。</p>
+            <div class="growth-form-grid">
+              <label>每 RM1 积分<input data-growth-config-points type="number" min="0" step="0.1"></label>
+              <label>Silver 门槛 RM<input data-growth-config-level="silver.spendThreshold" type="number" min="0" step="1"></label>
+              <label>Gold 门槛 RM<input data-growth-config-level="gold.spendThreshold" type="number" min="0" step="1"></label>
+              <label>VIP 门槛 RM<input data-growth-config-level="vip.spendThreshold" type="number" min="0" step="1"></label>
+            </div>
+            <div class="growth-form-grid">
+              <label>Silver 订单门槛<input data-growth-config-level="silver.orderThreshold" type="number" min="0" step="1"></label>
+              <label>Gold 订单门槛<input data-growth-config-level="gold.orderThreshold" type="number" min="0" step="1"></label>
+              <label>VIP 订单门槛<input data-growth-config-level="vip.orderThreshold" type="number" min="0" step="1"></label>
+            </div>
+            <div class="growth-form-grid">
+              <label>Silver 优惠 %<input data-growth-config-level="silver.discountPercent" type="number" min="0" max="100" step="0.1"></label>
+              <label>Gold 优惠 %<input data-growth-config-level="gold.discountPercent" type="number" min="0" max="100" step="0.1"></label>
+              <label>VIP 优惠 %<input data-growth-config-level="vip.discountPercent" type="number" min="0" max="100" step="0.1"></label>
+            </div>
+            <div class="growth-form-grid">
+              <label>Silver 积分倍率<input data-growth-config-level="silver.pointsMultiplier" type="number" min="0" step="0.05"></label>
+              <label>Gold 积分倍率<input data-growth-config-level="gold.pointsMultiplier" type="number" min="0" step="0.05"></label>
+              <label>VIP 积分倍率<input data-growth-config-level="vip.pointsMultiplier" type="number" min="0" step="0.05"></label>
+            </div>
+            <button class="growth-button" type="submit">保存规则</button>
           </form>
           <p class="growth-message" data-growth-message aria-live="polite"></p>
         </div>
@@ -193,7 +240,7 @@
     </section>
   </main>
 
-  <script src="js/app.js?v=20260710-content-admin"></script>
-  <script type="module" src="js/growth-mock.js?v=20260713-growth-admin"></script>
+  <script src="js/app.js?v=20260730-admin-sync"></script>
+  <script type="module" src="js/growth-mock.js?v=20260730-growth-admin-sync"></script>
 </body>
 </html>

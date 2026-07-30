@@ -10,7 +10,7 @@ const translations = {
   zh: {
     language: '中文',
     rewards: '会员奖励',
-    referral: '90推荐官',
+    referral: '会员推荐',
     member: '会员中心',
     home: '返回首页',
     login: '会员登录',
@@ -23,7 +23,7 @@ const translations = {
     loginAction: '登录',
     registerAction: '创建会员',
     welcome: '分享九零食刻，把美好食刻介绍给朋友，也获得属于你的推荐奖励。',
-    apply: '成为90推荐官',
+    apply: '成为会员推荐',
     applyIntro: '通过审核后，你可以获得专属推荐代码、分享链接和佣金记录。',
     pending: '审核中',
     approved: '已批准',
@@ -40,7 +40,7 @@ const translations = {
     region: '所在地区',
     method: '推荐方式',
     customerType: '预计客户类型',
-    agreeTerms: '我同意90推荐官条款',
+    agreeTerms: '我同意会员推荐条款',
     agreePrivacy: '我同意隐私政策',
     enquiry: '模拟建立询价',
     complete: '模拟完成订单',
@@ -51,7 +51,7 @@ const translations = {
     bank: '银行名称',
     account: '银行账号',
     accountName: '账户姓名',
-    mock: 'Mock 模式：不会真实收款、转账或发送 API 通知。',
+    mock: '内部流程：不会真实收款、转账或通知顾客。',
     noData: '目前还没有记录。',
     shareText: '分享九零食刻，把美好食刻介绍给朋友：',
     identity: 'Email / 手机号码', copy: '复制链接', whatsapp: 'WhatsApp',
@@ -61,13 +61,13 @@ const translations = {
     rewardTitle: '推荐奖励', rewardDesc: '支持三层真实订单推荐：第一代3%，第二代1%，第三代1%，订单完成并通过退款观察期后才进入可提现状态。',
     pathTitle: '清楚的奖励路径', pathRegister: '注册会员', pathWelcome: '+ 欢迎积分', pathOrder: '完成真实订单', pathPoints: '积分入账', pathRefer: '推荐朋友完成服务', pathCommission: '佣金确认', pathHold: '通过退款观察期', pathWithdraw: '可申请提现', startTitle: '立即开始', startDesc: '先注册会员，之后可以在会员中心查看积分、优惠券、订单、推荐和提现记录。',
     stepsTitle: '三步开始', stepsIntro: '最多追踪三层推荐关系，奖励只来自真实完成订单，不收取入会费，不靠拉人收费。',
-    stepApply: '注册成为90推荐官', stepApplyDesc: '提交社交平台、地区和推荐方式，等待后台审核。', stepShare: '分享专属链接或二维码', stepShareDesc: '系统记录首次有效访问，已绑定的会员不会被其他推荐代码覆盖。', stepEarn: '订单完成后获得奖励', stepEarnDesc: '订单完成并经过退款观察期，佣金才会变成可提现状态。',
-    rulesTitle: '透明规则', rulesMode: '奖励模式', rulesModeValue: '三层推荐奖励', rulesRate: '默认佣金', rulesRateValue: '第一代3% · 第二代1% · 第三代1%', rulesSettle: '结算条件', rulesSettleValue: '完成订单 + 观察期', rulesWithdraw: '提现方式', rulesWithdrawValue: '后台审核', notMemberTitle: '还不是会员？', notMemberDesc: '先注册会员，再在会员中心提交90推荐官申请。审核通过后才会生成推荐代码。',
-    mockTitle: 'Mock 流程测试', mockDesc: '仅用于本地验收：创建询价、完成订单、模拟退款和释放观察期佣金。',
-    memberLevel: '会员等级', commissionBook: '佣金账本', application: '成为90推荐官', memberMock: 'Mock 模式：不会真实收款、转账或发送 API 通知。'
+    stepApply: '注册成为会员推荐', stepApplyDesc: '提交社交平台、地区和推荐方式，等待后台审核。', stepShare: '分享专属链接或二维码', stepShareDesc: '系统记录首次有效访问，已绑定的会员不会被其他推荐代码覆盖。', stepEarn: '订单完成后获得奖励', stepEarnDesc: '订单完成并经过退款观察期，佣金才会变成可提现状态。',
+    rulesTitle: '透明规则', rulesMode: '奖励模式', rulesModeValue: '三层推荐奖励', rulesRate: '默认佣金', rulesRateValue: '第一代3% · 第二代1% · 第三代1%', rulesSettle: '结算条件', rulesSettleValue: '完成订单 + 观察期', rulesWithdraw: '提现方式', rulesWithdrawValue: '后台审核', notMemberTitle: '还不是会员？', notMemberDesc: '先注册会员，再在会员中心提交会员推荐申请。审核通过后才会生成推荐代码。',
+    mockTitle: '内部流程检查', mockDesc: '内部人员用于检查询价、订单、退款和佣金流程。',
+    memberLevel: '会员等级', commissionBook: '佣金账本', application: '成为会员推荐', memberMock: '内部流程：不会真实收款、转账或通知顾客。'
   },
   en: {
-    language: 'English', rewards: 'Member Rewards', referral: '90 Promoter', member: 'Member Centre', home: 'Home', login: 'Member Login', logout: 'Log out', register: 'Register', name: 'Name', email: 'Email', phone: 'Mobile number', password: 'Password (at least 6 characters)', loginAction: 'Log in', registerAction: 'Create member', welcome: 'Share 90 PROJECT with friends and earn transparent referral rewards.', apply: 'Become a 90 Promoter', applyIntro: 'After approval, you receive a referral code, share link and commission records.', pending: 'Under review', approved: 'Approved', code: 'Referral code', share: 'Share link', points: 'Points balance', coupons: 'Available coupons', commissions: 'Available commission', orders: 'My orders', enquiries: 'My enquiries', applySubmit: 'Submit application', socialPlatform: 'Social platform', socialAccount: 'Social account', region: 'Region', method: 'Promotion method', customerType: 'Expected customer type', agreeTerms: 'I agree to the promoter terms', agreePrivacy: 'I agree to the privacy policy', enquiry: 'Mock enquiry', complete: 'Mock complete order', refund: 'Mock refund', release: 'Release commission', withdrawal: 'Submit withdrawal', amount: 'Withdrawal amount', bank: 'Bank name', account: 'Bank account', accountName: 'Account name', mock: 'Mock mode: no real payment, bank transfer or API notification is used.', noData: 'No records yet.', shareText: 'Share 90 PROJECT with your friends:', identity: 'Email / mobile number', copy: 'Copy link', whatsapp: 'WhatsApp', benefitsTitle: 'Member benefits', benefitsIntro: 'Rewards are transparent and traceable, based on real enquiries and completed orders.', pointsTitle: 'Member points', pointsDesc: 'Earn points from registration, completed orders and selected campaigns. Every change is recorded.', couponTitle: 'Member coupons', couponDesc: 'Welcome, service, birthday and campaign coupons are controlled by admin rules.', rewardTitle: 'Referral rewards', rewardDesc: 'Supports three generations of real-order referrals: 3% for generation 1, 1% for generation 2 and 1% for generation 3. Commission becomes withdrawable after the refund observation period.', pathTitle: 'A clear reward path', pathRegister: 'Register as a member', pathWelcome: '+ Welcome points', pathOrder: 'Complete an eligible order', pathPoints: 'Points credited', pathRefer: 'Refer a friend who completes service', pathCommission: 'Commission confirmed', pathHold: 'Pass the refund observation period', pathWithdraw: 'Withdrawal available', startTitle: 'Start now', startDesc: 'Register first, then review points, coupons, orders, referrals and withdrawals in the member centre.', stepsTitle: 'Three simple steps', stepsIntro: 'The system tracks up to three referral generations. Rewards only come from completed real orders; there is no joining fee or recruitment-based payout.', stepApply: 'Register as a 90 Promoter', stepApplyDesc: 'Submit your platform, region and promotion method for admin review.', stepShare: 'Share your link or QR code', stepShareDesc: 'The first valid visit is recorded and an existing member binding cannot be overwritten.', stepEarn: 'Earn after the order is completed', stepEarnDesc: 'Commission becomes withdrawable after order completion and the refund observation period.', rulesTitle: 'Transparent rules', rulesMode: 'Reward model', rulesModeValue: 'Three-generation referral reward', rulesRate: 'Default commission', rulesRateValue: 'Gen 1 3% · Gen 2 1% · Gen 3 1%', rulesSettle: 'Settlement condition', rulesSettleValue: 'Completed order + hold period', rulesWithdraw: 'Withdrawal method', rulesWithdrawValue: 'Manual review', notMemberTitle: 'Not a member yet?', notMemberDesc: 'Register first, then submit the promoter application in the member centre. A referral code is created after approval.', mockTitle: 'Mock flow testing', mockDesc: 'For local acceptance only: create an enquiry, complete an order, simulate a refund and release held commission.', memberLevel: 'Member level', commissionBook: 'Commission ledger', application: 'Become a 90 Promoter', memberMock: 'Mock mode: no real payment, bank transfer or API notification is used.'
+    language: 'English', rewards: 'Member Rewards', referral: 'Member Referral', member: 'Member Centre', home: 'Home', login: 'Member Login', logout: 'Log out', register: 'Register', name: 'Name', email: 'Email', phone: 'Mobile number', password: 'Password (at least 6 characters)', loginAction: 'Log in', registerAction: 'Create member', welcome: 'Share 90 PROJECT with friends and earn transparent referral rewards.', apply: 'My referral code', applyIntro: 'Every member receives a referral code, share link and commission records.', pending: 'Under review', approved: 'Approved', code: 'Referral code', share: 'Share link', points: 'Points balance', coupons: 'Available coupons', commissions: 'Available commission', orders: 'My orders', enquiries: 'My enquiries', applySubmit: 'Submit application', socialPlatform: 'Social platform', socialAccount: 'Social account', region: 'Region', method: 'Promotion method', customerType: 'Expected customer type', agreeTerms: 'I agree to the member referral rules', agreePrivacy: 'I agree to the privacy policy', enquiry: 'Create enquiry', complete: 'Complete order', refund: 'Refund order', release: 'Release commission', withdrawal: 'Submit withdrawal', amount: 'Withdrawal amount', bank: 'Bank name', account: 'Bank account', accountName: 'Account name', mock: 'Internal flow only: no real payment, bank transfer or customer notification is used.', noData: 'No records yet.', shareText: 'Share 90 PROJECT with your friends:', identity: 'Email / mobile number', copy: 'Copy link', whatsapp: 'WhatsApp', benefitsTitle: 'Member benefits', benefitsIntro: 'Rewards are transparent and traceable, based on real enquiries and completed orders.', pointsTitle: 'Member points', pointsDesc: 'Earn points from registration, completed orders and selected campaigns. Every change is recorded.', couponTitle: 'Member coupons', couponDesc: 'Welcome, service, birthday and campaign coupons are controlled by admin rules.', rewardTitle: 'Referral rewards', rewardDesc: 'Supports three generations of real-order referrals: 3% for generation 1, 1% for generation 2 and 1% for generation 3. Commission becomes withdrawable after the refund observation period.', pathTitle: 'A clear reward path', pathRegister: 'Register as a member', pathWelcome: '+ Welcome points', pathOrder: 'Complete an eligible order', pathPoints: 'Points credited', pathRefer: 'Refer a friend who completes service', pathCommission: 'Commission confirmed', pathHold: 'Pass the refund observation period', pathWithdraw: 'Withdrawal available', startTitle: 'Start now', startDesc: 'Register first, then review points, coupons, orders, referrals and withdrawals in the member centre.', stepsTitle: 'Three simple steps', stepsIntro: 'The system tracks up to three referral generations. Rewards only come from completed real orders; there is no joining fee or recruitment-based payout.', stepApply: 'Register as a member', stepApplyDesc: 'Create a member account and the system prepares your referral code automatically.', stepShare: 'Share your link or QR code', stepShareDesc: 'The first valid visit is recorded and an existing member binding cannot be overwritten.', stepEarn: 'Earn after the order is completed', stepEarnDesc: 'Commission becomes withdrawable after order completion and the refund observation period.', rulesTitle: 'Transparent rules', rulesMode: 'Reward model', rulesModeValue: 'Three-generation referral reward', rulesRate: 'Default commission', rulesRateValue: 'Gen 1 3% · Gen 2 1% · Gen 3 1%', rulesSettle: 'Settlement condition', rulesSettleValue: 'Completed order + hold period', rulesWithdraw: 'Withdrawal method', rulesWithdrawValue: 'Manual review', notMemberTitle: 'Not a member yet?', notMemberDesc: 'Register first, then submit the member referral profile in the member centre. A referral code is created automatically after registration.', mockTitle: 'Internal flow check', mockDesc: 'For internal checking only: create an enquiry, complete an order, simulate a refund and release held commission.', memberLevel: 'Member level', commissionBook: 'Commission ledger', application: 'My referral code', memberMock: 'Internal flow only: no real payment, bank transfer or customer notification is used.'
   }
 };
 
@@ -80,7 +80,7 @@ Object.assign(translations.zh, {
   referralLevelThree: '\u7b2c\u4e09\u4ee3',
   referralCompleted: '\u5df2\u5b8c\u6210\u8ba2\u5355\u4f1a\u5458',
   rewards: '会员奖励',
-  referral: '90推荐官',
+  referral: '会员推荐',
   member: '会员中心',
   home: '返回首页',
   login: '会员登录',
@@ -92,7 +92,7 @@ Object.assign(translations.zh, {
   password: '密码（至少 6 个字符）',
   loginAction: '登录',
   registerAction: '创建会员',
-  apply: '成为90推荐官',
+  apply: '成为会员推荐',
   applyIntro: '通过审核后，你可以获得专属推荐代码、分享链接和佣金记录。',
   pending: '审核中',
   approved: '已批准',
@@ -113,14 +113,14 @@ Object.assign(translations.zh, {
   whatsapp: 'WhatsApp',
   memberLevel: '会员等级',
   commissionBook: '佣金账本',
-  application: '成为90推荐官',
+  application: '成为会员推荐',
   shareText: '分享九零食刻给朋友：',
   socialPlatform: '社交平台',
   socialAccount: '社交账号',
   region: '所在地区',
   method: '推荐方式',
   customerType: '预计客户类型',
-  agreeTerms: '我同意90推荐官条款',
+  agreeTerms: '我同意会员推荐条款',
   agreePrivacy: '我同意隐私政策',
   applySubmit: '提交申请'
 });
@@ -130,9 +130,9 @@ Object.assign(translations.zh, {
   memberHeroTitle: '九零食刻会员中心',
   memberHeroDesc: '用手机验证建立会员身份，统一管理资料、订单记录、积分优惠、推荐奖励和提现申请。',
   cloudChecking: '正在检测会员云端...',
-  cloudConnected: 'Supabase 已连接，会员资料会同步云端。',
-  cloudLocal: '本地会员模式：Supabase 尚未配置或暂不可用。',
-  cloudReadFail: 'Supabase 已配置，但当前读取失败；页面继续使用本地记录。',
+  cloudConnected: '会员资料已连接云端。',
+  cloudLocal: '会员资料暂时以本机记录显示。',
+  cloudReadFail: '云端资料读取暂时失败；页面继续使用本机记录。',
   benefitOne: '注册欢迎积分',
   benefitTwo: '订单记录归档',
   benefitThree: '推荐奖励查询',
@@ -182,19 +182,19 @@ Object.assign(translations.zh, {
   couponListTitle: '优惠券',
   pointsListTitle: '积分记录',
   notificationTitle: '会员通知',
-  applicationTitle: '申请成为90推荐官',
+  applicationTitle: '申请成为会员推荐',
   applicationIntro: '适合经常介绍朋友、公司、活动客户的人。后台审核通过后才会生成推荐码。',
   withdrawalTitle: '提现申请',
   withdrawalIntro: '佣金达到最低提现金额后，可以提交后台审核。',
   submitWithdrawal: '提交提现',
-  mockToolsTitle: '本地验收工具',
-  mockToolsIntro: '只用于测试会员流程，不会真实收款、转账或通知顾客。',
+  mockToolsTitle: '内部流程工具',
+  mockToolsIntro: '内部人员用于检查会员流程。',
   footerBack: '返回首页',
   loginHelpDuplicate: '这个 Email 或手机号已经注册，可以直接登录。',
   invalidRegister: '请填写完整资料，密码至少 6 个字符。',
-  registerCloudOk: '会员已创建，并已同步 Supabase。',
-  registerCloudConfirm: '会员已创建。Supabase 可能需要 Email 确认后才会同步。',
-  registerCloudFail: '会员已创建，本地可用；Supabase 同步暂时失败。',
+  registerCloudOk: '会员已创建，并已同步云端。',
+  registerCloudConfirm: '会员已创建。请先确认 Email 后再登录。',
+  registerCloudFail: '会员已创建，本机可用；云端同步暂时失败。',
   registerLocalOk: '会员已创建。欢迎积分与新会员优惠券已加入。',
   loginBusy: '登录中...',
   registerBusy: '创建中...',
@@ -209,12 +209,12 @@ Object.assign(translations.zh, {
   profileCloudOk: '会员资料已保存，并已同步云端。',
   profileCloudFail: '会员资料已保存，本次云端同步失败。',
   profileLocalOk: '会员资料已保存。',
-  applicationExists: '你已经提交过推荐官申请，等待后台审核即可。',
-  termsRequired: '请先同意推荐官条款与隐私政策。',
-  applicationCloudOk: '推荐官申请已提交，并已同步云端。',
-  applicationCloudFail: '推荐官申请已保存在本地，云端同步暂时失败。',
-  applicationLocalOk: '推荐官申请已提交审核。',
-  withdrawPromoterRequired: '推荐官通过审核后才可以申请提现。',
+  applicationExists: '你已经提交过会员推荐申请，等待后台审核即可。',
+  termsRequired: '请先同意会员推荐条款与隐私政策。',
+  applicationCloudOk: '会员推荐申请已提交，并已同步云端。',
+  applicationCloudFail: '会员推荐申请已保存在本地，云端同步暂时失败。',
+  applicationLocalOk: '会员推荐申请已提交审核。',
+  withdrawPromoterRequired: '会员推荐通过审核后才可以申请提现。',
   withdrawBelowMinimum: '提现金额低于最低提现金额。',
   withdrawPending: '你已经有一笔提现在处理中。',
   withdrawInsufficient: '可提现佣金余额不足。',
@@ -235,9 +235,9 @@ Object.assign(translations.en, {
   memberHeroTitle: '90 PROJECT Member Centre',
   memberHeroDesc: 'Verify by mobile number, then manage profile details, order records, points, coupons, referral rewards and withdrawal requests in one place.',
   cloudChecking: 'Checking member cloud connection...',
-  cloudConnected: 'Supabase is connected. Member data will sync to the cloud.',
-  cloudLocal: 'Local member mode: Supabase is not configured or temporarily unavailable.',
-  cloudReadFail: 'Supabase is configured, but reading failed. This page will continue with local records.',
+  cloudConnected: 'Member records are connected to the cloud.',
+  cloudLocal: 'Member records are shown from this device for now.',
+  cloudReadFail: 'Cloud records could not be read for now. This page will continue with local records.',
   benefitOne: 'Welcome points',
   benefitTwo: 'Order history archive',
   benefitThree: 'Referral reward tracking',
@@ -287,7 +287,7 @@ Object.assign(translations.en, {
   couponListTitle: 'Coupons',
   pointsListTitle: 'Points history',
   notificationTitle: 'Member notifications',
-  applicationTitle: 'Apply as a 90 Promoter',
+  applicationTitle: 'Apply as a Member Referral',
   applicationIntro: 'Suitable for people who often introduce friends, companies or event customers. A referral code is created after admin approval.',
   withdrawalTitle: 'Withdrawal request',
   withdrawalIntro: 'Once your commission reaches the minimum amount, you can submit it for admin review.',
@@ -297,9 +297,9 @@ Object.assign(translations.en, {
   footerBack: 'Back to home',
   loginHelpDuplicate: 'This email or phone is already registered. Please log in.',
   invalidRegister: 'Please complete all details. Password needs at least 6 characters.',
-  registerCloudOk: 'Member created and synced to Supabase.',
-  registerCloudConfirm: 'Member created. Supabase may require email confirmation before syncing.',
-  registerCloudFail: 'Member created locally, but Supabase sync failed for now.',
+  registerCloudOk: 'Member created and synced to the cloud.',
+  registerCloudConfirm: 'Member created. Please confirm your email before logging in.',
+  registerCloudFail: 'Member created on this device, but cloud sync failed for now.',
   registerLocalOk: 'Member created. Welcome points and coupon have been added.',
   loginBusy: 'Logging in...',
   registerBusy: 'Creating...',
@@ -314,12 +314,12 @@ Object.assign(translations.en, {
   profileCloudOk: 'Profile saved and synced to the cloud.',
   profileCloudFail: 'Profile saved locally, but cloud sync failed this time.',
   profileLocalOk: 'Profile saved.',
-  applicationExists: 'You already submitted a promoter application. Please wait for admin review.',
-  termsRequired: 'Please accept the promoter terms and privacy policy.',
-  applicationCloudOk: 'Promoter application submitted and synced to the cloud.',
-  applicationCloudFail: 'Promoter application saved locally, but cloud sync failed for now.',
-  applicationLocalOk: 'Promoter application submitted for review.',
-  withdrawPromoterRequired: 'You can request withdrawal after promoter approval.',
+  applicationExists: 'You already submitted a member referral profile. Please wait for admin review.',
+  termsRequired: 'Please accept the member referral rules and privacy policy.',
+  applicationCloudOk: 'Member referral profile submitted and synced to the cloud.',
+  applicationCloudFail: 'Member referral profile saved locally, but cloud sync failed for now.',
+  applicationLocalOk: 'Member referral profile submitted for review.',
+  withdrawPromoterRequired: 'You can request withdrawal after your referral code is ready.',
   withdrawBelowMinimum: 'Withdrawal amount is below the minimum.',
   withdrawPending: 'You already have a withdrawal in progress.',
   withdrawInsufficient: 'Available commission balance is insufficient.',
@@ -1091,11 +1091,25 @@ function renderAdmin() {
     return `<tr><td><strong>${esc(member?.name || item.memberId)}</strong><br><small>${esc(item.bankName || '-')} · ${esc(item.accountName || '-')}</small><br><small>${esc(item.bankAccount || item.duitNowNumber || '-')}</small></td><td><b>${formatMoney(item.amount)}</b><br><small>${new Date(item.createdAt).toLocaleDateString()}</small>${payment ? `<br><small>付款编号 ${esc(payment.referenceNumber || '-')}</small>` : ''}</td><td>${statusBadge(item.status)}</td><td><div class="growth-admin-actions"><button class="growth-button" data-review-withdrawal="${item.id}" data-decision="approve">批准</button><button class="growth-button secondary" data-review-withdrawal="${item.id}" data-decision="processing">处理中</button><button class="growth-button" data-review-withdrawal="${item.id}" data-decision="paid">标记已付款</button><button class="growth-button secondary" data-review-withdrawal="${item.id}" data-decision="reject">拒绝</button></div></td></tr>`;
   }).join('') : '<tr><td colspan="4">没有符合筛选的提现请求。</td></tr>';
   const config = snapshot.config;
-  document.querySelector('[data-growth-config-percent]').value = config.defaultCommission.value;
+  const rates = Array.isArray(config.referralCommissionRates) && config.referralCommissionRates.length
+    ? config.referralCommissionRates
+    : [config.defaultCommission?.value || 3, 1, 1];
+  document.querySelectorAll('[data-growth-config-rate]').forEach((input, index) => {
+    input.value = Number(rates[index] ?? 0);
+  });
+  document.querySelector('[data-growth-config-percent]').value = Number(rates[0] ?? config.defaultCommission.value ?? 0);
   document.querySelector('[data-growth-config-hold]').value = config.refundObservationDays;
   document.querySelector('[data-growth-config-min]').value = config.minimumWithdrawal;
   document.querySelector('[data-growth-config-min-order]').value = config.minimumCommissionEligibleAmount || 0;
   document.querySelector('[data-growth-config-cap]').value = config.maxCommissionPercentPerOrder || 5;
+  const pointsInput = document.querySelector('[data-growth-config-points]');
+  if (pointsInput) pointsInput.value = Number(config.pointsPerMyr ?? 1);
+  document.querySelectorAll('[data-growth-config-level]').forEach(input => {
+    const [levelId, field] = String(input.dataset.growthConfigLevel || '').split('.');
+    const level = (config.levels || []).find(item => item.id === levelId);
+    if (!level || !field) return;
+    input.value = Number(level[field] ?? 0);
+  });
 }
 
 function bindAdmin() {
@@ -1191,14 +1205,36 @@ function bindAdmin() {
   document.querySelector('[data-growth-config-form]')?.addEventListener('submit', event => {
     event.preventDefault();
     const config = api.getState().config;
-    config.defaultCommission.value = Number(document.querySelector('[data-growth-config-percent]').value) || 0;
-    config.referralCommissionRates = Array.isArray(config.referralCommissionRates) ? config.referralCommissionRates : [3, 1, 1];
-    config.referralCommissionRates[0] = config.defaultCommission.value;
-    config.commissionRules = (config.commissionRules || []).map(rule => Number(rule.generation) === 1 ? { ...rule, value: config.defaultCommission.value } : rule);
+    const rates = Array.from(document.querySelectorAll('[data-growth-config-rate]'))
+      .slice(0, 3)
+      .map(input => Number(input.value) || 0);
+    while (rates.length < 3) rates.push(0);
+    config.defaultCommission.value = rates[0];
+    config.referralCommissionRates = rates;
+    config.maxReferralGenerations = 3;
+    config.commissionRules = rates.map((rate, index) => ({
+      id: `generation-${index + 1}`,
+      name: `Generation ${index + 1} referral`,
+      service: '*',
+      type: 'percent',
+      value: rate,
+      generation: index + 1,
+      active: true
+    }));
     config.refundObservationDays = Number(document.querySelector('[data-growth-config-hold]').value) || 7;
     config.minimumWithdrawal = Number(document.querySelector('[data-growth-config-min]').value) || 50;
     config.minimumCommissionEligibleAmount = Number(document.querySelector('[data-growth-config-min-order]')?.value) || 0;
     config.maxCommissionPercentPerOrder = Number(document.querySelector('[data-growth-config-cap]')?.value) || 5;
+    const pointsInput = document.querySelector('[data-growth-config-points]');
+    if (pointsInput) config.pointsPerMyr = Number(pointsInput.value) || 1;
+    document.querySelectorAll('[data-growth-config-level]').forEach(input => {
+      const [levelId, field] = String(input.dataset.growthConfigLevel || '').split('.');
+      if (!levelId || !field) return;
+      const numericValue = Math.max(Number(input.value) || 0, 0);
+      config.levels = (config.levels || []).map(level => (
+        level.id === levelId ? { ...level, [field]: numericValue } : level
+      ));
+    });
     api.updateConfig(config, 'mock-admin');
     setMessage('增长系统规则已保存。');
     renderAdmin();

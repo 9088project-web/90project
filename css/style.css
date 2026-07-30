@@ -2707,6 +2707,31 @@ details p{color:var(--muted);font-size:13px;line-height:1.55}
   padding:12px;
   background:rgba(255,247,232,.045);
 }
+.admin-catering-service-row{
+  grid-template-columns:minmax(120px,.65fr) minmax(220px,1.4fr) minmax(120px,.65fr) auto;
+}
+.admin-catering-combo-row{
+  display:grid;
+  grid-template-columns:repeat(6,minmax(0,1fr)) auto;
+  gap:10px;
+  align-items:end;
+  border:1px solid rgba(214,168,92,.22);
+  border-radius:14px;
+  padding:12px;
+  background:rgba(255,247,232,.045);
+}
+.admin-catering-combo-row label,
+.admin-catering-service-row label{
+  color:#f4ddba;
+}
+.admin-catering-combo-row input,
+.admin-catering-combo-row textarea,
+.admin-catering-service-row input{
+  background:#fffaf1;
+}
+.admin-wide-field{
+  grid-column:1/-1;
+}
 .admin-case-row{
   display:grid;
   grid-template-columns:1fr 1fr 1.4fr 1fr auto;
@@ -3233,7 +3258,9 @@ body.order-form-visible .back-top{
   .admin-note-grid,.admin-row,.admin-row.two-line{grid-template-columns:1fr}
   .admin-site-rows{max-height:none}
   .admin-site-row{grid-template-columns:1fr}
-  .admin-catering-row{grid-template-columns:1fr}
+  .admin-catering-row,
+  .admin-catering-service-row,
+  .admin-catering-combo-row{grid-template-columns:1fr}
   .admin-case-row{grid-template-columns:1fr}
   .admin-catering-items{grid-column:auto}
   .admin-case-row .admin-catering-items{grid-column:auto}

@@ -60,7 +60,13 @@ const adminInquiries = document.getElementById('adminInquiries');
 const adminMemberStatus = document.getElementById('adminMemberStatus');
 const adminMembers = document.getElementById('adminMembers');
 const adminSiteRows = document.getElementById('adminSiteRows');
+const adminCateringMinimumPax = document.getElementById('adminCateringMinimumPax');
 const adminCateringMinimum = document.getElementById('adminCateringMinimum');
+const adminCateringMarketItems = document.getElementById('adminCateringMarketItems');
+const adminCateringServiceRows = document.getElementById('adminCateringServiceRows');
+const addCateringServiceRow = document.getElementById('addCateringServiceRow');
+const adminCateringComboRows = document.getElementById('adminCateringComboRows');
+const addCateringComboRow = document.getElementById('addCateringComboRow');
 const adminCateringRows = document.getElementById('adminCateringRows');
 const addCateringRow = document.getElementById('addCateringRow');
 const adminCaseRows = document.getElementById('adminCaseRows');
@@ -151,7 +157,7 @@ let stylingCaseTimer = null;
 let stylingCaseProgressFrame = null;
 let stylingCasePlaying = !prefersReducedMotion;
 const CATERING_SERVICE_STYLES = {
-  event: { label: '活动餐饮 / Event Catering', multiplier: 1.18 }
+  event: { label: '活动餐饮 / Event Catering', multiplier: 1 }
 };
 const CATERING_SELECTION_LIMITS = {
   staple: 1,
@@ -492,6 +498,7 @@ const SITE_CONTENT_FIELDS = [
   { path: 'nav.mobileWhatsApp', label: '手机底部 WhatsApp 按钮' },
   { path: 'contact.phone', label: '联系方式：电话号码' },
   { path: 'contact.whatsapp', label: '联系方式：WhatsApp 号码' },
+  { path: 'contact.email', label: '联系方式：Gmail / Email' },
   { path: 'contact.footer', label: '页脚版权文字' },
   { path: 'hero.title', label: 'Hero 主标题' },
   { path: 'hero.eyebrow', label: 'Hero 英文/副标' },
@@ -1112,6 +1119,80 @@ function parseCateringComboPrice(value) {
   return Number.isFinite(amount) ? amount : 0;
 }
 
+function defaultCateringServiceStyles() {
+  return Object.entries(CATERING_SERVICE_STYLES).map(([id, style]) => ({
+    id,
+    label: String(style.label || id),
+    multiplier: Number(style.multiplier || 1)
+  }));
+}
+
+function normalizeCateringServiceStyles(serviceStyles) {
+  const source = Array.isArray(serviceStyles) && serviceStyles.length
+    ? serviceStyles
+    : defaultCateringServiceStyles();
+  const normalized = source.map((style, index) => {
+    const id = String(style?.id || `service-${index + 1}`).trim();
+    const label = String(style?.label || id).trim();
+    const rawMultiplier = Number.parseFloat(style?.multiplier);
+    const multiplier = id === 'event' && rawMultiplier === 1.18 ? 1 : rawMultiplier;
+    return {
+      id,
+      label,
+      multiplier: Number.isFinite(multiplier) && multiplier > 0 ? multiplier : 1
+    };
+  }).filter(style => style.id && style.label);
+  return normalized.length ? normalized : defaultCateringServiceStyles();
+}
+
+function cateringServiceStyleMap(styles = editableCateringConfig().serviceStyles) {
+  const entries = normalizeCateringServiceStyles(styles).map(style => [style.id, style]);
+  return Object.fromEntries(entries);
+}
+
+function normalizeMarketPriceItems(items) {
+  const source = Array.isArray(items)
+    ? items
+    : String(items || '').split(/[\n,，]+/);
+  const values = source.map(item => String(item || '').trim()).filter(Boolean);
+  return Array.from(new Set(values));
+}
+
+function editableMarketPriceItems() {
+  return new Set(normalizeMarketPriceItems(editableCateringConfig().marketPriceItems));
+}
+
+function normalizeCateringCombos(combos) {
+  const source = Array.isArray(combos) && combos.length ? combos : CATERING_COMBOS;
+  return source.map((combo, index) => {
+    const id = String(combo?.id || `set-${index + 1}`).trim();
+    const title = String(combo?.title || combo?.label || id).trim();
+    const label = String(combo?.label || title).trim();
+    const price = String(combo?.price || '').trim();
+    const desc = String(combo?.desc || '').trim();
+    const pax = Math.max(Number.parseInt(combo?.pax || CATERING_MINIMUM_PAX, 10) || CATERING_MINIMUM_PAX, 1);
+    const service = String(combo?.service || 'event').trim();
+    const items = Array.isArray(combo?.items)
+      ? combo.items.map(item => String(item || '').trim()).filter(Boolean)
+      : String(combo?.items || '').split(/\n+/).map(item => item.trim()).filter(Boolean);
+    return { id, title, label, price, desc, pax, service, items };
+  }).filter(combo => combo.id && (combo.title || combo.label || combo.items.length));
+}
+
+function editableCateringCombos() {
+  return normalizeCateringCombos(editableCateringConfig().combos);
+}
+
+function populateCateringServiceStyleOptions() {
+  if (!cateringServiceStyle) return;
+  const current = cateringServiceStyle.value || 'event';
+  const styles = normalizeCateringServiceStyles(editableCateringConfig().serviceStyles);
+  cateringServiceStyle.innerHTML = styles.map(style => (
+    `<option value="${escapeHtml(style.id)}">${escapeHtml(style.label)}</option>`
+  )).join('');
+  cateringServiceStyle.value = styles.some(style => style.id === current) ? current : styles[0]?.id || 'event';
+}
+
 function cateringSelectionGroup(categoryId) {
   if (['staple', 'porridge'].includes(categoryId)) return 'staple';
   if (['vegetable', 'tofu', 'fried'].includes(categoryId)) return 'vegetable';
@@ -1174,7 +1255,7 @@ function cateringItemRate(category, item) {
 }
 
 function cateringItemIsMarketPrice(item) {
-  return CATERING_MARKET_PRICE_ITEMS.has(String(item || '').trim());
+  return editableMarketPriceItems().has(String(item || '').trim());
 }
 
 function cateringItemPriceLabel(category, item) {
@@ -1215,7 +1296,7 @@ function renderCateringMenu() {
 
 function renderCateringCombos() {
   if (!cateringComboPresets) return;
-  cateringComboPresets.innerHTML = CATERING_COMBOS.map(combo => `
+  cateringComboPresets.innerHTML = editableCateringCombos().map(combo => `
     <button class="combo-preset-card" type="button" data-catering-combo="${escapeHtml(combo.id)}">
       <span>${escapeHtml(combo.label)}</span>
       <b class="combo-price">${escapeHtml(combo.price || '')}</b>
@@ -1226,7 +1307,7 @@ function renderCateringCombos() {
 }
 
 function applyCateringCombo(comboId) {
-  const combo = CATERING_COMBOS.find(item => item.id === comboId);
+  const combo = editableCateringCombos().find(item => item.id === comboId);
   if (!combo || !cateringMenuGrid) return;
 
   activeCateringComboId = combo.id;
@@ -1236,7 +1317,7 @@ function applyCateringCombo(comboId) {
   });
   if (cateringPax) cateringPax.value = String(combo.pax);
   if (cateringServiceStyle) cateringServiceStyle.value = combo.service;
-  setCateringMenuMode(combo.service === 'buffet' ? 'buffet' : 'free');
+  setCateringMenuMode('buffet');
 
   cateringComboPresets?.querySelectorAll('[data-catering-combo]').forEach(button => {
     button.classList.toggle('is-active', button.dataset.cateringCombo === combo.id);
@@ -1266,9 +1347,10 @@ function selectedItemsMatchCombo(combo, selectedSet) {
 
 function currentCateringCombo(items = selectedCateringItems()) {
   const selectedSet = selectedCateringValueSet(items);
-  const preferred = CATERING_COMBOS.find(combo => combo.id === activeCateringComboId);
+  const combos = editableCateringCombos();
+  const preferred = combos.find(combo => combo.id === activeCateringComboId);
   if (selectedItemsMatchCombo(preferred, selectedSet)) return preferred;
-  return CATERING_COMBOS.find(combo => selectedItemsMatchCombo(combo, selectedSet)) || null;
+  return combos.find(combo => selectedItemsMatchCombo(combo, selectedSet)) || null;
 }
 
 function syncCateringComboState() {
@@ -1290,7 +1372,9 @@ function groupedCateringItems(items) {
 
 function calculateCateringEstimate() {
   const pax = Math.max(Number.parseInt(cateringPax?.value || '0', 10) || 0, 0);
-  const service = CATERING_SERVICE_STYLES[cateringServiceStyle?.value] || CATERING_SERVICE_STYLES.event;
+  const config = editableCateringConfig();
+  const serviceMap = cateringServiceStyleMap(config.serviceStyles);
+  const service = serviceMap[cateringServiceStyle?.value] || serviceMap.event || Object.values(serviceMap)[0] || CATERING_SERVICE_STYLES.event;
   const items = selectedCateringItems();
   const combo = syncCateringComboState();
   const pricedItems = items.filter(item => item.rate > 0);
@@ -1298,9 +1382,10 @@ function calculateCateringEstimate() {
   const comboPerPax = combo ? parseCateringComboPrice(combo.price) : 0;
   const itemPerPax = pricedItems.reduce((sum, item) => sum + item.rate, 0);
   const perPax = roundMoney(comboPerPax || itemPerPax);
-  const meetsMinimumPax = pax >= CATERING_MINIMUM_PAX;
+  const minimumPax = Math.max(Number.parseInt(config.minimumPax || CATERING_MINIMUM_PAX, 10) || CATERING_MINIMUM_PAX, 1);
+  const meetsMinimumPax = pax >= minimumPax;
   const subtotal = meetsMinimumPax && perPax ? roundMoney(pax * perPax * service.multiplier) : 0;
-  const minimumTotal = editableCateringConfig().minimumTotal || CATERING_MINIMUM_TOTAL;
+  const minimumTotal = config.minimumTotal || CATERING_MINIMUM_TOTAL;
   const total = subtotal;
 
   return {
@@ -1314,7 +1399,7 @@ function calculateCateringEstimate() {
     subtotal,
     total,
     minimumTotal,
-    minimumPax: CATERING_MINIMUM_PAX,
+    minimumPax,
     meetsMinimumPax
   };
 }
@@ -2135,6 +2220,7 @@ function siteContentDefaults(language) {
   });
   setPathValue(site, 'contact.phone', '018-949 0908');
   setPathValue(site, 'contact.whatsapp', WHATSAPP_NUMBER);
+  setPathValue(site, 'contact.email', '9088project@gmail.com');
   setPathValue(site, 'contact.footer', '© 2026 九零食刻 90 PROJECT. All Rights Reserved.');
   return site;
 }
@@ -2165,7 +2251,11 @@ function normalizeCateringMenu(menu) {
 
 function defaultCateringContent() {
   return {
+    minimumPax: CATERING_MINIMUM_PAX,
     minimumTotal: CATERING_MINIMUM_TOTAL,
+    marketPriceItems: normalizeMarketPriceItems(Array.from(CATERING_MARKET_PRICE_ITEMS)),
+    serviceStyles: normalizeCateringServiceStyles(),
+    combos: normalizeCateringCombos(CATERING_COMBOS),
     menu: normalizeCateringMenu(CATERING_MENU)
   };
 }
@@ -2504,7 +2594,11 @@ function normalizeAdminContent(content) {
 
   const cateringSource = content?.catering || {};
   normalized.catering = {
+    minimumPax: Math.max(Number.parseInt(cateringSource.minimumPax || normalized.catering.minimumPax, 10) || CATERING_MINIMUM_PAX, 1),
     minimumTotal: Math.max(Number.parseFloat(cateringSource.minimumTotal || normalized.catering.minimumTotal) || CATERING_MINIMUM_TOTAL, 0),
+    marketPriceItems: normalizeMarketPriceItems(cateringSource.marketPriceItems || normalized.catering.marketPriceItems),
+    serviceStyles: normalizeCateringServiceStyles(cateringSource.serviceStyles || normalized.catering.serviceStyles),
+    combos: normalizeCateringCombos(cateringSource.combos || normalized.catering.combos),
     menu: normalizeCateringMenu(cateringSource.menu || normalized.catering.menu)
   };
 
@@ -2581,6 +2675,22 @@ function editableContentForLanguage() {
 
 function editableCateringConfig() {
   return loadAdminContent().catering || defaultCateringContent();
+}
+
+function syncCateringPaxMinimum() {
+  if (!cateringPax) return;
+  const minimumPax = Math.max(Number.parseInt(editableCateringConfig().minimumPax || CATERING_MINIMUM_PAX, 10) || CATERING_MINIMUM_PAX, 1);
+  cateringPax.min = String(minimumPax);
+  const current = Number.parseInt(cateringPax.value || '0', 10) || 0;
+  if (current > 0 && current < minimumPax) cateringPax.value = String(minimumPax);
+}
+
+function refreshCateringInterface() {
+  populateCateringServiceStyleOptions();
+  syncCateringPaxMinimum();
+  renderCateringCombos();
+  renderCateringMenu();
+  renderCateringEstimate();
 }
 
 function languageText() {
@@ -3041,6 +3151,24 @@ function updateStaticLanguage() {
   setText('.footer-brand h2', t.cta.title);
   setText('.footer-brand strong', currentLanguage === 'en' ? '90 PROJECT' : '九零食刻 90 PROJECT');
   setText('.footer-brand p', t.cta.slogan);
+  const contactPhone = String(t.contact?.phone || '018-949 0908').trim();
+  const contactWhatsapp = String(t.contact?.whatsapp || WHATSAPP_NUMBER).replace(/\D/g, '');
+  const contactEmail = String(t.contact?.email || '9088project@gmail.com').trim();
+  const footerPhoneLink = document.querySelector('.footer-brand a[href^="tel:"]');
+  const footerWhatsappLink = document.querySelector('.footer-brand a[href^="https://wa.me/"]');
+  const footerEmailLink = document.querySelector('.contact-email-link');
+  if (footerPhoneLink) {
+    footerPhoneLink.href = `tel:${contactPhone.replace(/\D/g, '')}`;
+    footerPhoneLink.innerHTML = `<i class="ri-phone-line" aria-hidden="true"></i>${escapeHtml(contactPhone)}`;
+  }
+  if (footerWhatsappLink) {
+    footerWhatsappLink.href = `https://wa.me/${contactWhatsapp}`;
+    footerWhatsappLink.innerHTML = `<i class="ri-whatsapp-line" aria-hidden="true"></i>${escapeHtml(contactPhone)}`;
+  }
+  if (footerEmailLink) {
+    footerEmailLink.href = `mailto:${contactEmail}`;
+    footerEmailLink.innerHTML = `<i class="ri-mail-line" aria-hidden="true"></i>${escapeHtml(contactEmail)}`;
+  }
   setText('.final-cta .btn.big', t.cta.button);
   setText('.site-footer span:nth-child(2)', `WhatsApp: ${t.contact?.phone || '018-949 0908'}`);
   setText('.site-footer span:nth-child(3)', currentLanguage === 'en'
@@ -4251,8 +4379,7 @@ function importLocalBackup(file) {
       if (Array.isArray(data.members)) saveMembers(data.members);
       if (Array.isArray(data.conversions)) saveConversionEvents(data.conversions);
       updateStaticLanguage();
-      renderCateringMenu();
-      renderCateringEstimate();
+      refreshCateringInterface();
       renderMediaContent();
       renderAdminEditor();
       renderAdminInquiries();
@@ -4674,9 +4801,20 @@ function renderAdminAddonRows(content) {
 }
 
 function renderAdminCateringRows(content) {
+  if (adminCateringMinimumPax) {
+    adminCateringMinimumPax.value = String(content.catering?.minimumPax ?? CATERING_MINIMUM_PAX);
+  }
+
   if (adminCateringMinimum) {
     adminCateringMinimum.value = String(content.catering?.minimumTotal ?? CATERING_MINIMUM_TOTAL);
   }
+
+  if (adminCateringMarketItems) {
+    adminCateringMarketItems.value = normalizeMarketPriceItems(content.catering?.marketPriceItems).join('\n');
+  }
+
+  renderAdminCateringServiceRows(content);
+  renderAdminCateringComboRows(content);
 
   if (!adminCateringRows) return;
   const menu = normalizeCateringMenu(content.catering?.menu || CATERING_MENU);
@@ -4694,6 +4832,43 @@ function renderAdminCateringRows(content) {
         <textarea data-field="category-items" rows="5">${escapeHtml(category.items.join('\n'))}</textarea>
       </label>
       <button type="button" data-remove-catering>删除分类</button>
+    </div>
+  `).join('');
+}
+
+function renderAdminCateringServiceRows(content) {
+  if (!adminCateringServiceRows) return;
+  const styles = normalizeCateringServiceStyles(content.catering?.serviceStyles);
+  adminCateringServiceRows.innerHTML = styles.map((style, index) => `
+    <div class="admin-catering-service-row admin-row" data-catering-service-row>
+      <label>服务 ID<input data-field="service-id" value="${escapeHtml(style.id)}" placeholder="event"></label>
+      <label>前台显示名称<input data-field="service-label" value="${escapeHtml(style.label)}" placeholder="活动餐饮 / Event Catering"></label>
+      <label>价格倍率<input data-field="service-multiplier" type="number" min="0.1" step="0.01" value="${escapeHtml(style.multiplier)}"></label>
+      <button type="button" data-remove-catering-service>${styles.length <= 1 ? '保留' : '删除'}</button>
+    </div>
+  `).join('');
+}
+
+function renderAdminCateringComboRows(content) {
+  if (!adminCateringComboRows) return;
+  const combos = normalizeCateringCombos(content.catering?.combos);
+  adminCateringComboRows.innerHTML = combos.map((combo, index) => `
+    <div class="admin-catering-combo-row" data-catering-combo-row>
+      <div class="admin-catering-head">
+        <strong>套餐 ${index + 1}</strong>
+        <span>${escapeHtml(combo.label || combo.id)}</span>
+      </div>
+      <label>套餐 ID<input data-field="combo-id" value="${escapeHtml(combo.id)}" placeholder="set-a"></label>
+      <label>小标题<input data-field="combo-label" value="${escapeHtml(combo.label)}" placeholder="SET A"></label>
+      <label>套餐名称<input data-field="combo-title" value="${escapeHtml(combo.title)}" placeholder="Set A"></label>
+      <label>每人价格<input data-field="combo-price" value="${escapeHtml(combo.price)}" placeholder="RM29.90"></label>
+      <label>默认人数<input data-field="combo-pax" type="number" min="1" step="1" value="${escapeHtml(combo.pax)}"></label>
+      <label>服务 ID<input data-field="combo-service" value="${escapeHtml(combo.service)}" placeholder="event"></label>
+      <label class="admin-catering-items">套餐说明<input data-field="combo-desc" value="${escapeHtml(combo.desc)}" placeholder="主食 2 · 肉类 2 · 菜类 2"></label>
+      <label class="admin-catering-items">自动选择菜式（一行一个）
+        <textarea data-field="combo-items" rows="4">${escapeHtml(combo.items.join('\n'))}</textarea>
+      </label>
+      <button type="button" data-remove-catering-combo>删除套餐</button>
     </div>
   `).join('');
 }
@@ -5036,11 +5211,38 @@ function collectAdminContent() {
     if (enName || zhName || enPrice) content.en.addons.push({ name: enName || zhName, sub: '', price: enPrice || zhPrice });
   });
 
+  const minimumPax = Number.parseInt(adminCateringMinimumPax?.value || '', 10);
   const minimumTotal = Number.parseFloat(adminCateringMinimum?.value || '');
   content.catering = {
+    minimumPax: Number.isFinite(minimumPax) ? Math.max(minimumPax, 1) : CATERING_MINIMUM_PAX,
     minimumTotal: Number.isFinite(minimumTotal) ? Math.max(minimumTotal, 0) : CATERING_MINIMUM_TOTAL,
+    marketPriceItems: normalizeMarketPriceItems(adminCateringMarketItems?.value || ''),
+    serviceStyles: [],
+    combos: [],
     menu: []
   };
+
+  adminCateringServiceRows?.querySelectorAll('[data-catering-service-row]').forEach((row, index) => {
+    const id = adminRowValue(row, '[data-field="service-id"]') || `service-${index + 1}`;
+    const label = adminRowValue(row, '[data-field="service-label"]') || id;
+    const multiplier = Number.parseFloat(adminRowValue(row, '[data-field="service-multiplier"]')) || 1;
+    if (id || label) content.catering.serviceStyles.push({ id, label, multiplier });
+  });
+
+  adminCateringComboRows?.querySelectorAll('[data-catering-combo-row]').forEach((row, index) => {
+    const id = adminRowValue(row, '[data-field="combo-id"]') || `set-${index + 1}`;
+    const label = adminRowValue(row, '[data-field="combo-label"]');
+    const title = adminRowValue(row, '[data-field="combo-title"]');
+    const price = adminRowValue(row, '[data-field="combo-price"]');
+    const desc = adminRowValue(row, '[data-field="combo-desc"]');
+    const pax = Number.parseInt(adminRowValue(row, '[data-field="combo-pax"]'), 10) || CATERING_MINIMUM_PAX;
+    const service = adminRowValue(row, '[data-field="combo-service"]') || 'event';
+    const items = adminRowValue(row, '[data-field="combo-items"]')
+      .split(/\n+/)
+      .map(item => item.trim())
+      .filter(Boolean);
+    if (title || label || price || items.length) content.catering.combos.push({ id, label, title, price, desc, pax, service, items });
+  });
 
   adminCateringRows?.querySelectorAll('[data-catering-row]').forEach((row, index) => {
     const id = adminRowValue(row, '[data-field="category-id"]') || `category-${index + 1}`;
@@ -5160,6 +5362,31 @@ function addCateringEditorRow() {
   renderAdminAddonRows(content);
   renderAdminCateringRows(content);
   primeAdminTranslationFields();
+}
+
+function addCateringServiceEditorRow() {
+  const content = collectAdminContent();
+  content.catering.serviceStyles.push({
+    id: `service-${content.catering.serviceStyles.length + 1}`,
+    label: '新服务形式 / New Service',
+    multiplier: 1
+  });
+  renderAdminCateringRows(content);
+}
+
+function addCateringComboEditorRow() {
+  const content = collectAdminContent();
+  content.catering.combos.push({
+    id: `set-${content.catering.combos.length + 1}`,
+    label: 'SET',
+    title: '新套餐',
+    price: 'RM0',
+    desc: '',
+    pax: content.catering.minimumPax || CATERING_MINIMUM_PAX,
+    service: content.catering.serviceStyles[0]?.id || 'event',
+    items: []
+  });
+  renderAdminCateringRows(content);
 }
 
 function addCaseEditorRow() {
@@ -5646,6 +5873,8 @@ document.querySelectorAll('[data-admin-panel-tab]').forEach(button => {
 addWeeklyRow?.addEventListener('click', addWeeklyEditorRow);
 addAddonRow?.addEventListener('click', addAddonEditorRow);
 addCateringRow?.addEventListener('click', addCateringEditorRow);
+addCateringServiceRow?.addEventListener('click', addCateringServiceEditorRow);
+addCateringComboRow?.addEventListener('click', addCateringComboEditorRow);
 addCaseRow?.addEventListener('click', addCaseEditorRow);
 
 weeklyNoteZh?.addEventListener('input', () => updateTranslatedField(weeklyNoteEn, weeklyNoteZh.value));
@@ -5665,10 +5894,9 @@ adminSiteRows?.addEventListener('input', event => {
   if (field === 'zh-site') translateAdminRow(row);
 });
 
-adminCateringMinimum?.addEventListener('input', () => {
-  renderCateringMenu();
-  renderCateringEstimate();
-});
+adminCateringMinimumPax?.addEventListener('input', renderCateringEstimate);
+adminCateringMinimum?.addEventListener('input', renderCateringEstimate);
+adminCateringMarketItems?.addEventListener('input', renderCateringEstimate);
 
 adminCateringRows?.addEventListener('input', () => {
   renderCateringMenu();
@@ -5679,6 +5907,21 @@ adminCateringRows?.addEventListener('click', event => {
   if (!(event.target instanceof HTMLElement) || !event.target.matches('[data-remove-catering]')) return;
   const row = event.target.closest('[data-catering-row]');
   row?.remove();
+});
+
+adminCateringServiceRows?.addEventListener('click', event => {
+  if (!(event.target instanceof HTMLElement) || !event.target.matches('[data-remove-catering-service]')) return;
+  const rows = adminCateringServiceRows.querySelectorAll('[data-catering-service-row]');
+  if (rows.length <= 1) {
+    showAdminMessage('至少保留一个服务形式。', true);
+    return;
+  }
+  event.target.closest('[data-catering-service-row]')?.remove();
+});
+
+adminCateringComboRows?.addEventListener('click', event => {
+  if (!(event.target instanceof HTMLElement) || !event.target.matches('[data-remove-catering-combo]')) return;
+  event.target.closest('[data-catering-combo-row]')?.remove();
 });
 
 const renderMediaFromAdminInputs = () => {
@@ -5782,8 +6025,7 @@ saveAdminContent?.addEventListener('click', async () => {
   const content = collectAdminContent();
   saveEditableContent(content);
   updateStaticLanguage();
-  renderCateringMenu();
-  renderCateringEstimate();
+  refreshCateringInterface();
   renderMediaContent(content);
   renderManagedContent(content);
   renderAdminEditor();
@@ -5802,8 +6044,7 @@ resetAdminContent?.addEventListener('click', async () => {
   const defaults = defaultAdminContent();
   saveEditableContent(defaults);
   updateStaticLanguage();
-  renderCateringMenu();
-  renderCateringEstimate();
+  refreshCateringInterface();
   renderMediaContent(defaults);
   renderManagedContent(defaults);
   renderAdminEditor();
@@ -6037,9 +6278,7 @@ async function initializeApp() {
   await loadSupabaseRuntimeConfig();
   await loadAdminContentFromSupabase();
   initializeMealPlanDates();
-  renderCateringCombos();
-  renderCateringMenu();
-  renderCateringEstimate();
+  refreshCateringInterface();
   if (document.body?.dataset.detailPage === 'catering') {
     openCateringMenuBuilder(false);
   }
