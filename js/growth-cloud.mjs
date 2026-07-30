@@ -1,5 +1,8 @@
 const SUPABASE_MEMBER_SESSION_KEY = 'np90_supabase_member_session_v1';
 const MEMBER_SYNC_API_PATH = '/api/member-sync';
+const GROWTH_SYNC_API_PATH = '/api/growth-sync';
+const ADMIN_EMAIL = '9088project@gmail.com';
+const ADMIN_CLOUD_PASSWORD_SESSION_KEY = 'np90_admin_cloud_password_session_v1';
 
 const normalize = value => String(value || '').trim();
 const normalizeEmail = value => normalize(value).toLowerCase();
@@ -247,6 +250,67 @@ export function createGrowthCloud() {
     });
   }
 
+  function adminSyncHeaders() {
+    try {
+      const password = sessionStorage.getItem(ADMIN_CLOUD_PASSWORD_SESSION_KEY) || '';
+      if (!password) return null;
+      return {
+        'X-Admin-Email': ADMIN_EMAIL,
+        'X-Admin-Password': password
+      };
+    } catch {
+      return null;
+    }
+  }
+
+  async function loadSharedGrowthState(options = {}) {
+    const headers = { Accept: 'application/json' };
+    if (options.admin) {
+      const adminHeaders = adminSyncHeaders();
+      if (!adminHeaders) return { ok: false, skipped: true, reason: 'missing_admin_session' };
+      Object.assign(headers, adminHeaders);
+    } else {
+      const token = getSession()?.access_token;
+      if (!token) return { ok: false, skipped: true, reason: 'missing_member_session' };
+      headers.Authorization = `Bearer ${token}`;
+    }
+
+    try {
+      const response = await fetch(`${GROWTH_SYNC_API_PATH}?v=${Date.now()}`, {
+        cache: 'no-store',
+        headers
+      });
+      if (response.status === 404) return { ok: false, skipped: true };
+      if (!response.ok) return { ok: false, status: response.status, message: await response.text() };
+      return response.json();
+    } catch (error) {
+      return { ok: false, message: error instanceof Error ? error.message : 'growth_sync_load_failed' };
+    }
+  }
+
+  async function saveSharedGrowthState(state, options = {}) {
+    if (!options.admin) return { ok: false, skipped: true, reason: 'admin_required' };
+    const adminHeaders = adminSyncHeaders();
+    if (!adminHeaders) return { ok: false, skipped: true, reason: 'missing_admin_session' };
+
+    try {
+      const response = await fetch(GROWTH_SYNC_API_PATH, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Accept: 'application/json',
+          ...adminHeaders
+        },
+        body: JSON.stringify({ state })
+      });
+      if (response.status === 404) return { ok: false, skipped: true };
+      if (!response.ok) return { ok: false, status: response.status, message: await response.text() };
+      return response.json();
+    } catch (error) {
+      return { ok: false, message: error instanceof Error ? error.message : 'growth_sync_save_failed' };
+    }
+  }
+
   async function loadMemberGrowth(session = getSession()) {
     if (!session?.access_token || !session?.user?.id) return null;
     const token = session.access_token;
@@ -346,6 +410,8 @@ export function createGrowthCloud() {
     profileToMember,
     updateProfile,
     loadMemberGrowth,
+    loadSharedGrowthState,
+    saveSharedGrowthState,
     loadOrderLeads,
     updateOrderLead,
     submitPromoterApplication,

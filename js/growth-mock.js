@@ -390,10 +390,11 @@ const formatMoney = value => `RM${money(value).toFixed(2)}`;
 const eligibleAmountForAdmin = order => money(Math.max(0, Number(order?.totalAmount || 0) - Number(order?.sstAmount || 0) - Number(order?.deliveryFee || 0) - Number(order?.extraLabourFee || 0) - Number(order?.thirdPartyFee || 0) - Number(order?.couponDiscount || 0)));
 const currentMember = () => api.currentMember();
 const adminEditableOrderStatuses = ['new', 'confirmed', 'deposit_paid', 'cancelled'];
-const page = document.body?.dataset.growthPage || '';
+const page = document.body?.dataset.growthPage || (document.querySelector('[data-growth-admin]') ? 'admin' : '');
 let cloudReady = false;
 let cloudGrowthSnapshot = null;
 let cloudOrderLeadSync = { loading: false, lastAt: 0, count: 0, imported: 0, error: '' };
+let sharedGrowthStateSync = { loading: false, loaded: false, saving: false, lastAt: 0, error: '' };
 let adminGrowthSearch = '';
 let adminGrowthFilters = { order: 'all', withdrawal: 'all' };
 let phoneVerification = { phone: '', code: '', verified: false, cloudSession: null };
@@ -490,6 +491,22 @@ async function syncCloudDashboard(member = currentMember()) {
       if (imported.ok) member = imported.member;
     }
     cloudGrowthSnapshot = growth;
+    if (typeof cloud.loadSharedGrowthState === 'function') {
+      const shared = await cloud.loadSharedGrowthState();
+      if (shared.ok && shared.state && typeof api.replaceState === 'function') {
+        const previousMember = member || {};
+        const previousEmail = String(previousMember.email || '').toLowerCase();
+        const previousPhone = String(previousMember.phone || '').replace(/\D/g, '');
+        api.replaceState(shared.state);
+        const sharedMember = (shared.state.members || []).find(item => (
+          (previousMember.supabaseUserId && item.supabaseUserId === previousMember.supabaseUserId)
+          || (previousEmail && String(item.email || '').toLowerCase() === previousEmail)
+          || (previousPhone && String(item.phone || '').replace(/\D/g, '') === previousPhone)
+        ));
+        if (sharedMember?.id) localStorage.setItem('np90_growth_session_v1', sharedMember.id);
+        member = currentMember() || sharedMember || previousMember;
+      }
+    }
     setCloudStatus(t('cloudConnected'), true);
     return { member, growth };
   } catch (error) {
@@ -675,7 +692,7 @@ function bindPromoterApplicationForm() {
     if (cloudReady && cloud.getSession()?.access_token) {
       const cloudResult = await cloud.submitPromoterApplication(data);
       setMessage(cloudResult.ok ? t('applicationCloudOk') : t('applicationCloudFail'), !cloudResult.ok);
-      await syncCloudDashboard(member);
+      if (cloudResult.ok) await syncCloudDashboard(member);
     } else {
       setMessage(t('applicationLocalOk'));
     }
@@ -842,7 +859,7 @@ function bindMemberPage() {
     if (cloudReady && cloud.getSession()?.access_token) {
       const cloudResult = await cloud.submitWithdrawal(data);
       setMessage(cloudResult.ok ? t('withdrawCloudOk') : t('withdrawCloudFail'), !cloudResult.ok);
-      await syncCloudDashboard(member);
+      if (cloudResult.ok) await syncCloudDashboard(member);
     } else {
       setMessage(t('withdrawLocalOk'));
     }
@@ -966,6 +983,52 @@ async function syncOrderUpdateToCloud(order, input = {}) {
   }, token);
 }
 
+async function loadSharedGrowthStateForAdmin() {
+  if (page !== 'admin' || !cloudReady || sharedGrowthStateSync.loading || typeof cloud.loadSharedGrowthState !== 'function') {
+    return { ok: false, skipped: true };
+  }
+  sharedGrowthStateSync = { ...sharedGrowthStateSync, loading: true, error: '' };
+  try {
+    const result = await cloud.loadSharedGrowthState({ admin: true });
+    if (result.ok && result.state && typeof api.replaceState === 'function') {
+      api.replaceState(result.state);
+      sharedGrowthStateSync = { loading: false, loaded: true, saving: false, lastAt: Date.now(), error: '' };
+      return { ok: true };
+    }
+    sharedGrowthStateSync = { ...sharedGrowthStateSync, loading: false, loaded: false, lastAt: Date.now(), error: result.message || result.reason || 'load_failed' };
+    return result;
+  } catch (error) {
+    console.warn('Shared growth state load failed', error);
+    sharedGrowthStateSync = { ...sharedGrowthStateSync, loading: false, loaded: false, lastAt: Date.now(), error: 'load_failed' };
+    return { ok: false, message: 'load_failed' };
+  }
+}
+
+async function saveSharedGrowthStateForAdmin() {
+  if (page !== 'admin' || !cloudReady || sharedGrowthStateSync.saving || typeof cloud.saveSharedGrowthState !== 'function') {
+    return { ok: false, skipped: true };
+  }
+  sharedGrowthStateSync = { ...sharedGrowthStateSync, saving: true, error: '' };
+  try {
+    const result = await cloud.saveSharedGrowthState(api.getState(), { admin: true });
+    if (result.ok) {
+      if (result.state && typeof api.replaceState === 'function') api.replaceState(result.state);
+      sharedGrowthStateSync = { loading: false, loaded: true, saving: false, lastAt: Date.now(), error: '' };
+      return result;
+    }
+    sharedGrowthStateSync = { ...sharedGrowthStateSync, saving: false, lastAt: Date.now(), error: result.message || result.reason || 'save_failed' };
+    return result;
+  } catch (error) {
+    console.warn('Shared growth state save failed', error);
+    sharedGrowthStateSync = { ...sharedGrowthStateSync, saving: false, lastAt: Date.now(), error: 'save_failed' };
+    return { ok: false, message: 'save_failed' };
+  }
+}
+
+function cloudSyncOk(result, allowSkipped = true) {
+  return Boolean(result?.ok || (allowSkipped && result?.skipped));
+}
+
 async function syncCloudOrderLeads(force = false) {
   if (!cloudReady || cloudOrderLeadSync.loading) return;
   const token = getSupabaseAdminSession()?.access_token;
@@ -986,6 +1049,7 @@ async function syncCloudOrderLeads(force = false) {
       if (upserted.ok && upserted.createdOrder) imported += 1;
     });
     cloudOrderLeadSync = { loading: false, lastAt: Date.now(), count: rows.length, imported, error: '' };
+    if (imported && page === 'admin') await saveSharedGrowthStateForAdmin();
     if (page === 'admin') renderAdmin();
   } catch (error) {
     console.warn('Cloud order lead sync failed', error);
@@ -996,7 +1060,8 @@ async function syncCloudOrderLeads(force = false) {
 function renderAdmin() {
   const root = document.querySelector('[data-growth-admin]');
   if (!root) return;
-  importQueuedGrowthOrders();
+  const queuedImportCount = importQueuedGrowthOrders();
+  if (queuedImportCount) saveSharedGrowthStateForAdmin();
   syncCloudOrderLeads(false);
   const snapshot = api.adminSnapshot();
   const memberById = new Map(snapshot.members.map(member => [member.id, member]));
@@ -1148,8 +1213,9 @@ function bindAdmin() {
     }
     const syncButton = event.target.closest('[data-growth-sync-leads]');
     if (syncButton) {
-      syncCloudOrderLeads(true);
       setMessage('正在同步线上订单线索...');
+      await syncCloudOrderLeads(true);
+      setMessage(cloudOrderLeadSync.error ? '线上订单线索同步失败，请稍后再试。' : '线上订单线索已同步到云端增长系统。', Boolean(cloudOrderLeadSync.error));
       return;
     }
     const saveOrderButton = event.target.closest('[data-save-order]');
@@ -1163,14 +1229,17 @@ function bindAdmin() {
         return;
       }
       const cloudResult = await syncOrderUpdateToCloud(result.order, input);
-      setMessage(cloudResult.ok || cloudResult.skipped ? '订单资料已保存。' : '订单已保存，本次云端同步失败。', !(cloudResult.ok || cloudResult.skipped));
+      const stateResult = await saveSharedGrowthStateForAdmin();
+      const synced = cloudSyncOk(cloudResult) && cloudSyncOk(stateResult, false);
+      setMessage(synced ? '订单资料已保存，并已同步云端。' : '订单已保存，本次云端同步暂时失败。', !synced);
       renderAdmin();
       return;
     }
     const appButton = event.target.closest('[data-review-app]');
     if (appButton) {
       api.reviewPromoterApplication(appButton.dataset.reviewApp, appButton.dataset.decision, 'mock-admin', appButton.dataset.decision === 'reject' ? 'Mock review rejection' : 'Mock review approval');
-      setMessage('会员推荐状态已更新。');
+      const stateResult = await saveSharedGrowthStateForAdmin();
+      setMessage(cloudSyncOk(stateResult, false) ? '会员推荐状态已更新，并已同步云端。' : '会员推荐状态已更新，本次云端同步暂时失败。', !cloudSyncOk(stateResult, false));
       renderAdmin();
       return;
     }
@@ -1180,8 +1249,10 @@ function bindAdmin() {
       const input = collectAdminOrderInput(orderId);
       if (input) api.updateOrder(orderId, input, 'mock-admin');
       const result = api.completeOrder(orderId, 'mock-admin');
-      if (result.ok) await syncOrderUpdateToCloud(result.order, { ...(input || {}), status: result.order.status });
-      setMessage(result.ok ? '订单已确认完成，系统已自动计算符合条件的推荐佣金。' : `订单无法完成：${result.reason}`, !result.ok);
+      const cloudResult = result.ok ? await syncOrderUpdateToCloud(result.order, { ...(input || {}), status: result.order.status }) : { ok: false, skipped: true };
+      const stateResult = result.ok ? await saveSharedGrowthStateForAdmin() : { ok: false, skipped: true };
+      const synced = result.ok && cloudSyncOk(cloudResult) && cloudSyncOk(stateResult, false);
+      setMessage(result.ok ? (synced ? '订单已确认完成，推荐佣金已计算并同步云端。' : '订单已确认完成，推荐佣金已计算，本次云端同步暂时失败。') : `订单无法完成：${result.reason}`, !result.ok || !synced);
       renderAdmin();
       return;
     }
@@ -1195,14 +1266,18 @@ function bindAdmin() {
         : { referenceNumber: `MOCK-${Date.now()}` };
       const result = api.reviewWithdrawal(withdrawalButton.dataset.reviewWithdrawal, withdrawalButton.dataset.decision, 'mock-admin', payment);
       if (!result.ok) setMessage(`提现请求无法更新：${result.reason}`, true);
-      else setMessage(withdrawalButton.dataset.decision === 'paid' ? '提现已标记付款，并记录付款编号。' : '提现请求状态已更新。');
+      else {
+        const stateResult = await saveSharedGrowthStateForAdmin();
+        const baseMessage = withdrawalButton.dataset.decision === 'paid' ? '提现已标记付款，并记录付款编号。' : '提现请求状态已更新。';
+        setMessage(cloudSyncOk(stateResult, false) ? `${baseMessage}已同步云端。` : `${baseMessage}本次云端同步暂时失败。`, !cloudSyncOk(stateResult, false));
+      }
       renderAdmin();
       return;
     }
     const copyButton = event.target.closest('[data-copy-growth]');
     if (copyButton) navigator.clipboard?.writeText(copyButton.dataset.copyGrowth);
   });
-  document.querySelector('[data-growth-config-form]')?.addEventListener('submit', event => {
+  document.querySelector('[data-growth-config-form]')?.addEventListener('submit', async event => {
     event.preventDefault();
     const config = api.getState().config;
     const rates = Array.from(document.querySelectorAll('[data-growth-config-rate]'))
@@ -1236,7 +1311,8 @@ function bindAdmin() {
       ));
     });
     api.updateConfig(config, 'mock-admin');
-    setMessage('增长系统规则已保存。');
+    const stateResult = await saveSharedGrowthStateForAdmin();
+    setMessage(cloudSyncOk(stateResult, false) ? '增长系统规则已保存，并已同步云端。' : '增长系统规则已保存，本次云端同步暂时失败。', !cloudSyncOk(stateResult, false));
     renderAdmin();
   });
   renderAdmin();
@@ -1262,15 +1338,20 @@ if (page === 'member') {
   await syncCloudDashboard();
   renderMemberDashboard();
 }
+if (page === 'admin') await loadSharedGrowthStateForAdmin();
 if (page === 'referral') bindReferralPage();
 bindAdmin();
 applyLanguage();
-importQueuedGrowthOrders();
+const initialQueuedImportCount = importQueuedGrowthOrders();
+if (initialQueuedImportCount && page === 'admin') await saveSharedGrowthStateForAdmin();
 syncCloudOrderLeads(true);
 
-window.addEventListener('np90:growth-order-queued', () => {
+window.addEventListener('np90:growth-order-queued', async () => {
   const imported = importQueuedGrowthOrders();
-  if (imported && page === 'admin') renderAdmin();
+  if (imported && page === 'admin') {
+    await saveSharedGrowthStateForAdmin();
+    renderAdmin();
+  }
 });
 
 window.NP90GrowthMock = api;

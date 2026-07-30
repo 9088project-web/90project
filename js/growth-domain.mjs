@@ -155,6 +155,11 @@ export function createGrowthApi(storage = defaultStorage(), options = {}) {
     return clone(state);
   }
 
+  function replaceState(nextState = {}) {
+    state = write(nextState);
+    return clone(state);
+  }
+
   function captureReferralVisit(code, landingPage = '/', metadata = {}) {
     const normalizedCode = String(code || '').trim().toUpperCase();
     const current = read();
@@ -814,7 +819,7 @@ export function createGrowthApi(storage = defaultStorage(), options = {}) {
     return { ok: true, config: clone(next.config) };
   }
 
-  return { getState, captureReferralVisit, pendingReferral, registerMember, loginMember, logoutMember, currentMember, importMember, updateMemberProfile, upsertOrderLead, submitPromoterApplication, reviewPromoterApplication, createEnquiry, createOrder, updateOrder, completeOrder, releaseCommissions, mockAdvanceCommissionObservation, refundOrder, submitWithdrawal, reviewWithdrawal, grantCoupon, summary, adminSnapshot, updateConfig, availableCommissionFor };
+  return { getState, replaceState, captureReferralVisit, pendingReferral, registerMember, loginMember, logoutMember, currentMember, importMember, updateMemberProfile, upsertOrderLead, submitPromoterApplication, reviewPromoterApplication, createEnquiry, createOrder, updateOrder, completeOrder, releaseCommissions, mockAdvanceCommissionObservation, refundOrder, submitWithdrawal, reviewWithdrawal, grantCoupon, summary, adminSnapshot, updateConfig, availableCommissionFor };
 }
 
 export { COMMISSION_STATUSES, ORDER_STATUSES, WITHDRAWAL_STATUSES, money, normalizePhone };
