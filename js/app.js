@@ -2708,7 +2708,7 @@ async function loadAdminContentFromCloud() {
 }
 
 async function saveAdminContentToCloudApi(content) {
-  const password = adminCloudPassword || adminPassword?.value || '';
+  const password = adminSyncPassword();
   if (!password) return false;
 
   const response = await fetch(ADMIN_CONTENT_API_PATH, {
@@ -4759,7 +4759,12 @@ function applyReferralCodeFromUrl() {
 }
 
 function isAdminLoggedIn() {
-  return localStorage.getItem(ADMIN_SESSION_KEY) === '1';
+  const loggedIn = localStorage.getItem(ADMIN_SESSION_KEY) === '1';
+  if (!loggedIn) return false;
+  if (adminSyncPassword()) return true;
+  localStorage.removeItem(ADMIN_SESSION_KEY);
+  adminCloudPassword = '';
+  return false;
 }
 
 function setAdminLoggedIn(value) {
