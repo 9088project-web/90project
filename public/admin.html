@@ -6,8 +6,8 @@
   <meta name="robots" content="noindex, nofollow" />
   <title>内容管理后台｜九零食刻 90 PROJECT</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/remixicon@4.6.0/fonts/remixicon.css" />
-  <link rel="stylesheet" href="css/style.css?v=20260730-admin-sync" />
-  <link rel="stylesheet" href="css/admin.css?v=20260730-admin-sync" />
+  <link rel="stylesheet" href="css/style.css?v=20260731-admin-drawer" />
+  <link rel="stylesheet" href="css/admin.css?v=20260731-admin-drawer" />
   <link rel="stylesheet" href="css/growth.css?v=20260730-admin-sync" />
 </head>
 <body class="admin-page">
@@ -48,11 +48,18 @@
       </div>
 
       <div class="admin-nav admin-nav-grouped" aria-label="后台分类">
-        <div class="admin-nav-cluster admin-nav-cluster-primary">
-          <div class="admin-nav-cluster-head">
-            <span>网站内容</span>
-            <small>文字 / 菜单 / 媒体 / 页面</small>
-          </div>
+        <details class="admin-nav-cluster admin-nav-cluster-primary admin-nav-drawer" data-admin-nav-drawer="site-content">
+          <summary class="admin-nav-drawer-summary">
+            <span class="admin-nav-drawer-title">
+              <strong>网站内容</strong>
+              <small>文字 / 菜单 / 媒体 / 页面</small>
+            </span>
+            <span class="admin-nav-drawer-current">
+              <i class="ri-folder-open-line" aria-hidden="true"></i>
+              <span data-admin-drawer-current="site-content">全站文字</span>
+            </span>
+            <i class="ri-arrow-down-s-line admin-nav-drawer-icon" aria-hidden="true"></i>
+          </summary>
           <div class="admin-nav-tabs">
             <button type="button" class="active" data-admin-panel-tab="site">全站文字</button>
             <button type="button" data-admin-panel-tab="meal">包伙食菜单</button>
@@ -60,7 +67,7 @@
             <button type="button" data-admin-panel-tab="media">首页媒体</button>
             <button type="button" data-admin-panel-tab="pages">独立服务页</button>
           </div>
-        </div>
+        </details>
         <div class="admin-nav-cluster">
           <div class="admin-nav-cluster-head">
             <span>运营管理</span>
@@ -354,7 +361,7 @@
     </section>
   </main>
 
-  <script src="js/app.js?v=20260730-admin-sync"></script>
+  <script src="js/app.js?v=20260731-admin-drawer"></script>
   <script type="module" src="js/growth-mock.js?v=20260731-whatsapp-invoice"></script>
 </body>
 </html>

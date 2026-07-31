@@ -5386,12 +5386,22 @@ function renderAdminEditor() {
 }
 
 function setAdminPanel(panel = 'site') {
+  let activeButton = null;
   document.querySelectorAll('[data-admin-panel-tab]').forEach(button => {
-    button.classList.toggle('active', button.dataset.adminPanelTab === panel);
+    const isActive = button.dataset.adminPanelTab === panel;
+    button.classList.toggle('active', isActive);
+    if (isActive) activeButton = button;
   });
   document.querySelectorAll('[data-admin-panel]').forEach(section => {
     section.hidden = section.dataset.adminPanel !== panel;
   });
+  const contentPanelIds = new Set(['site', 'meal', 'catering', 'media', 'pages']);
+  const contentDrawerLabel = document.querySelector('[data-admin-drawer-current="site-content"]');
+  if (contentDrawerLabel) {
+    contentDrawerLabel.textContent = contentPanelIds.has(panel) && activeButton
+      ? activeButton.textContent.trim()
+      : '打开选择';
+  }
 }
 
 function renderAdminState() {
@@ -6134,7 +6144,11 @@ adminLogout?.addEventListener('click', () => {
 });
 
 document.querySelectorAll('[data-admin-panel-tab]').forEach(button => {
-  button.addEventListener('click', () => setAdminPanel(button.dataset.adminPanelTab || 'site'));
+  button.addEventListener('click', () => {
+    setAdminPanel(button.dataset.adminPanelTab || 'site');
+    const drawer = button.closest('[data-admin-nav-drawer]');
+    if (drawer instanceof HTMLDetailsElement) drawer.open = false;
+  });
 });
 
 addWeeklyRow?.addEventListener('click', addWeeklyEditorRow);

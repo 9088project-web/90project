@@ -2557,6 +2557,7 @@ details p{color:var(--muted);font-size:13px;line-height:1.55}
   z-index:3;
   display:grid;
   grid-template-columns:minmax(0,1.2fr) minmax(260px,.8fr);
+  align-items:start;
   gap:12px;
   margin:16px 0 4px;
   padding:12px;
@@ -2577,6 +2578,70 @@ details p{color:var(--muted);font-size:13px;line-height:1.55}
 }
 .admin-nav-cluster-primary{
   background:linear-gradient(135deg,rgba(214,168,92,.12),rgba(255,247,232,.035));
+}
+.admin-nav-drawer{
+  padding:0;
+  overflow:hidden;
+}
+.admin-nav-drawer summary{
+  list-style:none;
+}
+.admin-nav-drawer summary::-webkit-details-marker{
+  display:none;
+}
+.admin-nav-drawer-summary{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) auto auto;
+  align-items:center;
+  gap:12px;
+  padding:14px;
+  color:var(--gold2);
+  cursor:pointer;
+}
+.admin-nav-drawer-title{
+  display:grid;
+  gap:4px;
+}
+.admin-nav-drawer-title strong{
+  font-size:.95rem;
+  font-weight:1000;
+  letter-spacing:.08em;
+}
+.admin-nav-drawer-title small{
+  color:rgba(255,247,232,.58);
+  font-size:.74rem;
+  font-weight:800;
+}
+.admin-nav-drawer-current{
+  display:inline-flex;
+  align-items:center;
+  gap:7px;
+  min-height:36px;
+  padding:8px 12px;
+  border:1px solid rgba(214,168,92,.34);
+  border-radius:999px;
+  color:#17120d;
+  background:linear-gradient(135deg,#ffdf9a,#d6a85c);
+  font-size:.82rem;
+  font-weight:1000;
+  white-space:nowrap;
+}
+.admin-nav-drawer-icon{
+  display:grid;
+  place-items:center;
+  width:34px;
+  height:34px;
+  border:1px solid rgba(214,168,92,.26);
+  border-radius:999px;
+  color:#ffdf9a;
+  background:rgba(0,0,0,.18);
+  transition:transform .2s ease;
+}
+.admin-nav-drawer[open] .admin-nav-drawer-icon{
+  transform:rotate(180deg);
+}
+.admin-nav-drawer .admin-nav-tabs{
+  padding:0 14px 14px;
 }
 .admin-nav-cluster-head{
   display:flex;
@@ -3302,6 +3367,19 @@ body.order-form-visible .back-top{
     padding:10px;
   }
   .admin-nav-cluster{padding:10px}
+  .admin-nav-drawer{padding:0}
+  .admin-nav-drawer-summary{
+    grid-template-columns:minmax(0,1fr) auto;
+  }
+  .admin-nav-drawer-current{
+    order:3;
+    grid-column:1 / -1;
+    justify-content:center;
+  }
+  .admin-nav-drawer-icon{
+    grid-column:2;
+    grid-row:1;
+  }
   .admin-nav-cluster-head{
     align-items:flex-start;
     flex-direction:column;
