@@ -1,5 +1,18 @@
 {
   "buildCommand": "npm run build",
   "outputDirectory": "public",
-  "cleanUrls": true
+  "cleanUrls": true,
+  "redirects": [
+    {
+      "source": "/:path*",
+      "has": [
+        {
+          "type": "host",
+          "value": "90project.online"
+        }
+      ],
+      "destination": "https://www.90project.online/:path*",
+      "permanent": true
+    }
+  ]
 }
