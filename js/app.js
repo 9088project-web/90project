@@ -59,6 +59,8 @@ const adminDataStatus = document.getElementById('adminDataStatus');
 const adminInquiries = document.getElementById('adminInquiries');
 const adminMemberStatus = document.getElementById('adminMemberStatus');
 const adminMembers = document.getElementById('adminMembers');
+const adminMemberWhatsappTemplateZh = document.getElementById('adminMemberWhatsappTemplateZh');
+const adminMemberWhatsappTemplateEn = document.getElementById('adminMemberWhatsappTemplateEn');
 const adminSiteRows = document.getElementById('adminSiteRows');
 const adminCateringMinimumPax = document.getElementById('adminCateringMinimumPax');
 const adminCateringMinimum = document.getElementById('adminCateringMinimum');
@@ -145,6 +147,26 @@ const MEMBER_SYNC_API_PATH = '/api/member-sync';
 const ADMIN_EMAIL = '9088project@gmail.com';
 const ADMIN_PASSWORD_HASH = '3b523443';
 const WHATSAPP_NUMBER = '60189490908';
+const DEFAULT_MEMBER_WHATSAPP_TEMPLATES = {
+  zh: `你好 {name}，这里是九零食刻 90 PROJECT。
+
+我们想跟你确认餐饮 / 包伙食安排。
+电话：{phone}
+会员等级：{tier}
+推荐码：{referralCode}
+地区：{area}
+
+方便的话可以回复日期、人数和地点，我们会尽快帮你安排。谢谢。`,
+  en: `Hi {name}, this is 90 PROJECT.
+
+We would like to follow up on your meal plan / catering arrangement.
+Phone: {phone}
+Member tier: {tier}
+Referral code: {referralCode}
+Area: {area}
+
+Please share your date, pax and location when convenient. Thank you.`
+};
 const MEAL_PLAN_RATE = 15;
 const INQUIRY_STATUSES = ['new', 'contacted', 'quoted', 'confirmed', 'completed', 'cancelled'];
 const REFERRAL_REWARD_STATUSES = ['pending', 'approved', 'redeemed', 'cancelled'];
@@ -2576,7 +2598,10 @@ function defaultAdminContent() {
       }))
     },
     catering: defaultCateringContent(),
-    media: defaultMediaContent()
+    media: defaultMediaContent(),
+    operations: {
+      memberWhatsappTemplates: { ...DEFAULT_MEMBER_WHATSAPP_TEMPLATES }
+    }
   };
 }
 
@@ -2642,6 +2667,15 @@ function normalizeAdminContent(content) {
     video: normalizeVideoContent(mediaSource.video || normalized.media.video),
     homepage: normalizeHomepageMedia(mediaSource.homepage || normalized.media.homepage),
     details: normalizeDetailPages(mediaSource.details || normalized.media.details)
+  };
+
+  const operationsSource = content?.operations || {};
+  const templateSource = operationsSource.memberWhatsappTemplates || {};
+  normalized.operations = {
+    memberWhatsappTemplates: {
+      zh: String(templateSource.zh ?? operationsSource.memberWhatsappTemplate ?? normalized.operations.memberWhatsappTemplates.zh),
+      en: String(templateSource.en ?? normalized.operations.memberWhatsappTemplates.en)
+    }
   };
 
   return normalized;
@@ -4418,6 +4452,57 @@ function memberTierOptions(selectedTier) {
   )).join('');
 }
 
+function normalizeWhatsAppTarget(value) {
+  const digits = String(value || '').replace(/\D/g, '');
+  if (!digits) return '';
+  if (digits.startsWith('60')) return digits;
+  if (digits.startsWith('0')) return `6${digits}`;
+  return digits;
+}
+
+function adminMemberWhatsappTemplates(content = loadAdminContent()) {
+  return normalizeAdminContent(content).operations.memberWhatsappTemplates;
+}
+
+function memberContactValue(member, key) {
+  const values = {
+    name: member?.name || member?.email || (currentLanguage === 'en' ? 'member' : '会员'),
+    phone: member?.phone || '-',
+    email: member?.email || '-',
+    tier: member?.tier || 'Classic',
+    referralCode: normalizeReferralCode(member?.referralCode) || '-',
+    area: member?.profile?.area || '-'
+  };
+  return values[key] || '';
+}
+
+function buildAdminMemberWhatsappMessage(member) {
+  const templates = adminMemberWhatsappTemplates();
+  const template = currentLanguage === 'en' ? templates.en : templates.zh;
+  return String(template || DEFAULT_MEMBER_WHATSAPP_TEMPLATES[currentLanguage === 'en' ? 'en' : 'zh'])
+    .replace(/\{(name|phone|email|tier|referralCode|area)\}/g, (_, key) => memberContactValue(member, key));
+}
+
+function adminMemberByIndex(index) {
+  const memberIndex = Number.parseInt(index, 10);
+  if (!Number.isInteger(memberIndex)) return null;
+  return combinedAdminMembers()[memberIndex] || null;
+}
+
+function adminMemberContactControls(member, index) {
+  const whatsappPhone = normalizeWhatsAppTarget(member?.phone);
+  if (!whatsappPhone) {
+    return `<p class="admin-member-contact-note">${currentLanguage === 'en' ? 'No phone number available.' : '这个会员还没有电话号码。'}</p>`;
+  }
+
+  return `
+    <div class="admin-member-contact-actions">
+      <button type="button" data-member-contact-action="whatsapp" data-member-index="${index}">${currentLanguage === 'en' ? 'WhatsApp Customer' : 'WhatsApp 顾客'}</button>
+      <button type="button" data-member-contact-action="copy" data-member-index="${index}">${currentLanguage === 'en' ? 'Copy Message' : '复制文案'}</button>
+    </div>
+  `;
+}
+
 function renderAdminMembers(refreshRemote = true) {
   if (!adminMembers) return;
   if (refreshRemote) refreshSupabaseMembers();
@@ -4455,11 +4540,11 @@ function renderAdminMembers(refreshRemote = true) {
     return;
   }
 
-  const memberCards = members.map(member => {
+  const memberCards = members.map((member, index) => {
     const memberEmail = String(member.email || '').toLowerCase();
     const memberUserId = member.supabaseUserId || '';
     return `
-      <article class="admin-member-card" data-member-user-id="${escapeHtml(memberUserId)}">
+      <article class="admin-member-card" data-member-user-id="${escapeHtml(memberUserId)}" data-member-index="${index}">
         <div>
           <strong>${escapeHtml(member.name || member.email || (currentLanguage === 'en' ? 'Member' : '会员'))}</strong>
           <p>${currentLanguage === 'en' ? 'Phone' : '电话'}：${escapeHtml(member.phone || '-')}</p>
@@ -4467,10 +4552,11 @@ function renderAdminMembers(refreshRemote = true) {
           <p>${currentLanguage === 'en' ? 'Tier' : '会员等级'}：${escapeHtml(member.tier || 'Classic')}</p>
           <p>${currentLanguage === 'en' ? 'Area / Package' : '地区 / 常选配套'}：${escapeHtml(member.profile?.area || '-')} / ${escapeHtml(member.profile?.defaultPackage || '-')}</p>
           <p>${currentLanguage === 'en' ? 'Records' : '询问记录'}：${escapeHtml(member.records?.length || 0)}</p>
-          <p>${currentLanguage === 'en' ? 'Area / Package' : '地区 / 配套'}：${escapeHtml(member.profile?.area || '-')} / ${escapeHtml(member.profile?.defaultPackage || '-')}</p>
+          <p>${currentLanguage === 'en' ? 'Referral code' : '推荐码'}：${escapeHtml(normalizeReferralCode(member.referralCode) || '-')}</p>
           <p>${currentLanguage === 'en' ? 'Source' : '来源'}：${escapeHtml(member.source === 'supabase' ? 'Supabase' : 'Local')}</p>
         </div>
         <div class="admin-reward-list">
+          ${adminMemberContactControls(member, index)}
           <label>${currentLanguage === 'en' ? 'Member status' : '会员状态'}
             <select data-member-admin-field="status" data-member-email="${escapeHtml(memberEmail)}" data-member-user-id="${escapeHtml(memberUserId)}">${memberStatusOptions(member.status)}</select>
           </label>
@@ -5369,6 +5455,12 @@ function renderAdminConversions(refreshRemote = true) {
   }).join('');
 }
 
+function renderAdminMemberWhatsappSettings(content = loadAdminContent()) {
+  const templates = normalizeAdminContent(content).operations.memberWhatsappTemplates;
+  if (adminMemberWhatsappTemplateZh) adminMemberWhatsappTemplateZh.value = templates.zh || DEFAULT_MEMBER_WHATSAPP_TEMPLATES.zh;
+  if (adminMemberWhatsappTemplateEn) adminMemberWhatsappTemplateEn.value = templates.en || DEFAULT_MEMBER_WHATSAPP_TEMPLATES.en;
+}
+
 function renderAdminEditor() {
   const content = loadAdminContent();
   ensureAdminTranslateHelper();
@@ -5382,6 +5474,7 @@ function renderAdminEditor() {
   renderAdminHomepageRows(content);
   renderAdminDetailRows(content);
   renderAdminConversions();
+  renderAdminMemberWhatsappSettings(content);
   primeAdminTranslationFields();
 }
 
@@ -5589,6 +5682,13 @@ function collectAdminContent() {
       if (item.image || item.alt || item.caption) detail.gallery.push(item);
     });
   });
+
+  content.operations = {
+    memberWhatsappTemplates: {
+      zh: adminMemberWhatsappTemplateZh?.value?.trim() || DEFAULT_MEMBER_WHATSAPP_TEMPLATES.zh,
+      en: adminMemberWhatsappTemplateEn?.value?.trim() || DEFAULT_MEMBER_WHATSAPP_TEMPLATES.en
+    }
+  };
 
   return normalizeAdminContent(content);
 }
@@ -6280,6 +6380,32 @@ adminInquiries?.addEventListener('change', event => {
   if (!(event.target instanceof HTMLSelectElement) || !event.target.matches('[data-inquiry-status]')) return;
   const row = event.target.closest('[data-inquiry-id]');
   setInquiryStatus(row?.dataset.inquiryId || '', event.target.value);
+});
+
+adminMembers?.addEventListener('click', async event => {
+  const trigger = event.target instanceof HTMLElement
+    ? event.target.closest('[data-member-contact-action]')
+    : null;
+  if (!(trigger instanceof HTMLElement)) return;
+
+  const member = adminMemberByIndex(trigger.dataset.memberIndex || trigger.closest('[data-member-index]')?.dataset.memberIndex || '');
+  if (!member) return;
+
+  const message = buildAdminMemberWhatsappMessage(member);
+  if (trigger.dataset.memberContactAction === 'copy') {
+    await copyText(message);
+    showAdminMessage(currentLanguage === 'en' ? 'WhatsApp message copied.' : 'WhatsApp 文案已复制。');
+    return;
+  }
+
+  const whatsappPhone = normalizeWhatsAppTarget(member.phone);
+  if (!whatsappPhone) {
+    showAdminMessage(currentLanguage === 'en' ? 'This member has no phone number.' : '这个会员还没有电话号码。', true);
+    return;
+  }
+
+  window.open(`https://wa.me/${whatsappPhone}?text=${encodeURIComponent(message)}`, '_blank', 'noopener');
+  showAdminMessage(currentLanguage === 'en' ? 'WhatsApp is opening.' : '正在打开 WhatsApp。');
 });
 
 adminMembers?.addEventListener('change', event => {

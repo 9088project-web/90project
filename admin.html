@@ -6,8 +6,8 @@
   <meta name="robots" content="noindex, nofollow" />
   <title>内容管理后台｜九零食刻 90 PROJECT</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/remixicon@4.6.0/fonts/remixicon.css" />
-  <link rel="stylesheet" href="css/style.css?v=20260731-admin-drawer" />
-  <link rel="stylesheet" href="css/admin.css?v=20260731-admin-drawer" />
+  <link rel="stylesheet" href="css/style.css?v=20260731-member-whatsapp" />
+  <link rel="stylesheet" href="css/admin.css?v=20260731-member-whatsapp" />
   <link rel="stylesheet" href="css/growth.css?v=20260730-admin-sync" />
 </head>
 <body class="admin-page">
@@ -244,6 +244,21 @@
 
       <section class="admin-section" data-admin-panel="members" hidden>
         <div class="admin-section-head"><div><h2>会员资料</h2><p id="adminMemberStatus">查看会员、询问记录与后台备注。</p></div></div>
+        <div class="admin-member-whatsapp-settings">
+          <div>
+            <span>WHATSAPP FOLLOW UP</span>
+            <h3>会员 WhatsApp 联系设置</h3>
+            <p>这里设置后台联系会员时自动带出的文案。可用变量：{name}、{phone}、{email}、{tier}、{referralCode}、{area}。</p>
+          </div>
+          <div class="admin-member-whatsapp-grid">
+            <label>中文文案
+              <textarea id="adminMemberWhatsappTemplateZh" rows="5"></textarea>
+            </label>
+            <label>English Message
+              <textarea id="adminMemberWhatsappTemplateEn" rows="5"></textarea>
+            </label>
+          </div>
+        </div>
         <div class="admin-rows admin-members" id="adminMembers"></div>
       </section>
 
@@ -361,7 +376,7 @@
     </section>
   </main>
 
-  <script src="js/app.js?v=20260731-admin-drawer"></script>
+  <script src="js/app.js?v=20260731-member-whatsapp"></script>
   <script type="module" src="js/growth-mock.js?v=20260731-whatsapp-invoice"></script>
 </body>
 </html>

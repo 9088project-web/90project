@@ -2954,6 +2954,63 @@ details p{color:var(--muted);font-size:13px;line-height:1.55}
 .admin-members{
   gap:12px;
 }
+.admin-member-whatsapp-settings{
+  border:1px solid rgba(214,168,92,.24);
+  border-radius:18px;
+  padding:18px;
+  margin-bottom:14px;
+  background:linear-gradient(135deg,rgba(214,168,92,.12),rgba(255,247,232,.045));
+  display:grid;
+  gap:16px;
+}
+.admin-member-whatsapp-settings span{
+  display:block;
+  color:var(--gold2);
+  font-size:12px;
+  letter-spacing:.22em;
+  font-weight:900;
+  margin-bottom:6px;
+}
+.admin-member-whatsapp-settings h3{
+  margin:0 0 6px;
+  color:#fff9e8;
+  font-size:24px;
+  line-height:1.2;
+}
+.admin-member-whatsapp-settings p{
+  margin:0;
+  color:#dcc9aa;
+  line-height:1.7;
+}
+.admin-member-whatsapp-grid{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:12px;
+}
+.admin-member-contact-actions{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:8px;
+}
+.admin-member-contact-actions button{
+  min-height:44px;
+  border-radius:999px;
+  border:1px solid rgba(214,168,92,.36);
+  background:rgba(214,168,92,.12);
+  color:#ffe9b4;
+  font-weight:900;
+  cursor:pointer;
+}
+.admin-member-contact-actions button:first-child{
+  background:linear-gradient(135deg,#f7d58b,#a86f2a);
+  color:#150b04;
+  border-color:transparent;
+}
+.admin-member-contact-note{
+  border:1px dashed rgba(214,168,92,.28);
+  border-radius:12px;
+  padding:12px;
+}
 .admin-member-card{
   border:1px solid rgba(214,168,92,.24);
   border-radius:14px;
@@ -3400,6 +3457,8 @@ body.order-form-visible .back-top{
   .admin-toolbar{justify-content:flex-start}
   .admin-inquiry{grid-template-columns:1fr}
   .admin-inquiry-actions{min-width:0}
+  .admin-member-whatsapp-grid{grid-template-columns:1fr}
+  .admin-member-contact-actions{grid-template-columns:1fr}
   .admin-member-card{grid-template-columns:1fr}
   .admin-reward-line{grid-template-columns:1fr}
   .admin-reward-line select{width:100%}
