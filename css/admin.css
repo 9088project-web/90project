@@ -129,6 +129,295 @@ body.admin-page{min-height:100vh;background:radial-gradient(circle at 50% 0,rgba
   color:#8a581f;
   font-weight:900;
 }
+.admin-pos-panel{
+  gap:22px;
+  padding:clamp(18px,2.5vw,28px);
+  border-color:rgba(255,223,154,.22);
+  background:
+    linear-gradient(180deg,rgba(255,247,232,.06),rgba(255,247,232,.02)),
+    radial-gradient(circle at 72% 0,rgba(216,163,77,.16),transparent 42%),
+    rgba(9,7,5,.94);
+}
+.admin-pos-titlebar{
+  align-items:center;
+  padding-bottom:18px;
+  border-bottom:1px solid rgba(214,168,92,.18);
+}
+.admin-pos-stats{
+  display:grid;
+  grid-template-columns:1.25fr repeat(3,minmax(0,1fr));
+  gap:12px;
+}
+.admin-pos-stats div{
+  min-width:0;
+  padding:14px 16px;
+  border:1px solid rgba(214,168,92,.2);
+  border-radius:16px;
+  background:linear-gradient(135deg,rgba(255,247,232,.09),rgba(255,247,232,.025));
+}
+.admin-pos-stats span{
+  display:block;
+  color:#d8a34d;
+  font-size:11px;
+  font-weight:900;
+  letter-spacing:.18em;
+  text-transform:uppercase;
+}
+.admin-pos-stats strong{
+  display:block;
+  margin-top:8px;
+  overflow:hidden;
+  color:#fff4d9;
+  font-size:clamp(18px,2.2vw,28px);
+  line-height:1;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+.admin-pos-workspace{
+  display:grid;
+  grid-template-columns:minmax(260px,.8fr) minmax(420px,1.28fr) minmax(340px,.92fr);
+  gap:16px;
+  align-items:start;
+}
+.admin-pos-card{
+  min-width:0;
+  padding:16px;
+  border:1px solid rgba(214,168,92,.22);
+  border-radius:18px;
+  background:linear-gradient(180deg,rgba(32,24,17,.98),rgba(14,11,8,.98));
+  box-shadow:0 18px 50px rgba(0,0,0,.22);
+}
+.admin-pos-card-head{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:12px;
+  margin-bottom:14px;
+}
+.admin-pos-card-head span{
+  display:block;
+  margin-bottom:6px;
+  color:#d8a34d;
+  font-size:11px;
+  font-weight:900;
+  letter-spacing:.2em;
+}
+.admin-pos-card-head h3{
+  margin:0;
+  color:#ffdf9a;
+  font-size:22px;
+}
+.admin-pos-form-grid,
+.admin-pos-checkout-grid{
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:12px;
+}
+.admin-pos-form-grid .admin-pos-wide{
+  grid-column:1/-1;
+}
+.admin-pos-preset-strip{
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px;
+  margin:0 0 14px;
+}
+.admin-pos-preset-strip button{
+  min-height:38px;
+  padding:8px 13px;
+  border:1px solid rgba(255,223,154,.28);
+  border-radius:999px;
+  color:#ffe2a5;
+  background:rgba(255,247,232,.045);
+  font-weight:900;
+  cursor:pointer;
+}
+.admin-pos-preset-strip button:hover,
+.admin-pos-preset-strip button:focus-visible{
+  color:#120d08;
+  background:#f1c66f;
+  outline:none;
+}
+.admin-invoice-item-table{
+  overflow:hidden;
+  border:1px solid rgba(214,168,92,.18);
+  border-radius:16px;
+  background:rgba(0,0,0,.18);
+}
+.admin-invoice-item-row{
+  display:grid;
+  grid-template-columns:minmax(180px,1.4fr) 82px 108px 112px 44px;
+  gap:10px;
+  align-items:center;
+  padding:10px 12px;
+  border-top:1px solid rgba(214,168,92,.14);
+}
+.admin-invoice-item-row:first-child{
+  border-top:0;
+}
+.admin-invoice-item-heading{
+  color:#d8a34d;
+  background:rgba(255,223,154,.08);
+  font-size:11px;
+  font-weight:900;
+  letter-spacing:.16em;
+  text-transform:uppercase;
+}
+.admin-invoice-item-row input{
+  width:100%;
+  min-height:42px;
+  border:1px solid rgba(214,168,92,.2);
+  border-radius:12px;
+  padding:9px 11px;
+  color:#20160d;
+  background:#fffaf1;
+  font-weight:850;
+}
+.admin-invoice-item-amount{
+  color:#ffdf9a;
+  font-weight:950;
+  text-align:right;
+}
+.admin-invoice-item-remove{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  width:38px;
+  height:38px;
+  border:1px solid rgba(255,223,154,.18);
+  border-radius:12px;
+  color:#ffdf9a;
+  background:rgba(255,255,255,.04);
+  cursor:pointer;
+}
+.admin-invoice-item-remove:hover,
+.admin-invoice-item-remove:focus-visible{
+  color:#120d08;
+  background:#ffdf9a;
+  outline:none;
+}
+.admin-legacy-invoice-fields{
+  position:absolute;
+  width:1px;
+  height:1px;
+  overflow:hidden;
+  clip:rect(0 0 0 0);
+  white-space:nowrap;
+}
+.admin-pos-receipt{
+  overflow:hidden;
+  margin-bottom:14px;
+  border:1px solid rgba(214,168,92,.26);
+  border-radius:18px;
+  background:#fffaf1;
+  color:#1d140b;
+  box-shadow:0 18px 40px rgba(0,0,0,.2);
+}
+.admin-receipt-paper{
+  display:grid;
+  gap:14px;
+  padding:18px;
+}
+.admin-receipt-brand{
+  display:flex;
+  align-items:center;
+  gap:12px;
+  padding-bottom:12px;
+  border-bottom:1px dashed rgba(91,64,34,.28);
+}
+.admin-receipt-brand img{
+  width:52px;
+  height:52px;
+  border-radius:50%;
+  object-fit:cover;
+}
+.admin-receipt-brand span,
+.admin-receipt-meta span,
+.admin-receipt-total span{
+  display:block;
+  color:#8a5a22;
+  font-size:11px;
+  font-weight:950;
+  letter-spacing:.13em;
+  text-transform:uppercase;
+}
+.admin-receipt-brand strong{
+  display:block;
+  margin-top:3px;
+  font-size:18px;
+}
+.admin-receipt-meta{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:10px;
+}
+.admin-receipt-meta strong,
+.admin-receipt-total strong{
+  display:block;
+  margin-top:4px;
+  overflow-wrap:anywhere;
+}
+.admin-receipt-lines{
+  display:grid;
+  gap:8px;
+  padding:10px 0;
+  border-block:1px dashed rgba(91,64,34,.28);
+}
+.admin-receipt-line{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) auto;
+  gap:10px;
+  align-items:start;
+}
+.admin-receipt-line strong{
+  display:block;
+  line-height:1.25;
+}
+.admin-receipt-line small{
+  display:block;
+  margin-top:2px;
+  color:#765c42;
+}
+.admin-receipt-line b{
+  white-space:nowrap;
+}
+.admin-receipt-empty{
+  margin:0;
+  color:#765c42;
+  font-weight:800;
+}
+.admin-receipt-total{
+  display:grid;
+  gap:8px;
+}
+.admin-receipt-total div{
+  display:flex;
+  justify-content:space-between;
+  gap:12px;
+}
+.admin-receipt-total .is-balance{
+  margin-top:4px;
+  padding-top:10px;
+  border-top:1px solid rgba(91,64,34,.18);
+  color:#050302;
+  font-size:19px;
+}
+.admin-pos-receipt-panel>label{
+  display:block;
+  margin-top:12px;
+}
+.admin-pos-receipt-panel textarea{
+  width:100%;
+}
+.admin-pos-whatsapp-preview{
+  grid-template-columns:1fr;
+  margin-top:14px;
+  padding:0;
+  border:0;
+  background:transparent;
+}
+.admin-pos-whatsapp-preview textarea{
+  min-height:190px;
+}
 @media (max-width:980px){
   .admin-weekly-row{
     grid-template-columns:1fr;
@@ -155,5 +444,26 @@ body.admin-page{min-height:100vh;background:radial-gradient(circle at 50% 0,rgba
   .admin-invoice-head,
   .admin-invoice-actions{
     display:grid;
+  }
+  .admin-pos-stats,
+  .admin-pos-workspace{
+    grid-template-columns:1fr;
+  }
+  .admin-invoice-item-row{
+    grid-template-columns:minmax(0,1fr) 70px 94px;
+    gap:8px;
+  }
+  .admin-invoice-item-heading{
+    display:none;
+  }
+  .admin-invoice-item-row input[data-invoice-item-field="description"]{
+    grid-column:1/-1;
+  }
+  .admin-invoice-item-amount{
+    text-align:left;
+  }
+  .admin-invoice-item-remove{
+    grid-column:3;
+    justify-self:end;
   }
 }

@@ -7,7 +7,7 @@
   <title>内容管理后台｜九零食刻 90 PROJECT</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/remixicon@4.6.0/fonts/remixicon.css" />
   <link rel="stylesheet" href="css/style.css?v=20260731-member-whatsapp" />
-  <link rel="stylesheet" href="css/admin.css?v=20260731-member-whatsapp" />
+  <link rel="stylesheet" href="css/admin.css?v=20260731-pos-invoice" />
   <link rel="stylesheet" href="css/growth.css?v=20260730-admin-sync" />
 </head>
 <body class="admin-page">
@@ -147,86 +147,141 @@
             <p>填写顾客资料、服务内容、订金和推荐码，一键生成 WhatsApp 文案；保存后会同步到云端订单、会员和推荐佣金记录。</p>
           </div>
         </div>
-        <form class="growth-form growth-panel admin-invoice-panel" data-admin-invoice-form>
-          <div class="admin-invoice-head">
+        <form class="growth-form growth-panel admin-invoice-panel admin-pos-panel" data-admin-invoice-form>
+          <div class="admin-invoice-head admin-pos-titlebar">
             <div>
-              <span>ORDER BILLING</span>
-              <h3>快速开单</h3>
-              <p>先保存订单，再发 WhatsApp 给顾客确认。订单完成后到“增长系统”确认完成并计算佣金。</p>
+              <span>ORDER BILLING POS</span>
+              <h3>专业开单台</h3>
+              <p>选择顾客、加入项目、确认订金后即可生成收据与 WhatsApp 文案。保存后会同步到云端订单和会员记录。</p>
             </div>
             <button class="growth-button secondary" type="button" data-admin-new-invoice>新开单</button>
           </div>
-          <div class="growth-form-grid admin-invoice-grid">
-            <label>开单编号
-              <input data-invoice-field="invoiceNo" type="text" readonly>
-            </label>
-            <label>顾客姓名
-              <input data-invoice-field="name" type="text" placeholder="例如：王小姐" required>
-            </label>
-            <label>顾客 WhatsApp
-              <input data-invoice-field="phone" type="tel" placeholder="018-xxxx xxxx" required>
-            </label>
-            <label>Email（可选）
-              <input data-invoice-field="email" type="email" placeholder="customer@email.com">
-            </label>
-            <label>服务类型
-              <select data-invoice-field="serviceType">
-                <option value="Meal Plan">包伙食</option>
-                <option value="Event Catering">活动餐饮</option>
-                <option value="Event Styling">场地布置</option>
-                <option value="Cocktail Service">鸡尾酒服务</option>
-                <option value="Other">其他服务</option>
-              </select>
-            </label>
-            <label>订单状态
-              <select data-invoice-field="status">
-                <option value="confirmed">已确认</option>
-                <option value="deposit_paid">已付订金</option>
-                <option value="new">待确认</option>
-                <option value="cancelled">已取消</option>
-              </select>
-            </label>
-            <label>服务日期
-              <input data-invoice-field="eventDate" type="date">
-            </label>
-            <label>时间
-              <input data-invoice-field="eventTime" type="time">
-            </label>
-            <label>人数 Pax
-              <input data-invoice-field="pax" type="number" min="1" step="1" placeholder="30">
-            </label>
-            <label>推荐码（可选）
-              <input data-invoice-field="referralCode" type="text" placeholder="NP90XXXX">
-            </label>
-            <label class="admin-wide-field">地点
-              <input data-invoice-field="location" type="text" placeholder="地址 / Venue / Area">
-            </label>
-            <label class="admin-wide-field">菜单 / 项目内容
-              <textarea data-invoice-field="itemsSummary" rows="5" placeholder="例如：Set B 活动餐饮、30 pax、宫保鸡丁、炒饭、甜品、饮料..."></textarea>
-            </label>
-            <label>项目原额 RM
-              <input data-invoice-field="originalAmount" type="number" min="0" step="0.01" placeholder="0.00">
-            </label>
-            <label>优惠 / 调整 RM
-              <input data-invoice-field="discountAmount" type="number" min="0" step="0.01" value="0">
-            </label>
-            <label>已付订金 RM
-              <input data-invoice-field="depositAmount" type="number" min="0" step="0.01" value="0">
-            </label>
-            <label>余额 RM
-              <input data-invoice-field="balanceAmount" type="number" min="0" step="0.01" readonly>
-            </label>
-            <label class="admin-wide-field">后台备注
-              <textarea data-invoice-field="adminNotes" rows="3" placeholder="只给后台看的备注，例如付款截图、特别安排、内部负责人。"></textarea>
-            </label>
+
+          <div class="admin-pos-stats" aria-label="开单摘要">
+            <div><span>Invoice</span><strong data-admin-invoice-kpi="invoiceNo">-</strong></div>
+            <div><span>小计</span><strong data-admin-invoice-kpi="subtotal">RM0.00</strong></div>
+            <div><span>已收订金</span><strong data-admin-invoice-kpi="deposit">RM0.00</strong></div>
+            <div><span>余额</span><strong data-admin-invoice-kpi="balance">RM0.00</strong></div>
           </div>
-          <div class="admin-invoice-preview">
-            <div>
-              <span>WHATSAPP MESSAGE</span>
-              <h3>发送给顾客的内容</h3>
-            </div>
-            <textarea data-admin-invoice-preview rows="12" readonly></textarea>
+
+          <div class="admin-pos-workspace">
+            <section class="admin-pos-card admin-pos-customer">
+              <div class="admin-pos-card-head">
+                <div>
+                  <span>CUSTOMER</span>
+                  <h3>顾客资料</h3>
+                </div>
+              </div>
+              <div class="growth-form-grid admin-pos-form-grid">
+                <label>开单编号
+                  <input data-invoice-field="invoiceNo" type="text" readonly>
+                </label>
+                <label>订单状态
+                  <select data-invoice-field="status">
+                    <option value="confirmed">已确认</option>
+                    <option value="deposit_paid">已付订金</option>
+                    <option value="new">待确认</option>
+                    <option value="cancelled">已取消</option>
+                  </select>
+                </label>
+                <label>顾客姓名
+                  <input data-invoice-field="name" type="text" placeholder="例如：王小姐" required>
+                </label>
+                <label>顾客 WhatsApp
+                  <input data-invoice-field="phone" type="tel" placeholder="018-xxxx xxxx" required>
+                </label>
+                <label>Email（可选）
+                  <input data-invoice-field="email" type="email" placeholder="customer@email.com">
+                </label>
+                <label>推荐码（可选）
+                  <input data-invoice-field="referralCode" type="text" placeholder="NP90XXXX">
+                </label>
+                <label>服务类型
+                  <select data-invoice-field="serviceType">
+                    <option value="Meal Plan">包伙食</option>
+                    <option value="Event Catering" selected>活动餐饮</option>
+                    <option value="Event Styling">场地布置</option>
+                    <option value="Cocktail Service">鸡尾酒服务</option>
+                    <option value="Other">其他服务</option>
+                  </select>
+                </label>
+                <label>人数 Pax
+                  <input data-invoice-field="pax" type="number" min="1" step="1" placeholder="30">
+                </label>
+                <label>服务日期
+                  <input data-invoice-field="eventDate" type="date">
+                </label>
+                <label>时间
+                  <input data-invoice-field="eventTime" type="time">
+                </label>
+                <label class="admin-pos-wide">地点
+                  <input data-invoice-field="location" type="text" placeholder="地址 / Venue / Area">
+                </label>
+              </div>
+            </section>
+
+            <section class="admin-pos-card admin-pos-register">
+              <div class="admin-pos-card-head">
+                <div>
+                  <span>ITEM CART</span>
+                  <h3>项目明细</h3>
+                </div>
+                <button class="growth-button secondary" type="button" data-admin-invoice-add-item>新增项目</button>
+              </div>
+              <div class="admin-pos-preset-strip" aria-label="常用项目">
+                <button type="button" data-admin-invoice-preset data-preset-name="活动餐饮 Set A" data-preset-qty="10" data-preset-price="29.90">Set A</button>
+                <button type="button" data-admin-invoice-preset data-preset-name="活动餐饮 Set B" data-preset-qty="10" data-preset-price="32.90">Set B</button>
+                <button type="button" data-admin-invoice-preset data-preset-name="活动餐饮 Set C" data-preset-qty="10" data-preset-price="39.90">Set C</button>
+                <button type="button" data-admin-invoice-preset data-preset-name="活动餐饮 Set D" data-preset-qty="10" data-preset-price="43.90">Set D</button>
+                <button type="button" data-admin-invoice-preset data-preset-name="包伙食配套" data-preset-qty="20" data-preset-price="15">包伙食</button>
+                <button type="button" data-admin-invoice-preset data-preset-name="场地布置订金" data-preset-qty="1" data-preset-price="300">布置订金</button>
+              </div>
+              <div class="admin-invoice-item-table" aria-label="项目明细表">
+                <div class="admin-invoice-item-row admin-invoice-item-heading">
+                  <span>项目</span>
+                  <span>数量</span>
+                  <span>单价 RM</span>
+                  <span>金额</span>
+                  <span></span>
+                </div>
+                <div data-admin-invoice-items></div>
+              </div>
+              <div class="admin-legacy-invoice-fields" aria-hidden="true">
+                <textarea data-invoice-field="itemsSummary" rows="3" tabindex="-1"></textarea>
+                <input data-invoice-field="originalAmount" type="number" min="0" step="0.01" tabindex="-1">
+                <input data-invoice-field="balanceAmount" type="number" min="0" step="0.01" readonly tabindex="-1">
+              </div>
+            </section>
+
+            <aside class="admin-pos-card admin-pos-receipt-panel">
+              <div class="admin-pos-card-head">
+                <div>
+                  <span>RECEIPT</span>
+                  <h3>收据预览</h3>
+                </div>
+              </div>
+              <div class="admin-pos-receipt" data-admin-invoice-receipt></div>
+              <div class="growth-form-grid admin-pos-checkout-grid">
+                <label>优惠 / 调整 RM
+                  <input data-invoice-field="discountAmount" type="number" min="0" step="0.01" value="0">
+                </label>
+                <label>已付订金 RM
+                  <input data-invoice-field="depositAmount" type="number" min="0" step="0.01" value="0">
+                </label>
+              </div>
+              <label>后台备注
+                <textarea data-invoice-field="adminNotes" rows="3" placeholder="只给后台看的备注，例如付款截图、特别安排、内部负责人。"></textarea>
+              </label>
+              <div class="admin-invoice-preview admin-pos-whatsapp-preview">
+                <div>
+                  <span>WHATSAPP MESSAGE</span>
+                  <h3>发送给顾客的内容</h3>
+                </div>
+                <textarea data-admin-invoice-preview rows="9" readonly></textarea>
+              </div>
+            </aside>
           </div>
+
           <div class="admin-invoice-actions">
             <button class="growth-button secondary" type="button" data-admin-invoice-preview-button>生成文案</button>
             <button class="growth-button" type="submit">保存到云端订单</button>
@@ -377,6 +432,6 @@
   </main>
 
   <script src="js/app.js?v=20260731-member-whatsapp"></script>
-  <script type="module" src="js/growth-mock.js?v=20260731-whatsapp-invoice"></script>
+  <script type="module" src="js/growth-mock.js?v=20260731-pos-invoice"></script>
 </body>
 </html>

@@ -1005,13 +1005,160 @@ function formatInvoiceTime(value) {
   return date.toLocaleTimeString('zh-MY', { hour: 'numeric', minute: '2-digit' });
 }
 
+function invoiceCleanNumber(value) {
+  return money(Number(String(value ?? '').replace(/[^\d.-]/g, '')) || 0);
+}
+
+function invoiceQuantity(value) {
+  return Math.max(0, Number(String(value ?? '').replace(/[^\d.]/g, '')) || 0);
+}
+
+function invoiceQuantityLabel(value) {
+  const number = invoiceQuantity(value);
+  return Number.isInteger(number) ? String(number) : number.toFixed(2).replace(/0+$/, '').replace(/\.$/, '');
+}
+
+function adminInvoiceRows() {
+  return Array.from(document.querySelectorAll('[data-admin-invoice-item]'));
+}
+
+function adminInvoiceItemTemplate(item = {}, index = 0) {
+  const qty = item.qty !== undefined ? item.qty : 1;
+  const unitPrice = item.unitPrice !== undefined ? item.unitPrice : 0;
+  const amount = money(invoiceQuantity(qty) * invoiceCleanNumber(unitPrice));
+  return `
+    <div class="admin-invoice-item-row" data-admin-invoice-item>
+      <input data-invoice-item-field="description" type="text" value="${esc(item.description || '')}" placeholder="项目 / 菜单 / 服务 ${index + 1}" aria-label="项目名称">
+      <input data-invoice-item-field="qty" type="number" min="0" step="1" value="${esc(qty)}" aria-label="数量">
+      <input data-invoice-item-field="unitPrice" type="number" min="0" step="0.01" value="${esc(Number(unitPrice || 0).toFixed(2))}" aria-label="单价">
+      <span class="admin-invoice-item-amount" data-invoice-item-amount>${formatMoney(amount)}</span>
+      <button class="admin-invoice-item-remove" type="button" data-admin-invoice-remove-item aria-label="删除项目"><i class="ri-close-line" aria-hidden="true"></i></button>
+    </div>
+  `;
+}
+
+function renderAdminInvoiceItems(items = []) {
+  const container = document.querySelector('[data-admin-invoice-items]');
+  if (!container) return;
+  const source = Array.isArray(items) && items.length ? items : [{ description: '', qty: 1, unitPrice: 0 }];
+  container.innerHTML = source.map((item, index) => adminInvoiceItemTemplate(item, index)).join('');
+}
+
+function collectAdminInvoiceItems() {
+  const rows = adminInvoiceRows();
+  return rows.map(row => {
+    const description = row.querySelector('[data-invoice-item-field="description"]')?.value?.trim() || '';
+    const qty = invoiceQuantity(row.querySelector('[data-invoice-item-field="qty"]')?.value);
+    const unitPrice = invoiceCleanNumber(row.querySelector('[data-invoice-item-field="unitPrice"]')?.value);
+    const amount = money(qty * unitPrice);
+    const amountElement = row.querySelector('[data-invoice-item-amount]');
+    if (amountElement) amountElement.textContent = formatMoney(amount);
+    return { description, qty, unitPrice, amount };
+  }).filter(item => item.description || item.unitPrice > 0);
+}
+
+function buildInvoiceItemsSummary(items = []) {
+  return items.map((item, index) => {
+    const amount = money(item.amount ?? invoiceQuantity(item.qty) * invoiceCleanNumber(item.unitPrice));
+    return `${index + 1}. ${item.description || '项目'} x${invoiceQuantityLabel(item.qty)} @ ${formatMoney(item.unitPrice)} = ${formatMoney(amount)}`;
+  }).join('\n');
+}
+
+function adminInvoiceServiceText(serviceType) {
+  return ({
+    'Meal Plan': '包伙食',
+    'Event Catering': '活动餐饮',
+    'Event Styling': '场地布置',
+    'Cocktail Service': '鸡尾酒服务',
+    Other: '其他服务'
+  })[serviceType] || serviceType || '-';
+}
+
+function adminInvoiceStatusText(status) {
+  return ({
+    new: '待确认',
+    confirmed: '已确认',
+    deposit_paid: '已收订金',
+    completed: '已完成',
+    cancelled: '已取消'
+  })[status] || status || '-';
+}
+
+function updateAdminInvoiceKpis(data) {
+  const set = (key, value) => {
+    const element = document.querySelector(`[data-admin-invoice-kpi="${key}"]`);
+    if (element) element.textContent = value;
+  };
+  set('invoiceNo', data.invoiceNo || '-');
+  set('subtotal', formatMoney(data.originalAmount));
+  set('deposit', formatMoney(data.depositAmount));
+  set('balance', formatMoney(data.balanceAmount));
+}
+
+function renderAdminInvoiceReceipt(data) {
+  const receipt = document.querySelector('[data-admin-invoice-receipt]');
+  if (!receipt) return;
+  const items = Array.isArray(data.items) ? data.items : [];
+  const eventLine = [formatInvoiceDate(data.eventDate), formatInvoiceTime(data.eventTime)].filter(Boolean).join(' · ') || '-';
+  const itemRows = items.length
+    ? items.map(item => `
+      <div class="admin-receipt-line">
+        <span><strong>${esc(item.description || '项目')}</strong><small>${invoiceQuantityLabel(item.qty)} x ${formatMoney(item.unitPrice)}</small></span>
+        <b>${formatMoney(item.amount)}</b>
+      </div>
+    `).join('')
+    : '<p class="admin-receipt-empty">还没有项目明细。</p>';
+  receipt.innerHTML = `
+    <div class="admin-receipt-paper">
+      <div class="admin-receipt-brand">
+        <img src="assets/images/logo/logo-icon-dark.jpg" alt="90 PROJECT logo">
+        <div><span>Official Receipt</span><strong>九零食刻 90 PROJECT</strong></div>
+      </div>
+      <div class="admin-receipt-meta">
+        <div><span>Invoice No</span><strong>${esc(data.invoiceNo || '-')}</strong></div>
+        <div><span>Status</span><strong>${esc(adminInvoiceStatusText(data.status))}</strong></div>
+        <div><span>Customer</span><strong>${esc(data.name || '-')}</strong></div>
+        <div><span>WhatsApp</span><strong>${esc(data.phone || '-')}</strong></div>
+        <div><span>Service</span><strong>${esc(adminInvoiceServiceText(data.serviceType))}</strong></div>
+        <div><span>Date / Time</span><strong>${esc(eventLine)}</strong></div>
+      </div>
+      <div class="admin-receipt-lines">${itemRows}</div>
+      <div class="admin-receipt-total">
+        <div><span>Subtotal</span><strong>${formatMoney(data.originalAmount)}</strong></div>
+        <div><span>Discount</span><strong>-${formatMoney(data.discountAmount)}</strong></div>
+        <div><span>Total</span><strong>${formatMoney(data.totalAmount)}</strong></div>
+        <div><span>Deposit</span><strong>${formatMoney(data.depositAmount)}</strong></div>
+        <div class="is-balance"><span>Balance</span><strong>${formatMoney(data.balanceAmount)}</strong></div>
+      </div>
+    </div>
+  `;
+}
+
+function addAdminInvoiceItem(item = {}) {
+  const current = collectAdminInvoiceItems();
+  const next = [...current, {
+    description: item.description || '',
+    qty: item.qty !== undefined ? item.qty : 1,
+    unitPrice: item.unitPrice !== undefined ? item.unitPrice : 0
+  }];
+  renderAdminInvoiceItems(next);
+  updateAdminInvoicePreview();
+}
+
 function collectAdminInvoiceInput() {
   const invoiceNo = invoiceValue('invoiceNo') || generateInvoiceNo();
-  const originalAmount = invoiceNumber('originalAmount');
+  const items = collectAdminInvoiceItems();
+  const itemSubtotal = money(items.reduce((sum, item) => sum + Number(item.amount || 0), 0));
+  const itemsSummary = items.length ? buildInvoiceItemsSummary(items) : invoiceValue('itemsSummary');
+  const originalAmount = items.length ? itemSubtotal : invoiceNumber('originalAmount');
   const discountAmount = invoiceNumber('discountAmount');
   const depositAmount = invoiceNumber('depositAmount');
   const totalAmount = money(Math.max(0, originalAmount - discountAmount));
   const balanceAmount = money(Math.max(0, totalAmount - depositAmount));
+  const summaryField = invoiceField('itemsSummary');
+  const originalField = invoiceField('originalAmount');
+  if (summaryField) summaryField.value = itemsSummary;
+  if (originalField) originalField.value = originalAmount.toFixed(2);
   return {
     invoiceNo,
     name: invoiceValue('name'),
@@ -1024,7 +1171,8 @@ function collectAdminInvoiceInput() {
     pax: Number(invoiceValue('pax')) || 0,
     referralCode: invoiceValue('referralCode').toUpperCase(),
     location: invoiceValue('location'),
-    itemsSummary: invoiceValue('itemsSummary'),
+    items,
+    itemsSummary,
     originalAmount,
     discountAmount,
     depositAmount,
@@ -1077,6 +1225,8 @@ function updateAdminInvoicePreview() {
   const data = collectAdminInvoiceInput();
   const balanceField = invoiceField('balanceAmount');
   if (balanceField) balanceField.value = data.balanceAmount.toFixed(2);
+  updateAdminInvoiceKpis(data);
+  renderAdminInvoiceReceipt(data);
   const preview = document.querySelector('[data-admin-invoice-preview]');
   const message = buildAdminInvoiceMessage(data);
   if (preview) preview.value = message;
@@ -1087,8 +1237,9 @@ function updateAdminInvoicePreview() {
 function renderAdminInvoiceForm() {
   const form = document.querySelector('[data-admin-invoice-form]');
   if (!form || form.dataset.invoiceReady === '1') return;
+  let draft = null;
   try {
-    const draft = JSON.parse(localStorage.getItem(ADMIN_INVOICE_DRAFT_KEY) || 'null');
+    draft = JSON.parse(localStorage.getItem(ADMIN_INVOICE_DRAFT_KEY) || 'null');
     if (draft && typeof draft === 'object') {
       Object.entries(draft).forEach(([key, value]) => {
         const field = invoiceField(key);
@@ -1099,6 +1250,7 @@ function renderAdminInvoiceForm() {
     localStorage.removeItem(ADMIN_INVOICE_DRAFT_KEY);
   }
   if (!invoiceValue('invoiceNo')) invoiceField('invoiceNo').value = generateInvoiceNo();
+  renderAdminInvoiceItems(Array.isArray(draft?.items) ? draft.items : []);
   form.dataset.invoiceReady = '1';
   updateAdminInvoicePreview();
 }
@@ -1111,6 +1263,8 @@ function resetAdminInvoiceForm() {
   invoiceField('discountAmount').value = '0';
   invoiceField('depositAmount').value = '0';
   invoiceField('status').value = 'confirmed';
+  invoiceField('serviceType').value = 'Event Catering';
+  renderAdminInvoiceItems([]);
   localStorage.removeItem(ADMIN_INVOICE_DRAFT_KEY);
   updateAdminInvoicePreview();
   setInvoiceMessage('已准备新开单。');
@@ -1480,6 +1634,30 @@ function bindAdmin() {
     const newInvoiceButton = event.target.closest('[data-admin-new-invoice]');
     if (newInvoiceButton) {
       resetAdminInvoiceForm();
+      return;
+    }
+    const addInvoiceItemButton = event.target.closest('[data-admin-invoice-add-item]');
+    if (addInvoiceItemButton) {
+      addAdminInvoiceItem();
+      return;
+    }
+    const presetInvoiceButton = event.target.closest('[data-admin-invoice-preset]');
+    if (presetInvoiceButton) {
+      const qty = Number(invoiceValue('pax')) || Number(presetInvoiceButton.dataset.presetQty) || 1;
+      addAdminInvoiceItem({
+        description: presetInvoiceButton.dataset.presetName || presetInvoiceButton.textContent?.trim() || '项目',
+        qty,
+        unitPrice: Number(presetInvoiceButton.dataset.presetPrice) || 0
+      });
+      setInvoiceMessage('项目已加入开单明细。');
+      return;
+    }
+    const removeInvoiceItemButton = event.target.closest('[data-admin-invoice-remove-item]');
+    if (removeInvoiceItemButton) {
+      const row = removeInvoiceItemButton.closest('[data-admin-invoice-item]');
+      row?.remove();
+      if (!adminInvoiceRows().length) renderAdminInvoiceItems([]);
+      updateAdminInvoicePreview();
       return;
     }
     const previewInvoiceButton = event.target.closest('[data-admin-invoice-preview-button]');
