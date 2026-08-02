@@ -1739,7 +1739,13 @@ function bindAdmin() {
     }
     const presetInvoiceButton = event.target.closest('[data-admin-invoice-preset]');
     if (presetInvoiceButton) {
-      const qty = Number(invoiceValue('pax')) || Number(presetInvoiceButton.dataset.presetQty) || 1;
+      const presetQty = Number(presetInvoiceButton.dataset.presetQty) || 1;
+      const currentPax = Number(invoiceValue('pax')) || 0;
+      const qty = currentPax || presetQty;
+      const paxField = invoiceField('pax');
+      if (paxField && !currentPax && presetQty) {
+        paxField.value = String(presetQty);
+      }
       addAdminInvoiceItem({
         description: presetInvoiceButton.dataset.presetName || presetInvoiceButton.textContent?.trim() || '项目',
         qty,
