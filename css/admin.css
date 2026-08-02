@@ -1,18 +1,36 @@
-:root{--admin-bg:#0a0806;--admin-panel:#15100c;--admin-line:rgba(214,168,92,.25)}
-body.admin-page{min-height:100vh;background:radial-gradient(circle at 50% 0,rgba(214,168,92,.1),transparent 34%),#0a0806;color:#f6ead7}
+:root{
+  --admin-bg:#0a0806;
+  --admin-panel:#15100c;
+  --admin-line:rgba(214,168,92,.25);
+  --admin-pos-ink:#17100a;
+  --admin-pos-muted:#604c36;
+  --admin-pos-paper:#fffaf1;
+  --admin-pos-cream:#f8ecdc;
+  --admin-pos-line:#dbc19a;
+  --admin-pos-gold:#c0832f;
+  --admin-pos-deep:#120d08;
+}
+body.admin-page{min-height:100vh;overflow-x:hidden;background:radial-gradient(circle at 50% 0,rgba(214,168,92,.1),transparent 34%),#0a0806;color:#f6ead7}
 .admin-topbar{position:sticky;top:0;z-index:10;display:flex;align-items:center;justify-content:space-between;gap:20px;padding:16px clamp(18px,4vw,56px);border-bottom:1px solid var(--admin-line);background:rgba(10,8,6,.94);backdrop-filter:blur(16px)}
 .admin-topbar .brand-lockup{color:#f6ead7}.admin-topbar .brand-lockup img{width:44px;height:44px}.admin-topbar-actions{display:flex;align-items:center;gap:14px}.admin-topbar .btn{padding:10px 14px}.admin-status-dot{color:#d7b877;font-size:12px;font-weight:800;letter-spacing:.04em}.admin-status-dot i{color:#7fcf9d}
 .admin-shell{width:min(1440px,100%);margin:0 auto;padding:36px clamp(14px,4vw,56px) 80px}.admin-panel-card{border:1px solid var(--admin-line);border-radius:20px;background:linear-gradient(180deg,rgba(27,19,13,.98),rgba(11,9,7,.98));box-shadow:0 24px 70px rgba(0,0,0,.35)}
 .admin-login-card{width:min(560px,100%);margin:7vh auto 0;padding:clamp(24px,5vw,48px)}.admin-login-card h1,.admin-dashboard h1{margin:8px 0;color:#ffdf9a;font-size:clamp(28px,4vw,44px)}.admin-login-card .btn{margin-top:4px}.admin-dashboard{padding:clamp(18px,3vw,34px)}.admin-dashboard[hidden],.admin-login-card[hidden]{display:none}
 .admin-dashboard .member-dashboard-head{padding-bottom:20px;border-bottom:1px solid var(--admin-line)}.admin-dashboard .member-dashboard-head p{max-width:780px}
-.admin-nav{position:sticky;top:77px;z-index:5;margin:20px 0 0;padding:10px;border-radius:14px;background:rgba(8,7,5,.94)}.admin-nav button{font-size:13px}
+.admin-shell,.admin-dashboard,.admin-section,.admin-pos-panel{max-width:100%;min-width:0;box-sizing:border-box}
+.admin-nav{position:relative;top:auto;z-index:2;margin:20px 0 0;padding:10px;border-radius:14px;background:rgba(8,7,5,.94)}.admin-nav button{font-size:13px}
+.admin-nav-grouped{display:grid;grid-template-columns:minmax(0,1.12fr) minmax(320px,.88fr);gap:14px;align-items:start}
+.admin-nav-cluster{min-width:0;padding:16px;border:1px solid rgba(214,168,92,.2);border-radius:18px;background:linear-gradient(145deg,rgba(255,247,232,.055),rgba(0,0,0,.18))}
+.admin-nav-cluster-head,.admin-nav-drawer-summary{display:flex;align-items:center;justify-content:space-between;gap:14px}
+.admin-nav-cluster-head span,.admin-nav-drawer-title strong{color:#ffdf9a;font-weight:950}.admin-nav-cluster-head small,.admin-nav-drawer-title small{color:#b6a28a;font-weight:850}.admin-nav-drawer-summary{list-style:none;cursor:pointer}.admin-nav-drawer-summary::-webkit-details-marker{display:none}.admin-nav-drawer-current{display:inline-flex;align-items:center;gap:6px;min-width:0;color:#d8c19c;font-size:13px;font-weight:900}.admin-nav-drawer-icon{color:#f3c872;font-size:20px;transition:transform .2s ease}.admin-nav-drawer[open] .admin-nav-drawer-icon{transform:rotate(180deg)}
+.admin-nav-tabs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:14px}.admin-nav-cluster:not(.admin-nav-cluster-primary) .admin-nav-tabs{grid-template-columns:1fr}.admin-nav-tabs button{width:100%;min-height:44px;padding:10px 12px;border:1px solid rgba(214,168,92,.36);border-radius:999px;color:#ffdf9a;background:rgba(255,247,232,.035);font-weight:950;cursor:pointer}.admin-nav-tabs button.active,.admin-nav-tabs button:hover,.admin-nav-tabs button:focus-visible{color:#170f09;background:#f1c46e;outline:0}.admin-nav-drawer:not([open]) .admin-nav-tabs{display:none}
 .admin-section{background:rgba(0,0,0,.18)}.admin-section h2{font-size:clamp(22px,3vw,30px)}.admin-section h3{font-size:18px}.admin-subhead{margin:26px 0 10px;padding-top:18px;border-top:1px solid var(--admin-line)}
+.admin-dashboard:not([data-active-panel="site"]):not([data-active-panel="meal"]):not([data-active-panel="catering"]):not([data-active-panel="media"]):not([data-active-panel="pages"]) .admin-actions{display:none}
 .admin-media-block{padding:16px 0;border-top:1px solid rgba(214,168,92,.16)}.admin-media-block:first-of-type{border-top:0}.admin-media-block h3{margin:0 0 12px;color:#ffdf9a}
 .admin-asset-row{display:grid;grid-template-columns:minmax(150px,.65fr) minmax(0,1fr) minmax(0,1fr);gap:12px;align-items:end;padding:12px;border:1px solid var(--admin-line);border-radius:12px;background:rgba(255,247,232,.035)}.admin-asset-row>strong{color:#ffdf9a;font-size:14px}.admin-asset-row label,.admin-detail-grid label,.admin-detail-gallery-row label{color:#f4ddba}.admin-asset-row input,.admin-detail-grid input,.admin-detail-grid textarea,.admin-detail-gallery-row input{width:100%;margin-top:6px;background:#fffaf1;color:#251b12}
 .admin-detail-editor{display:grid;gap:14px;padding:16px;border:1px solid var(--admin-line);border-radius:14px;background:rgba(255,247,232,.035)}.admin-detail-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}.admin-detail-gallery{display:grid;gap:10px;padding-top:4px}.admin-detail-gallery-row{display:grid;grid-template-columns:100px repeat(3,minmax(0,1fr));gap:10px;align-items:end;padding:10px;border:1px solid rgba(214,168,92,.16);border-radius:10px}.admin-detail-gallery-row>strong{color:#ffdf9a;font-size:13px}.admin-bottom-message{margin:16px 0 0}
 .admin-weekly-row{grid-template-columns:repeat(6,minmax(0,1fr))}
  .admin-weekly-row textarea{min-height:88px}
-@media (max-width:800px){.admin-topbar{align-items:flex-start}.admin-topbar-actions{flex-direction:column;align-items:flex-end;gap:8px}.admin-status-dot{font-size:11px}.admin-nav{top:71px}.admin-asset-row,.admin-detail-grid,.admin-detail-gallery-row,.admin-weekly-row{grid-template-columns:1fr}.admin-detail-gallery-row>strong{margin-bottom:-4px}.admin-actions{position:sticky;bottom:12px;z-index:4;padding:10px;border:1px solid var(--admin-line);border-radius:14px;background:rgba(8,7,5,.95)}}
+@media (max-width:800px){.admin-topbar{align-items:flex-start}.admin-topbar-actions{flex-direction:column;align-items:flex-end;gap:8px}.admin-status-dot{font-size:11px}.admin-nav{top:auto}.admin-asset-row,.admin-detail-grid,.admin-detail-gallery-row,.admin-weekly-row{grid-template-columns:1fr}.admin-detail-gallery-row>strong{margin-bottom:-4px}.admin-actions{position:sticky;bottom:12px;z-index:4;padding:10px;border:1px solid var(--admin-line);border-radius:14px;background:rgba(8,7,5,.95)}}
 
 .admin-weekly-row{
   grid-template-columns:120px minmax(210px,.85fr) minmax(190px,.8fr) minmax(220px,1fr) minmax(220px,1fr);
@@ -130,82 +148,252 @@ body.admin-page{min-height:100vh;background:radial-gradient(circle at 50% 0,rgba
   font-weight:900;
 }
 .admin-pos-panel{
-  gap:22px;
-  padding:clamp(18px,2.5vw,28px);
-  border-color:rgba(255,223,154,.22);
+  position:relative;
+  gap:24px;
+  padding:clamp(18px,2.5vw,32px);
+  border-color:rgba(255,223,154,.38);
+  color:var(--admin-pos-ink);
   background:
-    linear-gradient(180deg,rgba(255,247,232,.06),rgba(255,247,232,.02)),
-    radial-gradient(circle at 72% 0,rgba(216,163,77,.16),transparent 42%),
-    rgba(9,7,5,.94);
+    linear-gradient(90deg,rgba(95,57,22,.045) 1px,transparent 1px),
+    linear-gradient(180deg,#fffaf3 0%,#f4e3cc 100%);
+  background-size:56px 56px,auto;
+  box-shadow:0 30px 90px rgba(0,0,0,.38);
+}
+.admin-pos-panel .growth-message{
+  color:#704816;
+}
+.admin-pos-panel .growth-button{
+  border-color:#9f641e;
+  color:#fff8e8;
+  background:linear-gradient(180deg,#c9923e,#8b5018);
+  box-shadow:0 10px 24px rgba(116,70,22,.2);
+}
+.admin-pos-panel .growth-button.secondary{
+  color:#2a1a0d;
+  background:#fff9ec;
+  border-color:#ba9056;
+  box-shadow:none;
+}
+.admin-pos-panel .growth-button:hover,
+.admin-pos-panel .growth-button:focus-visible{
+  outline:3px solid rgba(192,131,47,.3);
+  outline-offset:2px;
 }
 .admin-pos-titlebar{
+  position:relative;
+  display:grid;
+  grid-template-columns:minmax(0,1fr) auto;
+  align-items:start;
+  gap:18px;
+  overflow:hidden;
+  padding:22px;
+  border:1px solid rgba(255,223,154,.24);
+  border-radius:18px;
+  color:#fff4d9;
+  background:
+    radial-gradient(circle at 78% 0,rgba(248,196,98,.22),transparent 34%),
+    linear-gradient(135deg,#0d0906,#26160b 68%,#0d0906);
+}
+.admin-pos-titlebar::after{
+  content:"";
+  position:absolute;
+  inset:auto 22px 0;
+  height:3px;
+  background:linear-gradient(90deg,transparent,#dca951,transparent);
+  opacity:.85;
+}
+.admin-pos-title-copy,
+.admin-pos-title-actions,
+.admin-pos-steps{
+  position:relative;
+  z-index:1;
+}
+.admin-pos-panel .admin-pos-titlebar span{
+  color:#f7c96f;
+}
+.admin-pos-panel .admin-pos-titlebar h3{
+  margin-bottom:8px;
+  color:#fff7e8;
+  font-size:clamp(30px,4vw,48px);
+  letter-spacing:0;
+}
+.admin-pos-titlebar p{
+  max-width:720px;
+  color:#ead7b8;
+  font-size:16px;
+  line-height:1.65;
+}
+.admin-pos-title-actions{
+  display:flex;
   align-items:center;
-  padding-bottom:18px;
-  border-bottom:1px solid rgba(214,168,92,.18);
+  justify-content:flex-end;
+  gap:12px;
+  flex-wrap:wrap;
+}
+.admin-pos-status-pill{
+  min-width:142px;
+  padding:10px 14px;
+  border:1px solid rgba(255,223,154,.32);
+  border-radius:999px;
+  background:rgba(255,250,241,.1);
+  text-align:center;
+}
+.admin-pos-status-pill span{
+  margin:0 0 4px;
+  font-size:10px;
+  letter-spacing:.16em;
+}
+.admin-pos-status-pill strong{
+  color:#fff3d1;
+  font-size:16px;
+}
+.admin-pos-panel[data-payment-state="paid"] .admin-pos-status-pill{
+  border-color:rgba(113,198,139,.48);
+  background:rgba(113,198,139,.18);
+}
+.admin-pos-panel[data-payment-state="partial"] .admin-pos-status-pill{
+  border-color:rgba(247,201,111,.56);
+  background:rgba(247,201,111,.16);
+}
+.admin-pos-panel[data-payment-state="unpaid"] .admin-pos-status-pill{
+  border-color:rgba(255,161,119,.48);
+  background:rgba(255,161,119,.13);
+}
+.admin-pos-steps{
+  grid-column:1/-1;
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:10px;
+  margin:8px 0 0;
+  padding:0;
+  list-style:none;
+}
+.admin-pos-steps li{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  min-height:52px;
+  padding:12px;
+  border:1px solid rgba(255,223,154,.18);
+  border-radius:12px;
+  background:rgba(255,250,241,.08);
+}
+.admin-pos-steps strong{
+  display:grid;
+  place-items:center;
+  width:34px;
+  height:34px;
+  border-radius:50%;
+  color:#150d06;
+  background:#f3c872;
+  font-size:13px;
+}
+.admin-pos-steps span{
+  margin:0;
+  color:#fff0ce;
+  letter-spacing:.02em;
 }
 .admin-pos-stats{
   display:grid;
-  grid-template-columns:1.25fr repeat(3,minmax(0,1fr));
+  grid-template-columns:1.25fr repeat(4,minmax(0,1fr));
   gap:12px;
 }
 .admin-pos-stats div{
   min-width:0;
-  padding:14px 16px;
-  border:1px solid rgba(214,168,92,.2);
-  border-radius:16px;
-  background:linear-gradient(135deg,rgba(255,247,232,.09),rgba(255,247,232,.025));
+  padding:16px 18px;
+  border:1px solid var(--admin-pos-line);
+  border-radius:14px;
+  background:rgba(255,253,248,.96);
+  box-shadow:0 12px 26px rgba(89,55,20,.08);
+}
+.admin-pos-stats div:last-child{
+  color:#fff6df;
+  border-color:#24170b;
+  background:linear-gradient(145deg,#25180d,#100a05);
 }
 .admin-pos-stats span{
   display:block;
-  color:#d8a34d;
+  color:#8a5a22;
   font-size:11px;
-  font-weight:900;
-  letter-spacing:.18em;
+  font-weight:950;
+  letter-spacing:.16em;
   text-transform:uppercase;
+}
+.admin-pos-stats div:last-child span{
+  color:#f4c86d;
 }
 .admin-pos-stats strong{
   display:block;
   margin-top:8px;
   overflow:hidden;
-  color:#fff4d9;
-  font-size:clamp(18px,2.2vw,28px);
+  color:#17100a;
+  font-size:clamp(19px,2.2vw,29px);
   line-height:1;
   text-overflow:ellipsis;
   white-space:nowrap;
 }
+.admin-pos-stats div:last-child strong{
+  color:#fff5d7;
+}
 .admin-pos-workspace{
   display:grid;
-  grid-template-columns:minmax(260px,.8fr) minmax(420px,1.28fr) minmax(340px,.92fr);
-  gap:16px;
+  grid-template-columns:minmax(300px,.82fr) minmax(520px,1.25fr) minmax(420px,1fr);
+  gap:18px;
   align-items:start;
 }
 .admin-pos-card{
   min-width:0;
-  padding:16px;
-  border:1px solid rgba(214,168,92,.22);
+  padding:20px;
+  border:1px solid var(--admin-pos-line);
   border-radius:18px;
-  background:linear-gradient(180deg,rgba(32,24,17,.98),rgba(14,11,8,.98));
-  box-shadow:0 18px 50px rgba(0,0,0,.22);
+  color:var(--admin-pos-ink);
+  background:rgba(255,253,248,.98);
+  box-shadow:0 16px 36px rgba(60,39,18,.12);
 }
 .admin-pos-card-head{
   display:flex;
   align-items:flex-start;
   justify-content:space-between;
   gap:12px;
-  margin-bottom:14px;
+  margin-bottom:16px;
+  padding-bottom:12px;
+  border-bottom:1px solid rgba(126,82,34,.16);
 }
 .admin-pos-card-head span{
   display:block;
   margin-bottom:6px;
-  color:#d8a34d;
+  color:#9b651f;
   font-size:11px;
-  font-weight:900;
-  letter-spacing:.2em;
+  font-weight:950;
+  letter-spacing:.18em;
 }
 .admin-pos-card-head h3{
   margin:0;
-  color:#ffdf9a;
-  font-size:22px;
+  color:#170f09;
+  font-size:24px;
+}
+.admin-pos-panel .growth-form label,
+.admin-pos-card>label{
+  color:#553a20;
+  font-size:12px;
+  font-weight:950;
+}
+.admin-pos-panel input,
+.admin-pos-panel select,
+.admin-pos-panel textarea{
+  border:1px solid #c9ad82;
+  border-radius:12px;
+  color:#150e08;
+  background:#fffdfa;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.72);
+}
+.admin-pos-panel input::placeholder,
+.admin-pos-panel textarea::placeholder{
+  color:#89725b;
+}
+.admin-pos-panel input[readonly]{
+  color:#4d341a;
+  background:#f3e4d1;
 }
 .admin-pos-form-grid,
 .admin-pos-checkout-grid{
@@ -216,64 +404,90 @@ body.admin-page{min-height:100vh;background:radial-gradient(circle at 50% 0,rgba
   grid-column:1/-1;
 }
 .admin-pos-preset-strip{
-  display:flex;
-  flex-wrap:wrap;
-  gap:8px;
-  margin:0 0 14px;
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:10px;
+  margin:0 0 18px;
 }
 .admin-pos-preset-strip button{
-  min-height:38px;
-  padding:8px 13px;
-  border:1px solid rgba(255,223,154,.28);
-  border-radius:999px;
-  color:#ffe2a5;
-  background:rgba(255,247,232,.045);
-  font-weight:900;
+  display:grid;
+  gap:4px;
+  min-height:72px;
+  padding:12px 14px;
+  border:1px solid #b98b4b;
+  border-radius:14px;
+  color:#241406;
+  background:linear-gradient(180deg,#fff9ec,#f1d8a4);
+  font-weight:950;
+  text-align:left;
   cursor:pointer;
+}
+.admin-pos-preset-strip button span{
+  color:#1b1007;
+  font-size:17px;
+}
+.admin-pos-preset-strip button small{
+  color:#6e4c2c;
+  font-size:12px;
+  line-height:1.35;
 }
 .admin-pos-preset-strip button:hover,
 .admin-pos-preset-strip button:focus-visible{
-  color:#120d08;
-  background:#f1c66f;
-  outline:none;
+  color:#fff8e8;
+  background:#8d521a;
+  outline:3px solid rgba(192,131,47,.3);
+  outline-offset:2px;
 }
 .admin-invoice-item-table{
   overflow:hidden;
-  border:1px solid rgba(214,168,92,.18);
+  border:1px solid #c9ad82;
   border-radius:16px;
-  background:rgba(0,0,0,.18);
+  background:#fffdf8;
+  box-shadow:0 10px 24px rgba(74,47,20,.08);
 }
 .admin-invoice-item-row{
   display:grid;
-  grid-template-columns:minmax(180px,1.4fr) 82px 108px 112px 44px;
+  grid-template-columns:44px minmax(210px,1.55fr) 82px 118px 124px 42px;
   gap:10px;
   align-items:center;
-  padding:10px 12px;
-  border-top:1px solid rgba(214,168,92,.14);
+  padding:11px 12px;
+  border-top:1px solid rgba(126,82,34,.16);
 }
 .admin-invoice-item-row:first-child{
   border-top:0;
 }
 .admin-invoice-item-heading{
-  color:#d8a34d;
-  background:rgba(255,223,154,.08);
+  color:#fff6df;
+  background:linear-gradient(90deg,#140d07,#2a1a0d);
   font-size:11px;
-  font-weight:900;
-  letter-spacing:.16em;
+  font-weight:950;
+  letter-spacing:.14em;
   text-transform:uppercase;
+}
+.admin-invoice-line-no{
+  display:grid;
+  place-items:center;
+  width:34px;
+  height:34px;
+  border-radius:50%;
+  color:#5f3d16;
+  background:#f6e4c9;
+  font-size:12px;
+  font-weight:950;
 }
 .admin-invoice-item-row input{
   width:100%;
-  min-height:42px;
-  border:1px solid rgba(214,168,92,.2);
-  border-radius:12px;
+  min-height:44px;
+  border:1px solid #c9ad82;
+  border-radius:8px;
   padding:9px 11px;
-  color:#20160d;
+  color:#160e08;
   background:#fffaf1;
   font-weight:850;
 }
 .admin-invoice-item-amount{
-  color:#ffdf9a;
+  color:#6f410d;
+  font-size:15px;
   font-weight:950;
   text-align:right;
 }
@@ -283,17 +497,18 @@ body.admin-page{min-height:100vh;background:radial-gradient(circle at 50% 0,rgba
   justify-content:center;
   width:38px;
   height:38px;
-  border:1px solid rgba(255,223,154,.18);
-  border-radius:12px;
-  color:#ffdf9a;
-  background:rgba(255,255,255,.04);
+  border:1px solid #a96b2a;
+  border-radius:8px;
+  color:#7b3a16;
+  background:#fff6e2;
   cursor:pointer;
 }
 .admin-invoice-item-remove:hover,
 .admin-invoice-item-remove:focus-visible{
-  color:#120d08;
-  background:#ffdf9a;
-  outline:none;
+  color:#fff8e8;
+  background:#8a2f1c;
+  outline:3px solid rgba(138,47,28,.22);
+  outline-offset:2px;
 }
 .admin-legacy-invoice-fields{
   position:absolute;
@@ -306,16 +521,23 @@ body.admin-page{min-height:100vh;background:radial-gradient(circle at 50% 0,rgba
 .admin-pos-receipt{
   overflow:hidden;
   margin-bottom:14px;
-  border:1px solid rgba(214,168,92,.26);
-  border-radius:18px;
+  border:1px solid #b99159;
+  border-radius:16px;
   background:#fffaf1;
   color:#1d140b;
-  box-shadow:0 18px 40px rgba(0,0,0,.2);
+  box-shadow:0 18px 38px rgba(95,60,20,.14);
+}
+.admin-pos-receipt-panel{
+  position:sticky;
+  top:116px;
 }
 .admin-receipt-paper{
   display:grid;
   gap:14px;
   padding:18px;
+  background:
+    linear-gradient(#fffaf1,#fffaf1) padding-box,
+    repeating-linear-gradient(90deg,rgba(142,92,37,.12) 0 1px,transparent 1px 7px) border-box;
 }
 .admin-receipt-brand{
   display:flex;
@@ -345,6 +567,36 @@ body.admin-page{min-height:100vh;background:radial-gradient(circle at 50% 0,rgba
   margin-top:3px;
   font-size:18px;
 }
+.admin-receipt-brand small{
+  display:block;
+  margin-top:4px;
+  color:#7a5d3c;
+  font-size:11px;
+  font-weight:800;
+  letter-spacing:.08em;
+  text-transform:uppercase;
+}
+.admin-receipt-status{
+  margin-left:auto;
+  padding:8px 10px;
+  border:1px solid #caa86c;
+  border-radius:999px;
+  color:#5b3511;
+  background:#f8e2b1;
+  font-size:12px;
+  font-weight:950;
+  white-space:nowrap;
+}
+.admin-receipt-paper[data-receipt-payment-state="paid"] .admin-receipt-status{
+  color:#17462b;
+  border-color:#78b98b;
+  background:#dff3e4;
+}
+.admin-receipt-paper[data-receipt-payment-state="partial"] .admin-receipt-status{
+  color:#6c4510;
+  border-color:#dfb965;
+  background:#fff0c7;
+}
 .admin-receipt-meta{
   display:grid;
   grid-template-columns:repeat(2,minmax(0,1fr));
@@ -364,9 +616,21 @@ body.admin-page{min-height:100vh;background:radial-gradient(circle at 50% 0,rgba
 }
 .admin-receipt-line{
   display:grid;
-  grid-template-columns:minmax(0,1fr) auto;
+  grid-template-columns:30px minmax(0,1fr) auto;
   gap:10px;
   align-items:start;
+}
+.admin-receipt-line em{
+  display:grid;
+  place-items:center;
+  width:26px;
+  height:26px;
+  border-radius:50%;
+  color:#78511d;
+  background:#f2dfbd;
+  font-style:normal;
+  font-size:11px;
+  font-weight:950;
 }
 .admin-receipt-line strong{
   display:block;
@@ -395,11 +659,21 @@ body.admin-page{min-height:100vh;background:radial-gradient(circle at 50% 0,rgba
   gap:12px;
 }
 .admin-receipt-total .is-balance{
-  margin-top:4px;
-  padding-top:10px;
-  border-top:1px solid rgba(91,64,34,.18);
-  color:#050302;
+  margin-top:6px;
+  padding:12px;
+  border:1px solid rgba(91,64,34,.18);
+  border-radius:8px;
+  color:#fff6df;
+  background:#170f09;
   font-size:19px;
+}
+.admin-receipt-note{
+  margin:0;
+  padding-top:8px;
+  border-top:1px dashed rgba(91,64,34,.22);
+  color:#765c42;
+  font-size:12px;
+  line-height:1.55;
 }
 .admin-pos-receipt-panel>label{
   display:block;
@@ -417,8 +691,86 @@ body.admin-page{min-height:100vh;background:radial-gradient(circle at 50% 0,rgba
 }
 .admin-pos-whatsapp-preview textarea{
   min-height:190px;
+  border-color:#c9ad82;
+  background:#fffdf8;
+}
+.admin-invoice-actions{
+  position:static;
+  display:grid;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:12px;
+  padding:18px;
+  border:1px solid rgba(112,70,28,.22);
+  border-radius:18px;
+  background:linear-gradient(135deg,#fffaf1,#f0d6a6);
+  box-shadow:0 16px 36px rgba(74,47,20,.12);
+}
+@media (max-width:1320px){
+  .admin-pos-workspace{
+    grid-template-columns:minmax(280px,.76fr) minmax(0,1.24fr);
+  }
+  .admin-pos-receipt-panel{
+    position:static;
+    display:grid;
+    grid-template-columns:minmax(420px,.95fr) minmax(320px,.75fr);
+    gap:14px 18px;
+    align-items:start;
+  }
+  .admin-pos-receipt-panel .admin-pos-card-head{
+    grid-column:1/-1;
+    margin-bottom:0;
+  }
+  .admin-pos-receipt{
+    grid-row:2 / span 3;
+    margin-bottom:0;
+  }
+  .admin-pos-checkout-grid{
+    grid-column:2;
+    grid-row:2;
+  }
+  .admin-pos-receipt-panel>label{
+    grid-column:2;
+    grid-row:3;
+    margin-top:0;
+  }
+  .admin-pos-whatsapp-preview{
+    grid-column:2;
+    grid-row:4;
+    margin-top:0;
+  }
 }
 @media (max-width:980px){
+  .admin-shell{
+    padding:16px 12px 64px;
+  }
+  .admin-dashboard{
+    padding:14px;
+    border-radius:16px;
+  }
+  .admin-dashboard .member-dashboard-head{
+    display:grid;
+    gap:14px;
+  }
+  .admin-nav,
+  .admin-nav-grouped,
+  .admin-nav-cluster,
+  .admin-section,
+  .admin-pos-panel{
+    width:100%;
+    max-width:100%;
+  }
+  .admin-nav{
+    margin-top:14px;
+    padding:8px;
+    overflow:visible;
+  }
+  .admin-nav-grouped{
+    grid-template-columns:1fr;
+  }
+  .admin-nav-tabs,
+  .admin-nav-cluster:not(.admin-nav-cluster-primary) .admin-nav-tabs{
+    grid-template-columns:1fr;
+  }
   .admin-weekly-row{
     grid-template-columns:1fr;
     grid-template-areas:none;
@@ -445,25 +797,1155 @@ body.admin-page{min-height:100vh;background:radial-gradient(circle at 50% 0,rgba
   .admin-invoice-actions{
     display:grid;
   }
-  .admin-pos-stats,
+  .admin-invoice-actions{
+    grid-template-columns:1fr 1fr;
+    padding:14px;
+  }
+  .admin-pos-titlebar{
+    grid-template-columns:1fr;
+    padding:18px;
+  }
+  .admin-pos-title-actions{
+    justify-content:flex-start;
+  }
+  .admin-pos-steps,
   .admin-pos-workspace{
     grid-template-columns:1fr;
   }
+  .admin-pos-stats{
+    grid-template-columns:repeat(2,minmax(0,1fr));
+  }
+  .admin-pos-stats div:first-child{
+    grid-column:1/-1;
+  }
+  .admin-pos-preset-strip{
+    grid-template-columns:repeat(2,minmax(0,1fr));
+  }
+  .admin-pos-receipt-panel{
+    position:static;
+    display:block;
+  }
   .admin-invoice-item-row{
-    grid-template-columns:minmax(0,1fr) 70px 94px;
+    grid-template-columns:70px minmax(0,1fr) 92px;
     gap:8px;
   }
   .admin-invoice-item-heading{
     display:none;
   }
+  .admin-invoice-line-no{
+    grid-column:1;
+    grid-row:1;
+  }
   .admin-invoice-item-row input[data-invoice-item-field="description"]{
-    grid-column:1/-1;
+    grid-column:2;
+    grid-row:1;
+  }
+  .admin-invoice-item-row input[data-invoice-item-field="qty"]{
+    grid-column:1;
+    grid-row:2;
+  }
+  .admin-invoice-item-row input[data-invoice-item-field="unitPrice"]{
+    grid-column:2;
+    grid-row:2;
   }
   .admin-invoice-item-amount{
-    text-align:left;
+    grid-column:3;
+    grid-row:2;
+    text-align:right;
   }
   .admin-invoice-item-remove{
     grid-column:3;
+    grid-row:1;
     justify-self:end;
+  }
+}
+@media (max-width:640px){
+  .admin-topbar{
+    position:relative;
+    padding:14px 12px;
+  }
+  .admin-topbar .brand-lockup img{
+    width:38px;
+    height:38px;
+  }
+  .admin-topbar-actions{
+    width:100%;
+    align-items:stretch;
+  }
+  .admin-pos-panel{
+    gap:18px;
+    padding:12px;
+    border-radius:16px;
+  }
+  .admin-pos-titlebar h3{
+    font-size:30px;
+  }
+  .admin-pos-titlebar p{
+    font-size:14px;
+  }
+  .admin-pos-titlebar,
+  .admin-pos-card{
+    border-radius:14px;
+  }
+  .admin-pos-card{
+    padding:16px;
+  }
+  .admin-pos-stats,
+  .admin-pos-preset-strip,
+  .admin-pos-form-grid,
+  .admin-pos-checkout-grid,
+  .admin-receipt-meta{
+    grid-template-columns:1fr;
+  }
+  .admin-pos-stats div:first-child{
+    grid-column:auto;
+  }
+  .admin-receipt-line{
+    grid-template-columns:30px minmax(0,1fr);
+  }
+  .admin-receipt-line b{
+    grid-column:2;
+    justify-self:end;
+    white-space:normal;
+  }
+  .admin-receipt-status{
+    width:100%;
+    margin-left:0;
+    text-align:center;
+  }
+  .admin-invoice-actions{
+    grid-template-columns:1fr;
+  }
+  .admin-invoice-item-row{
+    grid-template-columns:44px minmax(0,1fr) 42px;
+  }
+  .admin-invoice-item-row input[data-invoice-item-field="qty"],
+  .admin-invoice-item-row input[data-invoice-item-field="unitPrice"],
+  .admin-invoice-item-amount{
+    grid-column:1/-1;
+  }
+  .admin-invoice-item-amount{
+    justify-self:stretch;
+    padding:10px 12px;
+    border-radius:10px;
+    background:#f8ead0;
+    text-align:right;
+  }
+}
+
+/* POS studio pass: clearer counter layout, stronger contrast and receipt-first hierarchy. */
+.admin-pos-panel{
+  --pos-ink:#18120b;
+  --pos-muted:#675947;
+  --pos-soft:#f7f0e6;
+  --pos-paper:#fffdf8;
+  --pos-line:#d4bea0;
+  --pos-gold:#c48932;
+  --pos-gold-strong:#9b5f18;
+  gap:22px;
+  padding:clamp(18px,2vw,28px);
+  border:1px solid rgba(140,94,40,.28);
+  color:var(--pos-ink);
+  background:
+    linear-gradient(180deg,#fffaf3 0%,#f0e1cc 100%);
+  box-shadow:0 24px 80px rgba(32,21,10,.22);
+}
+.admin-pos-titlebar{
+  padding:20px 22px;
+  border-color:rgba(255,223,154,.28);
+  border-radius:16px;
+  background:
+    linear-gradient(135deg,rgba(13,9,6,.98),rgba(47,28,12,.98));
+}
+.admin-pos-panel .admin-pos-titlebar h3{
+  font-size:clamp(28px,3vw,42px);
+}
+.admin-pos-titlebar p{
+  max-width:820px;
+  color:#f2dfc0;
+}
+.admin-pos-steps{
+  max-width:860px;
+}
+.admin-pos-steps li{
+  min-height:46px;
+  border-radius:999px;
+}
+.admin-pos-stats{
+  grid-template-columns:1.4fr repeat(4,minmax(0,1fr));
+}
+.admin-pos-stats div{
+  padding:14px 16px;
+  border-radius:12px;
+  background:#fffdf8;
+}
+.admin-pos-stats strong{
+  font-size:clamp(18px,1.85vw,25px);
+}
+.admin-pos-workspace{
+  grid-template-columns:minmax(280px,360px) minmax(470px,1fr) minmax(360px,430px);
+  gap:16px;
+}
+.admin-pos-card{
+  border-color:var(--pos-line);
+  border-radius:14px;
+  background:var(--pos-paper);
+  box-shadow:0 14px 32px rgba(60,42,20,.1);
+}
+.admin-pos-card-head{
+  align-items:center;
+  margin-bottom:14px;
+}
+.admin-pos-card-head h3{
+  font-size:22px;
+}
+.admin-pos-panel .growth-form label,
+.admin-pos-card>label{
+  color:#352417;
+  font-size:13px;
+}
+.admin-pos-panel input,
+.admin-pos-panel select,
+.admin-pos-panel textarea{
+  min-height:44px;
+  border-color:#bfa27a;
+  color:#160f09;
+  background:#fffefa;
+  font-size:15px;
+  font-weight:800;
+}
+.admin-pos-panel textarea{
+  line-height:1.45;
+}
+.admin-pos-panel input:focus,
+.admin-pos-panel select:focus,
+.admin-pos-panel textarea:focus{
+  border-color:#8f5b1c;
+  outline:3px solid rgba(196,137,50,.22);
+}
+.admin-pos-preset-strip{
+  grid-template-columns:repeat(2,minmax(0,1fr));
+}
+.admin-pos-preset-strip button{
+  min-height:70px;
+  border-color:#c49b61;
+  background:#fff9ec;
+}
+.admin-pos-preset-strip button span{
+  font-size:18px;
+}
+.admin-invoice-item-table{
+  border-radius:14px;
+  background:#ffffff;
+}
+.admin-invoice-item-row{
+  grid-template-columns:42px minmax(220px,1fr) 82px 112px 118px 38px;
+  padding:10px;
+}
+.admin-invoice-item-heading{
+  color:#f9e7bd;
+  background:#17100a;
+}
+.admin-invoice-line-no{
+  color:#17100a;
+  background:#ecd4ac;
+}
+.admin-invoice-item-row input{
+  min-height:42px;
+  background:#fffdf8;
+}
+.admin-invoice-item-amount{
+  color:#17100a;
+  font-size:16px;
+}
+.admin-pos-receipt-panel{
+  top:92px;
+  padding:0;
+  overflow:hidden;
+}
+.admin-pos-receipt-panel>.admin-pos-card-head,
+.admin-pos-receipt-panel>.admin-pos-checkout-grid,
+.admin-pos-receipt-panel>label,
+.admin-pos-receipt-panel>.admin-pos-whatsapp-preview{
+  margin-inline:18px;
+}
+.admin-pos-receipt-panel>.admin-pos-card-head{
+  margin-top:18px;
+}
+.admin-pos-receipt{
+  margin:0;
+  border-inline:0;
+  border-radius:0;
+  box-shadow:none;
+}
+.admin-receipt-paper{
+  gap:12px;
+  padding:18px;
+  background:#fffdf8;
+}
+.admin-receipt-brand{
+  align-items:flex-start;
+}
+.admin-receipt-brand strong{
+  color:#17100a;
+}
+.admin-receipt-meta{
+  grid-template-columns:1fr 1fr;
+}
+.admin-receipt-meta div{
+  min-width:0;
+  padding:8px 0;
+  border-bottom:1px solid rgba(97,70,38,.1);
+}
+.admin-receipt-lines{
+  padding:12px 0;
+}
+.admin-receipt-line{
+  padding:8px 0;
+  border-bottom:1px solid rgba(97,70,38,.09);
+}
+.admin-receipt-line:last-child{
+  border-bottom:0;
+}
+.admin-receipt-total{
+  padding:12px;
+  border:1px solid rgba(97,70,38,.14);
+  border-radius:12px;
+  background:#fff7e9;
+}
+.admin-receipt-total .is-balance{
+  background:#17100a;
+}
+.admin-pos-whatsapp-preview h3{
+  color:#17100a;
+}
+.admin-pos-whatsapp-preview textarea{
+  min-height:220px;
+  border-color:#bfa27a;
+  color:#1b130c;
+}
+.admin-invoice-actions{
+  grid-template-columns:1fr 1.15fr 1fr 1fr;
+  position:sticky;
+  bottom:14px;
+  z-index:4;
+  border-color:rgba(93,59,22,.22);
+  background:rgba(255,250,241,.96);
+  box-shadow:0 18px 42px rgba(33,20,8,.22);
+  backdrop-filter:blur(10px);
+}
+.admin-invoice-actions .growth-button{
+  min-height:48px;
+}
+@media (max-width:1320px){
+  .admin-pos-workspace{
+    grid-template-columns:minmax(290px,.85fr) minmax(520px,1.15fr);
+  }
+  .admin-pos-receipt-panel{
+    display:grid;
+    grid-template-columns:minmax(430px,1fr) minmax(320px,.78fr);
+    padding-bottom:18px;
+  }
+  .admin-pos-receipt-panel>.admin-pos-card-head{
+    margin-top:18px;
+  }
+  .admin-pos-receipt-panel>.admin-pos-card-head,
+  .admin-pos-receipt-panel>.admin-pos-checkout-grid,
+  .admin-pos-receipt-panel>label,
+  .admin-pos-receipt-panel>.admin-pos-whatsapp-preview{
+    margin-inline:18px;
+  }
+  .admin-pos-receipt{
+    border-left:0;
+    border-right:1px solid rgba(97,70,38,.14);
+  }
+}
+@media (max-width:980px){
+  .admin-pos-workspace,
+  .admin-pos-receipt-panel{
+    grid-template-columns:1fr;
+  }
+  .admin-pos-receipt{
+    border-right:0;
+  }
+  .admin-invoice-actions{
+    position:static;
+    grid-template-columns:1fr 1fr;
+  }
+}
+@media (max-width:640px){
+  .admin-pos-titlebar,
+  .admin-pos-card{
+    border-radius:14px;
+  }
+  .admin-pos-stats{
+    grid-template-columns:1fr 1fr;
+  }
+  .admin-pos-stats div:last-child{
+    grid-column:1/-1;
+  }
+  .admin-pos-preset-strip{
+    grid-template-columns:1fr;
+  }
+  .admin-pos-receipt-panel>.admin-pos-card-head,
+  .admin-pos-receipt-panel>.admin-pos-checkout-grid,
+  .admin-pos-receipt-panel>label,
+  .admin-pos-receipt-panel>.admin-pos-whatsapp-preview{
+    margin-inline:14px;
+  }
+  .admin-invoice-actions{
+    grid-template-columns:1fr;
+  }
+}
+
+/* POS finishing pass: no covered controls, clean mobile receipt and print-ready invoice. */
+.admin-invoice-actions{
+  position:static;
+  grid-template-columns:repeat(5,minmax(0,1fr));
+  margin-top:4px;
+  border-color:rgba(142,91,28,.24);
+  background:#fffaf1;
+  box-shadow:0 12px 34px rgba(48,31,13,.14);
+}
+.admin-invoice-actions .growth-button{
+  white-space:normal;
+}
+.admin-pos-receipt-panel{
+  align-self:start;
+}
+.admin-receipt-note{
+  color:#4b3828;
+}
+@media (max-width:1320px){
+  .admin-invoice-actions{
+    grid-template-columns:repeat(3,minmax(0,1fr));
+  }
+}
+@media (max-width:980px){
+  .admin-pos-receipt-panel{
+    display:block;
+  }
+  .admin-pos-receipt{
+    border-right:0;
+  }
+  .admin-invoice-actions{
+    grid-template-columns:1fr 1fr;
+  }
+}
+@media (max-width:640px){
+  .admin-pos-panel{
+    padding:10px;
+  }
+  .admin-pos-titlebar{
+    padding:16px;
+  }
+  .admin-pos-panel .admin-pos-titlebar h3{
+    font-size:26px;
+    line-height:1.05;
+  }
+  .admin-pos-stats{
+    gap:8px;
+  }
+  .admin-pos-stats div{
+    padding:10px;
+  }
+  .admin-pos-stats strong{
+    font-size:18px;
+  }
+  .admin-invoice-item-heading{
+    display:none;
+  }
+  .admin-invoice-item-row{
+    grid-template-columns:34px minmax(0,1fr) 34px;
+    align-items:center;
+    padding:10px;
+  }
+  .admin-invoice-item-row input[data-invoice-item-field="description"]{
+    grid-column:2;
+    grid-row:1;
+  }
+  .admin-invoice-item-row input[data-invoice-item-field="qty"]{
+    grid-column:1;
+    grid-row:2;
+  }
+  .admin-invoice-item-row input[data-invoice-item-field="unitPrice"]{
+    grid-column:2;
+    grid-row:2;
+  }
+  .admin-invoice-item-remove{
+    grid-column:3;
+    grid-row:1;
+  }
+  .admin-invoice-item-amount{
+    grid-column:1/-1;
+    grid-row:3;
+    justify-self:stretch;
+    text-align:right;
+  }
+  .admin-pos-receipt-panel{
+    padding-bottom:14px;
+  }
+  .admin-pos-receipt-panel>.admin-pos-card-head,
+  .admin-pos-receipt-panel>.admin-pos-checkout-grid,
+  .admin-pos-receipt-panel>label,
+  .admin-pos-receipt-panel>.admin-pos-whatsapp-preview{
+    margin-inline:12px;
+  }
+  .admin-receipt-paper{
+    padding:14px;
+  }
+  .admin-receipt-brand{
+    display:grid;
+    grid-template-columns:52px minmax(0,1fr);
+    gap:10px;
+  }
+  .admin-receipt-status{
+    grid-column:1/-1;
+  }
+  .admin-receipt-meta{
+    grid-template-columns:1fr;
+  }
+  .admin-receipt-line{
+    grid-template-columns:28px minmax(0,1fr);
+  }
+  .admin-receipt-line b{
+    grid-column:2;
+    justify-self:end;
+  }
+  .admin-receipt-total{
+    font-size:13px;
+  }
+  .admin-pos-checkout-grid{
+    grid-template-columns:1fr;
+  }
+  .admin-pos-whatsapp-preview textarea{
+    min-height:180px;
+  }
+  .admin-invoice-actions{
+    grid-template-columns:1fr;
+  }
+}
+@media print{
+  body{
+    background:#fff!important;
+  }
+  body *{
+    visibility:hidden!important;
+  }
+  [data-admin-invoice-receipt],
+  [data-admin-invoice-receipt] *{
+    visibility:visible!important;
+  }
+  [data-admin-invoice-receipt]{
+    position:absolute!important;
+    inset:0 auto auto 0!important;
+    width:100%!important;
+    max-width:none!important;
+    margin:0!important;
+  }
+  .admin-pos-receipt,
+  .admin-receipt-paper{
+    border:0!important;
+    box-shadow:none!important;
+  }
+}
+
+/* POS executive pass: clearer desktop flow, no empty workbench column, stronger bill review. */
+.admin-pos-panel{
+  --pos-stage:#f6ead9;
+  --pos-stage-2:#fffaf1;
+}
+.admin-pos-workspace{
+  grid-template-columns:minmax(360px,.9fr) minmax(560px,1.1fr);
+  grid-template-areas:
+    "customer register"
+    "receipt receipt";
+  gap:18px;
+}
+.admin-pos-customer{
+  grid-area:customer;
+}
+.admin-pos-register{
+  grid-area:register;
+}
+.admin-pos-receipt-panel{
+  grid-area:receipt;
+  position:static;
+  display:grid;
+  grid-template-columns:minmax(460px,.88fr) minmax(380px,.72fr);
+  gap:18px;
+  align-items:start;
+  padding:18px;
+  border-color:#b98b4b;
+  background:
+    linear-gradient(135deg,rgba(255,253,248,.98),rgba(245,229,202,.98));
+}
+.admin-pos-receipt-panel>.admin-pos-card-head{
+  grid-column:1/-1;
+  margin:0;
+  padding:0 0 12px;
+}
+.admin-pos-receipt-panel>.admin-pos-card-head h3::after{
+  content:"";
+  display:block;
+  width:72px;
+  height:3px;
+  margin-top:8px;
+  border-radius:999px;
+  background:linear-gradient(90deg,#9b5f18,#f2cc78);
+}
+.admin-pos-receipt{
+  grid-column:1;
+  grid-row:2 / span 4;
+  margin:0;
+  border-radius:18px;
+  box-shadow:0 18px 44px rgba(66,40,17,.14);
+}
+.admin-pos-receipt-panel>.admin-pos-checkout-grid,
+.admin-pos-receipt-panel>label,
+.admin-pos-receipt-panel>.admin-pos-whatsapp-preview{
+  grid-column:2;
+  margin:0;
+}
+.admin-pos-receipt-panel>.admin-pos-checkout-grid{
+  grid-row:2;
+}
+.admin-pos-receipt-panel>.admin-pos-settlement{
+  grid-row:3;
+}
+.admin-pos-receipt-panel>label{
+  grid-row:4;
+}
+.admin-pos-receipt-panel>.admin-pos-whatsapp-preview{
+  grid-row:5;
+  padding:14px;
+  border:1px solid rgba(126,82,34,.16);
+  border-radius:16px;
+  background:#fffaf1;
+}
+.admin-pos-settlement{
+  padding:16px;
+  border:1px solid rgba(126,82,34,.18);
+  border-radius:18px;
+  background:
+    linear-gradient(180deg,#fffdf8 0%,#f4e3c5 100%);
+  box-shadow:0 14px 34px rgba(77,46,18,.11);
+}
+.admin-pos-settlement-head{
+  display:flex;
+  align-items:start;
+  justify-content:space-between;
+  gap:12px;
+  padding-bottom:12px;
+  border-bottom:1px solid rgba(126,82,34,.14);
+}
+.admin-pos-settlement-head span{
+  display:block;
+  color:#a77331;
+  font-size:11px;
+  font-weight:900;
+  letter-spacing:.18em;
+}
+.admin-pos-settlement-head h4{
+  margin:4px 0 0;
+  color:#130d08;
+  font-size:24px;
+  line-height:1.05;
+}
+.admin-pos-settlement-head strong{
+  flex:0 0 auto;
+  padding:9px 13px;
+  border:1px solid rgba(151,101,44,.28);
+  border-radius:999px;
+  color:#5a3512;
+  background:#ffe3a1;
+  font-size:13px;
+  font-weight:1000;
+}
+.admin-pos-settlement dl{
+  display:grid;
+  gap:0;
+  margin:12px 0 0;
+}
+.admin-pos-settlement dl div{
+  display:flex;
+  justify-content:space-between;
+  gap:14px;
+  padding:9px 0;
+  border-bottom:1px solid rgba(126,82,34,.12);
+}
+.admin-pos-settlement dt{
+  margin:0;
+  color:#74583d;
+  font-size:13px;
+  font-weight:850;
+}
+.admin-pos-settlement dd{
+  margin:0;
+  color:#150f0a;
+  font-size:15px;
+  font-weight:1000;
+  text-align:right;
+}
+.admin-pos-settlement-total{
+  margin-top:6px;
+  padding:13px 12px !important;
+  border:1px solid rgba(116,72,24,.18) !important;
+  border-radius:13px;
+  background:#fff7df;
+}
+.admin-pos-settlement-total dt,
+.admin-pos-settlement-total dd{
+  color:#4b2b0f;
+}
+.admin-pos-settlement-balance{
+  margin-top:7px;
+  padding:15px 12px !important;
+  border:0 !important;
+  border-radius:15px;
+  color:#fff8e8;
+  background:linear-gradient(135deg,#15100c,#321a0b);
+}
+.admin-pos-settlement-balance dt,
+.admin-pos-settlement-balance dd{
+  color:#fff8e8;
+}
+.admin-pos-settlement-balance dd{
+  font-size:24px;
+}
+.admin-pos-settlement p{
+  margin:12px 0 0;
+  color:#765c42;
+  font-size:12px;
+  line-height:1.55;
+}
+.admin-pos-whatsapp-preview textarea{
+  min-height:260px;
+}
+.admin-invoice-actions{
+  align-items:center;
+  margin-top:2px;
+  padding:14px;
+  border-radius:16px;
+  background:
+    linear-gradient(180deg,#fffdf8,#f4e2c2);
+}
+.admin-invoice-actions .growth-button{
+  min-height:52px;
+  border-radius:12px;
+}
+.admin-invoice-actions .growth-button[type="submit"],
+.admin-invoice-actions [data-admin-invoice-open]{
+  box-shadow:0 10px 24px rgba(145,83,24,.18);
+}
+@media (max-width:1180px){
+  .admin-pos-workspace{
+    grid-template-columns:1fr;
+    grid-template-areas:
+      "customer"
+      "register"
+      "receipt";
+  }
+  .admin-pos-receipt-panel{
+    grid-template-columns:minmax(0,1fr);
+  }
+  .admin-pos-receipt,
+  .admin-pos-receipt-panel>.admin-pos-checkout-grid,
+  .admin-pos-receipt-panel>.admin-pos-settlement,
+  .admin-pos-receipt-panel>label,
+  .admin-pos-receipt-panel>.admin-pos-whatsapp-preview{
+    grid-column:1;
+    grid-row:auto;
+  }
+}
+@media (max-width:640px){
+  .admin-pos-receipt-panel{
+    padding:12px;
+  }
+  .admin-pos-receipt-panel>.admin-pos-card-head,
+  .admin-pos-receipt-panel>.admin-pos-checkout-grid,
+  .admin-pos-receipt-panel>.admin-pos-settlement,
+  .admin-pos-receipt-panel>label,
+  .admin-pos-receipt-panel>.admin-pos-whatsapp-preview{
+    margin-inline:0;
+  }
+  .admin-pos-settlement{
+    padding:13px;
+  }
+  .admin-pos-settlement-head{
+    display:grid;
+  }
+  .admin-pos-settlement-head h4{
+    font-size:22px;
+  }
+  .admin-pos-settlement-balance dd{
+    font-size:22px;
+  }
+  .admin-pos-whatsapp-preview textarea{
+    min-height:190px;
+  }
+}
+
+/* POS command desk pass: warmer high contrast, clearer cart, stronger checkout hierarchy. */
+.admin-section[data-admin-panel="orders"]{
+  padding-inline:0;
+}
+.admin-invoice-panel.admin-pos-panel{
+  gap:22px;
+  padding:clamp(14px,2vw,24px);
+  border:1px solid rgba(247,205,129,.42);
+  border-radius:24px;
+  color:#1b1209;
+  background:
+    linear-gradient(90deg,rgba(118,74,28,.045) 1px,transparent 1px),
+    linear-gradient(180deg,#fffaf1 0%,#f2dfc4 100%);
+  background-size:48px 48px,auto;
+}
+.admin-pos-titlebar{
+  grid-template-columns:minmax(0,1fr) auto;
+  gap:20px;
+  padding:24px;
+  border-radius:22px;
+  border-color:rgba(247,205,129,.34);
+  background:
+    radial-gradient(circle at 86% 6%,rgba(255,214,132,.2),transparent 34%),
+    linear-gradient(135deg,#0b0704 0%,#2f190a 62%,#120905 100%);
+  box-shadow:0 18px 42px rgba(36,18,7,.24);
+}
+.admin-pos-titlebar::after{
+  inset:auto 24px 0;
+}
+.admin-pos-panel .admin-pos-titlebar h3{
+  max-width:760px;
+  margin:4px 0 8px;
+  font-size:clamp(30px,4vw,50px);
+}
+.admin-pos-titlebar p{
+  max-width:760px;
+  color:#f2dfbd;
+}
+.admin-pos-title-actions{
+  align-self:stretch;
+  display:grid;
+  grid-template-columns:1fr;
+  min-width:176px;
+}
+.admin-pos-status-pill{
+  display:grid;
+  place-items:center;
+  min-height:72px;
+  border-radius:16px;
+  background:rgba(255,250,241,.11);
+}
+.admin-pos-title-actions .growth-button{
+  min-height:50px;
+  border-radius:14px;
+}
+.admin-pos-steps{
+  grid-column:1/-1;
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:10px;
+  width:100%;
+  margin-top:4px;
+}
+.admin-pos-steps li{
+  min-height:60px;
+  padding:10px 12px;
+  border-radius:14px;
+  background:rgba(255,250,241,.08);
+}
+.admin-pos-steps strong{
+  color:#f5c66c;
+}
+.admin-pos-steps span{
+  color:#fff8e8;
+}
+.admin-pos-stats{
+  display:grid;
+  grid-template-columns:minmax(170px,1.2fr) repeat(4,minmax(130px,1fr));
+  gap:12px;
+}
+.admin-pos-stats div{
+  min-height:78px;
+  padding:15px 16px;
+  border:1px solid #d5b47f;
+  border-radius:18px;
+  background:#fffdf8;
+  box-shadow:0 14px 30px rgba(78,45,16,.09);
+}
+.admin-pos-stats span{
+  color:#85623c;
+  font-size:11px;
+  letter-spacing:.14em;
+}
+.admin-pos-stats strong{
+  color:#1c1209;
+  font-size:clamp(18px,2vw,26px);
+  line-height:1.12;
+}
+.admin-pos-stats div:nth-child(3){
+  background:linear-gradient(180deg,#fff7e3,#f3d29c);
+}
+.admin-pos-stats div:nth-child(5){
+  border-color:#4b2a12;
+  background:linear-gradient(135deg,#130b05,#3c1d08);
+}
+.admin-pos-stats div:nth-child(5) span,
+.admin-pos-stats div:nth-child(5) strong{
+  color:#fff4d8;
+}
+.admin-pos-workspace{
+  grid-template-columns:minmax(380px,.84fr) minmax(590px,1.16fr);
+  gap:18px;
+}
+.admin-pos-card{
+  overflow:hidden;
+  border:1px solid #d2b17d;
+  border-radius:22px;
+  background:#fffdf8;
+  box-shadow:0 20px 44px rgba(70,40,15,.1);
+}
+.admin-pos-customer{
+  border-top:5px solid #d6a44f;
+}
+.admin-pos-register{
+  border-top:5px solid #955719;
+}
+.admin-pos-card-head{
+  margin:-18px -18px 18px;
+  padding:18px;
+  border-bottom:1px solid rgba(126,82,34,.16);
+  background:linear-gradient(180deg,#fff8e8,#f7e9d3);
+}
+.admin-pos-card-head span{
+  color:#a06b28;
+}
+.admin-pos-card-head h3{
+  color:#171008;
+  font-size:26px;
+}
+.admin-pos-panel .growth-form label,
+.admin-pos-card>label{
+  color:#4f3924;
+  font-size:13px;
+  letter-spacing:.01em;
+}
+.admin-pos-panel input,
+.admin-pos-panel select,
+.admin-pos-panel textarea{
+  min-height:48px;
+  border:1px solid #cba976;
+  border-radius:12px;
+  color:#171008;
+  background:#fffefb;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.8);
+}
+.admin-pos-panel input:focus,
+.admin-pos-panel select:focus,
+.admin-pos-panel textarea:focus{
+  border-color:#9d5d16;
+  outline:3px solid rgba(217,165,76,.28);
+}
+.admin-pos-form-grid{
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:14px;
+}
+.admin-pos-form-grid .admin-pos-wide{
+  grid-column:1/-1;
+}
+.admin-pos-preset-strip{
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:10px;
+  margin-bottom:14px;
+}
+.admin-pos-preset-strip button{
+  min-height:78px;
+  padding:14px;
+  border-radius:16px;
+  border-color:#cba976;
+  color:#1b1209;
+  background:linear-gradient(180deg,#fffaf0,#f4e0bf);
+  text-align:left;
+}
+.admin-pos-preset-strip button span{
+  font-size:19px;
+}
+.admin-pos-preset-strip button small{
+  margin-top:5px;
+  color:#785733;
+}
+.admin-invoice-item-table{
+  overflow-x:auto;
+  border-color:#cba976;
+  border-radius:18px;
+}
+.admin-invoice-item-row{
+  grid-template-columns:46px minmax(260px,1.6fr) 94px 128px 128px 46px;
+  min-width:790px;
+  padding:12px 14px;
+}
+.admin-invoice-item-heading{
+  color:#ffe8b1;
+  background:linear-gradient(90deg,#110904,#39200d);
+}
+.admin-invoice-item-row input{
+  border-radius:10px;
+  background:#fffefb;
+}
+.admin-invoice-item-amount{
+  padding:10px 0;
+  border-radius:10px;
+  color:#643707;
+  background:#fff4d7;
+  text-align:center;
+}
+.admin-pos-receipt-panel{
+  grid-template-columns:minmax(520px,1fr) minmax(400px,.76fr);
+  gap:18px;
+  border-top:5px solid #d6a44f;
+  border-color:#c89652;
+  background:
+    linear-gradient(135deg,#fffdf8 0%,#f6e4c5 100%);
+}
+.admin-pos-receipt-panel>.admin-pos-card-head{
+  margin:0;
+  padding:0 0 14px;
+  background:transparent;
+}
+.admin-pos-receipt{
+  border-color:#bd8b49;
+  border-radius:18px;
+  background:#fffefb;
+}
+.admin-receipt-paper{
+  gap:16px;
+  padding:20px;
+  background:#fffefb;
+}
+.admin-receipt-brand{
+  grid-template-columns:auto minmax(0,1fr) auto;
+  align-items:center;
+  padding-bottom:14px;
+  border-bottom:1px solid rgba(126,82,34,.16);
+}
+.admin-receipt-brand img{
+  width:56px;
+  height:56px;
+}
+.admin-receipt-brand strong{
+  color:#130d08;
+  font-size:19px;
+}
+.admin-receipt-brand small{
+  color:#77583a;
+  font-weight:850;
+}
+.admin-receipt-status{
+  border-radius:999px;
+}
+.admin-receipt-meta{
+  grid-template-columns:repeat(4,minmax(0,1fr));
+}
+.admin-receipt-meta div{
+  padding:10px;
+  border-radius:12px;
+  background:#fff7e8;
+}
+.admin-receipt-lines{
+  border-radius:14px;
+}
+.admin-receipt-total{
+  padding:14px;
+  border-radius:16px;
+  background:#fff5dd;
+}
+.admin-receipt-total .is-balance{
+  padding:12px;
+  border-radius:13px;
+  background:#160d06;
+}
+.admin-pos-checkout-grid{
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:12px;
+}
+.admin-pos-settlement{
+  border-color:#cba976;
+  background:linear-gradient(180deg,#fffdf8,#f2dfbe);
+}
+.admin-pos-whatsapp-preview{
+  box-shadow:0 12px 26px rgba(70,40,15,.08);
+}
+.admin-pos-whatsapp-preview textarea{
+  min-height:230px;
+  color:#171008;
+  background:#fffefb;
+}
+.admin-invoice-actions{
+  position:sticky;
+  bottom:10px;
+  z-index:4;
+  display:grid;
+  grid-template-columns:repeat(5,minmax(0,1fr));
+  gap:10px;
+  border:1px solid #d2b17d;
+  box-shadow:0 18px 42px rgba(42,24,9,.18);
+}
+@media (max-width:1180px){
+  .admin-pos-stats{
+    grid-template-columns:repeat(2,minmax(0,1fr));
+  }
+  .admin-pos-stats div:first-child,
+  .admin-pos-stats div:nth-child(3),
+  .admin-pos-stats div:nth-child(5){
+    grid-column:auto;
+  }
+  .admin-pos-workspace,
+  .admin-pos-receipt-panel{
+    grid-template-columns:1fr;
+  }
+  .admin-receipt-meta{
+    grid-template-columns:repeat(2,minmax(0,1fr));
+  }
+  .admin-invoice-actions{
+    grid-template-columns:repeat(2,minmax(0,1fr));
+  }
+  .admin-invoice-actions [data-admin-invoice-open]{
+    grid-column:1/-1;
+  }
+}
+@media (max-width:720px){
+  .admin-invoice-panel.admin-pos-panel{
+    padding:12px;
+    border-radius:18px;
+  }
+  .admin-pos-titlebar{
+    grid-template-columns:1fr;
+    padding:18px;
+  }
+  .admin-pos-title-actions{
+    grid-template-columns:1fr 1fr;
+    min-width:0;
+  }
+  .admin-pos-steps{
+    grid-template-columns:1fr;
+  }
+  .admin-pos-stats{
+    grid-template-columns:1fr;
+  }
+  .admin-pos-card{
+    border-radius:18px;
+  }
+  .admin-pos-form-grid,
+  .admin-pos-preset-strip,
+  .admin-pos-checkout-grid{
+    grid-template-columns:1fr;
+  }
+  .admin-receipt-meta{
+    grid-template-columns:1fr;
+  }
+  .admin-invoice-actions{
+    position:static;
+    grid-template-columns:1fr;
   }
 }

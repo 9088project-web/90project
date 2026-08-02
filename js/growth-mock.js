@@ -8,6 +8,7 @@ const GROWTH_ORDER_QUEUE_KEY = 'np90_growth_order_queue_v1';
 const SUPABASE_ADMIN_SESSION_KEY = 'np90_supabase_session_v1';
 const ADMIN_INVOICE_DRAFT_KEY = 'np90_admin_invoice_draft_v1';
 const BUSINESS_WHATSAPP = '018-949 0908';
+const BUSINESS_EMAIL = '9088project@gmail.com';
 const translations = {
   zh: {
     language: '中文',
@@ -1026,8 +1027,10 @@ function adminInvoiceItemTemplate(item = {}, index = 0) {
   const qty = item.qty !== undefined ? item.qty : 1;
   const unitPrice = item.unitPrice !== undefined ? item.unitPrice : 0;
   const amount = money(invoiceQuantity(qty) * invoiceCleanNumber(unitPrice));
+  const lineNumber = String(index + 1).padStart(2, '0');
   return `
     <div class="admin-invoice-item-row" data-admin-invoice-item>
+      <span class="admin-invoice-line-no">${lineNumber}</span>
       <input data-invoice-item-field="description" type="text" value="${esc(item.description || '')}" placeholder="项目 / 菜单 / 服务 ${index + 1}" aria-label="项目名称">
       <input data-invoice-item-field="qty" type="number" min="0" step="1" value="${esc(qty)}" aria-label="数量">
       <input data-invoice-item-field="unitPrice" type="number" min="0" step="0.01" value="${esc(Number(unitPrice || 0).toFixed(2))}" aria-label="单价">
@@ -1086,13 +1089,29 @@ function adminInvoiceStatusText(status) {
 
 function updateAdminInvoiceKpis(data) {
   const set = (key, value) => {
-    const element = document.querySelector(`[data-admin-invoice-kpi="${key}"]`);
-    if (element) element.textContent = value;
+    document.querySelectorAll(`[data-admin-invoice-kpi="${key}"]`).forEach(element => {
+      element.textContent = value;
+    });
   };
+  const itemCount = Array.isArray(data.items) ? data.items.length : 0;
+  const paymentState = data.totalAmount > 0 && data.balanceAmount <= 0
+    ? 'paid'
+    : data.depositAmount > 0
+      ? 'partial'
+      : 'unpaid';
+  const paymentText = paymentState === 'paid' ? '已结清' : paymentState === 'partial' ? '部分收款' : '未收款';
+  const form = document.querySelector('[data-admin-invoice-form]');
+  if (form) form.dataset.paymentState = paymentState;
   set('invoiceNo', data.invoiceNo || '-');
+  set('items', `${itemCount} 项`);
   set('subtotal', formatMoney(data.originalAmount));
+  set('deliveryFee', formatMoney(data.deliveryFee));
+  set('serviceFee', formatMoney(data.serviceFee));
+  set('discount', `-${formatMoney(data.discountAmount)}`);
+  set('total', formatMoney(data.totalAmount));
   set('deposit', formatMoney(data.depositAmount));
   set('balance', formatMoney(data.balanceAmount));
+  set('paymentStatus', paymentText);
 }
 
 function renderAdminInvoiceReceipt(data) {
@@ -1100,36 +1119,68 @@ function renderAdminInvoiceReceipt(data) {
   if (!receipt) return;
   const items = Array.isArray(data.items) ? data.items : [];
   const eventLine = [formatInvoiceDate(data.eventDate), formatInvoiceTime(data.eventTime)].filter(Boolean).join(' · ') || '-';
+  const issuedLine = new Date().toLocaleString('zh-MY', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit'
+  });
+  const paymentState = data.totalAmount > 0 && data.balanceAmount <= 0
+    ? 'paid'
+    : data.depositAmount > 0
+      ? 'partial'
+      : 'unpaid';
+  const paymentText = paymentState === 'paid' ? '已结清 Paid' : paymentState === 'partial' ? '部分收款 Partial' : '未收款 Unpaid';
+  const documentTitle = ({
+    quotation: 'Quotation',
+    invoice: 'Invoice',
+    receipt: 'Official Receipt'
+  })[data.documentType] || 'Invoice';
   const itemRows = items.length
-    ? items.map(item => `
+    ? items.map((item, index) => `
       <div class="admin-receipt-line">
+        <em>${String(index + 1).padStart(2, '0')}</em>
         <span><strong>${esc(item.description || '项目')}</strong><small>${invoiceQuantityLabel(item.qty)} x ${formatMoney(item.unitPrice)}</small></span>
         <b>${formatMoney(item.amount)}</b>
       </div>
     `).join('')
     : '<p class="admin-receipt-empty">还没有项目明细。</p>';
   receipt.innerHTML = `
-    <div class="admin-receipt-paper">
+    <div class="admin-receipt-paper" data-receipt-payment-state="${esc(paymentState)}">
       <div class="admin-receipt-brand">
         <img src="assets/images/logo/logo-icon-dark.jpg" alt="90 PROJECT logo">
-        <div><span>Official Receipt</span><strong>九零食刻 90 PROJECT</strong></div>
+        <div><span>${esc(documentTitle)}</span><strong>九零食刻 90 PROJECT</strong><small>${esc(BUSINESS_WHATSAPP)} · ${esc(BUSINESS_EMAIL)}</small></div>
+        <mark class="admin-receipt-status">${esc(paymentText)}</mark>
       </div>
       <div class="admin-receipt-meta">
         <div><span>Invoice No</span><strong>${esc(data.invoiceNo || '-')}</strong></div>
         <div><span>Status</span><strong>${esc(adminInvoiceStatusText(data.status))}</strong></div>
+        <div><span>Issued</span><strong>${esc(issuedLine)}</strong></div>
+        <div><span>Payment Due</span><strong>${esc(formatInvoiceDate(data.paymentDue) || '-')}</strong></div>
+        <div><span>Pax</span><strong>${data.pax ? `${esc(data.pax)} pax` : '-'}</strong></div>
         <div><span>Customer</span><strong>${esc(data.name || '-')}</strong></div>
+        <div><span>Company</span><strong>${esc(data.companyName || '-')}</strong></div>
         <div><span>WhatsApp</span><strong>${esc(data.phone || '-')}</strong></div>
+        <div><span>Email</span><strong>${esc(data.email || '-')}</strong></div>
         <div><span>Service</span><strong>${esc(adminInvoiceServiceText(data.serviceType))}</strong></div>
+        <div><span>Payment</span><strong>${esc(data.paymentMethod || '-')}</strong></div>
         <div><span>Date / Time</span><strong>${esc(eventLine)}</strong></div>
+        <div><span>Location</span><strong>${esc(data.location || '-')}</strong></div>
+        <div><span>Referral</span><strong>${esc(data.referralCode || '-')}</strong></div>
       </div>
       <div class="admin-receipt-lines">${itemRows}</div>
       <div class="admin-receipt-total">
-        <div><span>Subtotal</span><strong>${formatMoney(data.originalAmount)}</strong></div>
+        <div><span>Items Subtotal</span><strong>${formatMoney(data.originalAmount)}</strong></div>
+        <div><span>Delivery Fee</span><strong>${formatMoney(data.deliveryFee)}</strong></div>
+        <div><span>Service Fee</span><strong>${formatMoney(data.serviceFee)}</strong></div>
         <div><span>Discount</span><strong>-${formatMoney(data.discountAmount)}</strong></div>
         <div><span>Total</span><strong>${formatMoney(data.totalAmount)}</strong></div>
         <div><span>Deposit</span><strong>${formatMoney(data.depositAmount)}</strong></div>
         <div class="is-balance"><span>Balance</span><strong>${formatMoney(data.balanceAmount)}</strong></div>
       </div>
+      ${data.customerNotes ? `<p class="admin-receipt-note"><strong>顾客备注：</strong>${esc(data.customerNotes)}</p>` : ''}
+      <p class="admin-receipt-note">备注：此收据为订单确认记录；实际供应、运输、餐具与现场服务以最终确认安排为准。</p>
     </div>
   `;
 }
@@ -1151,9 +1202,11 @@ function collectAdminInvoiceInput() {
   const itemSubtotal = money(items.reduce((sum, item) => sum + Number(item.amount || 0), 0));
   const itemsSummary = items.length ? buildInvoiceItemsSummary(items) : invoiceValue('itemsSummary');
   const originalAmount = items.length ? itemSubtotal : invoiceNumber('originalAmount');
+  const deliveryFee = invoiceNumber('deliveryFee');
+  const serviceFee = invoiceNumber('serviceFee');
   const discountAmount = invoiceNumber('discountAmount');
   const depositAmount = invoiceNumber('depositAmount');
-  const totalAmount = money(Math.max(0, originalAmount - discountAmount));
+  const totalAmount = money(Math.max(0, originalAmount + deliveryFee + serviceFee - discountAmount));
   const balanceAmount = money(Math.max(0, totalAmount - depositAmount));
   const summaryField = invoiceField('itemsSummary');
   const originalField = invoiceField('originalAmount');
@@ -1161,23 +1214,30 @@ function collectAdminInvoiceInput() {
   if (originalField) originalField.value = originalAmount.toFixed(2);
   return {
     invoiceNo,
+    documentType: invoiceValue('documentType') || 'invoice',
     name: invoiceValue('name'),
+    companyName: invoiceValue('companyName'),
     phone: invoiceValue('phone'),
     email: invoiceValue('email'),
     serviceType: invoiceValue('serviceType') || 'Event Catering',
     status: invoiceValue('status') || 'confirmed',
     eventDate: invoiceValue('eventDate'),
     eventTime: invoiceValue('eventTime'),
+    paymentDue: invoiceValue('paymentDue'),
+    paymentMethod: invoiceValue('paymentMethod') || 'Bank Transfer',
     pax: Number(invoiceValue('pax')) || 0,
     referralCode: invoiceValue('referralCode').toUpperCase(),
     location: invoiceValue('location'),
     items,
     itemsSummary,
     originalAmount,
+    deliveryFee,
+    serviceFee,
     discountAmount,
     depositAmount,
     totalAmount,
     balanceAmount,
+    customerNotes: invoiceValue('customerNotes'),
     adminNotes: invoiceValue('adminNotes')
   };
 }
@@ -1195,9 +1255,11 @@ function buildAdminInvoiceMessage(data = collectAdminInvoiceInput()) {
     '',
     `开单编号：${data.invoiceNo || '-'}`,
     `顾客：${data.name || '-'}`,
+    data.companyName ? `公司 / 单位：${data.companyName}` : null,
     `服务：${serviceLabels[data.serviceType] || data.serviceType || '-'}`,
     data.eventDate ? `日期：${formatInvoiceDate(data.eventDate)}` : null,
     data.eventTime ? `时间：${formatInvoiceTime(data.eventTime)}` : null,
+    data.paymentDue ? `付款期限：${formatInvoiceDate(data.paymentDue)}` : null,
     data.location ? `地点：${data.location}` : null,
     data.pax ? `人数：${data.pax} pax` : null,
     '',
@@ -1206,11 +1268,15 @@ function buildAdminInvoiceMessage(data = collectAdminInvoiceInput()) {
     '',
     '费用：',
     `项目原额：${formatMoney(data.originalAmount)}`,
+    data.deliveryFee ? `运输费：${formatMoney(data.deliveryFee)}` : null,
+    data.serviceFee ? `服务 / 布置费：${formatMoney(data.serviceFee)}` : null,
     data.discountAmount ? `优惠 / 调整：-${formatMoney(data.discountAmount)}` : null,
     `应付总额：${formatMoney(data.totalAmount)}`,
     data.depositAmount ? `已付订金：${formatMoney(data.depositAmount)}` : null,
     `余额：${formatMoney(data.balanceAmount)}`,
+    data.paymentMethod ? `付款方式：${data.paymentMethod}` : null,
     data.referralCode ? `推荐码：${data.referralCode}` : null,
+    data.customerNotes ? `备注：${data.customerNotes}` : null,
     '',
     '请回复“确认订单”，我们会为你保留安排。',
     `WhatsApp：${BUSINESS_WHATSAPP}`
@@ -1262,8 +1328,12 @@ function resetAdminInvoiceForm() {
   invoiceField('invoiceNo').value = generateInvoiceNo();
   invoiceField('discountAmount').value = '0';
   invoiceField('depositAmount').value = '0';
+  if (invoiceField('deliveryFee')) invoiceField('deliveryFee').value = '0';
+  if (invoiceField('serviceFee')) invoiceField('serviceFee').value = '0';
   invoiceField('status').value = 'confirmed';
   invoiceField('serviceType').value = 'Event Catering';
+  if (invoiceField('documentType')) invoiceField('documentType').value = 'invoice';
+  if (invoiceField('paymentMethod')) invoiceField('paymentMethod').value = 'Bank Transfer';
   renderAdminInvoiceItems([]);
   localStorage.removeItem(ADMIN_INVOICE_DRAFT_KEY);
   updateAdminInvoicePreview();
@@ -1285,6 +1355,16 @@ async function copyText(value) {
   const ok = document.execCommand('copy');
   textarea.remove();
   return ok;
+}
+
+function printAdminInvoiceReceipt() {
+  const preview = updateAdminInvoicePreview();
+  if (!preview?.data?.originalAmount) {
+    setInvoiceMessage('请先加入项目明细，才可以打印收据。', true);
+    return;
+  }
+  window.print();
+  setInvoiceMessage('收据已准备打印，也可以在打印窗口另存 PDF。');
 }
 
 async function saveAdminInvoice(options = {}) {
@@ -1316,9 +1396,17 @@ async function saveAdminInvoice(options = {}) {
     totalAmount: data.totalAmount,
     originalAmount: data.originalAmount,
     discountAmount: data.discountAmount,
+    deliveryFee: data.deliveryFee,
+    extraLabourFee: data.serviceFee,
     depositAmount: data.depositAmount,
     balanceAmount: data.balanceAmount,
-    adminNotes: data.adminNotes,
+    adminNotes: [
+      data.companyName ? `Company: ${data.companyName}` : '',
+      data.paymentMethod ? `Payment Method: ${data.paymentMethod}` : '',
+      data.paymentDue ? `Payment Due: ${data.paymentDue}` : '',
+      data.customerNotes ? `Customer Notes: ${data.customerNotes}` : '',
+      data.adminNotes || ''
+    ].filter(Boolean).join('\n'),
     referralCode: data.referralCode,
     status: data.status,
     whatsappMessage: message,
@@ -1357,17 +1445,23 @@ function findAdminOrderWhatsApp(orderId) {
     email: member?.email || '',
     serviceType: order.serviceType || 'Event Catering',
     status: order.status || 'confirmed',
+    documentType: 'invoice',
     eventDate: order.eventDate || '',
     eventTime: order.eventTime || '',
+    paymentDue: '',
+    paymentMethod: 'Bank Transfer',
     pax: Number(order.pax) || 0,
     referralCode: relation?.referralCode || '',
     location: order.location || '',
     itemsSummary: order.itemsSummary || '',
     originalAmount: money(order.originalAmount || order.totalAmount),
+    deliveryFee: money(order.deliveryFee),
+    serviceFee: money(order.extraLabourFee),
     discountAmount: money(order.discountAmount),
     depositAmount: money(order.depositAmount),
     totalAmount: money(order.totalAmount),
     balanceAmount: money(order.balanceAmount ?? Math.max(0, Number(order.totalAmount || 0) - Number(order.depositAmount || 0))),
+    customerNotes: '',
     adminNotes: order.adminNotes || ''
   };
   const message = order.whatsappMessage || buildAdminInvoiceMessage(data);
@@ -1413,6 +1507,8 @@ async function syncOrderUpdateToCloud(order, input = {}) {
     itemsSummary: input.itemsSummary ?? order.itemsSummary ?? '',
     originalAmount: input.originalAmount ?? order.originalAmount ?? order.totalAmount ?? 0,
     discountAmount: input.discountAmount ?? order.discountAmount ?? 0,
+    deliveryFee: input.deliveryFee ?? order.deliveryFee ?? 0,
+    extraLabourFee: input.extraLabourFee ?? order.extraLabourFee ?? 0,
     depositAmount: input.depositAmount ?? order.depositAmount ?? 0,
     balanceAmount: input.balanceAmount ?? order.balanceAmount ?? 0,
     whatsappMessage: input.whatsappMessage ?? order.whatsappMessage ?? ''
@@ -1664,6 +1760,11 @@ function bindAdmin() {
     if (previewInvoiceButton) {
       updateAdminInvoicePreview();
       setInvoiceMessage('WhatsApp 文案已生成。');
+      return;
+    }
+    const printInvoiceButton = event.target.closest('[data-admin-invoice-print]');
+    if (printInvoiceButton) {
+      printAdminInvoiceReceipt();
       return;
     }
     const copyInvoiceButton = event.target.closest('[data-admin-invoice-copy]');

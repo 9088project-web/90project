@@ -5479,6 +5479,7 @@ function renderAdminEditor() {
 }
 
 function setAdminPanel(panel = 'site') {
+  if (adminDashboard) adminDashboard.dataset.activePanel = panel;
   let activeButton = null;
   document.querySelectorAll('[data-admin-panel-tab]').forEach(button => {
     const isActive = button.dataset.adminPanelTab === panel;
@@ -5503,7 +5504,12 @@ function renderAdminState() {
   adminAuthPanel.hidden = loggedIn;
   adminDashboard.hidden = !loggedIn;
   if (loggedIn) {
-    const activePanel = document.querySelector('[data-admin-panel-tab].active')?.dataset.adminPanelTab || 'site';
+    const params = new URLSearchParams(window.location.search);
+    const requestedPanel = params.get('panel');
+    const requestedPanelExists = requestedPanel && document.querySelector(`[data-admin-panel="${CSS.escape(requestedPanel)}"]`);
+    const activePanel = requestedPanelExists
+      ? requestedPanel
+      : document.querySelector('[data-admin-panel-tab].active')?.dataset.adminPanelTab || 'site';
     setAdminPanel(activePanel);
     renderAdminEditor();
     renderAdminInquiries();
