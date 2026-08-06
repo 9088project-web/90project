@@ -147,7 +147,7 @@
             <p>填顾客、选项目、确认金额，直接 WhatsApp 给顾客。</p>
           </div>
         </div>
-        <form class="growth-form growth-panel admin-invoice-panel admin-pos-panel" data-admin-invoice-form>
+        <form class="growth-form growth-panel admin-invoice-panel admin-pos-panel admin-pos-simplified" data-admin-invoice-form>
           <div class="admin-invoice-head admin-pos-titlebar">
             <div class="admin-pos-title-copy">
               <span>QUICK ORDER</span>
@@ -174,38 +174,59 @@
             <section class="admin-pos-card admin-pos-customer">
               <div class="admin-pos-card-head">
                 <div>
-                  <span>CUSTOMER</span>
-                  <h3>顾客</h3>
+                  <span>STEP 1</span>
+                  <h3>顾客与 Catering 细节</h3>
                 </div>
               </div>
-              <div class="growth-form-grid admin-pos-form-grid">
-                <label>顾客姓名
-                  <input data-invoice-field="name" type="text" placeholder="例如：王小姐" required>
-                </label>
-                <label>顾客 WhatsApp
-                  <input data-invoice-field="phone" type="tel" placeholder="018-xxxx xxxx" required>
-                </label>
-                <label>服务类型
-                  <select data-invoice-field="serviceType">
-                    <option value="Meal Plan">包伙食</option>
-                    <option value="Event Catering" selected>活动餐饮</option>
-                    <option value="Event Styling">场地布置</option>
-                    <option value="Cocktail Service">鸡尾酒服务</option>
-                    <option value="Other">其他服务</option>
-                  </select>
-                </label>
-                <label>人数 Pax
-                  <input data-invoice-field="pax" type="number" min="1" step="1" placeholder="30">
-                </label>
-                <label>服务日期
-                  <input data-invoice-field="eventDate" type="date">
-                </label>
-                <label class="admin-pos-wide">地点
-                  <input data-invoice-field="location" type="text" placeholder="地址 / Venue / Area">
-                </label>
+              <div class="admin-pos-fieldset">
+                <div class="admin-pos-fieldset-head">
+                  <strong>顾客资料</strong>
+                  <span>开单前只需要姓名和 WhatsApp。</span>
+                </div>
+                <div class="growth-form-grid admin-pos-form-grid">
+                  <label>顾客姓名
+                    <input data-invoice-field="name" type="text" placeholder="例如：王小姐" required>
+                  </label>
+                  <label>顾客 WhatsApp
+                    <input data-invoice-field="phone" type="tel" placeholder="018-xxxx xxxx" required>
+                  </label>
+                </div>
+              </div>
+
+              <div class="admin-pos-fieldset">
+                <div class="admin-pos-fieldset-head">
+                  <strong>Catering 细节</strong>
+                  <span>日期、人数、地点会出现在 WhatsApp 和收据。</span>
+                </div>
+                <div class="growth-form-grid admin-pos-form-grid">
+                  <label>服务类型
+                    <select data-invoice-field="serviceType">
+                      <option value="Meal Plan">包伙食</option>
+                      <option value="Event Catering" selected>活动餐饮</option>
+                      <option value="Event Styling">场地布置</option>
+                      <option value="Cocktail Service">鸡尾酒服务</option>
+                      <option value="Other">其他服务</option>
+                    </select>
+                  </label>
+                  <label>人数 Pax
+                    <input data-invoice-field="pax" type="number" min="1" step="1" placeholder="10">
+                  </label>
+                  <label>服务日期
+                    <input data-invoice-field="eventDate" type="date">
+                  </label>
+                  <label>时间
+                    <input data-invoice-field="eventTime" type="time">
+                  </label>
+                  <label class="admin-pos-wide">地点
+                    <input data-invoice-field="location" type="text" placeholder="地址 / Venue / Area">
+                  </label>
+                  <label class="admin-pos-wide">菜单 / 送达 / 餐具要求
+                    <textarea data-invoice-field="customerNotes" rows="3" placeholder="例如：菜单以当天供应为准、餐具/运输另行确认、请在日期前支付订金。"></textarea>
+                  </label>
+                </div>
               </div>
               <details class="admin-pos-more">
-                <summary>更多顾客资料</summary>
+                <summary>更多资料</summary>
                 <div class="growth-form-grid admin-pos-form-grid">
                   <label>开单编号
                     <input data-invoice-field="invoiceNo" type="text" readonly>
@@ -234,14 +255,8 @@
                   <label>推荐码
                     <input data-invoice-field="referralCode" type="text" placeholder="NP90XXXX">
                   </label>
-                  <label>时间
-                    <input data-invoice-field="eventTime" type="time">
-                  </label>
                   <label>付款期限
                     <input data-invoice-field="paymentDue" type="date">
-                  </label>
-                  <label class="admin-pos-wide">顾客备注（会显示给顾客）
-                    <textarea data-invoice-field="customerNotes" rows="3" placeholder="例如：菜单以当天供应为准、餐具/运输另行确认、请在日期前支付订金。"></textarea>
                   </label>
                 </div>
               </details>
@@ -250,19 +265,44 @@
             <section class="admin-pos-card admin-pos-register">
               <div class="admin-pos-card-head">
                 <div>
-                  <span>ITEM CART</span>
-                  <h3>选择项目</h3>
+                  <span>STEP 2</span>
+                  <h3>选择套餐与自由项目</h3>
                 </div>
-                <button class="growth-button secondary" type="button" data-admin-invoice-add-item>+ 自定义项目</button>
               </div>
-              <div class="admin-pos-preset-strip" aria-label="常用项目">
-                <button type="button" data-admin-invoice-preset data-preset-name="活动餐饮 Set A" data-preset-qty="10" data-preset-price="29.90"><span>Set A</span><small>RM29.90 / pax</small></button>
-                <button type="button" data-admin-invoice-preset data-preset-name="活动餐饮 Set B" data-preset-qty="10" data-preset-price="32.90"><span>Set B</span><small>RM32.90 / pax</small></button>
-                <button type="button" data-admin-invoice-preset data-preset-name="活动餐饮 Set C" data-preset-qty="10" data-preset-price="39.90"><span>Set C</span><small>RM39.90 / pax</small></button>
-                <button type="button" data-admin-invoice-preset data-preset-name="活动餐饮 Set D" data-preset-qty="10" data-preset-price="43.90"><span>Set D</span><small>RM43.90 / pax</small></button>
-                <button type="button" data-admin-invoice-preset data-preset-name="包伙食配套" data-preset-qty="20" data-preset-price="15"><span>包伙食</span><small>20 餐 · RM15/餐</small></button>
-                <button type="button" data-admin-invoice-preset data-preset-name="场地布置订金" data-preset-qty="1" data-preset-price="300"><span>布置订金</span><small>预收安排 · RM300</small></button>
+
+              <div class="admin-pos-menu-card">
+                <div class="admin-pos-menu-card-head">
+                  <div>
+                    <span>套餐 Set</span>
+                    <strong>活动餐饮一键加入</strong>
+                  </div>
+                  <small>10 pax 起算；已有人数会自动套用。</small>
+                </div>
+                <div class="admin-pos-preset-strip admin-pos-set-grid" aria-label="活动餐饮套餐">
+                  <button type="button" data-admin-invoice-preset data-preset-group="set" data-preset-name="活动餐饮 Set A" data-preset-qty="10" data-preset-price="29.90"><span>Set A</span><small>主食2 · 肉2 · 菜2</small><b>RM29.90</b></button>
+                  <button type="button" data-admin-invoice-preset data-preset-group="set" data-preset-name="活动餐饮 Set B" data-preset-qty="10" data-preset-price="32.90"><span>Set B</span><small>主食2 · 肉1 · 菜2 · 海鲜1</small><b>RM32.90</b></button>
+                  <button type="button" data-admin-invoice-preset data-preset-group="set" data-preset-name="活动餐饮 Set C" data-preset-qty="10" data-preset-price="39.90"><span>Set C</span><small>主食2 · 肉2 · 菜2 · 海鲜1</small><b>RM39.90</b></button>
+                  <button type="button" data-admin-invoice-preset data-preset-group="set" data-preset-name="活动餐饮 Set D" data-preset-qty="10" data-preset-price="43.90"><span>Set D</span><small>主食2 · 肉2 · 海鲜1 · 菜3</small><b>RM43.90</b></button>
+                </div>
               </div>
+
+              <div class="admin-pos-free-head">
+                <div>
+                  <span>自由选项</span>
+                  <strong>加运输、餐具、额外菜式或临时项目</strong>
+                </div>
+                <div>
+                  <button class="growth-button secondary" type="button" data-admin-invoice-add-item>+ 加项目</button>
+                  <button class="growth-button secondary admin-pos-clear" type="button" data-admin-invoice-clear-items>清空</button>
+                </div>
+              </div>
+              <details class="admin-pos-quick-extra">
+                <summary>其他快捷项目</summary>
+                <div class="admin-pos-preset-strip admin-pos-mini-presets" aria-label="其他常用项目">
+                  <button type="button" data-admin-invoice-preset data-preset-name="包伙食配套" data-preset-qty="20" data-preset-price="15"><span>包伙食</span><small>20 餐 · RM15/餐</small></button>
+                  <button type="button" data-admin-invoice-preset data-preset-name="场地布置订金" data-preset-qty="1" data-preset-price="300"><span>布置订金</span><small>预收安排 · RM300</small></button>
+                </div>
+              </details>
               <div class="admin-invoice-item-table" aria-label="项目明细表">
                 <div class="admin-invoice-item-row admin-invoice-item-heading">
                   <span>#</span>

@@ -1043,8 +1043,27 @@ function adminInvoiceItemTemplate(item = {}, index = 0) {
 function renderAdminInvoiceItems(items = []) {
   const container = document.querySelector('[data-admin-invoice-items]');
   if (!container) return;
-  const source = Array.isArray(items) && items.length ? items : [{ description: '', qty: 1, unitPrice: 0 }];
+  const source = Array.isArray(items) ? items : [];
+  if (!source.length) {
+    container.innerHTML = '<div class="admin-invoice-empty">先选择 Set 套餐，或点击「+ 加项目」自由添加。</div>';
+    return;
+  }
   container.innerHTML = source.map((item, index) => adminInvoiceItemTemplate(item, index)).join('');
+}
+
+function clearAdminInvoiceItems() {
+  renderAdminInvoiceItems([]);
+}
+
+function setAdminInvoiceMinimumPax(minimumPax = 10) {
+  const paxField = invoiceField('pax');
+  if (!paxField) return;
+  const minimum = Math.max(1, invoiceQuantity(minimumPax));
+  const current = invoiceQuantity(paxField.value);
+  if (current >= minimum) return;
+  paxField.value = String(minimum);
+  paxField.dispatchEvent(new Event('input', { bubbles: true }));
+  paxField.dispatchEvent(new Event('change', { bubbles: true }));
 }
 
 function collectAdminInvoiceItems() {
@@ -1196,12 +1215,32 @@ function addAdminInvoiceItem(item = {}) {
   updateAdminInvoicePreview();
 }
 
+function replaceAdminInvoiceSetItem(item = {}) {
+  const current = collectAdminInvoiceItems();
+  const qty = Math.max(10, invoiceQuantity(item.qty !== undefined ? item.qty : 10));
+  setAdminInvoiceMinimumPax(qty);
+  const next = current.filter(entry => !/^活动餐饮 Set [A-D]/i.test(entry.description || ''));
+  next.push({
+    description: item.description || '活动餐饮 Set',
+    qty,
+    unitPrice: item.unitPrice !== undefined ? item.unitPrice : 0
+  });
+  renderAdminInvoiceItems(next);
+  updateAdminInvoicePreview();
+}
+
+function clearAdminInvoicePresetActive() {
+  document.querySelectorAll('[data-admin-invoice-preset].is-active').forEach(button => {
+    button.classList.remove('is-active');
+  });
+}
+
 function collectAdminInvoiceInput() {
   const invoiceNo = invoiceValue('invoiceNo') || generateInvoiceNo();
   const items = collectAdminInvoiceItems();
   const itemSubtotal = money(items.reduce((sum, item) => sum + Number(item.amount || 0), 0));
-  const itemsSummary = items.length ? buildInvoiceItemsSummary(items) : invoiceValue('itemsSummary');
-  const originalAmount = items.length ? itemSubtotal : invoiceNumber('originalAmount');
+  const itemsSummary = items.length ? buildInvoiceItemsSummary(items) : '';
+  const originalAmount = items.length ? itemSubtotal : 0;
   const deliveryFee = invoiceNumber('deliveryFee');
   const serviceFee = invoiceNumber('serviceFee');
   const discountAmount = invoiceNumber('discountAmount');
@@ -1334,7 +1373,8 @@ function resetAdminInvoiceForm() {
   invoiceField('serviceType').value = 'Event Catering';
   if (invoiceField('documentType')) invoiceField('documentType').value = 'invoice';
   if (invoiceField('paymentMethod')) invoiceField('paymentMethod').value = 'Bank Transfer';
-  renderAdminInvoiceItems([]);
+  clearAdminInvoiceItems();
+  clearAdminInvoicePresetActive();
   localStorage.removeItem(ADMIN_INVOICE_DRAFT_KEY);
   updateAdminInvoicePreview();
   setInvoiceMessage('已准备新开单。');
@@ -1737,28 +1777,51 @@ function bindAdmin() {
       addAdminInvoiceItem();
       return;
     }
+    const clearInvoiceItemsButton = event.target.closest('[data-admin-invoice-clear-items]');
+    if (clearInvoiceItemsButton) {
+      clearAdminInvoiceItems();
+      clearAdminInvoicePresetActive();
+      updateAdminInvoicePreview();
+      setInvoiceMessage('项目已清空，可以重新选择。');
+      return;
+    }
     const presetInvoiceButton = event.target.closest('[data-admin-invoice-preset]');
     if (presetInvoiceButton) {
       const presetQty = Number(presetInvoiceButton.dataset.presetQty) || 1;
       const currentPax = Number(invoiceValue('pax')) || 0;
-      const qty = currentPax || presetQty;
+      const isSetPreset = presetInvoiceButton.dataset.presetGroup === 'set';
+      const qty = isSetPreset ? Math.max(currentPax || presetQty, presetQty, 10) : (currentPax || presetQty);
       const paxField = invoiceField('pax');
-      if (paxField && !currentPax && presetQty) {
-        paxField.value = String(presetQty);
+      if (paxField && (!currentPax || (isSetPreset && currentPax < 10))) {
+        setAdminInvoiceMinimumPax(qty);
       }
-      addAdminInvoiceItem({
+      if (isSetPreset && invoiceField('serviceType')) {
+        invoiceField('serviceType').value = 'Event Catering';
+      }
+      const item = {
         description: presetInvoiceButton.dataset.presetName || presetInvoiceButton.textContent?.trim() || '项目',
         qty,
         unitPrice: Number(presetInvoiceButton.dataset.presetPrice) || 0
-      });
-      setInvoiceMessage('项目已加入开单明细。');
+      };
+      if (isSetPreset) {
+        clearAdminInvoicePresetActive();
+        presetInvoiceButton.classList.add('is-active');
+        replaceAdminInvoiceSetItem(item);
+        setInvoiceMessage('套餐已套用；活动餐饮 Set 会按 10 pax 起算。');
+      } else {
+        addAdminInvoiceItem(item);
+        setInvoiceMessage('项目已加入开单明细。');
+      }
       return;
     }
     const removeInvoiceItemButton = event.target.closest('[data-admin-invoice-remove-item]');
     if (removeInvoiceItemButton) {
       const row = removeInvoiceItemButton.closest('[data-admin-invoice-item]');
       row?.remove();
-      if (!adminInvoiceRows().length) renderAdminInvoiceItems([]);
+      if (!adminInvoiceRows().length) clearAdminInvoiceItems();
+      if (!collectAdminInvoiceItems().some(item => /^活动餐饮 Set [A-D]/i.test(item.description || ''))) {
+        clearAdminInvoicePresetActive();
+      }
       updateAdminInvoicePreview();
       return;
     }
