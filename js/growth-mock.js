@@ -82,6 +82,14 @@ Object.assign(translations.zh, {
   referralLevelTwo: '\u7b2c\u4e8c\u4ee3',
   referralLevelThree: '\u7b2c\u4e09\u4ee3',
   referralCompleted: '\u5df2\u5b8c\u6210\u8ba2\u5355\u4f1a\u5458',
+  referralCompletedShort: '\u5df2\u6210\u4ea4',
+  referralReadyBadge: '\u5df2\u5f00\u542f',
+  referralToolIntro: '\u6bcf\u4f4d\u4f1a\u5458\u90fd\u6709\u81ea\u5df1\u7684\u63a8\u8350\u7801\u3002\u670b\u53cb\u901a\u8fc7\u8fd9\u4e2a\u94fe\u63a5\u6ce8\u518c\u6216\u8be2\u4ef7\uff0c\u7cfb\u7edf\u4f1a\u81ea\u52a8\u8bb0\u5f55\u5230\u4f60\u540d\u4e0b\u3002',
+  referralLinkTitle: '\u4e13\u5c5e\u5206\u4eab\u94fe\u63a5',
+  copyCode: '\u590d\u5236\u63a8\u8350\u7801',
+  whatsappShareReferral: 'WhatsApp \u5206\u4eab',
+  referralShareNote: '\u5206\u4eab\u524d\u53ef\u4ee5\u590d\u5236\u94fe\u63a5\uff0c\u6216\u76f4\u63a5\u7528 WhatsApp \u53d1\u7ed9\u670b\u53cb\u3002',
+  referralNoCodeHelp: '\u7cfb\u7edf\u6b63\u5728\u4e3a\u4f60\u51c6\u5907\u63a8\u8350\u7801\uff0c\u8bf7\u5237\u65b0\u6216\u7a0d\u540e\u518d\u8bd5\u3002',
   rewards: '会员奖励',
   referral: '会员推荐',
   member: '会员中心',
@@ -237,6 +245,14 @@ Object.assign(translations.en, {
   referralLevelTwo: 'Level 2',
   referralLevelThree: 'Level 3',
   referralCompleted: 'Completed-order members',
+  referralCompletedShort: 'Completed',
+  referralReadyBadge: 'Ready',
+  referralToolIntro: 'Every member has a personal referral code. When friends register or enquire through this link, the system records them under your account.',
+  referralLinkTitle: 'Personal sharing link',
+  copyCode: 'Copy code',
+  whatsappShareReferral: 'Share by WhatsApp',
+  referralShareNote: 'Copy the link or send it directly to friends through WhatsApp.',
+  referralNoCodeHelp: 'The system is preparing your referral code. Please refresh or try again shortly.',
   memberMetaTitle: 'Member Centre | 90 PROJECT',
   memberHeroTitle: '90 PROJECT Member Centre',
   memberHeroDesc: 'Verify by mobile number, then manage profile details, order records, points, coupons, referral rewards and withdrawal requests in one place.',
@@ -636,9 +652,32 @@ function renderMemberDashboard() {
   const promoterBox = document.querySelector('[data-growth-promoter-box]');
   if (!promoterBox) return;
   if (promoter && code) {
-    promoterBox.innerHTML = `<span class="growth-badge">${esc(t('approved'))}</span><h3>${esc(t('code'))}</h3><code class="growth-code">${esc(code)}</code><p>${esc(t('share'))}:<br><a href="${esc(shareUrl(code))}">${esc(shareUrl(code))}</a></p><div class="growth-actions"><button class="growth-button" type="button" data-copy-growth="${esc(shareUrl(code))}">${esc(t('copy'))}</button><a class="growth-button secondary" target="_blank" rel="noopener" href="https://wa.me/60189490908?text=${encodeURIComponent(`${t('shareText')} ${shareUrl(code)}`)}">${esc(t('whatsapp'))}</a></div>`;
+    const referralLink = shareUrl(code);
+    const referralStats = summary.referralStats || calculateReferralStats(member.id, state);
+    const shareMessage = `${t('shareText')} ${referralLink}`;
+    promoterBox.innerHTML = `<div class="member-referral-tool">
+      <div class="member-referral-tool-head">
+        <span class="growth-badge">${esc(t('referralReadyBadge'))}</span>
+        <h3>${esc(t('code'))}</h3>
+        <p>${esc(t('referralToolIntro'))}</p>
+      </div>
+      <code class="growth-code member-referral-code">${esc(code)}</code>
+      <div class="growth-actions member-referral-actions">
+        <button class="growth-button" type="button" data-copy-growth="${esc(code)}">${esc(t('copyCode'))}</button>
+        <button class="growth-button secondary" type="button" data-copy-growth="${esc(referralLink)}">${esc(t('copy'))}</button>
+      </div>
+      <label class="member-referral-link-field">${esc(t('referralLinkTitle'))}<input readonly value="${esc(referralLink)}"></label>
+      <div class="member-referral-mini-grid">
+        <span><strong>${Number(referralStats.levelOne || 0)}</strong>${esc(t('referralLevelOne'))}</span>
+        <span><strong>${Number(referralStats.levelTwo || 0)}</strong>${esc(t('referralLevelTwo'))}</span>
+        <span><strong>${Number(referralStats.levelThree || 0)}</strong>${esc(t('referralLevelThree'))}</span>
+        <span><strong>${Number(referralStats.completed || 0)}</strong>${esc(t('referralCompletedShort'))}</span>
+      </div>
+      <a class="growth-button member-referral-whatsapp" target="_blank" rel="noopener" href="https://wa.me/60189490908?text=${encodeURIComponent(shareMessage)}">${esc(t('whatsappShareReferral'))}</a>
+      <p class="member-referral-note">${esc(t('referralShareNote'))}</p>
+    </div>`;
   } else {
-    promoterBox.innerHTML = `<h3>${esc(t('code'))}</h3><p>${esc(t('noData'))}</p>`;
+    promoterBox.innerHTML = `<h3>${esc(t('code'))}</h3><p>${esc(t('referralNoCodeHelp'))}</p>`;
   }
   const list = document.querySelector('[data-growth-order-list]');
   list.innerHTML = summary.orders.length ? summary.orders.map(order => `<li><span>${esc(order.serviceType || 'Service')}<br><small>${esc(order.status)}</small></span><b>${formatMoney(order.totalAmount)}</b></li>`).join('') : `<li>${esc(t('noData'))}</li>`;
@@ -1701,7 +1740,7 @@ function renderAdmin() {
       const promoter = snapshot.promoters.find(item => item.memberId === member.id);
       const referralCode = promoter ? codeByPromoterId.get(promoter.id) || '-' : '-';
       const directCount = snapshot.relations.filter(relation => relation.promoterMemberId === member.id && relation.status === 'active').length;
-      return `<tr><td><strong>${esc(member.name || '90 Member')}</strong><br><small>${esc(member.phone || '-')} · ${esc(member.email || '-')}</small></td><td>${esc(member.levelId || 'member')}<br>${statusBadge(member.status || 'active')}</td><td>${promoter ? `${statusBadge(promoter.status)}<br><small>${esc(referralCode)}</small><br><small>直属下线 ${directCount}</small>` : '<span class="growth-muted">等待生成</span>'}</td><td>${formatMoney(member.totalSpend || 0)}<br><small>${Number(member.orderCount || 0)} orders</small></td><td><b>${Number(member.pointsBalance || 0)}</b></td></tr>`;
+      return `<tr><td><strong>${esc(member.name || '90 Member')}</strong><br><small>${esc(member.phone || '-')} · ${esc(member.email || '-')}</small></td><td>${esc(member.levelId || 'member')}<br>${statusBadge(member.status || 'active')}</td><td>${promoter ? `<code>${esc(referralCode)}</code><br><small>直属下线 ${directCount}</small><br>${statusBadge(promoter.status)}` : '<span class="growth-muted">等待生成</span>'}</td><td>${formatMoney(member.totalSpend || 0)}<br><small>${Number(member.orderCount || 0)} orders</small></td><td><b>${Number(member.pointsBalance || 0)}</b></td></tr>`;
     }).join('') : '<tr><td colspan="5">没有符合筛选的会员。</td></tr>';
   }
   const relationRows = document.querySelector('[data-growth-admin-relations]');

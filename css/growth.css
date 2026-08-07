@@ -199,6 +199,7 @@ body.growth-page {
 .growth-table th, .growth-table td { padding: 11px 9px; border-bottom: 1px solid rgba(116, 77, 32, .14); text-align: left; vertical-align: top; }
 .growth-table th { color: #8d5b26; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; }
 .growth-table td { color: #51443a; }
+.growth-table code { display: inline-flex; margin-bottom: 4px; padding: 4px 7px; border: 1px solid rgba(116, 77, 32, .2); border-radius: 6px; color: #7d5122; background: #fff5df; font-weight: 900; letter-spacing: .08em; }
 .growth-inline-field { display: grid; gap: 5px; margin: 0 0 8px; color: #8d5b26; font-size: 11px; font-weight: 900; letter-spacing: .03em; }
 .growth-inline-field input,
 .growth-inline-field select,
@@ -561,6 +562,91 @@ body.growth-page {
   background: rgba(255, 255, 255, .72);
 }
 
+.member-referral-tool {
+  display: grid;
+  gap: 14px;
+}
+
+.member-referral-tool-head h3 {
+  margin: 10px 0 8px;
+  font-size: clamp(24px, 3vw, 32px);
+}
+
+.member-referral-tool-head p {
+  margin: 0;
+  color: #6f5f50;
+  line-height: 1.6;
+}
+
+.member-referral-code {
+  margin: 0;
+  font-size: clamp(24px, 4vw, 34px);
+  letter-spacing: .16em;
+}
+
+.member-referral-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.member-referral-link-field {
+  display: grid;
+  gap: 7px;
+  color: #8d5b26;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.member-referral-link-field input {
+  width: 100%;
+  box-sizing: border-box;
+  min-height: 44px;
+  padding: 10px 12px;
+  border: 1px solid rgba(116, 77, 32, .2);
+  border-radius: 8px;
+  color: #21150d;
+  background: #fffaf1;
+  font: inherit;
+  font-weight: 800;
+}
+
+.member-referral-mini-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.member-referral-mini-grid span {
+  display: grid;
+  gap: 2px;
+  min-height: 66px;
+  padding: 12px;
+  border: 1px solid rgba(116, 77, 32, .16);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, .72);
+  color: #6b5b4a;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.member-referral-mini-grid strong {
+  color: #17120d;
+  font-size: 25px;
+  line-height: 1;
+}
+
+.member-referral-whatsapp {
+  width: 100%;
+}
+
+.member-referral-note {
+  margin: 0;
+  color: #6f5f50;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
 .member-profile-layout {
   display: grid;
   grid-template-columns: minmax(0, 1.25fr) minmax(280px, .75fr);
@@ -687,5 +773,12 @@ body.growth-page {
   }
   .member-register-steps {
     grid-template-columns: 1fr;
+  }
+  .member-referral-actions,
+  .member-referral-mini-grid {
+    grid-template-columns: 1fr;
+  }
+  .member-referral-code {
+    font-size: 24px;
   }
 }
