@@ -168,6 +168,9 @@ Object.assign(translations.zh, {
   phoneVerified: '手机号码已验证，可以创建会员。',
   phoneVerifyFailed: '验证码不正确或已过期，请重新发送。',
   phoneChanged: '手机号码已更改，请重新验证。',
+  referralCodeLabel: '\u63a8\u8350\u7801\uff08\u5982\u6709\uff09',
+  referralCodePlaceholder: 'NP90XXXX',
+  referralCodeHelp: '\u5982\u679c\u4f60\u662f\u901a\u8fc7\u670b\u53cb\u94fe\u63a5\u8fdb\u6765\uff0c\u7cfb\u7edf\u4f1a\u81ea\u52a8\u5e26\u5165\u63a8\u8350\u7801\u3002',
   loggedIn: '已登录',
   helloPrefix: '你好，',
   dashboardIntro: '你的会员资料、询问记录、优惠和推荐奖励都在这里。',
@@ -273,6 +276,9 @@ Object.assign(translations.en, {
   phoneVerified: 'Phone number verified. You can create a member account.',
   phoneVerifyFailed: 'The code is incorrect or expired. Please resend it.',
   phoneChanged: 'Phone number changed. Please verify again.',
+  referralCodeLabel: 'Referral code (optional)',
+  referralCodePlaceholder: 'NP90XXXX',
+  referralCodeHelp: 'If you came from a friend link, the code will be filled automatically.',
   loggedIn: 'Logged in',
   helloPrefix: 'Hello, ',
   dashboardIntro: 'Your profile, enquiry records, coupons and referral rewards are here.',
@@ -545,7 +551,26 @@ function applyLanguage() {
 }
 
 function shareUrl(code) {
-  return `${location.origin}/referral.html?ref=${encodeURIComponent(code)}`;
+  if (location.protocol === 'file:') return `${new URL('member.html', location.href).href}?ref=${encodeURIComponent(code)}`;
+  const isLocalPreview = ['localhost', '127.0.0.1'].includes(location.hostname);
+  const memberPath = isLocalPreview ? '/member.html' : '/member';
+  return `${location.origin}${memberPath}?ref=${encodeURIComponent(code)}`;
+}
+
+function referralCodeFromUrl() {
+  return new URLSearchParams(location.search).get('ref') || '';
+}
+
+function captureReferralFromUrl(landingPage = location.pathname || '/') {
+  const code = referralCodeFromUrl();
+  if (!code) return null;
+  const result = api.captureReferralVisit(code, landingPage);
+  const normalized = String(code || '').trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
+  document.querySelectorAll('[name="referralCode"]').forEach(field => {
+    field.value = normalized;
+    field.dispatchEvent(new Event('input', { bubbles: true }));
+  });
+  return result;
 }
 
 function renderAuthState() {
@@ -715,6 +740,7 @@ function bindMemberPage() {
   const phoneInput = document.getElementById('registerPhoneInput');
   const codeInput = document.getElementById('registerPhoneCode');
   const codeButton = document.getElementById('sendPhoneCode');
+  captureReferralFromUrl('/member.html');
 
   phoneInput?.addEventListener('input', updatePhoneVerificationUi);
   codeButton?.addEventListener('click', async () => {
@@ -764,6 +790,8 @@ function bindMemberPage() {
     setBusy(registerForm, true, busyLabel('registerBusy'));
     const data = Object.fromEntries(new FormData(registerForm));
     data.phoneVerified = true;
+    const pending = api.pendingReferral?.();
+    data.referralCode = data.referralCode || pending?.code || referralCodeFromUrl();
     const result = api.registerMember(data);
     if (!result.ok) {
       setBusy(registerForm, false);
@@ -895,11 +923,12 @@ function bindMemberPage() {
 }
 
 function bindReferralPage() {
-  const code = new URLSearchParams(location.search).get('ref');
+  const code = referralCodeFromUrl();
   const status = document.querySelector('[data-referral-status]');
   if (code) {
-    const result = api.captureReferralVisit(code, '/referral.html');
-    if (status) status.textContent = result.ok ? `Referral code ${code.toUpperCase()} recorded for this visit.` : 'This referral link is not active.';
+    const result = captureReferralFromUrl('/referral.html');
+    const normalized = String(code || '').trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
+    if (status) status.textContent = result?.ok ? `Referral code ${normalized} recorded for this visit.` : 'This referral link is not active.';
   }
   bindPromoterApplicationForm();
 }

@@ -92,7 +92,7 @@ function normalize(value) {
 }
 
 function normalizeCode(value) {
-  return normalize(value).toUpperCase().replace(/[^A-Z0-9-]/g, '');
+  return normalize(value).toUpperCase().replace(/[^A-Z0-9]/g, '');
 }
 
 function normalizeStatus(value) {
@@ -108,7 +108,7 @@ function normalizeTier(value) {
 function memberProfilePayload(member = {}, user) {
   const userMeta = user?.user_metadata || {};
   const referralCode = normalizeCode(member.referralCode || member.referral_code || userMeta.referral_code)
-    || normalizeCode(`NP90-${String(user?.id || '').replace(/-/g, '').slice(0, 8)}`);
+    || normalizeCode(`NP90${String(user?.id || '').replace(/-/g, '').slice(0, 8)}`);
   const area = member.profile?.area || member.defaultArea || member.default_area || member.address || '';
   const defaultPackage = member.profile?.defaultPackage || member.defaultPackage || member.default_package || member.companyName || '';
   const preference = member.profile?.preference || member.preference || member.taste_preference || '';

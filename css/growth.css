@@ -497,6 +497,23 @@ body.growth-page {
 .phone-verify-status[data-tone="warn"] { color: #8d5b26; }
 .phone-verify-status[data-tone="bad"] { color: #9a3627; }
 
+.member-referral-input {
+  display: grid;
+  gap: 7px;
+  padding: 12px 14px;
+  border: 1px solid rgba(116, 77, 32, .14);
+  border-radius: 10px;
+  background: rgba(255, 253, 248, .74);
+}
+
+.member-referral-input p {
+  margin: 0;
+  color: #7b644d;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.45;
+}
+
 .member-dashboard-shell {
   color: #17120d;
 }

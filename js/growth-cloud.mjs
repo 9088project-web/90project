@@ -111,8 +111,8 @@ export function createGrowthCloud() {
         data: {
           full_name: member.name,
           phone: member.phone,
-          referral_code: member.referralCode || '',
-          referred_by_code: member.referredByCode || null
+          referral_code: normalizeCode(member.referralCode || ''),
+          referred_by_code: normalizeCode(member.referredByCode || '') || null
         }
       })
     });
