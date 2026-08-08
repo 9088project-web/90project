@@ -422,6 +422,7 @@ let cloudOrderLeadSync = { loading: false, lastAt: 0, count: 0, imported: 0, err
 let sharedGrowthStateSync = { loading: false, loaded: false, saving: false, lastAt: 0, error: '' };
 let adminGrowthSearch = '';
 let adminGrowthFilters = { order: 'all', withdrawal: 'all' };
+let adminInvoiceHistoryFilters = { query: '', status: 'all' };
 let phoneVerification = { phone: '', code: '', verified: false, cloudSession: null };
 
 function setText(selector, value) {
@@ -1170,7 +1171,11 @@ function adminInvoiceStatusText(status) {
     confirmed: '已确认',
     deposit_paid: '已收订金',
     completed: '已完成',
-    cancelled: '已取消'
+    service_completed: '已完成',
+    fully_paid: '已结清',
+    cancelled: '已取消',
+    refunded: '已退款',
+    partially_refunded: '部分退款'
   })[status] || status || '-';
 }
 
@@ -1500,6 +1505,7 @@ async function saveAdminInvoice(options = {}) {
     pax: data.pax,
     foodChoice: data.itemsSummary,
     itemsSummary: data.itemsSummary,
+    lineItems: data.items,
     budget: data.totalAmount,
     totalAmount: data.totalAmount,
     originalAmount: data.originalAmount,
@@ -1540,12 +1546,37 @@ async function saveAdminInvoice(options = {}) {
   return { ok: true, data, message, order: updated.order, cloudResult, stateResult };
 }
 
+function adminInvoiceItemsFromOrder(order = {}) {
+  if (Array.isArray(order.lineItems) && order.lineItems.length) {
+    return order.lineItems.map(item => {
+      const qty = invoiceQuantity(item.qty ?? 1) || 1;
+      const unitPrice = invoiceCleanNumber(item.unitPrice);
+      return {
+        description: String(item.description || '').trim(),
+        qty,
+        unitPrice,
+        amount: money(item.amount ?? qty * unitPrice)
+      };
+    }).filter(item => item.description || item.amount > 0);
+  }
+  const summary = String(order.itemsSummary || '').replace(/\n+/g, ' / ').replace(/\s+/g, ' ').trim();
+  if (!summary) return [];
+  const amount = money(order.originalAmount || order.totalAmount || 0);
+  return [{
+    description: summary.replace(/\b\d+\.\s*/g, '').trim() || '订单项目',
+    qty: 1,
+    unitPrice: amount,
+    amount
+  }];
+}
+
 function findAdminOrderWhatsApp(orderId) {
   const snapshot = api.adminSnapshot();
   const order = snapshot.orders.find(item => item.id === orderId);
   if (!order) return null;
   const member = snapshot.members.find(item => item.id === order.memberId);
   const relation = snapshot.relations.find(item => item.memberId === order.memberId);
+  const items = adminInvoiceItemsFromOrder(order);
   const data = {
     invoiceNo: order.invoiceNo || order.externalInquiryId || order.id,
     name: member?.name || '顾客',
@@ -1561,7 +1592,8 @@ function findAdminOrderWhatsApp(orderId) {
     pax: Number(order.pax) || 0,
     referralCode: relation?.referralCode || '',
     location: order.location || '',
-    itemsSummary: order.itemsSummary || '',
+    items,
+    itemsSummary: order.itemsSummary || buildInvoiceItemsSummary(items),
     originalAmount: money(order.originalAmount || order.totalAmount),
     deliveryFee: money(order.deliveryFee),
     serviceFee: money(order.extraLabourFee),
@@ -1574,6 +1606,148 @@ function findAdminOrderWhatsApp(orderId) {
   };
   const message = order.whatsappMessage || buildAdminInvoiceMessage(data);
   return { order, member, data, message, url: adminWhatsAppUrl(member?.phone, message) };
+}
+
+function adminOrderDisplayStatus(status) {
+  return ({
+    new: '待确认',
+    confirmed: '已确认',
+    deposit_paid: '已付订金',
+    service_completed: '已完成',
+    fully_paid: '已结清',
+    cancelled: '已取消',
+    refunded: '已退款',
+    partially_refunded: '部分退款'
+  })[status] || status || '-';
+}
+
+function adminOrderStatusClass(status) {
+  if (['service_completed', 'fully_paid'].includes(status)) return 'is-good';
+  if (['cancelled', 'refunded', 'partially_refunded'].includes(status)) return 'is-bad';
+  if (status === 'deposit_paid') return 'is-paid';
+  return 'is-waiting';
+}
+
+function adminHistoryDate(value) {
+  if (!value) return '-';
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? value : date.toLocaleDateString('zh-MY', { year: 'numeric', month: 'short', day: 'numeric' });
+}
+
+function fillAdminInvoiceForm(data = {}) {
+  Object.entries(data).forEach(([key, value]) => {
+    const field = invoiceField(key);
+    if (!field || Array.isArray(value)) return;
+    if (field.type === 'date' && String(value || '').includes('T')) field.value = String(value).slice(0, 10);
+    else field.value = value ?? '';
+  });
+  renderAdminInvoiceItems(Array.isArray(data.items) ? data.items : []);
+  clearAdminInvoicePresetActive();
+  updateAdminInvoicePreview();
+}
+
+function loadAdminInvoiceFromOrder(orderId) {
+  const found = findAdminOrderWhatsApp(orderId);
+  if (!found) {
+    setInvoiceMessage('找不到这张订单。', true);
+    return false;
+  }
+  const order = found.order;
+  const data = {
+    ...found.data,
+    companyName: '',
+    customerNotes: '',
+    adminNotes: order.adminNotes || '',
+    serviceFee: money(order.extraLabourFee),
+    paymentMethod: 'Bank Transfer',
+    paymentDue: '',
+    documentType: 'invoice'
+  };
+  fillAdminInvoiceForm(data);
+  document.querySelector('[data-admin-invoice-form]')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  setInvoiceMessage(`已载入 ${data.invoiceNo || '订单'}，可以修改后再保存或重发 WhatsApp。`);
+  return true;
+}
+
+function renderAdminInvoiceHistory(snapshot = api.adminSnapshot()) {
+  const list = document.querySelector('[data-admin-invoice-history]');
+  if (!list) return;
+  const memberById = new Map(snapshot.members.map(member => [member.id, member]));
+  const relationByMemberId = new Map(snapshot.relations.map(relation => [relation.memberId, relation]));
+  const query = String(adminInvoiceHistoryFilters.query || '').trim().toLowerCase();
+  const statusFilter = adminInvoiceHistoryFilters.status || 'all';
+  const orders = [...snapshot.orders].sort((a, b) => new Date(b.updatedAt || b.createdAt || 0) - new Date(a.updatedAt || a.createdAt || 0));
+  const visible = orders.filter(order => {
+    const member = memberById.get(order.memberId);
+    const relation = relationByMemberId.get(order.memberId);
+    const statusOk = statusFilter === 'all' || order.status === statusFilter;
+    const haystack = [
+      order.invoiceNo,
+      order.externalInquiryId,
+      order.serviceType,
+      order.location,
+      order.itemsSummary,
+      order.status,
+      member?.name,
+      member?.phone,
+      member?.email,
+      relation?.referralCode
+    ].map(value => String(value || '').toLowerCase());
+    return statusOk && (!query || haystack.some(value => value.includes(query)));
+  });
+  const total = visible.reduce((sum, order) => sum + Number(order.totalAmount || 0), 0);
+  const balance = visible.reduce((sum, order) => sum + Number(order.balanceAmount ?? Math.max(0, Number(order.totalAmount || 0) - Number(order.depositAmount || 0))), 0);
+  const countElement = document.querySelector('[data-admin-order-history-count]');
+  const totalElement = document.querySelector('[data-admin-order-history-total]');
+  const balanceElement = document.querySelector('[data-admin-order-history-balance]');
+  if (countElement) countElement.textContent = String(visible.length);
+  if (totalElement) totalElement.textContent = formatMoney(total);
+  if (balanceElement) balanceElement.textContent = formatMoney(balance);
+  const syncElement = document.querySelector('[data-admin-order-sync-status]');
+  if (syncElement) {
+    const syncText = sharedGrowthStateSync.saving ? '云端保存中'
+      : sharedGrowthStateSync.loading ? '云端读取中'
+        : sharedGrowthStateSync.error ? '云端同步失败'
+          : sharedGrowthStateSync.loaded ? '云端已同步'
+            : cloudReady ? '云端已连接' : '本地记录';
+    syncElement.textContent = syncText;
+    syncElement.classList.toggle('is-good', !sharedGrowthStateSync.error && (sharedGrowthStateSync.loaded || cloudReady));
+    syncElement.classList.toggle('is-bad', Boolean(sharedGrowthStateSync.error));
+  }
+  list.innerHTML = visible.length ? visible.map(order => {
+    const member = memberById.get(order.memberId);
+    const relation = relationByMemberId.get(order.memberId);
+    const invoiceNo = order.invoiceNo || order.externalInquiryId || order.id;
+    const balanceAmount = money(order.balanceAmount ?? Math.max(0, Number(order.totalAmount || 0) - Number(order.depositAmount || 0)));
+    const itemPreview = adminInvoiceItemsFromOrder(order).slice(0, 3).map(item => item.description).filter(Boolean).join(' · ') || order.itemsSummary || '暂无项目明细';
+    return `
+      <article class="admin-order-card">
+        <div class="admin-order-card-head">
+          <div>
+            <span>${esc(invoiceNo)}</span>
+            <h4>${esc(member?.name || '顾客')}</h4>
+            <p>${esc(member?.phone || '-')} ${relation?.referralCode ? `· 推荐码 ${esc(relation.referralCode)}` : ''}</p>
+          </div>
+          <mark class="${adminOrderStatusClass(order.status)}">${esc(adminOrderDisplayStatus(order.status))}</mark>
+        </div>
+        <div class="admin-order-card-meta">
+          <div><span>服务</span><strong>${esc(adminInvoiceServiceText(order.serviceType))}</strong></div>
+          <div><span>日期</span><strong>${esc(adminHistoryDate(order.eventDate || order.createdAt))}</strong></div>
+          <div><span>人数</span><strong>${Number(order.pax || 0) ? `${Number(order.pax)} pax` : '-'}</strong></div>
+          <div><span>总额</span><strong>${formatMoney(order.totalAmount)}</strong></div>
+          <div><span>订金</span><strong>${formatMoney(order.depositAmount)}</strong></div>
+          <div><span>余额</span><strong>${formatMoney(balanceAmount)}</strong></div>
+        </div>
+        <p class="admin-order-card-items">${esc(itemPreview)}</p>
+        <div class="admin-order-card-actions">
+          <button class="growth-button secondary" type="button" data-admin-load-invoice="${esc(order.id)}">载入修改</button>
+          <button class="growth-button secondary" type="button" data-copy-order-whatsapp="${esc(order.id)}">复制 WhatsApp</button>
+          ${member?.phone ? `<button class="growth-button" type="button" data-open-order-whatsapp="${esc(order.id)}">发给顾客</button>` : ''}
+          <button class="growth-button secondary" type="button" data-admin-print-order="${esc(order.id)}">打印收据</button>
+        </div>
+      </article>
+    `;
+  }).join('') : '<div class="admin-order-empty">还没有符合筛选的开单记录。保存一张订单后会出现在这里。</div>';
 }
 
 function orderStatusOptions(status) {
@@ -1776,6 +1950,7 @@ function renderAdmin() {
       return `<tr data-admin-order-row="${esc(item.id)}"><td class="admin-order-invoice"><strong>${esc(invoiceNo)}</strong><br><small>${esc(member?.name || item.memberId)} · ${esc(member?.phone || '-')}</small><br><small>${esc(item.externalInquiryId || item.source || '-')}</small></td><td><label class="growth-inline-field">服务<input data-order-field="serviceType" value="${esc(item.serviceType || '')}" ${locked ? 'disabled' : ''}></label><label class="growth-inline-field">状态<select data-order-field="status" ${locked ? 'disabled' : ''}>${orderStatusOptions(item.status)}</select></label>${relation ? `<small>推荐码 ${esc(relation.referralCode)}</small>` : ''}${eventLine ? `<br><small>${esc(eventLine)}</small>` : ''}${item.location ? `<br><small>${esc(item.location)}</small>` : ''}</td><td><label class="growth-inline-field">金额 RM<input data-order-field="totalAmount" type="number" min="0" step="0.01" value="${Number(item.totalAmount || 0).toFixed(2)}" ${locked ? 'disabled' : ''}></label><small>订金 ${formatMoney(item.depositAmount || 0)} · 余额 ${formatMoney(balanceAmount)}</small><br><small>合资格 ${formatMoney(eligibleAmountForAdmin(item))}</small><label class="growth-inline-field">备注<textarea data-order-field="adminNotes" rows="2" ${locked ? 'disabled' : ''}>${esc(item.adminNotes || '')}</textarea></label></td><td><div class="growth-admin-actions">${whatsappActions}${locked ? '<span class="growth-muted">已锁定</span>' : `<button class="growth-button secondary" data-save-order="${esc(item.id)}">保存订单</button>${canComplete ? `<button class="growth-button" data-complete-order="${esc(item.id)}">确认完成并计佣</button>` : ''}`}</div></td></tr>`;
     }).join('') : '<tr><td colspan="4">没有符合筛选的订单。</td></tr>';
   }
+  renderAdminInvoiceHistory(snapshot);
   const commissionRows = document.querySelector('[data-growth-admin-commissions]');
   const visibleCommissions = snapshot.commissions.filter(item => {
     const promoter = promoterById.get(item.promoterId);
@@ -1927,6 +2102,25 @@ function bindAdmin() {
       }
       return;
     }
+    const refreshInvoiceHistoryButton = event.target.closest('[data-admin-history-refresh]');
+    if (refreshInvoiceHistoryButton) {
+      setInvoiceMessage('正在同步云端开单记录...');
+      await loadSharedGrowthStateForAdmin();
+      await syncCloudOrderLeads(true);
+      renderAdmin();
+      setInvoiceMessage(sharedGrowthStateSync.error || cloudOrderLeadSync.error ? '云端同步暂时失败，请确认后台登录状态后再试。' : '云端开单记录已同步。', Boolean(sharedGrowthStateSync.error || cloudOrderLeadSync.error));
+      return;
+    }
+    const loadInvoiceButton = event.target.closest('[data-admin-load-invoice]');
+    if (loadInvoiceButton) {
+      loadAdminInvoiceFromOrder(loadInvoiceButton.dataset.adminLoadInvoice);
+      return;
+    }
+    const printOrderButton = event.target.closest('[data-admin-print-order]');
+    if (printOrderButton) {
+      if (loadAdminInvoiceFromOrder(printOrderButton.dataset.adminPrintOrder)) printAdminInvoiceReceipt();
+      return;
+    }
     const copyOrderWhatsAppButton = event.target.closest('[data-copy-order-whatsapp]');
     if (copyOrderWhatsAppButton) {
       const result = findAdminOrderWhatsApp(copyOrderWhatsAppButton.dataset.copyOrderWhatsapp);
@@ -2047,6 +2241,14 @@ function bindAdmin() {
   });
   invoiceForm?.addEventListener('input', () => updateAdminInvoicePreview());
   invoiceForm?.addEventListener('change', () => updateAdminInvoicePreview());
+  document.querySelector('[data-admin-order-history-search]')?.addEventListener('input', event => {
+    adminInvoiceHistoryFilters.query = event.target.value || '';
+    renderAdminInvoiceHistory();
+  });
+  document.querySelector('[data-admin-order-history-status]')?.addEventListener('change', event => {
+    adminInvoiceHistoryFilters.status = event.target.value || 'all';
+    renderAdminInvoiceHistory();
+  });
   document.querySelector('[data-growth-config-form]')?.addEventListener('submit', async event => {
     event.preventDefault();
     const config = api.getState().config;

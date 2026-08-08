@@ -36,6 +36,14 @@ const normalizePhone = value => String(value || '').replace(/\D/g, '');
 const normalizeReferralCode = value => String(value || '').trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
 const money = value => Math.round((Number(value) || 0) * 100) / 100;
 const dateValue = value => new Date(value || Date.now()).toISOString();
+const normalizeOrderLineItems = items => Array.isArray(items)
+  ? items.map(item => ({
+      description: String(item?.description || '').trim(),
+      qty: Number(item?.qty) || 1,
+      unitPrice: money(item?.unitPrice),
+      amount: money(item?.amount ?? (Number(item?.qty || 1) * Number(item?.unitPrice || 0)))
+    })).filter(item => item.description || item.unitPrice > 0 || item.amount > 0)
+  : [];
 
 export function createGrowthState() {
   return {
@@ -485,6 +493,7 @@ export function createGrowthApi(storage = defaultStorage(), options = {}) {
       location: input.location || enquiry.location,
       pax: Number(input.pax) || Number(enquiry.pax) || 0,
       itemsSummary: input.itemsSummary || input.foodChoice || '',
+      lineItems: normalizeOrderLineItems(input.lineItems),
       adminNotes: input.adminNotes || '',
       whatsappMessage: input.whatsappMessage || '',
       sentAt: input.sentAt || null,
@@ -558,7 +567,7 @@ export function createGrowthApi(storage = defaultStorage(), options = {}) {
     const current = read();
     const enquiry = current.enquiries.find(item => item.id === enquiryId && item.memberId === memberId);
     if (!enquiry) return { ok: false, reason: 'enquiry_not_found' };
-    const order = { id: id('order'), enquiryId, memberId, externalInquiryId: input.externalInquiryId || enquiry.externalInquiryId || '', invoiceNo: input.invoiceNo || input.externalInquiryId || enquiry.invoiceNo || enquiry.externalInquiryId || '', serviceType: input.serviceType || enquiry.serviceType, totalAmount: money(input.totalAmount), originalAmount: money(input.originalAmount || input.totalAmount), discountAmount: money(input.discountAmount), depositAmount: money(input.depositAmount), balanceAmount: money(input.balanceAmount), sstAmount: money(input.sstAmount), deliveryFee: money(input.deliveryFee), extraLabourFee: money(input.extraLabourFee), thirdPartyFee: money(input.thirdPartyFee), couponDiscount: money(input.couponDiscount), refundedAmount: 0, eventDate: input.eventDate || enquiry.eventDate || '', eventTime: input.eventTime || enquiry.eventTime || '', location: input.location || enquiry.location || '', pax: Number(input.pax) || Number(enquiry.pax) || 0, itemsSummary: input.itemsSummary || enquiry.foodChoice || '', adminNotes: input.adminNotes || '', whatsappMessage: input.whatsappMessage || '', sentAt: input.sentAt || null, status: input.status || 'confirmed', source: input.source || 'manual-order', createdAt: dateValue(now()), updatedAt: dateValue(now()), completedAt: null };
+    const order = { id: id('order'), enquiryId, memberId, externalInquiryId: input.externalInquiryId || enquiry.externalInquiryId || '', invoiceNo: input.invoiceNo || input.externalInquiryId || enquiry.invoiceNo || enquiry.externalInquiryId || '', serviceType: input.serviceType || enquiry.serviceType, totalAmount: money(input.totalAmount), originalAmount: money(input.originalAmount || input.totalAmount), discountAmount: money(input.discountAmount), depositAmount: money(input.depositAmount), balanceAmount: money(input.balanceAmount), sstAmount: money(input.sstAmount), deliveryFee: money(input.deliveryFee), extraLabourFee: money(input.extraLabourFee), thirdPartyFee: money(input.thirdPartyFee), couponDiscount: money(input.couponDiscount), refundedAmount: 0, eventDate: input.eventDate || enquiry.eventDate || '', eventTime: input.eventTime || enquiry.eventTime || '', location: input.location || enquiry.location || '', pax: Number(input.pax) || Number(enquiry.pax) || 0, itemsSummary: input.itemsSummary || enquiry.foodChoice || '', lineItems: normalizeOrderLineItems(input.lineItems), adminNotes: input.adminNotes || '', whatsappMessage: input.whatsappMessage || '', sentAt: input.sentAt || null, status: input.status || 'confirmed', source: input.source || 'manual-order', createdAt: dateValue(now()), updatedAt: dateValue(now()), completedAt: null };
     const next = clone(current);
     next.orders.unshift(order);
     audit(next, 'order.created', memberId, 'order', order.id, 'MOCK order');
@@ -584,6 +593,7 @@ export function createGrowthApi(storage = defaultStorage(), options = {}) {
     });
     if (input.status !== undefined && ORDER_STATUSES.includes(input.status)) target.status = input.status;
     if (input.adminNotes !== undefined) target.adminNotes = String(input.adminNotes || '').trim();
+    if (input.lineItems !== undefined) target.lineItems = normalizeOrderLineItems(input.lineItems);
     if (input.completedAt !== undefined) target.completedAt = input.completedAt || null;
     target.updatedAt = dateValue(now());
 
