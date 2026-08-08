@@ -392,6 +392,7 @@ export function createGrowthCloud() {
       input.itemsSummary ? `Items:\n${input.itemsSummary}` : '',
       input.originalAmount !== undefined ? `Original: RM${Number(input.originalAmount || 0).toFixed(2)}` : '',
       input.discountAmount ? `Discount: RM${Number(input.discountAmount || 0).toFixed(2)}` : '',
+      input.paymentStatus ? `Payment Status: ${input.paymentStatus}` : '',
       input.depositAmount ? `Deposit: RM${Number(input.depositAmount || 0).toFixed(2)}` : '',
       input.balanceAmount !== undefined ? `Balance: RM${Number(input.balanceAmount || 0).toFixed(2)}` : ''
     ].filter(Boolean).join('\n');

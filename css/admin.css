@@ -3418,10 +3418,71 @@ body.admin-page{min-height:100vh;overflow-x:hidden;background:radial-gradient(ci
   color:#e9d9bb;
   line-height:1.55;
 }
+.admin-order-card-followup{
+  display:grid;
+  grid-template-columns:180px minmax(0,1fr);
+  gap:12px;
+  align-items:center;
+  margin:0 0 14px;
+  padding:12px;
+  border:1px solid rgba(255,214,141,.18);
+  border-radius:15px;
+  background:rgba(0,0,0,.2);
+}
+.admin-order-card-followup span{
+  display:block;
+  margin-bottom:3px;
+  color:rgba(255,246,226,.62);
+  font-size:12px;
+  font-weight:900;
+  letter-spacing:.08em;
+  text-transform:uppercase;
+}
+.admin-order-card-followup strong{
+  color:#ffdc91;
+  font-size:18px;
+}
+.admin-order-card-followup strong.is-good{
+  color:#bff6d3;
+}
+.admin-order-card-followup strong.is-paid{
+  color:#f3d2a0;
+}
+.admin-order-card-followup p{
+  margin:0;
+  color:#fff6df;
+  font-weight:800;
+  line-height:1.45;
+}
 .admin-order-card-actions{
   display:flex;
   flex-wrap:wrap;
   gap:10px;
+}
+.admin-order-progress-actions{
+  margin-bottom:12px;
+  padding-bottom:12px;
+  border-bottom:1px solid rgba(255,214,141,.14);
+}
+.admin-order-action-btn{
+  min-height:42px;
+  padding:0 16px;
+  border:1px solid rgba(255,214,141,.28);
+  border-radius:999px;
+  color:#fff6df;
+  background:rgba(255,248,234,.08);
+  font-weight:900;
+  cursor:pointer;
+}
+.admin-order-action-btn:hover,
+.admin-order-action-btn:focus-visible{
+  border-color:rgba(255,214,141,.68);
+  background:rgba(255,214,141,.16);
+}
+.admin-order-action-btn.is-primary{
+  color:#140d08;
+  border-color:#f1c46c;
+  background:linear-gradient(135deg,#ffdf8b,#b87827);
 }
 .admin-order-card-actions .growth-button{
   min-height:42px;
@@ -3456,8 +3517,12 @@ body.admin-page{min-height:100vh;overflow-x:hidden;background:radial-gradient(ci
   }
   .admin-order-history-toolbar,
   .admin-order-history-summary,
-  .admin-order-card-meta{
+  .admin-order-card-meta,
+  .admin-order-card-followup{
     grid-template-columns:1fr;
+  }
+  .admin-order-action-btn{
+    width:100%;
   }
   .admin-order-card-actions .growth-button{
     width:100%;

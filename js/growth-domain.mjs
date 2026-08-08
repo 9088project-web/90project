@@ -579,7 +579,7 @@ export function createGrowthApi(storage = defaultStorage(), options = {}) {
     const current = read();
     const order = current.orders.find(item => item.id === orderId);
     if (!order) return { ok: false, reason: 'order_not_found' };
-    if (['service_completed', 'fully_paid', 'refunded', 'partially_refunded'].includes(order.status)) {
+    if (['service_completed', 'refunded', 'partially_refunded'].includes(order.status)) {
       return { ok: false, reason: 'order_locked' };
     }
 
@@ -663,7 +663,7 @@ export function createGrowthApi(storage = defaultStorage(), options = {}) {
     const current = read();
     const order = current.orders.find(item => item.id === orderId);
     if (!order || ['cancelled', 'refunded'].includes(order.status)) return { ok: false, reason: 'order_not_completable' };
-    if (['service_completed', 'fully_paid'].includes(order.status)) return { ok: false, reason: 'order_already_completed' };
+    if (order.status === 'service_completed' || (order.status === 'fully_paid' && order.completedAt)) return { ok: false, reason: 'order_already_completed' };
     const next = clone(current);
     const target = next.orders.find(item => item.id === orderId);
     target.status = 'service_completed';

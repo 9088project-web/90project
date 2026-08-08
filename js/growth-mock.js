@@ -1628,6 +1628,129 @@ function adminOrderStatusClass(status) {
   return 'is-waiting';
 }
 
+function adminOrderPaymentSummary(order) {
+  const total = money(order.totalAmount);
+  const deposit = money(order.depositAmount);
+  const balance = money(order.balanceAmount ?? Math.max(0, total - deposit));
+  if (!total) return { label: '未填写金额', className: 'is-waiting', balance };
+  if (balance <= 0) return { label: '已结清', className: 'is-good', balance };
+  if (deposit > 0) return { label: `已收 ${formatMoney(deposit)}`, className: 'is-paid', balance };
+  return { label: '未收款', className: 'is-waiting', balance };
+}
+
+function adminOrderNextStep(order) {
+  const status = String(order.status || '');
+  const total = money(order.totalAmount);
+  const deposit = money(order.depositAmount);
+  const balance = money(order.balanceAmount ?? Math.max(0, total - deposit));
+  if (['cancelled', 'refunded', 'partially_refunded'].includes(status)) return '这张订单已经结束，保留记录即可。';
+  if (status === 'service_completed' || order.completedAt) {
+    return balance > 0 ? `服务已完成，还需跟进余款 ${formatMoney(balance)}。` : '服务已完成，可以查看推荐佣金和会员记录。';
+  }
+  if (status === 'new') return '先确认订单，再发送 WhatsApp 给顾客。';
+  if (!total) return '先补上金额，系统才可以准确开单。';
+  if (deposit <= 0) return '下一步：收订金，或直接结清。';
+  if (balance > 0) return `下一步：跟进余款 ${formatMoney(balance)}，服务完成后再计佣。`;
+  return '下一步：服务完成后点击完成计佣。';
+}
+
+function adminOrderQuickActionButtons(order) {
+  const status = String(order.status || '');
+  const total = money(order.totalAmount);
+  const deposit = money(order.depositAmount);
+  const balance = money(order.balanceAmount ?? Math.max(0, total - deposit));
+  const isClosed = ['cancelled', 'refunded', 'partially_refunded'].includes(status);
+  const isCompleted = status === 'service_completed' || Boolean(order.completedAt);
+  const buttons = [];
+  if (status === 'new') {
+    buttons.push(`<button class="admin-order-action-btn" type="button" data-admin-order-quick-action="confirm" data-order-id="${esc(order.id)}">确认订单</button>`);
+  }
+  if (!isClosed && !isCompleted && total > 0 && deposit <= 0) {
+    buttons.push(`<button class="admin-order-action-btn" type="button" data-admin-order-quick-action="deposit" data-order-id="${esc(order.id)}">收订金</button>`);
+  }
+  if (!isClosed && !isCompleted && total > 0 && balance > 0) {
+    buttons.push(`<button class="admin-order-action-btn" type="button" data-admin-order-quick-action="paid" data-order-id="${esc(order.id)}">结清余额</button>`);
+  }
+  if (!isClosed && !isCompleted) {
+    buttons.push(`<button class="admin-order-action-btn is-primary" type="button" data-admin-order-quick-action="complete" data-order-id="${esc(order.id)}">完成计佣</button>`);
+  }
+  return buttons.join('');
+}
+
+function appendAdminOrderNote(order, note) {
+  const current = String(order.adminNotes || '').trim();
+  const stamp = new Date().toLocaleString('zh-MY', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' });
+  return [current, `[${stamp}] ${note}`].filter(Boolean).join('\n');
+}
+
+async function applyAdminOrderQuickAction(orderId, action) {
+  const snapshot = api.adminSnapshot();
+  const order = snapshot.orders.find(item => item.id === orderId);
+  if (!order) {
+    setInvoiceMessage('找不到这张订单。', true);
+    return;
+  }
+  const total = money(order.totalAmount);
+  const deposit = money(order.depositAmount);
+  const balance = money(order.balanceAmount ?? Math.max(0, total - deposit));
+  let payload = null;
+  let result = null;
+  if (action === 'confirm') {
+    payload = {
+      status: 'confirmed',
+      adminNotes: appendAdminOrderNote(order, '订单已确认。')
+    };
+    result = api.updateOrder(orderId, payload, 'admin-order-center');
+  } else if (action === 'deposit') {
+    const defaultDeposit = Math.min(total, Math.max(50, Math.ceil(total * 0.3)));
+    const input = window.prompt('请输入收到的订金金额', defaultDeposit.toFixed(2));
+    if (input === null) return;
+    const received = money(Number(input));
+    if (received <= 0) {
+      setInvoiceMessage('订金金额必须大过 RM0。', true);
+      return;
+    }
+    const nextDeposit = money(Math.min(total, deposit + received));
+    payload = {
+      status: order.status === 'new' ? 'confirmed' : order.status,
+      paymentStatus: nextDeposit >= total ? 'fully_paid' : 'deposit_paid',
+      depositAmount: nextDeposit,
+      balanceAmount: Math.max(0, money(total - nextDeposit)),
+      adminNotes: appendAdminOrderNote(order, `已收订金 ${formatMoney(received)}。`)
+    };
+    result = api.updateOrder(orderId, payload, 'admin-order-center');
+  } else if (action === 'paid') {
+    payload = {
+      status: order.status === 'new' ? 'confirmed' : order.status,
+      paymentStatus: 'fully_paid',
+      depositAmount: total,
+      balanceAmount: 0,
+      adminNotes: appendAdminOrderNote(order, `订单已结清，原余额 ${formatMoney(balance)}。`)
+    };
+    result = api.updateOrder(orderId, payload, 'admin-order-center');
+  } else if (action === 'complete') {
+    if (balance > 0 && !window.confirm(`这张订单还有余款 ${formatMoney(balance)}。确定要完成并计算推荐佣金吗？`)) return;
+    result = api.completeOrder(orderId, 'admin-order-center');
+    payload = result.ok ? { status: result.order.status, completedAt: result.order.completedAt } : null;
+  }
+  if (!result?.ok) {
+    setInvoiceMessage(`订单无法更新：${result?.reason || 'unknown'}`, true);
+    renderAdmin();
+    return;
+  }
+  const cloudResult = await syncOrderUpdateToCloud(result.order, payload || {});
+  const stateResult = await saveSharedGrowthStateForAdmin();
+  const synced = cloudSyncOk(cloudResult) && cloudSyncOk(stateResult, false);
+  renderAdmin();
+  const actionLabel = ({
+    confirm: '订单已确认',
+    deposit: '订金已记录',
+    paid: '余额已结清',
+    complete: '服务已完成，推荐佣金已计算'
+  })[action] || '订单已更新';
+  setInvoiceMessage(synced ? `${actionLabel}，并已同步云端。` : `${actionLabel}，本次云端同步暂时失败。`, !synced);
+}
+
 function adminHistoryDate(value) {
   if (!value) return '-';
   const date = new Date(value);
@@ -1719,6 +1842,8 @@ function renderAdminInvoiceHistory(snapshot = api.adminSnapshot()) {
     const relation = relationByMemberId.get(order.memberId);
     const invoiceNo = order.invoiceNo || order.externalInquiryId || order.id;
     const balanceAmount = money(order.balanceAmount ?? Math.max(0, Number(order.totalAmount || 0) - Number(order.depositAmount || 0)));
+    const payment = adminOrderPaymentSummary(order);
+    const quickActions = adminOrderQuickActionButtons(order);
     const itemPreview = adminInvoiceItemsFromOrder(order).slice(0, 3).map(item => item.description).filter(Boolean).join(' · ') || order.itemsSummary || '暂无项目明细';
     return `
       <article class="admin-order-card">
@@ -1738,7 +1863,15 @@ function renderAdminInvoiceHistory(snapshot = api.adminSnapshot()) {
           <div><span>订金</span><strong>${formatMoney(order.depositAmount)}</strong></div>
           <div><span>余额</span><strong>${formatMoney(balanceAmount)}</strong></div>
         </div>
+        <div class="admin-order-card-followup">
+          <div>
+            <span>收款状态</span>
+            <strong class="${esc(payment.className)}">${esc(payment.label)}</strong>
+          </div>
+          <p>${esc(adminOrderNextStep(order))}</p>
+        </div>
         <p class="admin-order-card-items">${esc(itemPreview)}</p>
+        ${quickActions ? `<div class="admin-order-card-actions admin-order-progress-actions">${quickActions}</div>` : ''}
         <div class="admin-order-card-actions">
           <button class="growth-button secondary" type="button" data-admin-load-invoice="${esc(order.id)}">载入修改</button>
           <button class="growth-button secondary" type="button" data-copy-order-whatsapp="${esc(order.id)}">复制 WhatsApp</button>
@@ -1793,6 +1926,7 @@ async function syncOrderUpdateToCloud(order, input = {}) {
     extraLabourFee: input.extraLabourFee ?? order.extraLabourFee ?? 0,
     depositAmount: input.depositAmount ?? order.depositAmount ?? 0,
     balanceAmount: input.balanceAmount ?? order.balanceAmount ?? 0,
+    paymentStatus: input.paymentStatus ?? order.paymentStatus ?? '',
     whatsappMessage: input.whatsappMessage ?? order.whatsappMessage ?? ''
   }, token);
 }
@@ -2145,6 +2279,11 @@ function bindAdmin() {
       }
       window.open(result.url, '_blank', 'noopener');
       setMessage('已打开这张订单的 WhatsApp。');
+      return;
+    }
+    const orderQuickActionButton = event.target.closest('[data-admin-order-quick-action]');
+    if (orderQuickActionButton) {
+      await applyAdminOrderQuickAction(orderQuickActionButton.dataset.orderId, orderQuickActionButton.dataset.adminOrderQuickAction);
       return;
     }
     const exportButton = event.target.closest('[data-growth-export]');
