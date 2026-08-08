@@ -7,7 +7,7 @@
   <title>内容管理后台｜九零食刻 90 PROJECT</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/remixicon@4.6.0/fonts/remixicon.css" />
   <link rel="stylesheet" href="css/style.css?v=20260731-member-whatsapp" />
-  <link rel="stylesheet" href="css/admin.css?v=20260803-quick-order" />
+  <link rel="stylesheet" href="css/admin.css?v=20260808-admin-drawers" />
   <link rel="stylesheet" href="css/growth.css?v=20260730-admin-sync" />
 </head>
 <body class="admin-page">
@@ -68,11 +68,18 @@
             <button type="button" data-admin-panel-tab="pages">独立服务页</button>
           </div>
         </details>
-        <div class="admin-nav-cluster">
-          <div class="admin-nav-cluster-head">
-            <span>运营管理</span>
-            <small>顾客 / 会员 / 增长</small>
-          </div>
+        <details class="admin-nav-cluster admin-nav-drawer" data-admin-nav-drawer="operations">
+          <summary class="admin-nav-drawer-summary">
+            <span class="admin-nav-drawer-title">
+              <strong>运营管理</strong>
+              <small>顾客 / 会员 / 增长</small>
+            </span>
+            <span class="admin-nav-drawer-current">
+              <i class="ri-briefcase-4-line" aria-hidden="true"></i>
+              <span data-admin-drawer-current="operations">打开选择</span>
+            </span>
+            <i class="ri-arrow-down-s-line admin-nav-drawer-icon" aria-hidden="true"></i>
+          </summary>
           <div class="admin-nav-tabs">
             <button type="button" data-admin-panel-tab="orders">开单给顾客</button>
             <button type="button" data-admin-panel-tab="inquiries">顾客询问</button>
@@ -80,7 +87,7 @@
             <button type="button" data-admin-panel-tab="tracking">转化追踪</button>
             <button type="button" data-admin-panel-tab="growth">增长系统</button>
           </div>
-        </div>
+        </details>
       </div>
 
       <section class="admin-section" data-admin-panel="site">
@@ -391,8 +398,8 @@
           </div>
 
           <div class="admin-invoice-actions">
-            <button class="growth-button" type="submit">保存订单</button>
-            <button class="growth-button" type="button" data-admin-invoice-open>WhatsApp 发送</button>
+            <button class="growth-button" type="button" data-admin-invoice-open>保存并 WhatsApp</button>
+            <button class="growth-button secondary" type="submit">只保存</button>
             <button class="growth-button secondary" type="button" data-admin-invoice-copy>复制文案</button>
             <button class="growth-button secondary" type="button" data-admin-invoice-print>打印 / PDF</button>
             <button class="growth-button secondary" type="button" data-admin-new-invoice>新单</button>
@@ -540,7 +547,7 @@
     </section>
   </main>
 
-  <script src="js/app.js?v=20260731-pos-command"></script>
+  <script src="js/app.js?v=20260808-admin-drawers"></script>
   <script type="module" src="js/growth-mock.js?v=20260731-pos-command"></script>
 </body>
 </html>

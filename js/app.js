@@ -5489,13 +5489,17 @@ function setAdminPanel(panel = 'site') {
   document.querySelectorAll('[data-admin-panel]').forEach(section => {
     section.hidden = section.dataset.adminPanel !== panel;
   });
-  const contentPanelIds = new Set(['site', 'meal', 'catering', 'media', 'pages']);
-  const contentDrawerLabel = document.querySelector('[data-admin-drawer-current="site-content"]');
-  if (contentDrawerLabel) {
-    contentDrawerLabel.textContent = contentPanelIds.has(panel) && activeButton
+  const drawerGroups = [
+    { id: 'site-content', panels: new Set(['site', 'meal', 'catering', 'media', 'pages']) },
+    { id: 'operations', panels: new Set(['orders', 'inquiries', 'members', 'tracking', 'growth']) }
+  ];
+  drawerGroups.forEach(group => {
+    const drawerLabel = document.querySelector(`[data-admin-drawer-current="${group.id}"]`);
+    if (!drawerLabel) return;
+    drawerLabel.textContent = group.panels.has(panel) && activeButton
       ? activeButton.textContent.trim()
       : '打开选择';
-  }
+  });
 }
 
 function renderAdminState() {
