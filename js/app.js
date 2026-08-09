@@ -6093,7 +6093,10 @@ function setMobileMenu(open) {
 if (menuToggle && navLinks) {
   menuToggle.setAttribute('aria-expanded', 'false');
   menuToggle.innerHTML = '<span aria-hidden="true">☰</span>';
-  menuToggle.addEventListener('click', () => setMobileMenu(!navLinks.classList.contains('open')));
+  menuToggle.addEventListener('click', event => {
+    event.stopPropagation();
+    setMobileMenu(!navLinks.classList.contains('open'));
+  });
   navLinks.querySelectorAll('a').forEach(anchor => {
     anchor.addEventListener('click', () => setMobileMenu(false));
   });

@@ -6,6 +6,22 @@ function send(response, status, payload) {
   response.status(status).json(payload);
 }
 
+function applyCors(request, response) {
+  const origin = String(header(request, 'origin') || '');
+  const allowedOrigins = new Set([
+    'https://90project.online',
+    'https://www.90project.online',
+    'http://127.0.0.1:3050',
+    'http://localhost:3050'
+  ]);
+  if (allowedOrigins.has(origin)) {
+    response.setHeader('Access-Control-Allow-Origin', origin);
+    response.setHeader('Vary', 'Origin');
+  }
+  response.setHeader('Access-Control-Allow-Methods', 'GET,POST,PUT,OPTIONS');
+  response.setHeader('Access-Control-Allow-Headers', 'Content-Type,X-Admin-Email,X-Admin-Password');
+}
+
 function readableCloudMessage(value, fallback = 'Member cloud sync failed.') {
   let text = String(value || '').trim();
   if (text.startsWith('{')) {
@@ -263,6 +279,7 @@ async function updateReferralRewardAsAdmin(body) {
 }
 
 module.exports = async function handler(request, response) {
+  applyCors(request, response);
   if (request.method === 'OPTIONS') return send(response, 204, {});
 
   try {
