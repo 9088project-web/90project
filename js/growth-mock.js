@@ -1204,6 +1204,65 @@ function updateAdminInvoiceKpis(data) {
   set('deposit', formatMoney(data.depositAmount));
   set('balance', formatMoney(data.balanceAmount));
   set('paymentStatus', paymentText);
+  syncAdminInvoiceStage(data);
+}
+
+function adminInvoiceStageFromData(data = {}) {
+  const status = String(data.status || '');
+  const documentType = String(data.documentType || '');
+  if (documentType === 'receipt' || status === 'fully_paid') return 'receipt';
+  if (status === 'service_completed' || status === 'completed') return 'complete';
+  if (status === 'deposit_paid' || Number(data.depositAmount || 0) > 0) return 'deposit';
+  if (status === 'confirmed') return 'confirm';
+  return 'quote';
+}
+
+function syncAdminInvoiceStage(data = {}) {
+  const stage = adminInvoiceStageFromData(data);
+  document.querySelectorAll('[data-admin-order-stage]').forEach(button => {
+    const active = button.dataset.adminOrderStage === stage;
+    button.classList.toggle('is-active', active);
+    button.setAttribute('aria-pressed', active ? 'true' : 'false');
+  });
+}
+
+function applyAdminInvoiceStage(stage) {
+  const statusField = invoiceField('status');
+  const documentField = invoiceField('documentType');
+  const depositField = invoiceField('depositAmount');
+  const current = collectAdminInvoiceInput();
+  const total = Number(current.totalAmount || 0);
+  let message = '开单阶段已更新。';
+
+  if (stage === 'quote') {
+    if (statusField) statusField.value = 'new';
+    if (documentField) documentField.value = 'quotation';
+    message = '已切换成报价单，可以先发给顾客确认。';
+  } else if (stage === 'confirm') {
+    if (statusField) statusField.value = 'confirmed';
+    if (documentField) documentField.value = 'invoice';
+    message = '订单已标记为确认，可以收订金或安排服务。';
+  } else if (stage === 'deposit') {
+    if (statusField) statusField.value = 'deposit_paid';
+    if (documentField) documentField.value = 'invoice';
+    if (depositField && total > 0 && !(Number(depositField.value) > 0)) {
+      const suggestedDeposit = Math.min(total, Math.max(50, total * 0.3));
+      depositField.value = suggestedDeposit.toFixed(2);
+    }
+    message = total > 0 ? '已进入订金阶段，系统已准备付款余额。' : '请先加入项目和金额，再记录订金。';
+  } else if (stage === 'complete') {
+    if (statusField) statusField.value = 'service_completed';
+    if (documentField) documentField.value = 'invoice';
+    message = '服务已标记完成，可以检查余额并发收据。';
+  } else if (stage === 'receipt') {
+    if (statusField) statusField.value = 'fully_paid';
+    if (documentField) documentField.value = 'receipt';
+    if (depositField && total > 0) depositField.value = total.toFixed(2);
+    message = total > 0 ? '已切换成收据，付款状态为结清。' : '请先加入项目和金额，再生成收据。';
+  }
+
+  updateAdminInvoicePreview();
+  setInvoiceMessage(message);
 }
 
 function renderAdminInvoiceReceipt(data) {
@@ -1442,9 +1501,9 @@ function resetAdminInvoiceForm() {
   invoiceField('depositAmount').value = '0';
   if (invoiceField('deliveryFee')) invoiceField('deliveryFee').value = '0';
   if (invoiceField('serviceFee')) invoiceField('serviceFee').value = '0';
-  invoiceField('status').value = 'confirmed';
+  invoiceField('status').value = 'new';
   invoiceField('serviceType').value = 'Event Catering';
-  if (invoiceField('documentType')) invoiceField('documentType').value = 'invoice';
+  if (invoiceField('documentType')) invoiceField('documentType').value = 'quotation';
   if (invoiceField('paymentMethod')) invoiceField('paymentMethod').value = 'Bank Transfer';
   clearAdminInvoiceItems();
   clearAdminInvoicePresetActive();
@@ -2147,6 +2206,11 @@ function bindAdmin() {
     const newInvoiceButton = event.target.closest('[data-admin-new-invoice]');
     if (newInvoiceButton) {
       resetAdminInvoiceForm();
+      return;
+    }
+    const orderStageButton = event.target.closest('[data-admin-order-stage]');
+    if (orderStageButton) {
+      applyAdminInvoiceStage(orderStageButton.dataset.adminOrderStage || 'quote');
       return;
     }
     const addInvoiceItemButton = event.target.closest('[data-admin-invoice-add-item]');

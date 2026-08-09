@@ -5040,6 +5040,16 @@ function showAdminMessage(message, isError = false) {
   adminMessage.style.color = isError ? '#ffb4a6' : '#ffdf9a';
 }
 
+function setAdminSaveStatus(state = 'idle', title = '', detail = '') {
+  const status = document.querySelector('[data-admin-save-status]');
+  if (!status) return;
+  const titleElement = status.querySelector('strong');
+  const detailElement = status.querySelector('p');
+  status.dataset.state = state;
+  if (titleElement) titleElement.textContent = title || '等待保存';
+  if (detailElement) detailElement.textContent = detail || '保存后，网站、后台和线上版本会读取同一份最新内容。';
+}
+
 function adminRowValue(row, selector) {
   return row.querySelector(selector)?.value?.trim() || '';
 }
@@ -6638,6 +6648,7 @@ adminMembers?.addEventListener('change', event => {
 });
 
 saveAdminContent?.addEventListener('click', async () => {
+  setAdminSaveStatus('saving', '正在同步云端', '正在把后台内容保存到云端。');
   const content = collectAdminContent();
   saveEditableContent(content);
   updateStaticLanguage();
@@ -6647,16 +6658,25 @@ saveAdminContent?.addEventListener('click', async () => {
   renderAdminEditor();
   try {
     const cloudSaved = await saveAdminContentToCloud(content);
+    setAdminSaveStatus(
+      cloudSaved ? 'done' : 'local',
+      cloudSaved ? '云端已同步' : '只保存本机',
+      cloudSaved
+        ? '网站、后台和线上版本会读取同一份最新内容。'
+        : '本机内容已更新；请重新登录后台后再保存一次，让云端同步。'
+    );
     showAdminMessage(cloudSaved
       ? '内容已保存到云端，网站会读取同一份最新内容。'
       : '内容已更新并保留本地备份；云端暂时未连接。请重新登录后台后再保存一次。');
   } catch (error) {
     console.warn('Supabase admin content save failed', error);
+    setAdminSaveStatus('error', '云端同步失败', '本机已保留备份；请重新登录后台后再保存一次。');
     showAdminMessage('内容已保留本地备份，但云端同步失败。请重新登录后台；如果仍失败，再确认 Supabase 表和 Vercel 环境变量。', true);
   }
 });
 
 resetAdminContent?.addEventListener('click', async () => {
+  setAdminSaveStatus('saving', '正在恢复并同步', '正在恢复默认内容并保存到云端。');
   const defaults = defaultAdminContent();
   saveEditableContent(defaults);
   updateStaticLanguage();
@@ -6666,11 +6686,19 @@ resetAdminContent?.addEventListener('click', async () => {
   renderAdminEditor();
   try {
     const cloudSaved = await saveAdminContentToCloud(defaults);
+    setAdminSaveStatus(
+      cloudSaved ? 'done' : 'local',
+      cloudSaved ? '默认内容已同步' : '默认内容只保存本机',
+      cloudSaved
+        ? '网站、后台和线上版本会读取同一份默认内容。'
+        : '默认内容已恢复；请重新登录后台后再保存一次，让云端同步。'
+    );
     showAdminMessage(cloudSaved
       ? '默认内容已保存到云端，网站会读取同一份内容。'
       : '已恢复默认内容并保留本地备份；云端暂时未连接。请重新登录后台后再保存一次。');
   } catch (error) {
     console.warn('Supabase admin content reset failed', error);
+    setAdminSaveStatus('error', '云端同步失败', '本机已恢复默认内容；请重新登录后台后再保存一次。');
     showAdminMessage('已恢复本地默认内容，但云端同步失败。请重新登录后台；如果仍失败，再确认 Supabase 表和 Vercel 环境变量。', true);
   }
 });

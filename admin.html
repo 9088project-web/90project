@@ -90,6 +90,14 @@
         </details>
       </div>
 
+      <div class="admin-sync-card" data-admin-save-status data-state="idle" aria-live="polite">
+        <div>
+          <span>云端同步</span>
+          <strong>等待保存</strong>
+        </div>
+        <p>保存后，网站、后台和线上版本会读取同一份最新内容。</p>
+      </div>
+
       <section class="admin-section" data-admin-panel="site">
         <div class="admin-section-head"><div><h2>全站文字与联系方式</h2><p>首页导航、Hero、套餐、服务卡、表单、FAQ、CTA、电话号码和页脚都可以编辑。</p></div></div>
         <div class="admin-site-rows" id="adminSiteRows"></div>
@@ -177,6 +185,34 @@
             <div><span>余额</span><strong data-admin-invoice-kpi="balance">RM0.00</strong></div>
           </div>
 
+          <div class="admin-order-flow-strip" data-admin-order-flow aria-label="开单流程">
+            <button type="button" class="is-active" data-admin-order-stage="quote">
+              <span>01</span>
+              <strong>报价</strong>
+              <small>发给顾客</small>
+            </button>
+            <button type="button" data-admin-order-stage="confirm">
+              <span>02</span>
+              <strong>确认</strong>
+              <small>顾客确认</small>
+            </button>
+            <button type="button" data-admin-order-stage="deposit">
+              <span>03</span>
+              <strong>订金</strong>
+              <small>记录收款</small>
+            </button>
+            <button type="button" data-admin-order-stage="complete">
+              <span>04</span>
+              <strong>完成</strong>
+              <small>服务结束</small>
+            </button>
+            <button type="button" data-admin-order-stage="receipt">
+              <span>05</span>
+              <strong>收据</strong>
+              <small>结清打印</small>
+            </button>
+          </div>
+
           <div class="admin-pos-workspace">
             <section class="admin-pos-card admin-pos-customer">
               <div class="admin-pos-card-head">
@@ -243,6 +279,8 @@
                     <select data-invoice-field="status">
                       <option value="confirmed">已确认</option>
                       <option value="deposit_paid">已付订金</option>
+                      <option value="service_completed">已完成</option>
+                      <option value="fully_paid">已结清</option>
                       <option value="new">待确认</option>
                       <option value="cancelled">已取消</option>
                     </select>
