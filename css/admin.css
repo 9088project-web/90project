@@ -2952,6 +2952,50 @@ body.admin-page{min-height:100vh;overflow-x:hidden;background:radial-gradient(ci
 .admin-section[data-admin-panel="orders"] .admin-pos-quick-extra .admin-pos-mini-presets{
   padding:0 14px 14px;
 }
+.admin-section[data-admin-panel="orders"] .admin-pos-service-drawer{
+  margin:0 14px 14px;
+  padding:0;
+  border:1px solid rgba(139,99,45,.2);
+  border-radius:16px;
+  background:#fff8ec;
+}
+.admin-section[data-admin-panel="orders"] .admin-pos-service-drawer>summary,
+.admin-section[data-admin-panel="orders"] .admin-pos-preview-drawer>summary{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  min-height:48px;
+  padding:0 16px;
+  color:#7a4d19;
+  cursor:pointer;
+  font-weight:950;
+}
+.admin-section[data-admin-panel="orders"] .admin-pos-service-drawer>summary::after,
+.admin-section[data-admin-panel="orders"] .admin-pos-preview-drawer>summary::after{
+  content:"+";
+  display:grid;
+  width:28px;
+  height:28px;
+  place-items:center;
+  border:1px solid rgba(139,99,45,.2);
+  border-radius:999px;
+  color:#8a5418;
+  background:#fffdf8;
+}
+.admin-section[data-admin-panel="orders"] .admin-pos-service-drawer[open]>summary::after,
+.admin-section[data-admin-panel="orders"] .admin-pos-preview-drawer[open]>summary::after{
+  content:"-";
+}
+.admin-section[data-admin-panel="orders"] .admin-pos-service-drawer .admin-pos-fieldset-head,
+.admin-section[data-admin-panel="orders"] .admin-pos-service-drawer .admin-pos-form-grid{
+  margin-inline:14px;
+}
+.admin-section[data-admin-panel="orders"] .admin-pos-service-drawer .admin-pos-fieldset-head{
+  padding-top:2px;
+}
+.admin-section[data-admin-panel="orders"] .admin-pos-service-drawer .admin-pos-form-grid{
+  padding-bottom:14px;
+}
 .admin-section[data-admin-panel="orders"] .admin-pos-simplified .admin-invoice-item-table{
   margin:0 14px 14px;
   overflow:hidden;

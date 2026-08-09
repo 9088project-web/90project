@@ -6,6 +6,20 @@ function send(response, status, payload) {
   response.status(status).json(payload);
 }
 
+function readableCloudMessage(value, fallback = 'Member cloud sync failed.') {
+  let text = String(value || '').trim();
+  if (text.startsWith('{')) {
+    try {
+      const payload = JSON.parse(text);
+      text = String(payload.error_description || payload.msg || payload.message || payload.error || payload.detail || text).trim();
+    } catch {}
+  }
+  if (!text) return fallback;
+  if (/bad request/i.test(text)) return 'Cloud request was rejected. Please check the submitted details and try again.';
+  if (/jwt|token|unauthorized/i.test(text)) return 'Cloud session expired or is not authorized. Please log in again.';
+  return text;
+}
+
 function header(request, name) {
   const value = request.headers?.[name.toLowerCase()] || request.headers?.[name];
   return Array.isArray(value) ? value[0] : value;
@@ -79,7 +93,7 @@ async function supabaseRequest(path, key, options = {}) {
 
   if (!response.ok) {
     const message = await response.text();
-    throw new Error(message || `Supabase request failed: ${response.status}`);
+    throw new Error(readableCloudMessage(message, `Supabase request failed: ${response.status}`));
   }
 
   if (response.status === 204) return null;
@@ -287,7 +301,7 @@ module.exports = async function handler(request, response) {
   } catch (error) {
     return send(response, 500, {
       ok: false,
-      message: error instanceof Error ? error.message : 'Member cloud sync failed.'
+      message: readableCloudMessage(error instanceof Error ? error.message : '', 'Member cloud sync failed.')
     });
   }
 };

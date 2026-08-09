@@ -99,6 +99,7 @@ const cateringWhatsApp = document.getElementById('cateringWhatsApp');
 const cateringMenuBuilder = document.getElementById('cateringMenuBuilder');
 const cateringComboPresets = document.getElementById('cateringComboPresets');
 const cateringSelectionNotice = document.getElementById('cateringSelectionNotice');
+const cateringSelectionCounts = document.getElementById('cateringSelectionCounts');
 const mealStartDate = document.getElementById('mealStartDate');
 const mealEndDate = document.getElementById('mealEndDate');
 const mealPeriodSummary = document.getElementById('mealPeriodSummary');
@@ -185,16 +186,24 @@ const CATERING_SERVICE_STYLES = {
   event: { label: '活动餐饮 / Event Catering', multiplier: 1 }
 };
 const CATERING_SELECTION_LIMITS = {
-  staple: 1,
-  vegetable: 4,
-  protein: 2,
-  dessert: 1
+  staple: 2,
+  meat: 2,
+  seafood: 1,
+  vegetable: 2
 };
 const CATERING_SELECTION_LABELS = {
   staple: '主食',
-  vegetable: '蔬菜 / 豆腐',
-  protein: '肉类 / 鱼虾',
-  dessert: '甜品'
+  meat: '肉类',
+  seafood: '海鲜',
+  vegetable: '菜 / 豆腐 / 炸料',
+  dessert: '甜品',
+  beverage: '饮料'
+};
+const CATERING_COMBO_REQUIREMENTS = {
+  'set-a': { staple: 2, meat: 2, vegetable: 2 },
+  'set-b': { staple: 2, meat: 1, vegetable: 2, seafood: 1 },
+  'set-c': { staple: 2, meat: 2, vegetable: 2, seafood: 1 },
+  'set-d': { staple: 2, meat: 2, seafood: 1, vegetable: 3 }
 };
 const CATERING_MARKET_PRICE_ITEMS = new Set(['香煎鳕鱼']);
 const CATERING_REMOVED_CATEGORY_IDS = new Set(['sauce', 'sauce-style', 'sauce_style']);
@@ -204,6 +213,7 @@ const CATERING_SPECIAL_ITEM_RATES = [
 ];
 let cateringMenuMode = 'buffet';
 let activeCateringComboId = '';
+let cateringSelectionMessage = '';
 const CATERING_MENU = [
   {
     id: 'staple',
@@ -300,6 +310,7 @@ const CATERING_COMBOS = [
     desc: '主食 2 · 肉类 2 · 菜类 / 豆腐 / 炸料 2',
     pax: 30,
     service: 'event',
+    requirements: { staple: 2, meat: 2, vegetable: 2 },
     items: ['腊肠炒饭', '炒米粉', '咖喱鸡', '黑胡椒鸡扒', '蒜蓉小白菜', '泰式豆腐']
   },
   {
@@ -310,6 +321,7 @@ const CATERING_COMBOS = [
     desc: '主食 2 · 肉类 1 · 菜类 / 炸料 / 豆腐 2 · 海鲜 1',
     pax: 30,
     service: 'event',
+    requirements: { staple: 2, meat: 1, vegetable: 2, seafood: 1 },
     items: ['蛋炒饭', '福建面', 'Ginger Onion Chicken', '蒜蓉西兰花', '红烧豆腐', '炸鱼柳']
   },
   {
@@ -320,6 +332,7 @@ const CATERING_COMBOS = [
     desc: '主食 2 · 肉类 2 · 菜类 / 炸料 / 豆腐 2 · 海鲜 1',
     pax: 30,
     service: 'event',
+    requirements: { staple: 2, meat: 2, vegetable: 2, seafood: 1 },
     items: ['扬州炒饭', '干炒河粉', '香料炸鸡', '糖醋肉', '炒高丽菜', '蒜蓉菠菜', '麦片虾']
   },
   {
@@ -330,6 +343,7 @@ const CATERING_COMBOS = [
     desc: '主食 2 · 肉类 2 · 海鲜 1 · 菜类 / 炸料 / 豆腐 3',
     pax: 30,
     service: 'event',
+    requirements: { staple: 2, meat: 2, seafood: 1, vegetable: 3 },
     items: ['白饭', '炒米粉', '姜葱肉片', '黑胡椒鸡扒', '咸蛋奶油虾', '奶油杂菜', '蚝油生菜', '蒜蓉菜心']
   }
 ];
@@ -457,11 +471,11 @@ const DEFAULT_DETAIL_CONTENT = {
     heroAlt: '活动餐饮自助餐台',
     kicker: 'EASY BUFFET BUILDER',
     introTitle: '',
-    introDesc: '适合家庭聚会、生日会、公司活动和小型 Buffet。先用推荐 Set 快速配好菜，也可以自由搭配后直接发送给我们确认。',
+    introDesc: '适合家庭聚会、生日会、公司活动和小型 Buffet。先选择 Set A-D，再按套餐规定自由选菜；不想自己选，也可以直接发送给我们确认。',
     contactTitle: '需要我们帮你配？',
     contactDesc: '把日期、地点和人数发给我们。',
     panelTitle: '菜单选择与预算',
-    panelDesc: '先用推荐组合开始，也可以自由搭配菜式。系统价格为初步估算，实际报价会按地点、份量、运输、餐具和现场服务确认。',
+    panelDesc: '先选择 SET A-D，再按套餐规定自由选菜；不想自己选，也可以直接 WhatsApp 让我们确认菜单。',
     gallery: [
       { image: 'assets/images/reference-series/service-catering.png', alt: '自助餐台与活动用餐场景', caption: '自助餐台与活动现场，可以按人数和服务形式安排。' },
       { image: 'assets/images/reference-series/contact-table.png', alt: '餐桌与烛光布置', caption: '菜单确定后，再细化餐桌、餐具与现场动线。' },
@@ -1189,6 +1203,29 @@ function normalizeMarketPriceItems(items) {
   return Array.from(new Set(values));
 }
 
+function normalizeCateringRequirements(requirements = {}, comboId = '') {
+  const fallback = CATERING_COMBO_REQUIREMENTS[comboId] || {};
+  const source = requirements && typeof requirements === 'object' && !Array.isArray(requirements)
+    ? requirements
+    : fallback;
+  const normalized = {};
+
+  Object.keys(CATERING_SELECTION_LABELS).forEach(group => {
+    const rawValue = source[group] ?? fallback[group] ?? 0;
+    const value = Number.parseInt(rawValue, 10);
+    if (Number.isFinite(value) && value > 0) normalized[group] = value;
+  });
+
+  return normalized;
+}
+
+function cateringRequirementSummary(requirements = {}) {
+  const entries = Object.entries(requirements)
+    .filter(([, limit]) => Number(limit) > 0)
+    .map(([group, limit]) => `${CATERING_SELECTION_LABELS[group] || group} ${limit}`);
+  return entries.join(' · ');
+}
+
 function editableMarketPriceItems() {
   return new Set(normalizeMarketPriceItems(editableCateringConfig().marketPriceItems));
 }
@@ -1206,7 +1243,8 @@ function normalizeCateringCombos(combos) {
     const items = Array.isArray(combo?.items)
       ? combo.items.map(item => String(item || '').trim()).filter(Boolean)
       : String(combo?.items || '').split(/\n+/).map(item => item.trim()).filter(Boolean);
-    return { id, title, label, price, desc, pax, service, items };
+    const requirements = normalizeCateringRequirements(combo?.requirements, id);
+    return { id, title, label, price, desc, pax, service, items, requirements };
   }).filter(combo => combo.id && (combo.title || combo.label || combo.items.length));
 }
 
@@ -1227,8 +1265,10 @@ function populateCateringServiceStyleOptions() {
 function cateringSelectionGroup(categoryId) {
   if (['staple', 'porridge'].includes(categoryId)) return 'staple';
   if (['vegetable', 'tofu', 'fried'].includes(categoryId)) return 'vegetable';
-  if (['chicken', 'pork', 'fish', 'prawn'].includes(categoryId)) return 'protein';
+  if (['chicken', 'pork'].includes(categoryId)) return 'meat';
+  if (['fish', 'prawn'].includes(categoryId)) return 'seafood';
   if (categoryId === 'dessert') return 'dessert';
+  if (categoryId === 'beverage') return 'beverage';
   return 'optional';
 }
 
@@ -1241,41 +1281,73 @@ function selectedCateringCounts() {
     }, {});
 }
 
-function cateringBuffetStatus() {
+function activeCateringCombo() {
+  if (!activeCateringComboId) return null;
+  return editableCateringCombos().find(item => item.id === activeCateringComboId) || null;
+}
+
+function cateringBuffetStatus(combo = currentCateringCombo()) {
   const counts = selectedCateringCounts();
-  const missing = Object.entries(CATERING_SELECTION_LIMITS)
+  const requirements = normalizeCateringRequirements(combo?.requirements, combo?.id);
+  const requiredEntries = Object.entries(requirements).filter(([, limit]) => Number(limit) > 0);
+  const missing = requiredEntries
     .filter(([group, limit]) => (counts[group] || 0) < limit)
     .map(([group, limit]) => `${CATERING_SELECTION_LABELS[group]} ${(counts[group] || 0)}/${limit}`);
-  return { counts, missing, complete: missing.length === 0 };
+  const over = requiredEntries
+    .filter(([group, limit]) => (counts[group] || 0) > limit)
+    .map(([group, limit]) => `${CATERING_SELECTION_LABELS[group]} ${(counts[group] || 0)}/${limit}`);
+  return {
+    counts,
+    requirements,
+    missing,
+    over,
+    complete: Boolean(combo && requiredEntries.length && missing.length === 0 && over.length === 0)
+  };
 }
 
 function setCateringMenuMode(mode) {
   cateringMenuMode = mode === 'free' ? 'free' : 'buffet';
+  if (cateringMenuMode === 'free') activeCateringComboId = '';
+  cateringSelectionMessage = '';
   document.querySelectorAll('[data-catering-mode]').forEach(button => {
     const active = button.dataset.cateringMode === cateringMenuMode;
     button.classList.toggle('is-active', active);
     button.setAttribute('aria-pressed', String(active));
   });
-  if (cateringSelectionNotice) {
-    cateringSelectionNotice.textContent = cateringMenuMode === 'buffet'
-      ? '套餐模式：Set A-D 按固定每人价格计算；10 pax 起开始计算。'
-      : '自由搭配模式：按所选菜式分类单价相加；时价菜式另外确认。';
-  }
   renderCateringEstimate();
 }
 
 function renderCateringSelectionGuide() {
-  const status = cateringBuffetStatus();
-  Object.entries(CATERING_SELECTION_LIMITS).forEach(([group, limit]) => {
-    const count = document.querySelector(`[data-catering-count="${group}"]`);
-    if (count) count.textContent = `${status.counts[group] || 0}/${limit}`;
-  });
-  const statusText = document.querySelector('[data-catering-rule-status]');
-  if (statusText) {
-    statusText.textContent = cateringMenuMode === 'free'
-      ? '自由搭配已开启'
-      : status.complete ? '套餐组合已达标' : `还差：${status.missing.join('、')}`;
-    statusText.classList.toggle('is-complete', cateringMenuMode === 'free' || status.complete);
+  const combo = currentCateringCombo();
+  const status = cateringBuffetStatus(combo);
+  const ruleSummary = combo ? cateringRequirementSummary(status.requirements) : '';
+
+  if (cateringSelectionCounts) {
+    if (cateringMenuMode === 'free') {
+      cateringSelectionCounts.innerHTML = '<strong class="is-complete">自由搭配已开启</strong>';
+    } else if (!combo) {
+      cateringSelectionCounts.innerHTML = '<strong>先选择 SET A-D</strong>';
+    } else {
+      const countBadges = Object.entries(status.requirements)
+        .map(([group, limit]) => {
+          const count = status.counts[group] || 0;
+          const complete = count === limit;
+          return `<span class="${complete ? 'is-complete' : ''}">${escapeHtml(CATERING_SELECTION_LABELS[group] || group)} <b>${count}/${limit}</b></span>`;
+        }).join('');
+      const ruleStatus = status.complete
+        ? '<strong class="is-complete">套餐菜单已选好</strong>'
+        : `<strong>还差：${escapeHtml(status.missing.join('、') || '继续选择菜式')}</strong>`;
+      cateringSelectionCounts.innerHTML = `${countBadges}${ruleStatus}`;
+    }
+  }
+
+  if (cateringSelectionNotice) {
+    const defaultNotice = cateringMenuMode === 'free'
+      ? '自由搭配模式：按所选菜式分类单价相加；时价菜式另外确认。'
+      : combo
+        ? `${combo.label} 规则：${ruleSummary}。可以按规定自己选菜，也可以直接 WhatsApp 让我们确认菜单。`
+        : '先选择 SET A、B、C 或 D，再按套餐规定数量自由选择菜式。';
+    cateringSelectionNotice.textContent = cateringSelectionMessage || defaultNotice;
   }
 }
 
@@ -1335,6 +1407,8 @@ function renderCateringCombos() {
       <b class="combo-price">${escapeHtml(combo.price || '')}</b>
       <strong>${escapeHtml(combo.title)}</strong>
       <small>${escapeHtml(combo.desc)}</small>
+      <em>${escapeHtml(cateringRequirementSummary(combo.requirements) || '自由确认菜单')}</em>
+      <i>点击套用后可自己选菜，或直接 WhatsApp 确认</i>
     </button>
   `).join('');
 }
@@ -1344,19 +1418,20 @@ function applyCateringCombo(comboId) {
   if (!combo || !cateringMenuGrid) return;
 
   activeCateringComboId = combo.id;
-  const wanted = new Set(combo.items);
   cateringMenuGrid.querySelectorAll('input[type="checkbox"]').forEach(input => {
-    input.checked = wanted.has(input.value);
+    input.checked = false;
   });
   if (cateringPax) cateringPax.value = String(combo.pax);
   if (cateringServiceStyle) cateringServiceStyle.value = combo.service;
   setCateringMenuMode('buffet');
+  activeCateringComboId = combo.id;
+  cateringSelectionMessage = `${combo.label} 已选择：请按 ${cateringRequirementSummary(combo.requirements)} 自由选菜；也可以直接 WhatsApp 让我们确认菜单。`;
 
   cateringComboPresets?.querySelectorAll('[data-catering-combo]').forEach(button => {
     button.classList.toggle('is-active', button.dataset.cateringCombo === combo.id);
   });
   renderCateringEstimate();
-  document.querySelector('.calculator-panel')?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  document.querySelector('.menu-builder')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
 function selectedCateringItems() {
@@ -1379,20 +1454,48 @@ function selectedItemsMatchCombo(combo, selectedSet) {
 }
 
 function currentCateringCombo(items = selectedCateringItems()) {
-  const selectedSet = selectedCateringValueSet(items);
-  const combos = editableCateringCombos();
-  const preferred = combos.find(combo => combo.id === activeCateringComboId);
-  if (selectedItemsMatchCombo(preferred, selectedSet)) return preferred;
-  return combos.find(combo => selectedItemsMatchCombo(combo, selectedSet)) || null;
+  if (cateringMenuMode !== 'buffet') return null;
+  return activeCateringCombo();
 }
 
 function syncCateringComboState() {
   const combo = currentCateringCombo();
-  activeCateringComboId = combo?.id || '';
+  if (!combo) activeCateringComboId = '';
   cateringComboPresets?.querySelectorAll('[data-catering-combo]').forEach(button => {
     button.classList.toggle('is-active', Boolean(combo) && button.dataset.cateringCombo === combo.id);
   });
   return combo;
+}
+
+function validateCateringMenuChoice(input) {
+  if (!(input instanceof HTMLInputElement) || !input.checked || cateringMenuMode !== 'buffet') return true;
+  const combo = currentCateringCombo();
+  if (!combo) {
+    input.checked = false;
+    cateringSelectionMessage = '请先选择 SET A、B、C 或 D，再按套餐规则选择菜式。';
+    return false;
+  }
+
+  const requirements = normalizeCateringRequirements(combo.requirements, combo.id);
+  const group = input.dataset.menuGroup || 'optional';
+  const limit = requirements[group] || 0;
+  const label = CATERING_SELECTION_LABELS[group] || input.dataset.menuTitle || '这个分类';
+
+  if (!limit) {
+    input.checked = false;
+    cateringSelectionMessage = `${combo.label} 不包含${label}。需要加购或特别安排，可以用 WhatsApp 让我们确认。`;
+    return false;
+  }
+
+  const counts = selectedCateringCounts();
+  if ((counts[group] || 0) > limit) {
+    input.checked = false;
+    cateringSelectionMessage = `${combo.label} 的${label}最多选择 ${limit} 道。`;
+    return false;
+  }
+
+  cateringSelectionMessage = '';
+  return true;
 }
 
 function groupedCateringItems(items) {
@@ -1441,11 +1544,16 @@ function calculateCateringEstimate() {
 
 function buildCateringMessage(estimate) {
   const grouped = groupedCateringItems(estimate.items);
+  const status = cateringBuffetStatus(estimate.combo);
   const menuLines = Object.entries(grouped).map(([category, items]) => (
     `${category}：${items.map(item => item.marketPrice ? `${item.name}（按时价）` : item.name).join('、')}`
-  )).join('\n') || '还没有选择菜式';
+  )).join('\n') || (estimate.combo ? `还没有选择菜式，请帮我按 ${estimate.combo.label} 规则确认菜单。` : '还没有选择菜式');
   const hasMarketPriceItems = estimate.marketPriceItems.length > 0;
   const pricingLabel = estimate.combo ? `${estimate.combo.label} ${estimate.combo.price}` : '自由搭配单项计算';
+  const ruleLine = estimate.combo ? cateringRequirementSummary(status.requirements) : '自由搭配';
+  const menuStatusLine = estimate.combo
+    ? status.complete ? '已按套餐规则选满' : `尚未选满：${status.missing.join('、') || '请 WhatsApp 确认'}`
+    : '自由搭配';
   const minimumNote = estimate.minimumTotalApplied
     ? `\n已套用最低预算：${formatCurrency(estimate.minimumTotal)}`
     : '';
@@ -1464,6 +1572,12 @@ ${estimate.service.label}
 【计价方式】
 ${pricingLabel}
 
+【套餐规则】
+${ruleLine}
+
+【菜单状态】
+${menuStatusLine}
+
 【选择菜单】
 ${menuLines}
 
@@ -1480,15 +1594,17 @@ function renderCateringEstimate() {
   if (!cateringEstimateTotal || !cateringEstimateMeta || !selectedCateringSummary || !cateringWhatsApp) return;
 
   const estimate = calculateCateringEstimate();
+  const status = cateringBuffetStatus(estimate.combo);
+  const hasSelection = Boolean(estimate.combo || estimate.items.length);
   const hasMarketPriceItems = estimate.marketPriceItems.length > 0;
   const pricingLabel = estimate.combo ? `${estimate.combo.label} ${estimate.combo.price}` : '自由搭配';
   const fixedTotalLabel = estimate.total ? formatCurrency(estimate.total) : '';
   const totalLabel = hasMarketPriceItems && fixedTotalLabel ? `${fixedTotalLabel} + 时价` : fixedTotalLabel;
   const minimumNote = estimate.minimumTotalApplied ? ` · 已套用最低预算 ${formatCurrency(estimate.minimumTotal)}` : '';
   renderCateringSelectionGuide();
-  if (!estimate.items.length) {
+  if (!hasSelection) {
     cateringEstimateTotal.textContent = 'RM0';
-    cateringEstimateMeta.textContent = '请选择菜式开始计算。';
+    cateringEstimateMeta.textContent = '请先选择 SET A-D 或自由搭配菜式。';
   } else if (!estimate.meetsMinimumPax) {
     cateringEstimateTotal.textContent = `${estimate.minimumPax} pax 起`;
     cateringEstimateMeta.textContent = `外餐预算从 ${estimate.minimumPax} pax 开始计算，请输入 ${estimate.minimumPax} 或以上人数。`;
@@ -1500,16 +1616,25 @@ function renderCateringEstimate() {
     cateringEstimateMeta.textContent = hasMarketPriceItems ? `${estimate.pax || '-'} pax · 含按时价菜式，请 WhatsApp 确认报价。` : '请选择菜式开始计算。';
   }
 
-  if (!estimate.items.length) {
+  if (!estimate.items.length && estimate.combo) {
+    selectedCateringSummary.innerHTML = `
+      <p><b>已选择</b>：${escapeHtml(estimate.combo.label)} ${escapeHtml(estimate.combo.price)} / pax</p>
+      <p><b>套餐规则</b>：${escapeHtml(cateringRequirementSummary(status.requirements))}</p>
+      <p>还没有选择菜式，可以继续按规则挑菜，或直接 WhatsApp 让我们确认菜单。</p>
+    `;
+  } else if (!estimate.items.length) {
     selectedCateringSummary.textContent = '还没有选择菜式。';
   } else {
     const grouped = groupedCateringItems(estimate.items);
+    const ruleLine = estimate.combo
+      ? `<p><b>套餐规则</b>：${escapeHtml(cateringRequirementSummary(status.requirements))}；${status.complete ? '已选满' : `还差 ${escapeHtml(status.missing.join('、') || '请 WhatsApp 确认')}`}</p>`
+      : '';
     const formula = estimate.meetsMinimumPax && estimate.perPax
       ? `<p><b>计算</b>：${estimate.pax} pax × ${formatCurrency(estimate.perPax)} / pax = ${escapeHtml(totalLabel || '按时价')}${estimate.minimumTotalApplied ? `（最低预算 ${formatCurrency(estimate.minimumTotal)}）` : ''}</p>`
       : `<p><b>计算</b>：${estimate.minimumPax} pax 起开始计算。</p>`;
     selectedCateringSummary.innerHTML = Object.entries(grouped).map(([category, items]) => (
       `<p><b>${escapeHtml(category)}</b>：${items.map(item => escapeHtml(item.marketPrice ? `${item.name}（按时价）` : item.name)).join('、')}</p>`
-    )).join('') + formula;
+    )).join('') + ruleLine + formula;
   }
 
   cateringWhatsApp.href = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(buildCateringMessage(estimate))}`;
@@ -1964,7 +2089,7 @@ async function supabaseFetch(path, options = {}) {
 
   if (!response.ok) {
     const message = await response.text();
-    throw new Error(message || `Supabase request failed: ${response.status}`);
+    throw new Error(readableCloudMessage(message, `Supabase request failed: ${response.status}`));
   }
 
   if (response.status === 204) return null;
@@ -2029,7 +2154,7 @@ async function supabaseMemberSignUp({ name, phone, email, password, referralCode
 
   if (!response.ok) {
     const message = await response.text();
-    return { ok: false, message };
+    return { ok: false, message: readableCloudMessage(message) };
   }
 
   const payload = await response.json();
@@ -2050,7 +2175,10 @@ async function supabaseMemberSignIn(email, password) {
     body: JSON.stringify({ email, password })
   });
 
-  if (!response.ok) return { ok: false };
+  if (!response.ok) {
+    const message = await response.text();
+    return { ok: false, message: readableCloudMessage(message) };
+  }
 
   const session = await response.json();
   if (!session?.access_token) return { ok: false };
@@ -2758,7 +2886,7 @@ async function saveAdminContentToCloudApi(content) {
   if (response.status === 404) return false;
   if (!response.ok) {
     const message = await response.text();
-    throw new Error(message || `Cloud admin content save failed: ${response.status}`);
+    throw new Error(readableCloudMessage(message, `Cloud admin content save failed: ${response.status}`));
   }
   return true;
 }
@@ -2811,7 +2939,7 @@ async function loadCloudMembersForAdmin() {
       headers
     });
     if (response.status === 404) return false;
-    if (!response.ok) throw new Error(await response.text());
+    if (!response.ok) throw new Error(readableCloudMessage(await response.text()));
 
     const result = await response.json();
     if (!result?.ok) return false;
@@ -2837,7 +2965,7 @@ async function syncMemberProfileToCloudApi(member, session = getSupabaseMemberSe
       body: JSON.stringify({ action: 'upsert-profile', member })
     });
     if (response.status === 404) return false;
-    if (!response.ok) throw new Error(await response.text());
+    if (!response.ok) throw new Error(readableCloudMessage(await response.text()));
     const result = await response.json();
     return Boolean(result?.ok);
   } catch (error) {
@@ -2857,7 +2985,7 @@ async function updateCloudMemberAdminField(userId, field, value) {
       body: JSON.stringify({ action: 'update-profile-field', userId, field, value })
     });
     if (response.status === 404) return false;
-    if (!response.ok) throw new Error(await response.text());
+    if (!response.ok) throw new Error(readableCloudMessage(await response.text()));
     const result = await response.json();
     return Boolean(result?.ok);
   } catch (error) {
@@ -2877,7 +3005,7 @@ async function updateCloudReferralRewardStatusApi(rewardId, status) {
       body: JSON.stringify({ action: 'update-reward-status', rewardId, status })
     });
     if (response.status === 404) return false;
-    if (!response.ok) throw new Error(await response.text());
+    if (!response.ok) throw new Error(readableCloudMessage(await response.text()));
     const result = await response.json();
     return Boolean(result?.ok);
   } catch (error) {
@@ -3446,6 +3574,47 @@ function escapeHtml(value) {
     '"': '&quot;',
     "'": '&#39;'
   }[character]));
+}
+
+function readableCloudMessage(value, fallback = '') {
+  const raw = value instanceof Error ? value.message : String(value || '');
+  let text = raw.trim();
+
+  if (text.startsWith('{')) {
+    try {
+      const payload = JSON.parse(text);
+      text = String(
+        payload.error_description
+        || payload.msg
+        || payload.message
+        || payload.error
+        || payload.detail
+        || text
+      ).trim();
+    } catch (error) {}
+  }
+
+  const lower = text.toLowerCase();
+  const isEnglish = currentLanguage === 'en';
+
+  if (!text) return fallback || (isEnglish ? 'The cloud request could not be completed. Please try again.' : '云端请求暂时无法完成，请稍后再试。');
+  if (lower.includes('bad request')) return isEnglish
+    ? 'The cloud rejected this request. Please check that the details are complete and try again.'
+    : '云端拒绝了这个请求。请检查资料是否完整、格式是否正确，然后再试。';
+  if (lower.includes('invalid login credentials')) return isEnglish
+    ? 'Email / phone or password is incorrect.'
+    : 'Email / 手机号或密码不正确。';
+  if (lower.includes('email not confirmed')) return isEnglish
+    ? 'Please confirm your email first, then log in again.'
+    : '请先确认 Email，再重新登录。';
+  if (lower.includes('user already registered') || lower.includes('already registered')) return isEnglish
+    ? 'This email is already registered. Please log in instead.'
+    : '这个 Email 已经注册，请直接登录。';
+  if (lower.includes('jwt') || lower.includes('token') || lower.includes('unauthorized')) return isEnglish
+    ? 'Your cloud session has expired. Please log in again.'
+    : '云端登录已过期，请重新登录。';
+
+  return text;
 }
 
 function encodePassword(password) {
@@ -5211,8 +5380,12 @@ function renderAdminCateringComboRows(content) {
       <label>每人价格<input data-field="combo-price" value="${escapeHtml(combo.price)}" placeholder="RM29.90"></label>
       <label>默认人数<input data-field="combo-pax" type="number" min="1" step="1" value="${escapeHtml(combo.pax)}"></label>
       <label>服务 ID<input data-field="combo-service" value="${escapeHtml(combo.service)}" placeholder="event"></label>
+      <label>主食数量<input data-field="combo-req-staple" type="number" min="0" step="1" value="${escapeHtml(combo.requirements.staple || 0)}"></label>
+      <label>肉类数量<input data-field="combo-req-meat" type="number" min="0" step="1" value="${escapeHtml(combo.requirements.meat || 0)}"></label>
+      <label>海鲜数量<input data-field="combo-req-seafood" type="number" min="0" step="1" value="${escapeHtml(combo.requirements.seafood || 0)}"></label>
+      <label>菜 / 豆腐 / 炸料数量<input data-field="combo-req-vegetable" type="number" min="0" step="1" value="${escapeHtml(combo.requirements.vegetable || 0)}"></label>
       <label class="admin-catering-items">套餐说明<input data-field="combo-desc" value="${escapeHtml(combo.desc)}" placeholder="主食 2 · 肉类 2 · 菜类 2"></label>
-      <label class="admin-catering-items">自动选择菜式（一行一个）
+      <label class="admin-catering-items">参考菜式（一行一个，不会自动套用）
         <textarea data-field="combo-items" rows="4">${escapeHtml(combo.items.join('\n'))}</textarea>
       </label>
       <button type="button" data-remove-catering-combo>删除套餐</button>
@@ -5495,10 +5668,17 @@ function setAdminPanel(panel = 'site') {
   ];
   drawerGroups.forEach(group => {
     const drawerLabel = document.querySelector(`[data-admin-drawer-current="${group.id}"]`);
-    if (!drawerLabel) return;
-    drawerLabel.textContent = group.panels.has(panel) && activeButton
-      ? activeButton.textContent.trim()
-      : '打开选择';
+    const drawer = document.querySelector(`[data-admin-nav-drawer="${group.id}"]`);
+    const isGroupActive = group.panels.has(panel);
+    if (drawerLabel) {
+      drawerLabel.textContent = isGroupActive && activeButton
+        ? activeButton.textContent.trim()
+        : '打开选择';
+    }
+    if (drawer instanceof HTMLDetailsElement) {
+      drawer.classList.toggle('is-current', isGroupActive);
+      drawer.open = false;
+    }
   });
 }
 
@@ -5611,11 +5791,17 @@ function collectAdminContent() {
     const desc = adminRowValue(row, '[data-field="combo-desc"]');
     const pax = Number.parseInt(adminRowValue(row, '[data-field="combo-pax"]'), 10) || CATERING_MINIMUM_PAX;
     const service = adminRowValue(row, '[data-field="combo-service"]') || 'event';
+    const requirements = {
+      staple: Number.parseInt(adminRowValue(row, '[data-field="combo-req-staple"]'), 10) || 0,
+      meat: Number.parseInt(adminRowValue(row, '[data-field="combo-req-meat"]'), 10) || 0,
+      seafood: Number.parseInt(adminRowValue(row, '[data-field="combo-req-seafood"]'), 10) || 0,
+      vegetable: Number.parseInt(adminRowValue(row, '[data-field="combo-req-vegetable"]'), 10) || 0
+    };
     const items = adminRowValue(row, '[data-field="combo-items"]')
       .split(/\n+/)
       .map(item => item.trim())
       .filter(Boolean);
-    if (title || label || price || items.length) content.catering.combos.push({ id, label, title, price, desc, pax, service, items });
+    if (title || label || price || items.length) content.catering.combos.push({ id, label, title, price, desc, pax, service, items, requirements });
   });
 
   adminCateringRows?.querySelectorAll('[data-catering-row]').forEach((row, index) => {
@@ -6064,6 +6250,10 @@ memberRegisterForm?.addEventListener('submit', async event => {
       showMemberMessage(currentLanguage === 'en'
         ? 'Member created locally. Supabase may require email confirmation before cloud login.'
         : '会员已建立在本地；Supabase 可能需要 Email 确认后才可云端登录。');
+    } else if (cloud.message) {
+      showMemberMessage(currentLanguage === 'en'
+        ? `Member created locally. Cloud sync needs attention: ${cloud.message}`
+        : `会员已建立在本地；云端同步需要处理：${cloud.message}`, true);
     }
   } catch (error) {
     console.warn('Supabase member signup failed', error);
@@ -6079,6 +6269,7 @@ memberLoginForm?.addEventListener('submit', async event => {
   const email = fieldValue('loginEmail').toLowerCase();
   const password = fieldValue('loginPassword');
   let member = loadMembers().find(item => item.email === email && item.password === encodePassword(password));
+  let cloudLoginMessage = '';
 
   if (!member) {
     try {
@@ -6087,9 +6278,12 @@ memberLoginForm?.addEventListener('submit', async event => {
         const profile = await loadSupabaseMemberProfile(cloud.session);
         member = mergeSupabaseProfileToLocalMember(profile, cloud.session, { email, password: encodePassword(password) });
         await refreshSupabaseMemberData();
+      } else if (cloud.message) {
+        cloudLoginMessage = cloud.message;
       }
     } catch (error) {
       console.warn('Supabase member login failed', error);
+      cloudLoginMessage = readableCloudMessage(error);
     }
   } else {
     try {
@@ -6105,14 +6299,17 @@ memberLoginForm?.addEventListener('submit', async event => {
         });
         await updateSupabaseMemberProfile(member, cloud.session);
         refreshSupabaseMemberData();
+      } else if (cloud.message) {
+        cloudLoginMessage = cloud.message;
       }
     } catch (error) {
       console.warn('Supabase member login sync failed', error);
+      cloudLoginMessage = readableCloudMessage(error);
     }
   }
 
   if (!member) {
-    showMemberMessage(t.member.messages.loginError, true);
+    showMemberMessage(cloudLoginMessage || t.member.messages.loginError, true);
     return;
   }
 
@@ -6642,7 +6839,9 @@ document.addEventListener('click', event => {
   }
 });
 
-cateringMenuGrid?.addEventListener('change', () => {
+cateringMenuGrid?.addEventListener('change', event => {
+  const input = event.target instanceof HTMLInputElement ? event.target : null;
+  if (input?.matches('input[type="checkbox"]')) validateCateringMenuChoice(input);
   renderCateringEstimate();
 });
 cateringPax?.addEventListener('input', renderCateringEstimate);

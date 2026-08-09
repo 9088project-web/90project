@@ -1954,6 +1954,13 @@ body.case-lightbox-open{overflow:hidden}
   color:#cdb895;
   line-height:1.45;
 }
+.combo-preset-card em{
+  color:#f4c76e;
+  font-size:12px;
+  font-style:normal;
+  font-weight:900;
+  line-height:1.45;
+}
 .combo-preset-card:hover,
 .combo-preset-card.is-active{
   transform:translateY(-2px);
@@ -2639,6 +2646,13 @@ details p{color:var(--muted);font-size:13px;line-height:1.55}
 }
 .admin-nav-drawer[open] .admin-nav-drawer-icon{
   transform:rotate(180deg);
+}
+.admin-nav-drawer.is-current{
+  border-color:rgba(214,168,92,.42);
+  background:linear-gradient(135deg,rgba(214,168,92,.11),rgba(255,247,232,.035));
+}
+.admin-nav-drawer.is-current:not([open]) .admin-nav-drawer-summary{
+  background:rgba(214,168,92,.055);
 }
 .admin-nav-drawer .admin-nav-tabs{
   padding:0 14px 14px;

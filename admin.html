@@ -6,8 +6,8 @@
   <meta name="robots" content="noindex, nofollow" />
   <title>内容管理后台｜九零食刻 90 PROJECT</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/remixicon@4.6.0/fonts/remixicon.css" />
-  <link rel="stylesheet" href="css/style.css?v=20260731-member-whatsapp" />
-  <link rel="stylesheet" href="css/admin.css?v=20260808-admin-order-actions" />
+  <link rel="stylesheet" href="css/style.css?v=20260810-flow-polish" />
+  <link rel="stylesheet" href="css/admin.css?v=20260810-flow-polish" />
   <link rel="stylesheet" href="css/growth.css?v=20260730-admin-sync" />
 </head>
 <body class="admin-page">
@@ -120,7 +120,7 @@
           <div class="admin-rows" id="adminCateringServiceRows"></div>
         </div>
         <div class="admin-media-block">
-          <div class="admin-section-head admin-subhead"><div><h3>推荐套餐 Set A-D</h3><p>顾客点击套餐卡片时，会自动套用这里设置的菜式、价格和人数。</p></div><button type="button" id="addCateringComboRow">新增套餐</button></div>
+          <div class="admin-section-head admin-subhead"><div><h3>推荐套餐 Set A-D</h3><p>顾客点击套餐卡片时，会按这里的分类数量自由选菜；参考菜式只作内部提示，不会自动套用。</p></div><button type="button" id="addCateringComboRow">新增套餐</button></div>
           <div class="admin-rows" id="adminCateringComboRows"></div>
         </div>
         <div class="admin-rows" id="adminCateringRows"></div>
@@ -182,7 +182,7 @@
               <div class="admin-pos-card-head">
                 <div>
                   <span>STEP 1</span>
-                  <h3>顾客与 Catering 细节</h3>
+                  <h3>顾客资料</h3>
                 </div>
               </div>
               <div class="admin-pos-fieldset">
@@ -200,10 +200,11 @@
                 </div>
               </div>
 
-              <div class="admin-pos-fieldset">
+              <details class="admin-pos-more admin-pos-service-drawer" open>
+                <summary>Catering 细节</summary>
                 <div class="admin-pos-fieldset-head">
-                  <strong>Catering 细节</strong>
-                  <span>日期、人数、地点会出现在 WhatsApp 和收据。</span>
+                  <strong>日期、人数、地点</strong>
+                  <span>这些资料会自动写进 WhatsApp 和收据。</span>
                 </div>
                 <div class="growth-form-grid admin-pos-form-grid">
                   <label>服务类型
@@ -231,7 +232,7 @@
                     <textarea data-invoice-field="customerNotes" rows="3" placeholder="例如：菜单以当天供应为准、餐具/运输另行确认、请在日期前支付订金。"></textarea>
                   </label>
                 </div>
-              </div>
+              </details>
               <details class="admin-pos-more">
                 <summary>更多资料</summary>
                 <div class="growth-form-grid admin-pos-form-grid">
@@ -296,7 +297,7 @@
               <div class="admin-pos-free-head">
                 <div>
                   <span>自由选项</span>
-                  <strong>加运输、餐具、额外菜式或临时项目</strong>
+                  <strong>加项目或临时调整</strong>
                 </div>
                 <div>
                   <button class="growth-button secondary" type="button" data-admin-invoice-add-item>+ 加项目</button>
@@ -374,7 +375,7 @@
                 <p>系统会自动计算：项目小计 + 运输费 + 服务费 - 优惠 - 订金 = 余额。</p>
               </div>
               <details class="admin-pos-more admin-pos-preview-drawer">
-                <summary>收据 / WhatsApp / 后台备注</summary>
+                <summary>预览收据 / WhatsApp / 后台备注</summary>
                 <div class="admin-pos-more-body">
                   <div class="admin-pos-receipt" data-admin-invoice-receipt></div>
                   <div class="growth-form-grid admin-pos-checkout-grid">
@@ -580,7 +581,7 @@
     </section>
   </main>
 
-  <script src="js/app.js?v=20260808-admin-order-actions"></script>
-  <script type="module" src="js/growth-mock.js?v=20260808-admin-order-actions"></script>
+  <script src="js/app.js?v=20260810-flow-polish"></script>
+  <script type="module" src="js/growth-mock.js?v=20260810-flow-polish"></script>
 </body>
 </html>

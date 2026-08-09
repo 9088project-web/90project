@@ -17,6 +17,32 @@ const otpPhone = value => {
   return digits ? `+${digits}` : '';
 };
 
+const cloudMessage = value => {
+  let text = String(value || '').trim();
+  if (text.startsWith('{')) {
+    try {
+      const payload = JSON.parse(text);
+      text = String(
+        payload.error_description
+        || payload.msg
+        || payload.message
+        || payload.error
+        || payload.detail
+        || text
+      ).trim();
+    } catch {}
+  }
+
+  const lower = text.toLowerCase();
+  if (!text) return '云端请求暂时无法完成，请稍后再试。';
+  if (lower.includes('bad request')) return '云端拒绝了这个请求。请检查资料是否完整、格式是否正确，然后再试。';
+  if (lower.includes('invalid login credentials')) return 'Email / 手机号或密码不正确。';
+  if (lower.includes('email not confirmed')) return '请先确认 Email，再重新登录。';
+  if (lower.includes('already registered')) return '这个 Email 已经注册，请直接登录。';
+  if (lower.includes('jwt') || lower.includes('token') || lower.includes('unauthorized')) return '云端登录已过期，请重新登录。';
+  return text;
+};
+
 async function readJson(path) {
   try {
     const response = await fetch(path, { cache: 'no-store' });
@@ -89,7 +115,7 @@ export function createGrowthCloud() {
       headers,
       body: options.body ? JSON.stringify(options.body) : undefined
     });
-    if (!response.ok) return { ok: false, status: response.status, message: await response.text() };
+    if (!response.ok) return { ok: false, status: response.status, message: cloudMessage(await response.text()) };
     if (response.status === 204) return { ok: true, data: null };
     const text = await response.text();
     return { ok: true, data: text ? JSON.parse(text) : null };
@@ -116,7 +142,7 @@ export function createGrowthCloud() {
         }
       })
     });
-    if (!response.ok) return { ok: false, message: await response.text() };
+    if (!response.ok) return { ok: false, message: cloudMessage(await response.text()) };
     const payload = await response.json();
     const session = payload?.session || payload;
     if (session?.access_token) setSession(session);
@@ -136,7 +162,7 @@ export function createGrowthCloud() {
         data: { source: '90_project_member_phone_verification' }
       })
     });
-    if (!response.ok) return { ok: false, message: await response.text() };
+    if (!response.ok) return { ok: false, message: cloudMessage(await response.text()) };
     return { ok: true };
   }
 
@@ -150,7 +176,7 @@ export function createGrowthCloud() {
       headers: { apikey: config.anonKey, 'Content-Type': 'application/json' },
       body: JSON.stringify({ phone: normalizedPhone, token: code, type: 'sms' })
     });
-    if (!response.ok) return { ok: false, message: await response.text() };
+    if (!response.ok) return { ok: false, message: cloudMessage(await response.text()) };
     const session = await response.json();
     if (session?.access_token) setSession(session);
     return { ok: true, session: session?.access_token ? session : null, user: session?.user || null };
@@ -163,7 +189,7 @@ export function createGrowthCloud() {
       headers: { apikey: config.anonKey, 'Content-Type': 'application/json' },
       body: JSON.stringify({ email: normalizeEmail(identity), password })
     });
-    if (!response.ok) return { ok: false, message: await response.text() };
+    if (!response.ok) return { ok: false, message: cloudMessage(await response.text()) };
     const session = await response.json();
     if (!session?.access_token) return { ok: false };
     setSession(session);
@@ -218,7 +244,7 @@ export function createGrowthCloud() {
         body: JSON.stringify({ action: 'upsert-profile', member })
       });
       if (response.status === 404) return { ok: false, skipped: true };
-      if (!response.ok) return { ok: false, message: await response.text() };
+      if (!response.ok) return { ok: false, message: cloudMessage(await response.text()) };
       const payload = await response.json();
       return { ok: Boolean(payload?.ok), data: payload };
     } catch (error) {
@@ -281,7 +307,7 @@ export function createGrowthCloud() {
         headers
       });
       if (response.status === 404) return { ok: false, skipped: true };
-      if (!response.ok) return { ok: false, status: response.status, message: await response.text() };
+      if (!response.ok) return { ok: false, status: response.status, message: cloudMessage(await response.text()) };
       return response.json();
     } catch (error) {
       return { ok: false, message: error instanceof Error ? error.message : 'growth_sync_load_failed' };
@@ -304,7 +330,7 @@ export function createGrowthCloud() {
         body: JSON.stringify({ state })
       });
       if (response.status === 404) return { ok: false, skipped: true };
-      if (!response.ok) return { ok: false, status: response.status, message: await response.text() };
+      if (!response.ok) return { ok: false, status: response.status, message: cloudMessage(await response.text()) };
       return response.json();
     } catch (error) {
       return { ok: false, message: error instanceof Error ? error.message : 'growth_sync_save_failed' };
