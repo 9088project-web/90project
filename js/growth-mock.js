@@ -451,6 +451,43 @@ function setInvoiceMessage(message, error = false) {
   updateMessageElement(document.querySelector('[data-admin-invoice-message]'), message, error);
 }
 
+function growthReadableCloudMessage(value, fallback = '云端同步暂时失败，请重新登录后台后再试。') {
+  const raw = value instanceof Error ? value.message : String(value || '');
+  let text = raw.trim();
+
+  if (text.startsWith('{')) {
+    try {
+      const payload = JSON.parse(text);
+      text = String(
+        payload.error_description
+        || payload.msg
+        || payload.message
+        || payload.error
+        || payload.detail
+        || text
+      ).trim();
+    } catch (error) {}
+  }
+
+  const lower = text.toLowerCase();
+  if (!text) return fallback;
+  if (text === '400' || lower.includes('bad request') || lower.includes('cloud request was rejected') || (lower.includes('detail') && lower.includes('bad'))) {
+    return '云端拒绝了这个请求。请检查顾客资料、金额、日期和后台登录状态后再试。';
+  }
+  if (lower.includes('jwt') || lower.includes('token') || lower.includes('unauthorized') || lower.includes('missing_admin_session')) {
+    return '后台云端登录已过期，请重新登录后台后再保存一次。';
+  }
+  if (lower.includes('save_failed')) return '云端保存暂时失败，请重新登录后台后再试。';
+  if (lower.includes('load_failed')) return '云端读取暂时失败，请刷新或重新登录后台。';
+  return text;
+}
+
+function cloudSyncProblemMessage(...results) {
+  const firstProblem = results.find(result => result && !cloudSyncOk(result, false));
+  if (!firstProblem) return '';
+  return growthReadableCloudMessage(firstProblem.message || firstProblem.reason || firstProblem.status || '');
+}
+
 function setBusy(form, busy, label = '') {
   const button = form?.querySelector('button[type="submit"]');
   if (!button) return;
@@ -1114,7 +1151,7 @@ function renderAdminInvoiceItems(items = []) {
   if (!container) return;
   const source = Array.isArray(items) ? items : [];
   if (!source.length) {
-    container.innerHTML = '<div class="admin-invoice-empty">先选择 Set 套餐，或点击「+ 加项目」自由添加。</div>';
+    container.innerHTML = '<div class="admin-invoice-empty">先点 Set A-D，或用「+ 自由加项」临时加入项目。</div>';
     return;
   }
   container.innerHTML = source.map((item, index) => adminInvoiceItemTemplate(item, index)).join('');
@@ -1133,6 +1170,33 @@ function setAdminInvoiceMinimumPax(minimumPax = 10) {
   paxField.value = String(minimum);
   paxField.dispatchEvent(new Event('input', { bubbles: true }));
   paxField.dispatchEvent(new Event('change', { bubbles: true }));
+}
+
+function isAdminInvoiceSetDescription(description = '') {
+  return /\bSet\s*[A-D]\b/i.test(String(description || '').trim());
+}
+
+function syncAdminInvoiceSetQtyFromPax() {
+  const paxField = invoiceField('pax');
+  const pax = Math.max(10, invoiceQuantity(paxField?.value) || 10);
+  let changed = false;
+  let hasSetItem = false;
+  adminInvoiceRows().forEach(row => {
+    const description = row.querySelector('[data-invoice-item-field="description"]')?.value || '';
+    if (!isAdminInvoiceSetDescription(description)) return;
+    hasSetItem = true;
+    const qtyField = row.querySelector('[data-invoice-item-field="qty"]');
+    if (!qtyField) return;
+    const currentQty = invoiceQuantity(qtyField.value);
+    if (currentQty === pax) return;
+    qtyField.value = invoiceQuantityLabel(pax);
+    changed = true;
+  });
+  if (hasSetItem && paxField && invoiceQuantity(paxField.value) !== pax) {
+    paxField.value = String(pax);
+    changed = true;
+  }
+  return changed;
 }
 
 function collectAdminInvoiceItems() {
@@ -1351,7 +1415,7 @@ function replaceAdminInvoiceSetItem(item = {}) {
   const current = collectAdminInvoiceItems();
   const qty = Math.max(10, invoiceQuantity(item.qty !== undefined ? item.qty : 10));
   setAdminInvoiceMinimumPax(qty);
-  const next = current.filter(entry => !/^活动餐饮 Set [A-D]/i.test(entry.description || ''));
+  const next = current.filter(entry => !isAdminInvoiceSetDescription(entry.description));
   next.push({
     description: item.description || '活动餐饮 Set',
     qty,
@@ -1459,6 +1523,7 @@ function updateAdminInvoicePreview() {
   const form = document.querySelector('[data-admin-invoice-form]');
   if (!form) return null;
   if (!invoiceValue('invoiceNo')) invoiceField('invoiceNo').value = generateInvoiceNo();
+  syncAdminInvoiceSetQtyFromPax();
   const data = collectAdminInvoiceInput();
   const balanceField = invoiceField('balanceAmount');
   if (balanceField) balanceField.value = data.balanceAmount.toFixed(2);
@@ -1514,8 +1579,12 @@ function resetAdminInvoiceForm() {
 
 async function copyText(value) {
   if (navigator.clipboard?.writeText) {
-    await navigator.clipboard.writeText(value);
-    return true;
+    try {
+      await navigator.clipboard.writeText(value);
+      return true;
+    } catch (error) {
+      // Some embedded browsers block clipboard permission; fall back to the classic copy path.
+    }
   }
   const textarea = document.createElement('textarea');
   textarea.value = value;
@@ -1600,7 +1669,7 @@ async function saveAdminInvoice(options = {}) {
   const cloudResult = await syncOrderUpdateToCloud(updated.order, payload);
   const stateResult = await saveSharedGrowthStateForAdmin();
   const fullySynced = cloudSyncOk(cloudResult) && cloudSyncOk(stateResult, false);
-  setInvoiceMessage(fullySynced ? '开单已保存，并已同步云端。' : '开单已保存；云端同步需要后台重新登录后再保存一次。', !fullySynced);
+  setInvoiceMessage(fullySynced ? '开单已保存，并已同步云端。' : `开单已保存在本机；${cloudSyncProblemMessage(cloudResult, stateResult) || '云端同步需要后台重新登录后再保存一次。'}`, !fullySynced);
   renderAdmin();
   return { ok: true, data, message, order: updated.order, cloudResult, stateResult };
 }
@@ -1807,7 +1876,7 @@ async function applyAdminOrderQuickAction(orderId, action) {
     paid: '余额已结清',
     complete: '服务已完成，推荐佣金已计算'
   })[action] || '订单已更新';
-  setInvoiceMessage(synced ? `${actionLabel}，并已同步云端。` : `${actionLabel}，本次云端同步暂时失败。`, !synced);
+  setInvoiceMessage(synced ? `${actionLabel}，并已同步云端。` : `${actionLabel}；${cloudSyncProblemMessage(cloudResult, stateResult) || '本次云端同步暂时失败。'}`, !synced);
 }
 
 function adminHistoryDate(value) {
@@ -2260,7 +2329,7 @@ function bindAdmin() {
       const row = removeInvoiceItemButton.closest('[data-admin-invoice-item]');
       row?.remove();
       if (!adminInvoiceRows().length) clearAdminInvoiceItems();
-      if (!collectAdminInvoiceItems().some(item => /^活动餐饮 Set [A-D]/i.test(item.description || ''))) {
+      if (!collectAdminInvoiceItems().some(item => isAdminInvoiceSetDescription(item.description))) {
         clearAdminInvoicePresetActive();
       }
       updateAdminInvoicePreview();
@@ -2306,7 +2375,8 @@ function bindAdmin() {
       await loadSharedGrowthStateForAdmin();
       await syncCloudOrderLeads(true);
       renderAdmin();
-      setInvoiceMessage(sharedGrowthStateSync.error || cloudOrderLeadSync.error ? '云端同步暂时失败，请确认后台登录状态后再试。' : '云端开单记录已同步。', Boolean(sharedGrowthStateSync.error || cloudOrderLeadSync.error));
+      const syncError = sharedGrowthStateSync.error || cloudOrderLeadSync.error;
+      setInvoiceMessage(syncError ? growthReadableCloudMessage(syncError) : '云端开单记录已同步。', Boolean(syncError));
       return;
     }
     const loadInvoiceButton = event.target.closest('[data-admin-load-invoice]');

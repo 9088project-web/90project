@@ -159,22 +159,22 @@
         <div class="admin-section-head">
           <div>
             <h2>快速开单</h2>
-            <p>填顾客、选项目、确认金额，直接 WhatsApp 给顾客。</p>
+            <p>三步完成：顾客资料、选择 Set / 自由项目、确认金额后 WhatsApp 发送。</p>
           </div>
         </div>
         <form class="growth-form growth-panel admin-invoice-panel admin-pos-panel admin-pos-simplified" data-admin-invoice-form>
           <div class="admin-invoice-head admin-pos-titlebar">
             <div class="admin-pos-title-copy">
               <span>QUICK ORDER</span>
-              <h3>顾客 → 项目 → 收款</h3>
-              <p>常用套餐直接点选，金额自动计算。</p>
+              <h3>快速开单收银台</h3>
+              <p>顾客资料、套餐、加项、订金与余额都会即时计算。</p>
             </div>
             <div class="admin-pos-title-actions">
               <div class="admin-pos-status-pill">
                 <span>PAYMENT</span>
                 <strong data-admin-invoice-kpi="paymentStatus">未收款</strong>
               </div>
-              <button class="growth-button secondary" type="button" data-admin-new-invoice>新开单</button>
+              <button class="growth-button secondary" type="button" data-admin-new-invoice>新单</button>
             </div>
           </div>
 
@@ -188,33 +188,33 @@
           <div class="admin-order-flow-strip" data-admin-order-flow aria-label="开单流程">
             <button type="button" class="is-active" data-admin-order-stage="quote">
               <span>01</span>
-              <strong>报价</strong>
-              <small>发给顾客</small>
+              <strong>资料</strong>
+              <small>顾客资料</small>
             </button>
             <button type="button" data-admin-order-stage="confirm">
               <span>02</span>
-              <strong>确认</strong>
-              <small>顾客确认</small>
+              <strong>项目</strong>
+              <small>选 Set / 加项</small>
             </button>
             <button type="button" data-admin-order-stage="deposit">
               <span>03</span>
-              <strong>订金</strong>
-              <small>记录收款</small>
+              <strong>收款</strong>
+              <small>订金余额</small>
             </button>
             <button type="button" data-admin-order-stage="complete">
               <span>04</span>
-              <strong>完成</strong>
-              <small>服务结束</small>
+              <strong>发送</strong>
+              <small>WhatsApp</small>
             </button>
             <button type="button" data-admin-order-stage="receipt">
               <span>05</span>
               <strong>收据</strong>
-              <small>结清打印</small>
+              <small>打印留档</small>
             </button>
           </div>
 
           <div class="admin-pos-workspace">
-            <section class="admin-pos-card admin-pos-customer">
+            <section class="admin-pos-card admin-pos-customer admin-pos-customer-card">
               <div class="admin-pos-card-head">
                 <div>
                   <span>STEP 1</span>
@@ -224,7 +224,7 @@
               <div class="admin-pos-fieldset">
                 <div class="admin-pos-fieldset-head">
                   <strong>顾客资料</strong>
-                  <span>开单前只需要姓名和 WhatsApp。</span>
+                  <span>先填姓名和 WhatsApp；日期、人数、地点可以展开补上。</span>
                 </div>
                 <div class="growth-form-grid admin-pos-form-grid">
                   <label>顾客姓名
@@ -237,7 +237,7 @@
               </div>
 
               <details class="admin-pos-more admin-pos-service-drawer" open>
-                <summary>Catering 细节</summary>
+                <summary>活动 / Catering 资料</summary>
                 <div class="admin-pos-fieldset-head">
                   <strong>日期、人数、地点</strong>
                   <span>这些资料会自动写进 WhatsApp 和收据。</span>
@@ -308,7 +308,7 @@
               </details>
             </section>
 
-            <section class="admin-pos-card admin-pos-register">
+            <section class="admin-pos-card admin-pos-register admin-pos-menu-column">
               <div class="admin-pos-card-head">
                 <div>
                   <span>STEP 2</span>
@@ -320,9 +320,9 @@
                 <div class="admin-pos-menu-card-head">
                   <div>
                     <span>套餐 Set</span>
-                    <strong>活动餐饮一键加入</strong>
+                    <strong>Set A-D 快速选择</strong>
                   </div>
-                  <small>10 pax 起算；已有人数会自动套用。</small>
+                  <small>10 pax 起算，可再加自由项目。</small>
                 </div>
                 <div class="admin-pos-preset-strip admin-pos-set-grid" aria-label="活动餐饮套餐">
                   <button type="button" data-admin-invoice-preset data-preset-group="set" data-preset-name="活动餐饮 Set A" data-preset-qty="10" data-preset-price="29.90"><span>Set A</span><small>主食2 · 肉2 · 菜2</small><b>RM29.90</b></button>
@@ -330,15 +330,17 @@
                   <button type="button" data-admin-invoice-preset data-preset-group="set" data-preset-name="活动餐饮 Set C" data-preset-qty="10" data-preset-price="39.90"><span>Set C</span><small>主食2 · 肉2 · 菜2 · 海鲜1</small><b>RM39.90</b></button>
                   <button type="button" data-admin-invoice-preset data-preset-group="set" data-preset-name="活动餐饮 Set D" data-preset-qty="10" data-preset-price="43.90"><span>Set D</span><small>主食2 · 肉2 · 海鲜1 · 菜3</small><b>RM43.90</b></button>
                 </div>
+                <p class="admin-pos-set-note">顾客可以在套餐规定内自由选菜单；菜单还没确定时，也可以先开单后用 WhatsApp 确认。</p>
               </div>
 
               <div class="admin-pos-free-head">
                 <div>
                   <span>自由选项</span>
-                  <strong>加项目或临时调整</strong>
+                  <strong>额外加项 / 费用调整</strong>
+                  <small>加菜、布置、特别费用或临时报价，用这里快速补上。</small>
                 </div>
                 <div>
-                  <button class="growth-button secondary" type="button" data-admin-invoice-add-item>+ 加项目</button>
+                  <button class="growth-button secondary" type="button" data-admin-invoice-add-item>+ 自由加项</button>
                   <button class="growth-button secondary admin-pos-clear" type="button" data-admin-invoice-clear-items>清空</button>
                 </div>
               </div>
@@ -371,7 +373,7 @@
               <div class="admin-pos-card-head">
                 <div>
                   <span>CHECKOUT</span>
-                  <h3>收款</h3>
+                  <h3>结账</h3>
                 </div>
               </div>
               <div class="growth-form-grid admin-pos-checkout-grid">
@@ -383,11 +385,14 @@
                     <option value="Bank Transfer">Bank Transfer</option>
                     <option value="Cash">Cash</option>
                     <option value="Touch n Go">Touch n Go</option>
-                    <option value="Pending">待确认</option>
+                  <option value="Pending">待确认</option>
                   </select>
                 </label>
                 <label>运输费 RM
                   <input data-invoice-field="deliveryFee" type="number" min="0" step="0.01" value="0">
+                </label>
+                <label>服务 / 布置费 RM
+                  <input data-invoice-field="serviceFee" type="number" min="0" step="0.01" value="0">
                 </label>
                 <label>优惠 / 调整 RM
                   <input data-invoice-field="discountAmount" type="number" min="0" step="0.01" value="0">
@@ -412,14 +417,11 @@
                 </dl>
                 <p>系统会自动计算：项目小计 + 运输费 + 服务费 - 优惠 - 订金 = 余额。</p>
               </div>
-              <details class="admin-pos-more admin-pos-preview-drawer">
-                <summary>预览收据 / WhatsApp / 后台备注</summary>
+              <details class="admin-pos-more admin-pos-preview-drawer" open>
+                <summary>收据预览 / WhatsApp 文案</summary>
                 <div class="admin-pos-more-body">
                   <div class="admin-pos-receipt" data-admin-invoice-receipt></div>
                   <div class="growth-form-grid admin-pos-checkout-grid">
-                    <label>服务 / 布置费 RM
-                      <input data-invoice-field="serviceFee" type="number" min="0" step="0.01" value="0">
-                    </label>
                     <label>后台备注
                       <textarea data-invoice-field="adminNotes" rows="3" placeholder="只给后台看的备注，例如付款截图、特别安排、内部负责人。"></textarea>
                     </label>
@@ -437,10 +439,10 @@
           </div>
 
           <div class="admin-invoice-actions">
-            <button class="growth-button" type="button" data-admin-invoice-open>保存并 WhatsApp</button>
-            <button class="growth-button secondary" type="submit">只保存</button>
+            <button class="growth-button" type="button" data-admin-invoice-open>保存 + WhatsApp</button>
+            <button class="growth-button secondary" type="submit">保存记录</button>
             <button class="growth-button secondary" type="button" data-admin-invoice-copy>复制文案</button>
-            <button class="growth-button secondary" type="button" data-admin-invoice-print>打印 / PDF</button>
+            <button class="growth-button secondary" type="button" data-admin-invoice-print>打印/PDF</button>
             <button class="growth-button secondary" type="button" data-admin-new-invoice>新单</button>
           </div>
           <p class="growth-message" data-admin-invoice-message aria-live="polite"></p>
