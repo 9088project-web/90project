@@ -885,6 +885,13 @@ function bindMemberPage() {
   loginHelpLinks.forEach(link => link.addEventListener('click', updateLoginHelpLinks));
 
   const isEmailIdentity = value => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(value || '').trim());
+  const passwordResetRedirectUrl = () => {
+    if (typeof window === 'undefined') return 'https://www.90project.online/member?reset=password';
+    const origin = String(window.location.origin || '').replace(/\/+$/, '');
+    if (/^https:\/\/(www\.)?90project\.online$/i.test(origin)) return 'https://www.90project.online/member?reset=password';
+    if (/^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/i.test(origin)) return `${origin}/member.html?reset=password`;
+    return 'https://www.90project.online/member?reset=password';
+  };
   const openLoginWhatsAppHelp = () => {
     updateLoginHelpLinks();
     window.open(businessWhatsAppUrl(memberLoginHelpMessage(loginIdentityInput?.value)), '_blank', 'noopener');
@@ -897,6 +904,8 @@ function bindMemberPage() {
     resetCard.hidden = false;
     updateMessageElement(resetMessage, t('resetPasswordReady'), false);
     resetCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  } else if (recovery.message) {
+    setMessage(recovery.message, true, 'login');
   }
 
   resetPasswordButton?.addEventListener('click', async () => {
@@ -915,7 +924,7 @@ function bindMemberPage() {
     resetPasswordButton.dataset.originalText = resetPasswordButton.textContent || '';
     resetPasswordButton.textContent = t('resetPasswordSending');
     setMessage(t('resetPasswordSending'), false, 'login');
-    const redirectTo = `${window.location.origin}${window.location.pathname}`;
+    const redirectTo = passwordResetRedirectUrl();
     const result = await cloud.sendPasswordReset(identity, redirectTo);
     resetPasswordButton.disabled = false;
     resetPasswordButton.textContent = resetPasswordButton.dataset.originalText || t('forgotLogin');

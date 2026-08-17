@@ -217,6 +217,8 @@ export function createGrowthCloud() {
     const hashParams = new URLSearchParams(String(location.hash || '').replace(/^#/, ''));
     const searchParams = new URLSearchParams(String(location.search || '').replace(/^\?/, ''));
     const params = hashParams.get('access_token') ? hashParams : searchParams;
+    const error = params.get('error_description') || params.get('error') || hashParams.get('error_description') || hashParams.get('error') || searchParams.get('error_description') || searchParams.get('error');
+    if (error) return { ok: false, message: cloudMessage(error) };
     const accessToken = params.get('access_token');
     const type = params.get('type') || hashParams.get('type') || searchParams.get('type');
     if (!accessToken || (type && type !== 'recovery')) return { ok: false };
