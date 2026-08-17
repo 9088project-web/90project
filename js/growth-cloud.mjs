@@ -36,6 +36,7 @@ const cloudMessage = value => {
   const lower = text.toLowerCase();
   if (!text) return '云端请求暂时无法完成，请稍后再试。';
   if (lower.includes('bad request')) return '云端拒绝了这个请求。请检查资料是否完整、格式是否正确，然后再试。';
+  if (lower.includes('rate limit')) return '重设密码邮件发送太频繁，请稍后再试；如果急用，请点击 WhatsApp 协助。';
   if (lower.includes('invalid login credentials')) return 'Email / 手机号或密码不正确。';
   if (lower.includes('email not confirmed')) return '请先确认 Email，再重新登录。';
   if (lower.includes('already registered')) return '这个 Email 已经注册，请直接登录。';
