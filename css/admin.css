@@ -4734,6 +4734,29 @@ body.admin-page{min-height:100vh;overflow-x:hidden;background:radial-gradient(ci
   line-height:1.5;
 }
 
+.admin-section[data-admin-panel="orders"] .admin-pos-simplified .admin-pos-manual-note{
+  margin:0;
+  padding:12px 14px;
+  border:1px solid rgba(160,102,37,.22);
+  border-radius:14px;
+  background:#fff2d5;
+  color:#6b5538;
+  font-size:13px;
+  font-weight:800;
+  line-height:1.55;
+}
+
+.admin-section[data-admin-panel="orders"] .admin-pos-simplified .admin-pos-manual-note strong{
+  color:#1b120a;
+}
+
+.admin-order-card-followup p small{
+  display:block;
+  margin-top:6px;
+  color:#9a6a2f;
+  font-weight:900;
+}
+
 .admin-section[data-admin-panel="orders"] .admin-pos-simplified .admin-pos-free-head{
   display:flex;
   justify-content:space-between;

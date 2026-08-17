@@ -159,7 +159,7 @@
         <div class="admin-section-head">
           <div>
             <h2>快速开单</h2>
-            <p>三步完成：顾客资料、选择 Set / 自由项目、确认金额后 WhatsApp 发送。</p>
+            <p>三步开单：顾客资料、选择 Set / 自由项目、确认金额后 WhatsApp 发送；顾客实际消费后才人工确认计佣。</p>
           </div>
         </div>
         <form class="growth-form growth-panel admin-invoice-panel admin-pos-panel admin-pos-simplified" data-admin-invoice-form>
@@ -167,7 +167,7 @@
             <div class="admin-pos-title-copy">
               <span>QUICK ORDER</span>
               <h3>快速开单收银台</h3>
-              <p>顾客资料、套餐、加项、订金与余额都会即时计算。</p>
+              <p>顾客资料、套餐、加项、订金与余额会即时计算；保存和 WhatsApp 不会自动计佣。</p>
             </div>
             <div class="admin-pos-title-actions">
               <div class="admin-pos-status-pill">
@@ -203,8 +203,8 @@
             </button>
             <button type="button" data-admin-order-stage="complete">
               <span>04</span>
-              <strong>发送</strong>
-              <small>WhatsApp</small>
+              <strong>验收</strong>
+              <small>人工计佣</small>
             </button>
             <button type="button" data-admin-order-stage="receipt">
               <span>05</span>
@@ -277,14 +277,13 @@
                   </label>
                   <label>订单状态
                     <select data-invoice-field="status">
+                      <option value="new">待确认</option>
                       <option value="confirmed">已确认</option>
                       <option value="deposit_paid">已付订金</option>
-                      <option value="service_completed">已完成</option>
-                      <option value="fully_paid">已结清</option>
-                      <option value="new">待确认</option>
                       <option value="cancelled">已取消</option>
                     </select>
                   </label>
+                  <p class="admin-pos-wide admin-pos-manual-note"><strong>人工确认：</strong>这张单保存、发给顾客或收订金后都不会自动计佣。必须等顾客实际消费 / 服务完成后，到「开单记录中心」点击「人工确认完成计佣」。</p>
                   <label>单据类型
                     <select data-invoice-field="documentType">
                       <option value="quotation">报价单</option>
@@ -452,7 +451,7 @@
             <div>
               <span>ORDER RECORDS</span>
               <h3>开单记录中心</h3>
-              <p>所有开单都会保存在这里，可以搜索顾客、载入修改、重发 WhatsApp 或打印收据。</p>
+              <p>所有开单都会保存在这里，可以搜索、载入修改、重发 WhatsApp、打印收据；顾客实际消费后在这里人工确认计佣。</p>
             </div>
             <strong class="admin-order-sync-pill" data-admin-order-sync-status>检查云端中</strong>
           </div>
@@ -513,7 +512,7 @@
       </section>
 
       <section class="admin-section growth-admin-section" data-admin-panel="growth" hidden>
-        <div class="admin-section-head"><div><h2>会员推荐与会员奖励</h2><p>查看会员推荐码、三层佣金、订单完成确认、提现审核和默认规则。</p></div></div>
+        <div class="admin-section-head"><div><h2>会员推荐与会员奖励</h2><p>查看会员推荐码、三层佣金、订单消费人工确认、提现审核和默认规则。</p></div></div>
         <div data-growth-admin>
           <div class="growth-admin-toolbar">
             <label>搜索会员 / 推荐码
@@ -559,7 +558,8 @@
             <div class="growth-table-wrap"><table class="growth-table"><thead><tr><th>下线会员</th><th>直属推荐人</th><th>推荐码</th><th>绑定时间</th></tr></thead><tbody data-growth-admin-relations></tbody></table></div>
           </div>
           <div class="growth-panel">
-            <h3>订单完成确认</h3>
+            <h3>人工确认完成订单</h3>
+            <p class="growth-muted">只有确认顾客已经实际消费 / 服务已经完成，才点击确认完成并计佣。</p>
             <div class="growth-table-wrap"><table class="growth-table"><thead><tr><th>订单 / 顾客</th><th>服务 / 状态</th><th>金额</th><th>操作</th></tr></thead><tbody data-growth-admin-orders></tbody></table></div>
           </div>
           <div class="growth-panel">

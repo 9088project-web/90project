@@ -196,6 +196,61 @@ export function createGrowthCloud() {
     return { ok: true, session };
   }
 
+  async function sendPasswordReset(email, redirectTo = '') {
+    if (!configured()) return { ok: false, skipped: true };
+    const body = { email: normalizeEmail(email) };
+    if (redirectTo) body.redirect_to = redirectTo;
+    const response = await fetch(`${config.url}/auth/v1/recover`, {
+      method: 'POST',
+      headers: {
+        apikey: config.anonKey,
+        Authorization: `Bearer ${config.anonKey}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(body)
+    });
+    if (!response.ok) return { ok: false, message: cloudMessage(await response.text()) };
+    return { ok: true };
+  }
+
+  function recoverySessionFromUrl(location = window.location) {
+    const hashParams = new URLSearchParams(String(location.hash || '').replace(/^#/, ''));
+    const searchParams = new URLSearchParams(String(location.search || '').replace(/^\?/, ''));
+    const params = hashParams.get('access_token') ? hashParams : searchParams;
+    const accessToken = params.get('access_token');
+    const type = params.get('type') || hashParams.get('type') || searchParams.get('type');
+    if (!accessToken || (type && type !== 'recovery')) return { ok: false };
+    const expiresIn = Number(params.get('expires_in')) || 3600;
+    const session = {
+      access_token: accessToken,
+      refresh_token: params.get('refresh_token') || null,
+      token_type: params.get('token_type') || 'bearer',
+      expires_at: Math.floor(Date.now() / 1000) + expiresIn
+    };
+    setSession(session);
+    if (typeof window !== 'undefined' && window.history?.replaceState) {
+      window.history.replaceState({}, document.title, `${location.pathname}${location.search && !location.search.includes('access_token') ? location.search : ''}`);
+    }
+    return { ok: true, session };
+  }
+
+  async function updatePassword(password, session = getSession()) {
+    if (!configured()) return { ok: false, skipped: true };
+    if (!session?.access_token) return { ok: false, reason: 'missing_recovery_session' };
+    const response = await fetch(`${config.url}/auth/v1/user`, {
+      method: 'PUT',
+      headers: {
+        apikey: config.anonKey,
+        Authorization: `Bearer ${session.access_token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ password })
+    });
+    if (!response.ok) return { ok: false, message: cloudMessage(await response.text()) };
+    const text = await response.text();
+    return { ok: true, user: text ? JSON.parse(text) : null };
+  }
+
   function signOut() {
     setSession(null);
   }
@@ -444,6 +499,9 @@ export function createGrowthCloud() {
     sendPhoneOtp,
     verifyPhoneOtp,
     signIn,
+    sendPasswordReset,
+    recoverySessionFromUrl,
+    updatePassword,
     signOut,
     loadProfile,
     profileToMember,

@@ -458,9 +458,41 @@ body.growth-page {
   font-weight: 800;
 }
 
-.member-form-help a {
+.member-form-help a,
+.member-form-help-link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 32px;
+  padding: 4px 2px;
+  border: 0;
   color: #8c602d;
-  text-decoration: none;
+  background: transparent;
+  font: inherit;
+  font-weight: 900;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+  cursor: pointer;
+}
+
+.member-form-help a:hover,
+.member-form-help a:focus-visible,
+.member-form-help-link:hover,
+.member-form-help-link:focus-visible {
+  color: #4f2d10;
+  outline: none;
+}
+
+.member-form-help-link:disabled {
+  color: #b69a77;
+  cursor: wait;
+}
+
+.member-reset-card {
+  grid-column: 1 / -1;
+  border-color: rgba(214, 168, 92, .42);
+  background:
+    linear-gradient(135deg, rgba(255, 250, 241, .98), rgba(255, 240, 207, .86)),
+    #fffaf1;
 }
 
 .phone-verify-box {

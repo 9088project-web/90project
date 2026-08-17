@@ -8,6 +8,7 @@ const GROWTH_ORDER_QUEUE_KEY = 'np90_growth_order_queue_v1';
 const SUPABASE_ADMIN_SESSION_KEY = 'np90_supabase_session_v1';
 const ADMIN_INVOICE_DRAFT_KEY = 'np90_admin_invoice_draft_v1';
 const BUSINESS_WHATSAPP = '018-949 0908';
+const BUSINESS_WHATSAPP_LINK = '60189490908';
 const BUSINESS_EMAIL = '9088project@gmail.com';
 const translations = {
   zh: {
@@ -377,7 +378,22 @@ Object.assign(translations.zh, {
   applicationCloudOk: '会员推荐资料已同步云端。',
   applicationCloudFail: '会员推荐资料已保存在本地，云端同步暂时失败。',
   applicationLocalOk: '会员推荐资料已保存。',
-  withdrawPromoterRequired: '推荐码生成后才可以申请提现。'
+  withdrawPromoterRequired: '推荐码生成后才可以申请提现。',
+  resetPasswordBadge: '重设密码',
+  resetPasswordTitle: '设置新密码',
+  resetPasswordIntro: '请输入新的会员密码。完成后可以用新密码登录会员中心。',
+  resetPasswordNew: '新密码',
+  resetPasswordAction: '更新密码',
+  resetPasswordPrompt: '请先在登录框输入注册 Email，系统才可以自动发送重设密码邮件。',
+  resetPasswordPhoneHelp: '手机号暂时不能自动重设密码，已为你打开 WhatsApp 协助。',
+  resetPasswordSending: '正在发送重设密码邮件...',
+  resetPasswordSent: '重设密码邮件已发送，请到 Email 收信并按照步骤更新密码。',
+  resetPasswordUnavailable: '自动重设暂时无法使用，已为你打开 WhatsApp 协助。',
+  resetPasswordReady: '请设置新的会员密码。',
+  resetPasswordInvalid: '新密码至少需要 6 个字符。',
+  resetPasswordUpdating: '正在更新密码...',
+  resetPasswordUpdated: '密码已更新，请使用新密码登录。',
+  resetPasswordFailed: '密码更新失败，请重新打开 Email 链接或使用 WhatsApp 协助。'
 });
 
 Object.assign(translations.en, {
@@ -404,7 +420,22 @@ Object.assign(translations.en, {
   applicationCloudOk: 'Member referral profile synced to the cloud.',
   applicationCloudFail: 'Member referral profile saved locally, but cloud sync failed for now.',
   applicationLocalOk: 'Member referral profile saved.',
-  withdrawPromoterRequired: 'You can request withdrawal after your referral code is ready.'
+  withdrawPromoterRequired: 'You can request withdrawal after your referral code is ready.',
+  resetPasswordBadge: 'Password reset',
+  resetPasswordTitle: 'Set a new password',
+  resetPasswordIntro: 'Enter a new member password. After updating, you can log in with the new password.',
+  resetPasswordNew: 'New password',
+  resetPasswordAction: 'Update password',
+  resetPasswordPrompt: 'Please enter your registered email in the login box so the system can send a reset email.',
+  resetPasswordPhoneHelp: 'Mobile numbers cannot reset passwords automatically yet. WhatsApp help has been opened.',
+  resetPasswordSending: 'Sending password reset email...',
+  resetPasswordSent: 'Password reset email sent. Please check your email and follow the steps.',
+  resetPasswordUnavailable: 'Automatic reset is not available right now. WhatsApp help has been opened.',
+  resetPasswordReady: 'Please set your new member password.',
+  resetPasswordInvalid: 'The new password needs at least 6 characters.',
+  resetPasswordUpdating: 'Updating password...',
+  resetPasswordUpdated: 'Password updated. Please log in with the new password.',
+  resetPasswordFailed: 'Password update failed. Please reopen the email link or use WhatsApp help.'
 });
 
 
@@ -503,6 +534,24 @@ function setBusy(form, busy, label = '') {
 
 function busyLabel(key) {
   return t(key) || '处理中...';
+}
+
+function businessWhatsAppUrl(message) {
+  return `https://wa.me/${BUSINESS_WHATSAPP_LINK}?text=${encodeURIComponent(message || '')}`;
+}
+
+function memberLoginHelpMessage(identity = '') {
+  const account = String(identity || '').trim();
+  if (language === 'en') {
+    return [
+      'Hi, I need help with my 90 PROJECT member login.',
+      account ? `Account: ${account}` : ''
+    ].filter(Boolean).join('\n');
+  }
+  return [
+    '你好，我需要协助处理 90 PROJECT 会员登入。',
+    account ? `会员账号：${account}` : ''
+  ].filter(Boolean).join('\n');
 }
 
 function downloadCsv(filename, rows) {
@@ -814,10 +863,80 @@ function bindPromoterApplicationForm() {
 function bindMemberPage() {
   const registerForm = document.getElementById('growthRegisterForm');
   const loginForm = document.getElementById('growthLoginForm');
+  const loginIdentityInput = loginForm?.querySelector('input[name="identity"]');
+  const loginHelpLinks = document.querySelectorAll('[data-member-login-help]');
+  const resetPasswordButton = document.querySelector('[data-member-password-reset]');
+  const resetCard = document.querySelector('[data-member-reset-card]');
+  const resetForm = document.getElementById('growthPasswordResetForm');
+  const resetMessage = document.querySelector('[data-growth-reset-message]');
   const phoneInput = document.getElementById('registerPhoneInput');
   const codeInput = document.getElementById('registerPhoneCode');
   const codeButton = document.getElementById('sendPhoneCode');
   captureReferralFromUrl('/member.html');
+
+  const updateLoginHelpLinks = () => {
+    const url = businessWhatsAppUrl(memberLoginHelpMessage(loginIdentityInput?.value));
+    loginHelpLinks.forEach(link => {
+      if (link instanceof HTMLAnchorElement) link.href = url;
+    });
+  };
+  updateLoginHelpLinks();
+  loginIdentityInput?.addEventListener('input', updateLoginHelpLinks);
+  loginHelpLinks.forEach(link => link.addEventListener('click', updateLoginHelpLinks));
+
+  const isEmailIdentity = value => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(value || '').trim());
+  const openLoginWhatsAppHelp = () => {
+    updateLoginHelpLinks();
+    window.open(businessWhatsAppUrl(memberLoginHelpMessage(loginIdentityInput?.value)), '_blank', 'noopener');
+  };
+
+  const recovery = cloudReady && typeof cloud.recoverySessionFromUrl === 'function'
+    ? cloud.recoverySessionFromUrl()
+    : { ok: false };
+  if (recovery.ok && resetCard) {
+    resetCard.hidden = false;
+    updateMessageElement(resetMessage, t('resetPasswordReady'), false);
+    resetCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+
+  resetPasswordButton?.addEventListener('click', async () => {
+    const identity = String(loginIdentityInput?.value || '').trim();
+    if (!identity) return setMessage(t('resetPasswordPrompt'), true, 'login');
+    if (!isEmailIdentity(identity)) {
+      setMessage(t('resetPasswordPhoneHelp'), true, 'login');
+      return openLoginWhatsAppHelp();
+    }
+    if (!cloudReady || typeof cloud.sendPasswordReset !== 'function') {
+      setMessage(t('resetPasswordUnavailable'), true, 'login');
+      return openLoginWhatsAppHelp();
+    }
+
+    resetPasswordButton.disabled = true;
+    resetPasswordButton.dataset.originalText = resetPasswordButton.textContent || '';
+    resetPasswordButton.textContent = t('resetPasswordSending');
+    setMessage(t('resetPasswordSending'), false, 'login');
+    const redirectTo = `${window.location.origin}${window.location.pathname}`;
+    const result = await cloud.sendPasswordReset(identity, redirectTo);
+    resetPasswordButton.disabled = false;
+    resetPasswordButton.textContent = resetPasswordButton.dataset.originalText || t('forgotLogin');
+    setMessage(result.ok ? t('resetPasswordSent') : (result.message || t('resetPasswordUnavailable')), !result.ok, 'login');
+    if (!result.ok) openLoginWhatsAppHelp();
+  });
+
+  resetForm?.addEventListener('submit', async event => {
+    event.preventDefault();
+    const password = String(new FormData(resetForm).get('password') || '');
+    if (password.length < 6) return updateMessageElement(resetMessage, t('resetPasswordInvalid'), true);
+    if (!cloudReady || typeof cloud.updatePassword !== 'function') return updateMessageElement(resetMessage, t('resetPasswordFailed'), true);
+    setBusy(resetForm, true, busyLabel('resetPasswordUpdating'));
+    updateMessageElement(resetMessage, t('resetPasswordUpdating'), false);
+    const result = await cloud.updatePassword(password);
+    setBusy(resetForm, false);
+    if (!result.ok) return updateMessageElement(resetMessage, result.message || t('resetPasswordFailed'), true);
+    resetForm.reset();
+    updateMessageElement(resetMessage, t('resetPasswordUpdated'), false);
+    setMessage(t('resetPasswordUpdated'), false, 'login');
+  });
 
   phoneInput?.addEventListener('input', updatePhoneVerificationUi);
   codeButton?.addEventListener('click', async () => {
@@ -1243,6 +1362,13 @@ function adminInvoiceStatusText(status) {
   })[status] || status || '-';
 }
 
+function adminInvoiceSafeManualStatus(data = {}) {
+  const status = String(data.status || '').trim();
+  if (adminEditableOrderStatuses.includes(status)) return status;
+  if (money(data.depositAmount) > 0 || (money(data.totalAmount) > 0 && money(data.balanceAmount) <= 0)) return 'deposit_paid';
+  return 'confirmed';
+}
+
 function updateAdminInvoiceKpis(data) {
   const set = (key, value) => {
     document.querySelectorAll(`[data-admin-invoice-kpi="${key}"]`).forEach(element => {
@@ -1315,14 +1441,14 @@ function applyAdminInvoiceStage(stage) {
     }
     message = total > 0 ? '已进入订金阶段，系统已准备付款余额。' : '请先加入项目和金额，再记录订金。';
   } else if (stage === 'complete') {
-    if (statusField) statusField.value = 'service_completed';
     if (documentField) documentField.value = 'invoice';
-    message = '服务已标记完成，可以检查余额并发收据。';
+    if (statusField && !adminEditableOrderStatuses.includes(statusField.value)) statusField.value = adminInvoiceSafeManualStatus(current);
+    message = '顾客实际消费后，请到「开单记录中心」点击「人工确认完成计佣」。';
   } else if (stage === 'receipt') {
-    if (statusField) statusField.value = 'fully_paid';
     if (documentField) documentField.value = 'receipt';
     if (depositField && total > 0) depositField.value = total.toFixed(2);
-    message = total > 0 ? '已切换成收据，付款状态为结清。' : '请先加入项目和金额，再生成收据。';
+    if (statusField && !['confirmed', 'deposit_paid'].includes(statusField.value)) statusField.value = total > 0 ? 'deposit_paid' : 'confirmed';
+    message = total > 0 ? '已生成收据金额；推荐佣金仍需在订单记录人工确认。' : '请先加入项目和金额，再生成收据。';
   }
 
   updateAdminInvoicePreview();
@@ -1612,12 +1738,20 @@ async function saveAdminInvoice(options = {}) {
   const form = document.querySelector('[data-admin-invoice-form]');
   if (!form) return { ok: false, reason: 'form_not_found' };
   if (!form.reportValidity()) return { ok: false, reason: 'invalid_form' };
-  const preview = updateAdminInvoicePreview();
-  const data = preview?.data;
-  const message = preview?.message || '';
+  let preview = updateAdminInvoicePreview();
+  let data = preview?.data;
+  let message = preview?.message || '';
   if (!data?.originalAmount) {
     setInvoiceMessage('请填写项目金额，系统才可以准确开单。', true);
     return { ok: false, reason: 'missing_amount' };
+  }
+  const safeStatus = adminInvoiceSafeManualStatus(data);
+  if (data.status !== safeStatus) {
+    const statusField = invoiceField('status');
+    if (statusField) statusField.value = safeStatus;
+    preview = updateAdminInvoicePreview();
+    data = preview?.data;
+    message = preview?.message || message;
   }
   const payload = {
     externalInquiryId: data.invoiceNo,
@@ -1778,8 +1912,8 @@ function adminOrderNextStep(order) {
   if (status === 'new') return '先确认订单，再发送 WhatsApp 给顾客。';
   if (!total) return '先补上金额，系统才可以准确开单。';
   if (deposit <= 0) return '下一步：收订金，或直接结清。';
-  if (balance > 0) return `下一步：跟进余款 ${formatMoney(balance)}，服务完成后再计佣。`;
-  return '下一步：服务完成后点击完成计佣。';
+  if (balance > 0) return `下一步：跟进余款 ${formatMoney(balance)}；顾客实际消费后再人工确认计佣。`;
+  return '下一步：顾客实际消费 / 服务完成后，点击「人工确认完成计佣」。';
 }
 
 function adminOrderQuickActionButtons(order) {
@@ -1800,7 +1934,7 @@ function adminOrderQuickActionButtons(order) {
     buttons.push(`<button class="admin-order-action-btn" type="button" data-admin-order-quick-action="paid" data-order-id="${esc(order.id)}">结清余额</button>`);
   }
   if (!isClosed && !isCompleted) {
-    buttons.push(`<button class="admin-order-action-btn is-primary" type="button" data-admin-order-quick-action="complete" data-order-id="${esc(order.id)}">完成计佣</button>`);
+    buttons.push(`<button class="admin-order-action-btn is-primary" type="button" data-admin-order-quick-action="complete" data-order-id="${esc(order.id)}">人工确认完成计佣</button>`);
   }
   return buttons.join('');
 }
@@ -1857,9 +1991,20 @@ async function applyAdminOrderQuickAction(orderId, action) {
     };
     result = api.updateOrder(orderId, payload, 'admin-order-center');
   } else if (action === 'complete') {
-    if (balance > 0 && !window.confirm(`这张订单还有余款 ${formatMoney(balance)}。确定要完成并计算推荐佣金吗？`)) return;
+    const confirmText = balance > 0
+      ? `这张订单还有余款 ${formatMoney(balance)}。\n\n只有确认顾客已经实际消费 / 服务已经完成，才可以计算推荐佣金。\n\n确定要人工确认完成并计佣吗？`
+      : '请确认顾客已经实际消费 / 服务已经完成。\n\n确认后系统会计算三代推荐佣金，并锁定这张订单。';
+    if (!window.confirm(confirmText)) return;
+    const verifiedNotes = appendAdminOrderNote(order, '人工确认顾客已消费 / 服务已完成，允许系统计入推荐佣金。');
+    api.updateOrder(orderId, { adminNotes: verifiedNotes }, 'admin-order-center');
     result = api.completeOrder(orderId, 'admin-order-center');
-    payload = result.ok ? { status: result.order.status, completedAt: result.order.completedAt } : null;
+    payload = result.ok ? {
+      status: result.order.status,
+      completedAt: result.order.completedAt,
+      manualVerifiedAt: result.order.manualVerifiedAt,
+      manualVerifiedBy: result.order.manualVerifiedBy,
+      adminNotes: result.order.adminNotes
+    } : null;
   }
   if (!result?.ok) {
     setInvoiceMessage(`订单无法更新：${result?.reason || 'unknown'}`, true);
@@ -1874,7 +2019,7 @@ async function applyAdminOrderQuickAction(orderId, action) {
     confirm: '订单已确认',
     deposit: '订金已记录',
     paid: '余额已结清',
-    complete: '服务已完成，推荐佣金已计算'
+    complete: '已人工确认消费，推荐佣金已计算'
   })[action] || '订单已更新';
   setInvoiceMessage(synced ? `${actionLabel}，并已同步云端。` : `${actionLabel}；${cloudSyncProblemMessage(cloudResult, stateResult) || '本次云端同步暂时失败。'}`, !synced);
 }
@@ -1889,6 +2034,10 @@ function fillAdminInvoiceForm(data = {}) {
   Object.entries(data).forEach(([key, value]) => {
     const field = invoiceField(key);
     if (!field || Array.isArray(value)) return;
+    if (key === 'status' && !adminEditableOrderStatuses.includes(String(value || ''))) {
+      field.value = adminInvoiceSafeManualStatus(data);
+      return;
+    }
     if (field.type === 'date' && String(value || '').includes('T')) field.value = String(value).slice(0, 10);
     else field.value = value ?? '';
   });
@@ -1973,6 +2122,9 @@ function renderAdminInvoiceHistory(snapshot = api.adminSnapshot()) {
     const payment = adminOrderPaymentSummary(order);
     const quickActions = adminOrderQuickActionButtons(order);
     const itemPreview = adminInvoiceItemsFromOrder(order).slice(0, 3).map(item => item.description).filter(Boolean).join(' · ') || order.itemsSummary || '暂无项目明细';
+    const manualVerification = order.manualVerifiedAt || order.completedAt
+      ? `<small>人工确认：${esc(adminHistoryDate(order.manualVerifiedAt || order.completedAt))}</small>`
+      : '';
     return `
       <article class="admin-order-card">
         <div class="admin-order-card-head">
@@ -1996,7 +2148,7 @@ function renderAdminInvoiceHistory(snapshot = api.adminSnapshot()) {
             <span>收款状态</span>
             <strong class="${esc(payment.className)}">${esc(payment.label)}</strong>
           </div>
-          <p>${esc(adminOrderNextStep(order))}</p>
+          <p>${esc(adminOrderNextStep(order))}${manualVerification}</p>
         </div>
         <p class="admin-order-card-items">${esc(itemPreview)}</p>
         ${quickActions ? `<div class="admin-order-card-actions admin-order-progress-actions">${quickActions}</div>` : ''}
@@ -2209,7 +2361,7 @@ function renderAdmin() {
       const eventLine = [item.eventDate, item.eventTime].filter(Boolean).join(' ');
       const balanceAmount = money(item.balanceAmount ?? Math.max(0, Number(item.totalAmount || 0) - Number(item.depositAmount || 0)));
       const whatsappActions = `<button class="growth-button secondary" data-copy-order-whatsapp="${esc(item.id)}">复制开单</button>${member?.phone ? `<button class="growth-button secondary" data-open-order-whatsapp="${esc(item.id)}">WhatsApp</button>` : ''}`;
-      return `<tr data-admin-order-row="${esc(item.id)}"><td class="admin-order-invoice"><strong>${esc(invoiceNo)}</strong><br><small>${esc(member?.name || item.memberId)} · ${esc(member?.phone || '-')}</small><br><small>${esc(item.externalInquiryId || item.source || '-')}</small></td><td><label class="growth-inline-field">服务<input data-order-field="serviceType" value="${esc(item.serviceType || '')}" ${locked ? 'disabled' : ''}></label><label class="growth-inline-field">状态<select data-order-field="status" ${locked ? 'disabled' : ''}>${orderStatusOptions(item.status)}</select></label>${relation ? `<small>推荐码 ${esc(relation.referralCode)}</small>` : ''}${eventLine ? `<br><small>${esc(eventLine)}</small>` : ''}${item.location ? `<br><small>${esc(item.location)}</small>` : ''}</td><td><label class="growth-inline-field">金额 RM<input data-order-field="totalAmount" type="number" min="0" step="0.01" value="${Number(item.totalAmount || 0).toFixed(2)}" ${locked ? 'disabled' : ''}></label><small>订金 ${formatMoney(item.depositAmount || 0)} · 余额 ${formatMoney(balanceAmount)}</small><br><small>合资格 ${formatMoney(eligibleAmountForAdmin(item))}</small><label class="growth-inline-field">备注<textarea data-order-field="adminNotes" rows="2" ${locked ? 'disabled' : ''}>${esc(item.adminNotes || '')}</textarea></label></td><td><div class="growth-admin-actions">${whatsappActions}${locked ? '<span class="growth-muted">已锁定</span>' : `<button class="growth-button secondary" data-save-order="${esc(item.id)}">保存订单</button>${canComplete ? `<button class="growth-button" data-complete-order="${esc(item.id)}">确认完成并计佣</button>` : ''}`}</div></td></tr>`;
+      return `<tr data-admin-order-row="${esc(item.id)}"><td class="admin-order-invoice"><strong>${esc(invoiceNo)}</strong><br><small>${esc(member?.name || item.memberId)} · ${esc(member?.phone || '-')}</small><br><small>${esc(item.externalInquiryId || item.source || '-')}</small></td><td><label class="growth-inline-field">服务<input data-order-field="serviceType" value="${esc(item.serviceType || '')}" ${locked ? 'disabled' : ''}></label><label class="growth-inline-field">状态<select data-order-field="status" ${locked ? 'disabled' : ''}>${orderStatusOptions(item.status)}</select></label>${relation ? `<small>推荐码 ${esc(relation.referralCode)}</small>` : ''}${eventLine ? `<br><small>${esc(eventLine)}</small>` : ''}${item.location ? `<br><small>${esc(item.location)}</small>` : ''}</td><td><label class="growth-inline-field">金额 RM<input data-order-field="totalAmount" type="number" min="0" step="0.01" value="${Number(item.totalAmount || 0).toFixed(2)}" ${locked ? 'disabled' : ''}></label><small>订金 ${formatMoney(item.depositAmount || 0)} · 余额 ${formatMoney(balanceAmount)}</small><br><small>合资格 ${formatMoney(eligibleAmountForAdmin(item))}</small><label class="growth-inline-field">备注<textarea data-order-field="adminNotes" rows="2" ${locked ? 'disabled' : ''}>${esc(item.adminNotes || '')}</textarea></label></td><td><div class="growth-admin-actions">${whatsappActions}${locked ? '<span class="growth-muted">已锁定</span>' : `<button class="growth-button secondary" data-save-order="${esc(item.id)}">保存订单</button>${canComplete ? `<button class="growth-button" data-complete-order="${esc(item.id)}">人工确认完成计佣</button>` : ''}`}</div></td></tr>`;
     }).join('') : '<tr><td colspan="4">没有符合筛选的订单。</td></tr>';
   }
   renderAdminInvoiceHistory(snapshot);
@@ -2476,13 +2628,32 @@ function bindAdmin() {
     const completeOrderButton = event.target.closest('[data-complete-order]');
     if (completeOrderButton) {
       const orderId = completeOrderButton.dataset.completeOrder;
+      const snapshot = api.adminSnapshot();
+      const order = snapshot.orders.find(item => item.id === orderId);
+      const total = money(order?.totalAmount || 0);
+      const deposit = money(order?.depositAmount || 0);
+      const balance = money(order?.balanceAmount ?? Math.max(0, total - deposit));
+      const confirmText = balance > 0
+        ? `这张订单还有余款 ${formatMoney(balance)}。\n\n只有确认顾客已经实际消费 / 服务已经完成，才可以计算推荐佣金。\n\n确定要人工确认完成并计佣吗？`
+        : '请确认顾客已经实际消费 / 服务已经完成。\n\n确认后系统会计算三代推荐佣金，并锁定这张订单。';
+      if (!window.confirm(confirmText)) return;
       const input = collectAdminOrderInput(orderId);
-      if (input) api.updateOrder(orderId, input, 'mock-admin');
+      if (input) {
+        input.adminNotes = appendAdminOrderNote(order || input, '人工确认顾客已消费 / 服务已完成，允许系统计入推荐佣金。');
+        api.updateOrder(orderId, input, 'mock-admin');
+      }
       const result = api.completeOrder(orderId, 'mock-admin');
-      const cloudResult = result.ok ? await syncOrderUpdateToCloud(result.order, { ...(input || {}), status: result.order.status }) : { ok: false, skipped: true };
+      const cloudResult = result.ok ? await syncOrderUpdateToCloud(result.order, {
+        ...(input || {}),
+        status: result.order.status,
+        completedAt: result.order.completedAt,
+        manualVerifiedAt: result.order.manualVerifiedAt,
+        manualVerifiedBy: result.order.manualVerifiedBy,
+        adminNotes: result.order.adminNotes
+      }) : { ok: false, skipped: true };
       const stateResult = result.ok ? await saveSharedGrowthStateForAdmin() : { ok: false, skipped: true };
       const synced = result.ok && cloudSyncOk(cloudResult) && cloudSyncOk(stateResult, false);
-      setMessage(result.ok ? (synced ? '订单已确认完成，推荐佣金已计算并同步云端。' : '订单已确认完成，推荐佣金已计算，本次云端同步暂时失败。') : `订单无法完成：${result.reason}`, !result.ok || !synced);
+      setMessage(result.ok ? (synced ? '已人工确认顾客消费，推荐佣金已计算并同步云端。' : '已人工确认顾客消费，推荐佣金已计算，本次云端同步暂时失败。') : `订单无法完成：${result.reason}`, !result.ok || !synced);
       renderAdmin();
       return;
     }

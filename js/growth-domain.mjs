@@ -567,7 +567,7 @@ export function createGrowthApi(storage = defaultStorage(), options = {}) {
     const current = read();
     const enquiry = current.enquiries.find(item => item.id === enquiryId && item.memberId === memberId);
     if (!enquiry) return { ok: false, reason: 'enquiry_not_found' };
-    const order = { id: id('order'), enquiryId, memberId, externalInquiryId: input.externalInquiryId || enquiry.externalInquiryId || '', invoiceNo: input.invoiceNo || input.externalInquiryId || enquiry.invoiceNo || enquiry.externalInquiryId || '', serviceType: input.serviceType || enquiry.serviceType, totalAmount: money(input.totalAmount), originalAmount: money(input.originalAmount || input.totalAmount), discountAmount: money(input.discountAmount), depositAmount: money(input.depositAmount), balanceAmount: money(input.balanceAmount), sstAmount: money(input.sstAmount), deliveryFee: money(input.deliveryFee), extraLabourFee: money(input.extraLabourFee), thirdPartyFee: money(input.thirdPartyFee), couponDiscount: money(input.couponDiscount), refundedAmount: 0, eventDate: input.eventDate || enquiry.eventDate || '', eventTime: input.eventTime || enquiry.eventTime || '', location: input.location || enquiry.location || '', pax: Number(input.pax) || Number(enquiry.pax) || 0, itemsSummary: input.itemsSummary || enquiry.foodChoice || '', lineItems: normalizeOrderLineItems(input.lineItems), adminNotes: input.adminNotes || '', whatsappMessage: input.whatsappMessage || '', sentAt: input.sentAt || null, status: input.status || 'confirmed', source: input.source || 'manual-order', createdAt: dateValue(now()), updatedAt: dateValue(now()), completedAt: null };
+    const order = { id: id('order'), enquiryId, memberId, externalInquiryId: input.externalInquiryId || enquiry.externalInquiryId || '', invoiceNo: input.invoiceNo || input.externalInquiryId || enquiry.invoiceNo || enquiry.externalInquiryId || '', serviceType: input.serviceType || enquiry.serviceType, totalAmount: money(input.totalAmount), originalAmount: money(input.originalAmount || input.totalAmount), discountAmount: money(input.discountAmount), depositAmount: money(input.depositAmount), balanceAmount: money(input.balanceAmount), sstAmount: money(input.sstAmount), deliveryFee: money(input.deliveryFee), extraLabourFee: money(input.extraLabourFee), thirdPartyFee: money(input.thirdPartyFee), couponDiscount: money(input.couponDiscount), refundedAmount: 0, eventDate: input.eventDate || enquiry.eventDate || '', eventTime: input.eventTime || enquiry.eventTime || '', location: input.location || enquiry.location || '', pax: Number(input.pax) || Number(enquiry.pax) || 0, itemsSummary: input.itemsSummary || enquiry.foodChoice || '', lineItems: normalizeOrderLineItems(input.lineItems), adminNotes: input.adminNotes || '', whatsappMessage: input.whatsappMessage || '', sentAt: input.sentAt || null, status: input.status || 'confirmed', source: input.source || 'manual-order', createdAt: dateValue(now()), updatedAt: dateValue(now()), completedAt: null, manualVerifiedAt: null, manualVerifiedBy: '' };
     const next = clone(current);
     next.orders.unshift(order);
     audit(next, 'order.created', memberId, 'order', order.id, 'MOCK order');
@@ -585,7 +585,7 @@ export function createGrowthApi(storage = defaultStorage(), options = {}) {
 
     const next = clone(current);
     const target = next.orders.find(item => item.id === orderId);
-    ['serviceType', 'source', 'invoiceNo', 'eventDate', 'eventTime', 'location', 'itemsSummary', 'whatsappMessage', 'sentAt', 'paymentStatus'].forEach(field => {
+    ['serviceType', 'source', 'invoiceNo', 'eventDate', 'eventTime', 'location', 'itemsSummary', 'whatsappMessage', 'sentAt', 'paymentStatus', 'manualVerifiedBy'].forEach(field => {
       if (input[field] !== undefined) target[field] = String(input[field] || '').trim();
     });
     ['totalAmount', 'sstAmount', 'deliveryFee', 'extraLabourFee', 'thirdPartyFee', 'couponDiscount', 'originalAmount', 'discountAmount', 'depositAmount', 'balanceAmount', 'pax'].forEach(field => {
@@ -595,6 +595,7 @@ export function createGrowthApi(storage = defaultStorage(), options = {}) {
     if (input.adminNotes !== undefined) target.adminNotes = String(input.adminNotes || '').trim();
     if (input.lineItems !== undefined) target.lineItems = normalizeOrderLineItems(input.lineItems);
     if (input.completedAt !== undefined) target.completedAt = input.completedAt || null;
+    if (input.manualVerifiedAt !== undefined) target.manualVerifiedAt = input.manualVerifiedAt || null;
     target.updatedAt = dateValue(now());
 
     const enquiry = next.enquiries.find(item => item.id === target.enquiryId);
@@ -668,6 +669,8 @@ export function createGrowthApi(storage = defaultStorage(), options = {}) {
     const target = next.orders.find(item => item.id === orderId);
     target.status = 'service_completed';
     target.completedAt = dateValue(now());
+    target.manualVerifiedAt = target.completedAt;
+    target.manualVerifiedBy = actorId;
     target.updatedAt = dateValue(now());
     const member = findMember(next, target.memberId);
     if (member) {
@@ -705,7 +708,7 @@ export function createGrowthApi(storage = defaultStorage(), options = {}) {
       });
       if (newLedgers.length) next.commissionLedgers.unshift(...newLedgers);
     }
-    audit(next, 'order.completed', actorId, 'order', orderId, 'MOCK order completed');
+    audit(next, 'order.completed', actorId, 'order', orderId, 'Manual customer consumption confirmed');
     state = write(next);
     return { ok: true, order: clone(target) };
   }
