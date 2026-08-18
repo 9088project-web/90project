@@ -11,6 +11,7 @@ const entries = [
   'cocktail.html',
   'styling.html',
   'member.html',
+  'reset-password.html',
   'referral.html',
   'rewards.html',
   'robots.txt',

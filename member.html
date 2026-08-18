@@ -6,7 +6,7 @@
   <meta name="description" content="90 PROJECT 会员中心：会员资料、积分、优惠券、订单、推荐码、佣金与提现记录。" />
   <title>会员中心 | 90 PROJECT</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/remixicon@4.6.0/fonts/remixicon.css" />
-  <link rel="stylesheet" href="css/growth.css?v=20260730-admin-sync" />
+  <link rel="stylesheet" href="css/growth.css?v=20260818-reset-pos" />
 </head>
 <body class="growth-page member-system-page" data-growth-page="member">
   <header class="growth-header">
@@ -84,6 +84,7 @@
         <p data-i18n="resetPasswordIntro">请输入新的会员密码。完成后可以用新密码登录会员中心。</p>
         <form class="growth-form" id="growthPasswordResetForm">
           <label data-i18n="resetPasswordNew">新密码<input name="password" type="password" required minlength="6" autocomplete="new-password" placeholder="至少 6 个字符"></label>
+          <label data-i18n="resetPasswordConfirm">确认新密码<input name="passwordConfirm" type="password" required minlength="6" autocomplete="new-password" placeholder="再次输入新密码"></label>
           <button class="growth-button" type="submit" data-i18n="resetPasswordAction">更新密码</button>
           <p class="growth-message member-login-message" data-growth-reset-message aria-live="polite" hidden></p>
         </form>
@@ -229,6 +230,6 @@
   <footer class="growth-footer">
     <div class="growth-shell">90 PROJECT Member System · <a href="index.html#top" data-i18n="footerBack">返回首页</a></div>
   </footer>
-  <script type="module" src="js/growth-mock.js?v=20260818-cloud-sync"></script>
+  <script type="module" src="js/growth-mock.js?v=20260818-reset-pos"></script>
 </body>
 </html>

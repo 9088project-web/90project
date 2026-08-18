@@ -228,8 +228,10 @@ export function createGrowthCloud() {
     const params = hashParams.get('access_token') ? hashParams : searchParams;
     const resetValue = String(searchParams.get('reset') || hashParams.get('reset') || '').toLowerCase();
     const typeValue = String(params.get('type') || hashParams.get('type') || searchParams.get('type') || '').toLowerCase();
+    const resetPath = /\/reset-password(?:\.html)?$/i.test(String(location.pathname || ''));
     const resetRequested = resetValue === 'password'
       || resetValue === 'true'
+      || resetPath
       || typeValue === 'recovery'
       || hashParams.has('access_token')
       || searchParams.has('access_token')
@@ -254,8 +256,9 @@ export function createGrowthCloud() {
     };
     setSession(session);
     if (typeof window !== 'undefined' && window.history?.replaceState) {
-      const cleanSearch = resetValue === 'password' ? '?reset=password' : '';
-      window.history.replaceState({}, document.title, `${location.pathname}${cleanSearch}`);
+      const cleanPath = resetPath ? (/(localhost|127\.0\.0\.1)/i.test(window.location.hostname) ? '/member.html' : '/member') : location.pathname;
+      const cleanSearch = resetValue === 'password' || resetPath ? '?reset=password' : '';
+      window.history.replaceState({}, document.title, `${cleanPath}${cleanSearch}`);
     }
     return { ok: true, session };
   }

@@ -7,8 +7,8 @@
   <title>内容管理后台｜九零食刻 90 PROJECT</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/remixicon@4.6.0/fonts/remixicon.css" />
   <link rel="stylesheet" href="css/style.css?v=20260810-flow-polish" />
-  <link rel="stylesheet" href="css/admin.css?v=20260810-flow-polish" />
-  <link rel="stylesheet" href="css/growth.css?v=20260730-admin-sync" />
+  <link rel="stylesheet" href="css/admin.css?v=20260818-reset-pos" />
+  <link rel="stylesheet" href="css/growth.css?v=20260818-reset-pos" />
 </head>
 <body class="admin-page">
   <header class="admin-topbar">
@@ -162,7 +162,7 @@
             <p>像 POS 一样快速处理：填顾客资料、选择 Set 或自由项目、确认金额后保存并 WhatsApp 发送。顾客实际消费后才人工确认计佣。</p>
           </div>
         </div>
-        <form class="growth-form growth-panel admin-invoice-panel admin-pos-panel admin-pos-simplified admin-pos-v10" data-admin-invoice-form>
+        <form class="growth-form growth-panel admin-invoice-panel admin-pos-panel admin-pos-simplified admin-pos-v11" data-admin-invoice-form>
           <div class="admin-invoice-head admin-pos-titlebar">
             <div class="admin-pos-title-copy">
               <span>QUICK ORDER</span>
@@ -185,23 +185,7 @@
             <div><span>余额</span><strong data-admin-invoice-kpi="balance">RM0.00</strong></div>
           </div>
 
-          <div class="admin-order-flow-strip" data-admin-order-flow aria-label="开单流程">
-            <button type="button" class="is-active" data-admin-order-stage="quote">
-              <span>01</span>
-              <strong>顾客</strong>
-              <small>姓名 / WhatsApp</small>
-            </button>
-            <button type="button" data-admin-order-stage="confirm">
-              <span>02</span>
-              <strong>菜单</strong>
-              <small>Set / 自由项目</small>
-            </button>
-            <button type="button" data-admin-order-stage="receipt">
-              <span>03</span>
-              <strong>发送</strong>
-              <small>收款 / WhatsApp</small>
-            </button>
-          </div>
+          <div class="admin-order-flow-strip" data-admin-order-flow aria-label="开单流程" hidden></div>
 
           <div class="admin-pos-workspace">
             <section class="admin-pos-card admin-pos-customer admin-pos-customer-card">
@@ -311,7 +295,7 @@
                     <span>套餐 Set</span>
                     <strong>Set A-D 快速选择</strong>
                   </div>
-                  <small>顾客可在规则内自由选菜单，也可以先 WhatsApp 确认。</small>
+                  <small>顾客可按 Set 规则自由选择菜单，也可以先用 WhatsApp 确认菜单。</small>
                 </div>
                 <div class="admin-pos-preset-strip admin-pos-set-grid" aria-label="活动餐饮套餐">
                   <button type="button" data-admin-invoice-preset data-preset-group="set" data-preset-name="活动餐饮 Set A" data-preset-qty="10" data-preset-price="29.90"><span>Set A</span><small>主食2 · 肉2 · 菜2</small><b>RM29.90</b></button>
@@ -320,7 +304,7 @@
                   <button type="button" data-admin-invoice-preset data-preset-group="set" data-preset-name="活动餐饮 Set D" data-preset-qty="10" data-preset-price="43.90"><span>Set D</span><small>主食2 · 肉2 · 海鲜1 · 菜3</small><b>RM43.90</b></button>
                 </div>
                 <p class="admin-pos-set-note">Set 会按人数自动计算，低于 10 pax 会用 10 pax 起算。</p>
-                <p class="admin-pos-set-helper" data-admin-invoice-set-helper>请选择 Set，或用自由项目开单。</p>
+                <p class="admin-pos-set-helper" data-admin-invoice-set-helper>先点 Set A-D，系统会自动放进项目明细；菜单内容可写在备注，或直接 WhatsApp 与顾客确认。</p>
               </div>
 
               <div class="admin-pos-free-head">
@@ -618,7 +602,7 @@
     </section>
   </main>
 
-  <script src="js/app.js?v=20260818-cloud-sync"></script>
-  <script type="module" src="js/growth-mock.js?v=20260818-cloud-sync"></script>
+  <script src="js/app.js?v=20260818-reset-pos"></script>
+  <script type="module" src="js/growth-mock.js?v=20260818-reset-pos"></script>
 </body>
 </html>

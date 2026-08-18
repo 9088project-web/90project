@@ -440,6 +440,16 @@ body.growth-page {
   line-height: 1.45;
 }
 
+.member-reset-card {
+  border-color: rgba(214, 168, 92, .38);
+  background:
+    linear-gradient(135deg, rgba(255, 251, 242, .98), rgba(252, 238, 212, .92));
+}
+
+.member-reset-card .growth-form {
+  margin-top: 14px;
+}
+
 .is-member-logged-in [data-growth-auth] {
   display: none !important;
 }

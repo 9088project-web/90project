@@ -9,7 +9,7 @@ function redirectPasswordRecoveryToMember() {
     || hashParams.has('access_token')
     || searchParams.has('code')
     || hashParams.has('code');
-  if (!recoverySignal || /\/member(?:\.html)?$/i.test(window.location.pathname)) return;
+  if (!recoverySignal || /\/(?:member|reset-password)(?:\.html)?$/i.test(window.location.pathname)) return;
 
   const isLocal = /^(localhost|127\.0\.0\.1)$/i.test(window.location.hostname);
   const target = new URL(isLocal ? '/member.html' : '/member', window.location.origin);

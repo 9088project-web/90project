@@ -1,5 +1,5 @@
 import { createGrowthApi, money } from './growth-domain.mjs';
-import { createGrowthCloud } from './growth-cloud.mjs';
+import { createGrowthCloud } from './growth-cloud.mjs?v=20260818-reset-pos';
 
 const api = createGrowthApi();
 const cloud = createGrowthCloud();
@@ -394,15 +394,17 @@ Object.assign(translations.zh, {
   resetPasswordTitle: '设置新密码',
   resetPasswordIntro: '请输入新的会员密码。完成后可以用新密码登录会员中心。',
   resetPasswordNew: '新密码',
+  resetPasswordConfirm: '确认新密码',
   resetPasswordAction: '更新密码',
   resetPasswordPrompt: '请先在登录框输入注册 Email，系统才可以自动发送重设密码邮件。',
   resetPasswordPhoneHelp: '手机号暂时不能自动重设密码，已为你打开 WhatsApp 协助。',
   resetPasswordSending: '正在发送重设密码邮件...',
-  resetPasswordSent: '重设密码邮件已发送，请到 Email 收信并按照步骤更新密码。',
+  resetPasswordSent: '重设密码邮件已发送，请打开最新 Email 里的链接设置新密码。',
   resetPasswordUnavailable: '自动重设暂时无法使用，已为你打开 WhatsApp 协助。',
   resetPasswordReady: '请设置新的会员密码。',
-  resetPasswordNeedEmailLink: '请从最新的重设密码 Email 打开链接，页面才可以安全修改密码。',
+  resetPasswordNeedEmailLink: '这不是有效的重设链接。请回到登录框重新发送最新 Email，再从邮件打开链接。',
   resetPasswordInvalid: '新密码至少需要 6 个字符。',
+  resetPasswordMismatch: '两次输入的新密码不一致。',
   resetPasswordUpdating: '正在更新密码...',
   resetPasswordUpdated: '密码已更新，请使用新密码登录。',
   resetPasswordFailed: '密码更新失败，请重新打开 Email 链接或使用 WhatsApp 协助。'
@@ -437,15 +439,17 @@ Object.assign(translations.en, {
   resetPasswordTitle: 'Set a new password',
   resetPasswordIntro: 'Enter a new member password. After updating, you can log in with the new password.',
   resetPasswordNew: 'New password',
+  resetPasswordConfirm: 'Confirm new password',
   resetPasswordAction: 'Update password',
   resetPasswordPrompt: 'Please enter your registered email in the login box so the system can send a reset email.',
   resetPasswordPhoneHelp: 'Mobile numbers cannot reset passwords automatically yet. WhatsApp help has been opened.',
   resetPasswordSending: 'Sending password reset email...',
-  resetPasswordSent: 'Password reset email sent. Please check your email and follow the steps.',
+  resetPasswordSent: 'Password reset email sent. Please open the latest email link to set a new password.',
   resetPasswordUnavailable: 'Automatic reset is not available right now. WhatsApp help has been opened.',
   resetPasswordReady: 'Please set your new member password.',
-  resetPasswordNeedEmailLink: 'Please open the latest password reset email link so this page can safely update your password.',
+  resetPasswordNeedEmailLink: 'This is not a valid reset link. Please send a new email from the login box and open the latest link.',
   resetPasswordInvalid: 'The new password needs at least 6 characters.',
+  resetPasswordMismatch: 'The two new passwords do not match.',
   resetPasswordUpdating: 'Updating password...',
   resetPasswordUpdated: 'Password updated. Please log in with the new password.',
   resetPasswordFailed: 'Password update failed. Please reopen the email link or use WhatsApp help.'
@@ -1068,11 +1072,11 @@ function bindMemberPage() {
 
   const isEmailIdentity = value => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(value || '').trim());
   const passwordResetRedirectUrl = () => {
-    if (typeof window === 'undefined') return 'https://www.90project.online/member?reset=password';
+    if (typeof window === 'undefined') return 'https://www.90project.online/reset-password';
     const origin = String(window.location.origin || '').replace(/\/+$/, '');
-    if (/^https:\/\/(www\.)?90project\.online$/i.test(origin)) return 'https://www.90project.online/member?reset=password';
-    if (/^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/i.test(origin)) return `${origin}/member.html?reset=password`;
-    return 'https://www.90project.online/member?reset=password';
+    if (/^https:\/\/(www\.)?90project\.online$/i.test(origin)) return 'https://www.90project.online/reset-password';
+    if (/^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/i.test(origin)) return `${origin}/reset-password.html`;
+    return 'https://www.90project.online/reset-password';
   };
   const openLoginWhatsAppHelp = () => {
     updateLoginHelpLinks();
@@ -1084,8 +1088,10 @@ function bindMemberPage() {
     const hashParams = new URLSearchParams(String(window.location.hash || '').replace(/^#/, ''));
     const resetValue = String(searchParams.get('reset') || hashParams.get('reset') || '').toLowerCase();
     const typeValue = String(searchParams.get('type') || hashParams.get('type') || '').toLowerCase();
+    const resetPath = /\/reset-password(?:\.html)?$/i.test(String(window.location.pathname || ''));
     return resetValue === 'password'
       || resetValue === 'true'
+      || resetPath
       || typeValue === 'recovery'
       || searchParams.has('access_token')
       || hashParams.has('access_token')
@@ -1136,8 +1142,11 @@ function bindMemberPage() {
 
   resetForm?.addEventListener('submit', async event => {
     event.preventDefault();
-    const password = String(new FormData(resetForm).get('password') || '');
+    const resetData = new FormData(resetForm);
+    const password = String(resetData.get('password') || '');
+    const passwordConfirm = String(resetData.get('passwordConfirm') || '');
     if (password.length < 6) return updateMessageElement(resetMessage, t('resetPasswordInvalid'), true);
+    if (password !== passwordConfirm) return updateMessageElement(resetMessage, t('resetPasswordMismatch'), true);
     if (!cloudReady || typeof cloud.updatePassword !== 'function') return updateMessageElement(resetMessage, t('resetPasswordFailed'), true);
     if (resetCard?.dataset.resetReady === 'false') return updateMessageElement(resetMessage, t('resetPasswordNeedEmailLink'), true);
     setBusy(resetForm, true, busyLabel('resetPasswordUpdating'));
