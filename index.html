@@ -166,10 +166,8 @@
             <h2 id="mealPlanTitle">包伙食配套</h2>
             <span>MONTHLY MEAL PLAN</span>
           </div>
-          <div class="price-pill">
-            <strong>RM300</strong><span>/ 月</span>
-            <small>20餐（月） | 平均一餐 RM15</small>
-          </div>
+          <div class="meal-package-board" id="mealPackageBoard" aria-label="包伙食配套价目"></div>
+          <p class="meal-package-note" id="mealPackageNote">请选择配套和餐数，系统会同步期限与下单内容。</p>
           <ul class="check-list">
             <li><i class="ri-checkbox-circle-line" aria-hidden="true"></i>新鲜现煮，每日更换菜单</li>
             <li><i class="ri-checkbox-circle-line" aria-hidden="true"></i>星期一至星期五供应</li>
@@ -186,6 +184,8 @@
               <button type="button" data-meal-duration="5">5 个工作日</button>
               <button type="button" data-meal-duration="10">2 周工作日</button>
               <button type="button" data-meal-duration="20">1 个月工作日</button>
+              <button type="button" data-meal-duration="30">30 个工作日</button>
+              <button type="button" data-meal-duration="40">40 个工作日</button>
             </div>
             <div class="meal-date-grid">
               <label>开始日期<input id="mealStartDate" type="date" autocomplete="off"></label>

@@ -124,6 +124,8 @@ const cateringMenuBuilder = document.getElementById('cateringMenuBuilder');
 const cateringComboPresets = document.getElementById('cateringComboPresets');
 const cateringSelectionNotice = document.getElementById('cateringSelectionNotice');
 const cateringSelectionCounts = document.getElementById('cateringSelectionCounts');
+const mealPackageBoard = document.getElementById('mealPackageBoard');
+const mealPackageNote = document.getElementById('mealPackageNote');
 const mealStartDate = document.getElementById('mealStartDate');
 const mealEndDate = document.getElementById('mealEndDate');
 const mealPeriodSummary = document.getElementById('mealPeriodSummary');
@@ -554,6 +556,8 @@ const DEFAULT_DETAIL_CONTENT = {
   }
 };
 
+const MEAL_PLAN_PACKAGE_FIELD_COUNTS = [5, 4, 3];
+
 const SITE_CONTENT_FIELDS = [
   { path: 'title', label: 'SEO 标题 / Browser Title' },
   { path: 'description', label: 'SEO 描述 / Meta Description', multiline: true },
@@ -577,6 +581,16 @@ const SITE_CONTENT_FIELDS = [
   { path: 'hero.secondary', label: 'Hero WhatsApp 按钮' },
   { path: 'mealPlan.title', label: '包伙食区标题' },
   { path: 'mealPlan.desc', label: '包伙食区说明', multiline: true },
+  ...MEAL_PLAN_PACKAGE_FIELD_COUNTS.flatMap((optionCount, packageIndex) => [
+    { path: `mealPlan.packages.${packageIndex}.title`, label: `包伙食配套 ${packageIndex + 1} 名称` },
+    { path: `mealPlan.packages.${packageIndex}.label`, label: `包伙食配套 ${packageIndex + 1} 小标` },
+    { path: `mealPlan.packages.${packageIndex}.desc`, label: `包伙食配套 ${packageIndex + 1} 说明`, multiline: true },
+    ...Array.from({ length: optionCount }, (_, optionIndex) => [
+      { path: `mealPlan.packages.${packageIndex}.options.${optionIndex}.meals`, label: `配套 ${packageIndex + 1}-${optionIndex + 1} 餐数` },
+      { path: `mealPlan.packages.${packageIndex}.options.${optionIndex}.total`, label: `配套 ${packageIndex + 1}-${optionIndex + 1} 总价 RM` },
+      { path: `mealPlan.packages.${packageIndex}.options.${optionIndex}.average`, label: `配套 ${packageIndex + 1}-${optionIndex + 1} 平均 RM/餐` }
+    ]).flat()
+  ]),
   ...[0, 1, 2].flatMap(index => [
     { path: `prices.${index}.title`, label: `配套 ${index + 1} 标题` },
     { path: `prices.${index}.priceHtml`, label: `配套 ${index + 1} 价格显示`, multiline: true },
@@ -653,6 +667,8 @@ let supabaseConversionsCache = [];
 let supabaseConversionsFetchInProgress = false;
 let supabaseRuntimeConfig = { ...(window.NP90_SUPABASE || {}) };
 let adminCloudPassword = '';
+let selectedMealPackageId = 'one-meat-two-veg-fruit';
+let selectedMealPackageMeals = 20;
 
 const translations = {
   zh: {
@@ -694,10 +710,45 @@ const translations = {
       priceUnit: '/ 月',
       priceNote: '20餐（月） | 平均一餐 RM15',
       points: ['新鲜现煮，每日更换菜单', '星期一至星期五供应', '适合上班族、学生、家庭', '固定地址配送'],
+      packages: [
+        {
+          title: '一肉两菜 + 水果',
+          label: '完整均衡配套',
+          desc: '适合想要更丰富日常午餐的顾客。',
+          options: [
+            { meals: '5', total: '82', average: '16.40' },
+            { meals: '10', total: '158', average: '15.80' },
+            { meals: '20', total: '300', average: '15.00' },
+            { meals: '30', total: '438', average: '14.60' },
+            { meals: '40', total: '568', average: '14.20' }
+          ]
+        },
+        {
+          title: '一肉一菜 + 水果',
+          label: '轻量日常配套',
+          desc: '适合简单、稳定、价格更轻的日常餐。',
+          options: [
+            { meals: '5', total: '67', average: '13.40' },
+            { meals: '10', total: '128', average: '12.80' },
+            { meals: '20', total: '240', average: '12.00' },
+            { meals: '30', total: '348', average: '11.60' }
+          ]
+        },
+        {
+          title: '一肉盖饭 + 鸡蛋',
+          label: '盖饭经济配套',
+          desc: '适合快速午餐、学生和简单固定餐。',
+          options: [
+            { meals: '5', total: '44', average: '8.80' },
+            { meals: '10', total: '85', average: '8.50' },
+            { meals: '20', total: '160', average: '8.00' }
+          ]
+        }
+      ],
       periodLabel: 'MEAL PERIOD',
       periodTitle: '选择伙食期限',
       periodDesc: '用日历自由选择开始和结束日期。',
-      quickOptions: ['5 个工作日', '2 周工作日', '1 个月工作日'],
+      quickOptions: ['5 餐', '10 餐', '20 餐', '30 餐', '40 餐'],
       startLabel: '开始日期',
       endLabel: '结束日期',
       periodEmpty: '请选择日期，系统会计算工作日餐数。',
@@ -945,10 +996,45 @@ const translations = {
       priceUnit: '/ month',
       priceNote: '20 meals / month | Average RM15 per meal',
       points: ['Freshly cooked, with a rotating daily menu', 'Available Monday to Friday', 'Suitable for offices, students and families', 'Delivery to a fixed address'],
+      packages: [
+        {
+          title: '1 Meat + 2 Vegetables + Fruit',
+          label: 'Balanced Meal Plan',
+          desc: 'For customers who want a fuller daily lunch.',
+          options: [
+            { meals: '5', total: '82', average: '16.40' },
+            { meals: '10', total: '158', average: '15.80' },
+            { meals: '20', total: '300', average: '15.00' },
+            { meals: '30', total: '438', average: '14.60' },
+            { meals: '40', total: '568', average: '14.20' }
+          ]
+        },
+        {
+          title: '1 Meat + 1 Vegetable + Fruit',
+          label: 'Daily Light Plan',
+          desc: 'A simpler daily meal plan with a lighter price.',
+          options: [
+            { meals: '5', total: '67', average: '13.40' },
+            { meals: '10', total: '128', average: '12.80' },
+            { meals: '20', total: '240', average: '12.00' },
+            { meals: '30', total: '348', average: '11.60' }
+          ]
+        },
+        {
+          title: 'Rice Bowl + Egg',
+          label: 'Value Rice Bowl Plan',
+          desc: 'For quick lunches, students and simple fixed meals.',
+          options: [
+            { meals: '5', total: '44', average: '8.80' },
+            { meals: '10', total: '85', average: '8.50' },
+            { meals: '20', total: '160', average: '8.00' }
+          ]
+        }
+      ],
       periodLabel: 'MEAL PERIOD',
       periodTitle: 'Choose your meal period',
       periodDesc: 'Use the calendar to choose your start and end dates.',
-      quickOptions: ['5 working days', '2 working weeks', '1 working month'],
+      quickOptions: ['5 meals', '10 meals', '20 meals', '30 meals', '40 meals'],
       startLabel: 'Start date',
       endLabel: 'End date',
       periodEmpty: 'Choose dates to calculate your working-day meals.',
@@ -3193,6 +3279,122 @@ function updatePriceCards(t) {
   });
 }
 
+function normalizeMealPlanPackages(packages) {
+  const source = Array.isArray(packages) ? packages : [];
+  return source
+    .map((mealPackage, index) => {
+      const title = String(mealPackage?.title || '').trim();
+      const label = String(mealPackage?.label || '').trim();
+      const desc = String(mealPackage?.desc || '').trim();
+      const id = String(mealPackage?.id || title || `meal-plan-${index + 1}`)
+        .toLowerCase()
+        .replace(/[^a-z0-9\u3400-\u9fff]+/gi, '-')
+        .replace(/^-+|-+$/g, '') || `meal-plan-${index + 1}`;
+      const options = (Array.isArray(mealPackage?.options) ? mealPackage.options : [])
+        .map(option => {
+          const meals = Number.parseInt(option?.meals, 10);
+          const total = Number.parseFloat(option?.total);
+          const average = Number.parseFloat(option?.average || (Number.isFinite(total) && meals ? total / meals : 0));
+          return { meals, total, average };
+        })
+        .filter(option => option.meals > 0 && Number.isFinite(option.total) && option.total > 0)
+        .sort((left, right) => left.meals - right.meals);
+
+      return { id, title, label, desc, options };
+    })
+    .filter(mealPackage => mealPackage.title && mealPackage.options.length);
+}
+
+function mealPlanPackages() {
+  const editablePackages = editableContentForLanguage()?.site?.mealPlan?.packages;
+  const fallbackPackages = translations[currentLanguage]?.mealPlan?.packages || translations.zh.mealPlan.packages;
+  const packages = normalizeMealPlanPackages(editablePackages);
+  return packages.length ? packages : normalizeMealPlanPackages(fallbackPackages);
+}
+
+function formatMealPlanMoney(value, decimals = 0) {
+  const amount = Number.parseFloat(value);
+  if (!Number.isFinite(amount)) return String(value || '0');
+  return decimals > 0 ? amount.toFixed(decimals) : amount.toFixed(0);
+}
+
+function getSelectedMealPackageSelection() {
+  const packages = mealPlanPackages();
+  if (!packages.length) return null;
+  const mealPackage = packages.find(item => item.id === selectedMealPackageId) || packages[0];
+  const option = mealPackage.options.find(item => item.meals === selectedMealPackageMeals)
+    || mealPackage.options.find(item => item.meals === 20)
+    || mealPackage.options[0];
+  selectedMealPackageId = mealPackage.id;
+  selectedMealPackageMeals = option.meals;
+  return { mealPackage, option };
+}
+
+function mealPackageOrderValue(selection = getSelectedMealPackageSelection()) {
+  if (!selection) return '';
+  const { mealPackage, option } = selection;
+  const total = formatMealPlanMoney(option.total, 0);
+  const average = formatMealPlanMoney(option.average, 2);
+  return currentLanguage === 'en'
+    ? `${mealPackage.title} - ${option.meals} meals RM${total} (RM${average}/meal)`
+    : `${mealPackage.title} - ${option.meals}餐 RM${total}（平均 RM${average}/餐）`;
+}
+
+function syncSelectedMealPackageToOrder() {
+  const selection = getSelectedMealPackageSelection();
+  const value = mealPackageOrderValue(selection);
+  const mealButton = document.querySelector('#meal-plan .choose-package');
+  if (mealButton && value) mealButton.dataset.package = value;
+  if (value) setPackageValue(value);
+}
+
+function refreshMealPackageSelectionClasses() {
+  const selection = getSelectedMealPackageSelection();
+  const selectedId = selection?.mealPackage?.id;
+  const selectedMeals = selection?.option?.meals;
+  document.querySelectorAll('[data-meal-package-card]').forEach(card => {
+    card.classList.toggle('is-selected', card.dataset.mealPackageId === selectedId);
+  });
+  document.querySelectorAll('[data-meal-package-option]').forEach(button => {
+    const isSelected = button.dataset.mealPackageId === selectedId
+      && Number.parseInt(button.dataset.mealPackageMeals || '0', 10) === selectedMeals;
+    button.classList.toggle('is-selected', isSelected);
+    button.setAttribute('aria-pressed', String(isSelected));
+  });
+  if (mealPackageNote && selection) {
+    const option = selection.option;
+    const selectedText = currentLanguage === 'en'
+      ? `Selected: ${selection.mealPackage.title}, ${option.meals} meals, RM${formatMealPlanMoney(option.total, 0)}.`
+      : `已选择：${selection.mealPackage.title}，${option.meals}餐，RM${formatMealPlanMoney(option.total, 0)}。`;
+    mealPackageNote.textContent = selectedText;
+  }
+  syncSelectedMealPackageToOrder();
+}
+
+function renderMealPlanPackages() {
+  if (!mealPackageBoard) return;
+  const packages = mealPlanPackages();
+  mealPackageBoard.innerHTML = packages.map(mealPackage => `
+    <article class="meal-package-card" data-meal-package-card data-meal-package-id="${escapeHtml(mealPackage.id)}">
+      <div class="meal-package-head">
+        <span>${escapeHtml(mealPackage.label)}</span>
+        <strong>${escapeHtml(mealPackage.title)}</strong>
+        ${mealPackage.desc ? `<small>${escapeHtml(mealPackage.desc)}</small>` : ''}
+      </div>
+      <div class="meal-package-options">
+        ${mealPackage.options.map(option => `
+          <button type="button" data-meal-package-option data-meal-package-id="${escapeHtml(mealPackage.id)}" data-meal-package-meals="${option.meals}" aria-pressed="false">
+            <span>${currentLanguage === 'en' ? `${option.meals} meals` : `${option.meals}餐`}</span>
+            <strong>RM${formatMealPlanMoney(option.total, 0)}</strong>
+            <small>${currentLanguage === 'en' ? `RM${formatMealPlanMoney(option.average, 2)} / meal` : `RM${formatMealPlanMoney(option.average, 2)} / 餐`}</small>
+          </button>
+        `).join('')}
+      </div>
+    </article>
+  `).join('');
+  refreshMealPackageSelectionClasses();
+}
+
 function localDateValue(date) {
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, '0');
@@ -3256,12 +3458,27 @@ function syncMealPlanPeriod() {
   }
 
   const meals = countMealWeekdays(start, end);
-  const total = meals * MEAL_PLAN_RATE;
+  const selection = getSelectedMealPackageSelection();
+  let total = meals * MEAL_PLAN_RATE;
+  let average = MEAL_PLAN_RATE;
+  let matchedOption = null;
+  if (selection) {
+    matchedOption = selection.mealPackage.options.find(option => option.meals === meals) || null;
+    const priceOption = matchedOption || selection.option;
+    average = Number.parseFloat(priceOption.average || (priceOption.total / priceOption.meals)) || MEAL_PLAN_RATE;
+    total = matchedOption ? matchedOption.total : Math.round(meals * average * 100) / 100;
+    if (matchedOption) selectedMealPackageMeals = matchedOption.meals;
+    refreshMealPackageSelectionClasses();
+  }
+  const totalText = formatMealPlanMoney(total, matchedOption ? 0 : 2);
+  const averageText = formatMealPlanMoney(average, 2);
   mealPeriodSummary.textContent = currentLanguage === 'en'
-    ? `${formatMealDate(mealStartDate.value)} - ${formatMealDate(mealEndDate.value)} · ${meals} working-day meals · Estimated RM${total}`
-    : `${formatMealDate(mealStartDate.value)} 至 ${formatMealDate(mealEndDate.value)} · ${meals} 个工作日餐 · 预计 RM${total}`;
+    ? `${formatMealDate(mealStartDate.value)} - ${formatMealDate(mealEndDate.value)} · ${meals} working-day meals · ${matchedOption ? 'Package' : 'Estimated'} RM${totalText} · RM${averageText}/meal`
+    : `${formatMealDate(mealStartDate.value)} 至 ${formatMealDate(mealEndDate.value)} · ${meals} 个工作日餐 · ${matchedOption ? '配套价' : '预计'} RM${totalText} · 平均 RM${averageText}/餐`;
   if (orderDateField) {
-    orderDateField.value = `${formatMealDate(mealStartDate.value)} 至 ${formatMealDate(mealEndDate.value)}（${meals} 个工作日）`;
+    orderDateField.value = currentLanguage === 'en'
+      ? `${formatMealDate(mealStartDate.value)} - ${formatMealDate(mealEndDate.value)} (${meals} working-day meals)`
+      : `${formatMealDate(mealStartDate.value)} 至 ${formatMealDate(mealEndDate.value)}（${meals} 个工作日）`;
   }
 }
 
@@ -3413,6 +3630,7 @@ function updateStaticLanguage() {
   if (mealButton) {
     mealButton.innerHTML = `<i class="ri-whatsapp-line" aria-hidden="true"></i>${escapeHtml(t.mealPlan.periodButton)}`;
   }
+  renderMealPlanPackages();
   updatePriceCards(t);
 
   setText('.weekly-menu .panel-title h2', t.weekly.title);
@@ -3449,6 +3667,7 @@ function updateStaticLanguage() {
   setPlaceholder('area', t.order.placeholders.area);
   setPlaceholder('notes', t.order.placeholders.notes);
   updateSelectOptions('package', t.order.packageOptions);
+  syncSelectedMealPackageToOrder();
   updateSelectOptions('meal', t.order.mealOptions);
   setText('#orderForm .btn-wide', t.order.submit);
   setText('.order-preview-head span', t.order.previewLabel);
@@ -6775,9 +6994,28 @@ document.querySelectorAll('.choose-package').forEach(button => {
   });
 });
 
+mealPackageBoard?.addEventListener('click', event => {
+  const button = event.target instanceof HTMLElement ? event.target.closest('[data-meal-package-option]') : null;
+  if (!(button instanceof HTMLElement)) return;
+  selectedMealPackageId = button.dataset.mealPackageId || selectedMealPackageId;
+  selectedMealPackageMeals = Number.parseInt(button.dataset.mealPackageMeals || String(selectedMealPackageMeals), 10) || selectedMealPackageMeals;
+  setMealPlanDuration(selectedMealPackageMeals);
+  syncSelectedMealPackageToOrder();
+  renderOrderPreview();
+});
+
 [mealStartDate, mealEndDate].forEach(input => input?.addEventListener('change', syncMealPlanPeriod));
 document.querySelectorAll('[data-meal-duration]').forEach(button => {
-  button.addEventListener('click', () => setMealPlanDuration(Number(button.dataset.mealDuration || 5)));
+  button.addEventListener('click', () => {
+    const duration = Number(button.dataset.mealDuration || 5);
+    const selection = getSelectedMealPackageSelection();
+    if (selection?.mealPackage?.options?.some(option => option.meals === duration)) {
+      selectedMealPackageMeals = duration;
+    }
+    setMealPlanDuration(duration);
+    refreshMealPackageSelectionClasses();
+    renderOrderPreview();
+  });
 });
 
 document.querySelectorAll('[data-service-href]').forEach(card => {

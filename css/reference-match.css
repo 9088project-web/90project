@@ -381,6 +381,122 @@ main {
   color: var(--ref-gold);
 }
 
+.meal-package-board {
+  display: grid;
+  gap: 10px;
+  margin: 14px 0 8px;
+}
+
+.meal-package-card {
+  position: relative;
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid rgba(150, 101, 40, .2);
+  border-radius: 8px;
+  background: linear-gradient(145deg, rgba(255, 253, 248, .94), rgba(245, 235, 220, .72));
+  box-shadow: 0 10px 24px rgba(72, 48, 28, .07);
+  transition: border-color .2s ease, box-shadow .2s ease, transform .2s ease;
+}
+
+.meal-package-card.is-selected {
+  border-color: rgba(161, 109, 46, .52);
+  box-shadow: 0 14px 32px rgba(118, 73, 27, .16);
+  transform: translateY(-1px);
+}
+
+.meal-package-head {
+  display: grid;
+  gap: 3px;
+}
+
+.meal-package-head span {
+  color: #a16d2e;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+}
+
+.meal-package-head strong {
+  color: #15110e;
+  font-size: 16px;
+  line-height: 1.18;
+}
+
+.meal-package-head small {
+  color: #74665a;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.45;
+}
+
+.meal-package-options {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.meal-package-options button {
+  display: grid;
+  gap: 2px;
+  min-height: 62px;
+  padding: 8px 9px;
+  border: 1px solid rgba(150, 101, 40, .22);
+  border-radius: 7px;
+  color: #241a12;
+  text-align: left;
+  background: rgba(255, 251, 244, .88);
+  font: inherit;
+  cursor: pointer;
+  transition: color .2s ease, background-color .2s ease, border-color .2s ease, box-shadow .2s ease;
+}
+
+.meal-package-options button span {
+  color: #7c552a;
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.meal-package-options button strong {
+  color: inherit;
+  font-size: 18px;
+  line-height: 1;
+}
+
+.meal-package-options button small {
+  color: #75665a;
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.meal-package-options button:hover,
+.meal-package-options button:focus-visible,
+.meal-package-options button.is-selected {
+  border-color: rgba(218, 176, 100, .75);
+  color: #fff7e8;
+  background: linear-gradient(180deg, #060403, #1c130d);
+  box-shadow: 0 10px 18px rgba(34, 20, 10, .18);
+}
+
+.meal-package-options button:hover span,
+.meal-package-options button:focus-visible span,
+.meal-package-options button.is-selected span,
+.meal-package-options button:hover small,
+.meal-package-options button:focus-visible small,
+.meal-package-options button.is-selected small {
+  color: rgba(255, 239, 204, .84);
+}
+
+.meal-package-note {
+  min-height: 18px;
+  margin: 7px 0 12px;
+  color: #7d572b;
+  font-size: 11px;
+  font-weight: 900;
+  line-height: 1.45;
+}
+
 .btn-brown {
   width: 100%;
   min-height: 38px;
@@ -1707,7 +1823,7 @@ main {
 
 .meal-quick-options {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(82px, 1fr));
   gap: 5px;
 }
 
@@ -1773,6 +1889,14 @@ main {
 }
 
 @media (max-width: 680px) {
+  .meal-package-card {
+    padding: 11px;
+  }
+
+  .meal-package-options button {
+    min-height: 58px;
+  }
+
   .meal-period-picker {
     margin-top: 14px;
     padding: 12px;
@@ -1780,6 +1904,12 @@ main {
 
   .meal-quick-options button {
     font-size: 10px;
+  }
+}
+
+@media (max-width: 420px) {
+  .meal-package-options {
+    grid-template-columns: 1fr;
   }
 }
 
