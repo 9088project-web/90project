@@ -160,6 +160,8 @@ const GROWTH_STATE_KEY = 'np90_growth_state_v1';
 const GROWTH_ORDER_QUEUE_KEY = 'np90_growth_order_queue_v1';
 const LANG_KEY = 'np90_language_v1';
 const ADMIN_CONTENT_KEY = 'np90_admin_content_v1';
+const ADMIN_CONTENT_UPDATED_AT_KEY = 'np90_admin_content_updated_at_v1';
+const ADMIN_CONTENT_SYNC_STATE_KEY = 'np90_admin_content_sync_state_v1';
 const ADMIN_SESSION_KEY = 'np90_admin_session_v1';
 const ADMIN_CLOUD_PASSWORD_SESSION_KEY = 'np90_admin_cloud_password_session_v1';
 const ADMIN_ATTEMPTS_KEY = 'np90_admin_attempts_v1';
@@ -1747,7 +1749,7 @@ function renderCateringEstimate() {
     )).join('') + ruleLine + formula;
   }
 
-  cateringWhatsApp.href = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(buildCateringMessage(estimate))}`;
+  cateringWhatsApp.href = `https://wa.me/${activeContactDetails().whatsapp}?text=${encodeURIComponent(buildCateringMessage(estimate))}`;
 }
 
 function openCateringMenuBuilder(scroll = true) {
@@ -2039,14 +2041,13 @@ function renderDetailPageContent(content = loadAdminContent()) {
     `).join('');
   }
 
-  const phone = languageText().contact?.phone || '018-949 0908';
-  const whatsapp = languageText().contact?.whatsapp || WHATSAPP_NUMBER;
+  const contactDetails = activeContactDetails(languageText());
   const message = currentLanguage === 'en'
     ? 'Hi, I would like to ask about 90 PROJECT.'
     : '你好，我想询问九零食刻 90 PROJECT。';
   document.querySelectorAll('.detail-contact-card a').forEach(link => {
-    link.textContent = `WhatsApp ${phone}`;
-    link.href = `https://wa.me/${String(whatsapp).replace(/\D/g, '')}?text=${encodeURIComponent(message)}`;
+    link.textContent = `WhatsApp ${contactDetails.phone}`;
+    link.href = `https://wa.me/${contactDetails.whatsapp}?text=${encodeURIComponent(message)}`;
   });
   const footerLink = document.querySelector('.detail-footer a');
   if (footerLink) footerLink.textContent = currentLanguage === 'en' ? 'Contact 90 PROJECT' : '联系九零食刻';
@@ -2091,6 +2092,10 @@ function supabaseAnonKey() {
   return String(supabaseRuntimeConfig.anonKey || '');
 }
 
+function isLocalPreviewHost() {
+  return /^(localhost|127\.0\.0\.1|\[::1\])$/i.test(window.location.hostname);
+}
+
 async function fetchSupabaseConfig(path) {
   try {
     const response = await fetch(path, { cache: 'no-store' });
@@ -2103,8 +2108,7 @@ async function fetchSupabaseConfig(path) {
 }
 
 async function loadSupabaseRuntimeConfig() {
-  const localStaticPreview = /^(localhost|127\.0\.0\.1|\[::1\])$/i.test(window.location.hostname);
-  if (!localStaticPreview) {
+  if (!isLocalPreviewHost()) {
     const apiConfig = await fetchSupabaseConfig('/api/supabase-config');
     if (apiConfig?.url && apiConfig?.anonKey) {
       supabaseRuntimeConfig = { ...supabaseRuntimeConfig, ...apiConfig };
@@ -2927,8 +2931,26 @@ function loadAdminContent() {
   }
 }
 
-function saveEditableContent(content) {
-  localStorage.setItem(ADMIN_CONTENT_KEY, JSON.stringify(normalizeAdminContent(content)));
+function markAdminContentSyncState(meta = {}) {
+  try {
+    localStorage.setItem(ADMIN_CONTENT_SYNC_STATE_KEY, JSON.stringify({
+      source: meta.source || 'local',
+      updatedAt: meta.updatedAt || new Date().toISOString(),
+      cloudSynced: Boolean(meta.cloudSynced),
+      lastError: meta.lastError || ''
+    }));
+  } catch (error) {
+    console.warn('Unable to store admin sync state', error);
+  }
+}
+
+function saveEditableContent(content, meta = {}) {
+  const normalized = normalizeAdminContent(content);
+  const updatedAt = meta.updatedAt || new Date().toISOString();
+  localStorage.setItem(ADMIN_CONTENT_KEY, JSON.stringify(normalized));
+  localStorage.setItem(ADMIN_CONTENT_UPDATED_AT_KEY, updatedAt);
+  markAdminContentSyncState({ ...meta, updatedAt });
+  return normalized;
 }
 
 function parseRemoteAdminContent(value) {
@@ -2944,13 +2966,19 @@ function parseRemoteAdminContent(value) {
 }
 
 async function loadAdminContentFromCloudApi() {
+  if (isLocalPreviewHost()) return false;
+
   try {
     const response = await fetch(`${ADMIN_CONTENT_API_PATH}?v=${Date.now()}`, { cache: 'no-store' });
     if (!response.ok) return false;
     const result = await response.json();
     const content = parseRemoteAdminContent(result?.content);
     if (!content) return false;
-    saveEditableContent(content);
+    saveEditableContent(content, {
+      source: result?.source || 'cloud-api',
+      updatedAt: result?.updatedAt,
+      cloudSynced: true
+    });
     return true;
   } catch (error) {
     return false;
@@ -2962,12 +2990,16 @@ async function loadAdminContentFromSupabase() {
 
   try {
     const rows = await supabaseFetch(
-      `/rest/v1/site_settings?select=value&key=eq.${encodeURIComponent(ADMIN_CONTENT_SETTING_KEY)}&limit=1`,
+      `/rest/v1/site_settings?select=value,updated_at&key=eq.${encodeURIComponent(ADMIN_CONTENT_SETTING_KEY)}&limit=1`,
       { token: supabaseAnonKey() }
     );
     const content = parseRemoteAdminContent(rows?.[0]?.value);
     if (!content) return false;
-    saveEditableContent(content);
+    saveEditableContent(content, {
+      source: 'supabase-direct',
+      updatedAt: rows?.[0]?.updated_at,
+      cloudSynced: true
+    });
     return true;
   } catch (error) {
     console.warn('Supabase admin content load failed', error);
@@ -2998,20 +3030,37 @@ async function saveAdminContentToCloudApi(content) {
     const message = await response.text();
     throw new Error(readableCloudMessage(message, `Cloud admin content save failed: ${response.status}`));
   }
+  const result = await response.json().catch(() => null);
+  const remoteContent = parseRemoteAdminContent(result?.content);
+  if (remoteContent) {
+    saveEditableContent(remoteContent, {
+      source: result?.source || 'cloud-api-save',
+      updatedAt: result?.updatedAt,
+      cloudSynced: true
+    });
+  }
   return true;
 }
 
 async function saveAdminContentToSupabase(content) {
   if (!isSupabaseConfigured() || !getSupabaseSession()?.access_token) return false;
 
-  await supabaseFetch(`/rest/v1/site_settings?on_conflict=key`, {
+  const rows = await supabaseFetch(`/rest/v1/site_settings?on_conflict=key`, {
     method: 'POST',
-    headers: { Prefer: 'resolution=merge-duplicates,return=minimal' },
+    headers: { Prefer: 'resolution=merge-duplicates,return=representation' },
     body: {
       key: ADMIN_CONTENT_SETTING_KEY,
       value: JSON.stringify(normalizeAdminContent(content))
     }
   });
+  const remoteContent = parseRemoteAdminContent(rows?.[0]?.value);
+  if (remoteContent) {
+    saveEditableContent(remoteContent, {
+      source: 'supabase-direct-save',
+      updatedAt: rows?.[0]?.updated_at,
+      cloudSynced: true
+    });
+  }
   return true;
 }
 
@@ -3148,11 +3197,43 @@ function refreshCateringInterface() {
   renderCateringEstimate();
 }
 
+function refreshAdminContentConsumers(options = {}) {
+  updateStaticLanguage();
+  refreshCateringInterface();
+  renderMediaContent();
+  renderManagedContent();
+  if (options.adminEditor && typeof renderAdminEditor === 'function') renderAdminEditor();
+  if (options.adminLists) {
+    if (typeof renderAdminInquiries === 'function') renderAdminInquiries(false);
+    if (typeof renderAdminMembers === 'function') renderAdminMembers(false);
+    if (typeof renderAdminConversions === 'function') renderAdminConversions(false);
+  }
+}
+
 function languageText() {
   const language = currentLanguage === 'en' ? 'en' : 'zh';
   const base = cloneData(translations[language] || translations.zh);
   const site = loadAdminContent()[language]?.site || {};
   return deepMerge(base, site);
+}
+
+function normalizeWhatsappNumber(value = '') {
+  const digits = String(value || '').replace(/\D/g, '');
+  if (!digits) return WHATSAPP_NUMBER;
+  if (digits.startsWith('60')) return digits;
+  if (digits.startsWith('0')) return `60${digits.slice(1)}`;
+  return digits;
+}
+
+function activeContactDetails(source = languageText()) {
+  const contact = source?.contact || {};
+  const phone = String(contact.phone || '018-949 0908').trim();
+  const email = String(contact.email || '9088project@gmail.com').trim();
+  return {
+    phone,
+    email,
+    whatsapp: normalizeWhatsappNumber(contact.whatsapp || phone || WHATSAPP_NUMBER)
+  };
 }
 
 function setText(selector, value, root = document) {
@@ -3578,8 +3659,8 @@ function updateStaticLanguage() {
     ? 'Hi, I would like to ask about 90 PROJECT.'
     : '你好，我想询问九零食刻 90 PROJECT。';
   const navWhatsapp = document.querySelector('.nav-whatsapp');
-  const whatsappNumber = String(t.contact?.whatsapp || WHATSAPP_NUMBER).replace(/\D/g, '');
-  if (navWhatsapp) navWhatsapp.href = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(quickMessage)}`;
+  const navContact = activeContactDetails(t);
+  if (navWhatsapp) navWhatsapp.href = `https://wa.me/${navContact.whatsapp}?text=${encodeURIComponent(quickMessage)}`;
   setText('.mobile-wa', t.nav.mobileWhatsApp);
   menuToggle?.setAttribute('aria-label', t.nav.menu);
   backTop?.setAttribute('aria-label', t.nav.backTop);
@@ -3739,26 +3820,24 @@ function updateStaticLanguage() {
   setText('.footer-brand h2', t.cta.title);
   setText('.footer-brand strong', currentLanguage === 'en' ? '90 PROJECT' : '九零食刻 90 PROJECT');
   setText('.footer-brand p', t.cta.slogan);
-  const contactPhone = String(t.contact?.phone || '018-949 0908').trim();
-  const contactWhatsapp = String(t.contact?.whatsapp || WHATSAPP_NUMBER).replace(/\D/g, '');
-  const contactEmail = String(t.contact?.email || '9088project@gmail.com').trim();
+  const contactDetails = activeContactDetails(t);
   const footerPhoneLink = document.querySelector('.footer-brand a[href^="tel:"]');
   const footerWhatsappLink = document.querySelector('.footer-brand a[href^="https://wa.me/"]');
   const footerEmailLink = document.querySelector('.contact-email-link');
   if (footerPhoneLink) {
-    footerPhoneLink.href = `tel:${contactPhone.replace(/\D/g, '')}`;
-    footerPhoneLink.innerHTML = `<i class="ri-phone-line" aria-hidden="true"></i>${escapeHtml(contactPhone)}`;
+    footerPhoneLink.href = `tel:${contactDetails.phone.replace(/\D/g, '')}`;
+    footerPhoneLink.innerHTML = `<i class="ri-phone-line" aria-hidden="true"></i>${escapeHtml(contactDetails.phone)}`;
   }
   if (footerWhatsappLink) {
-    footerWhatsappLink.href = `https://wa.me/${contactWhatsapp}`;
-    footerWhatsappLink.innerHTML = `<i class="ri-whatsapp-line" aria-hidden="true"></i>${escapeHtml(contactPhone)}`;
+    footerWhatsappLink.href = `https://wa.me/${contactDetails.whatsapp}`;
+    footerWhatsappLink.innerHTML = `<i class="ri-whatsapp-line" aria-hidden="true"></i>${escapeHtml(contactDetails.phone)}`;
   }
   if (footerEmailLink) {
-    footerEmailLink.href = `mailto:${contactEmail}`;
-    footerEmailLink.innerHTML = `<i class="ri-mail-line" aria-hidden="true"></i>${escapeHtml(contactEmail)}`;
+    footerEmailLink.href = `mailto:${contactDetails.email}`;
+    footerEmailLink.innerHTML = `<i class="ri-mail-line" aria-hidden="true"></i>${escapeHtml(contactDetails.email)}`;
   }
   setText('.final-cta .btn.big', t.cta.button);
-  setText('.site-footer span:nth-child(2)', `WhatsApp: ${t.contact?.phone || '018-949 0908'}`);
+  setText('.site-footer span:nth-child(2)', `WhatsApp: ${contactDetails.phone}`);
   setText('.site-footer span:nth-child(3)', currentLanguage === 'en'
     ? '© 2026 90 PROJECT. All Rights Reserved.'
     : '© 2026 九零食刻 90 PROJECT. All Rights Reserved.');
@@ -4655,7 +4734,7 @@ function renderAdminInquiries(refreshRemote = true) {
       hour: '2-digit',
       minute: '2-digit'
     });
-    const waUrl = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(buildOrderMessage(inquiry))}`;
+    const waUrl = `https://wa.me/${activeContactDetails().whatsapp}?text=${encodeURIComponent(buildOrderMessage(inquiry))}`;
     return `
       <article class="admin-inquiry" data-inquiry-id="${escapeHtml(inquiry.id)}">
         <div>
@@ -5121,21 +5200,40 @@ function exportLocalBackup() {
 function importLocalBackup(file) {
   if (!file) return;
   const reader = new FileReader();
-  reader.addEventListener('load', () => {
+  reader.addEventListener('load', async () => {
     try {
       const data = JSON.parse(String(reader.result || '{}'));
-      if (data.adminContent) saveEditableContent(data.adminContent);
+      let importedAdminContent = null;
+      if (data.adminContent) {
+        importedAdminContent = saveEditableContent(data.adminContent, {
+          source: 'backup-import',
+          cloudSynced: false
+        });
+      }
       if (Array.isArray(data.inquiries)) saveInquiries(data.inquiries);
       if (Array.isArray(data.members)) saveMembers(data.members);
       if (Array.isArray(data.conversions)) saveConversionEvents(data.conversions);
-      updateStaticLanguage();
-      refreshCateringInterface();
-      renderMediaContent();
-      renderAdminEditor();
-      renderAdminInquiries();
-      renderAdminMembers();
-      renderAdminConversions();
+      refreshAdminContentConsumers({ adminEditor: true, adminLists: true });
       renderMemberState();
+      if (importedAdminContent) {
+        try {
+          const cloudSaved = await saveAdminContentToCloud(importedAdminContent);
+          if (cloudSaved) {
+            markAdminContentSyncState({
+              source: 'backup-import-cloud',
+              cloudSynced: true,
+              updatedAt: localStorage.getItem(ADMIN_CONTENT_UPDATED_AT_KEY) || new Date().toISOString()
+            });
+            refreshAdminContentConsumers({ adminEditor: true, adminLists: true });
+          }
+        } catch (syncError) {
+          markAdminContentSyncState({
+            source: 'backup-import',
+            cloudSynced: false,
+            lastError: syncError instanceof Error ? syncError.message : String(syncError || 'Cloud sync failed')
+          });
+        }
+      }
       showAdminMessage(currentLanguage === 'en' ? 'Local backup imported.' : '本地备份已导入。');
     } catch (error) {
       showAdminMessage(currentLanguage === 'en' ? 'Import failed. Please choose a valid JSON backup.' : '导入失败，请选择正确的 JSON 备份。', true);
@@ -6895,15 +6993,27 @@ adminMembers?.addEventListener('change', event => {
 
 saveAdminContent?.addEventListener('click', async () => {
   setAdminSaveStatus('saving', '正在同步云端', '正在把后台内容保存到云端。');
-  const content = collectAdminContent();
-  saveEditableContent(content);
-  updateStaticLanguage();
-  refreshCateringInterface();
-  renderMediaContent(content);
-  renderManagedContent(content);
-  renderAdminEditor();
+  const content = saveEditableContent(collectAdminContent(), {
+    source: 'admin-local',
+    cloudSynced: false
+  });
+  refreshAdminContentConsumers({ adminEditor: true });
   try {
     const cloudSaved = await saveAdminContentToCloud(content);
+    if (cloudSaved) {
+      markAdminContentSyncState({
+        source: 'cloud-save',
+        cloudSynced: true,
+        updatedAt: localStorage.getItem(ADMIN_CONTENT_UPDATED_AT_KEY) || new Date().toISOString()
+      });
+      refreshAdminContentConsumers({ adminEditor: true, adminLists: true });
+    } else {
+      markAdminContentSyncState({
+        source: 'admin-local',
+        cloudSynced: false,
+        lastError: 'Cloud password or Supabase session is not available.'
+      });
+    }
     setAdminSaveStatus(
       cloudSaved ? 'done' : 'local',
       cloudSaved ? '云端已同步' : '只保存本机',
@@ -6918,20 +7028,37 @@ saveAdminContent?.addEventListener('click', async () => {
     console.warn('Supabase admin content save failed', error);
     setAdminSaveStatus('error', '云端同步失败', '本机已保留备份；请重新登录后台后再保存一次。');
     showAdminMessage('内容已保留本地备份，但云端同步失败。请重新登录后台；如果仍失败，再确认 Supabase 表和 Vercel 环境变量。', true);
+    markAdminContentSyncState({
+      source: 'admin-local',
+      cloudSynced: false,
+      lastError: error instanceof Error ? error.message : String(error || 'Cloud sync failed')
+    });
   }
 });
 
 resetAdminContent?.addEventListener('click', async () => {
   setAdminSaveStatus('saving', '正在恢复并同步', '正在恢复默认内容并保存到云端。');
-  const defaults = defaultAdminContent();
-  saveEditableContent(defaults);
-  updateStaticLanguage();
-  refreshCateringInterface();
-  renderMediaContent(defaults);
-  renderManagedContent(defaults);
-  renderAdminEditor();
+  const defaults = saveEditableContent(defaultAdminContent(), {
+    source: 'admin-reset-local',
+    cloudSynced: false
+  });
+  refreshAdminContentConsumers({ adminEditor: true });
   try {
     const cloudSaved = await saveAdminContentToCloud(defaults);
+    if (cloudSaved) {
+      markAdminContentSyncState({
+        source: 'cloud-reset',
+        cloudSynced: true,
+        updatedAt: localStorage.getItem(ADMIN_CONTENT_UPDATED_AT_KEY) || new Date().toISOString()
+      });
+      refreshAdminContentConsumers({ adminEditor: true, adminLists: true });
+    } else {
+      markAdminContentSyncState({
+        source: 'admin-reset-local',
+        cloudSynced: false,
+        lastError: 'Cloud password or Supabase session is not available.'
+      });
+    }
     setAdminSaveStatus(
       cloudSaved ? 'done' : 'local',
       cloudSaved ? '默认内容已同步' : '默认内容只保存本机',
@@ -6946,6 +7073,11 @@ resetAdminContent?.addEventListener('click', async () => {
     console.warn('Supabase admin content reset failed', error);
     setAdminSaveStatus('error', '云端同步失败', '本机已恢复默认内容；请重新登录后台后再保存一次。');
     showAdminMessage('已恢复本地默认内容，但云端同步失败。请重新登录后台；如果仍失败，再确认 Supabase 表和 Vercel 环境变量。', true);
+    markAdminContentSyncState({
+      source: 'admin-reset-local',
+      cloudSynced: false,
+      lastError: error instanceof Error ? error.message : String(error || 'Cloud sync failed')
+    });
   }
 });
 
@@ -7181,7 +7313,7 @@ form?.addEventListener('submit', event => {
   saveInquiryForMember({ ...orderData, id: inquiry.id, status: inquiry.status });
   renderOrderPreview();
   showOrderMessage(currentLanguage === 'en' ? 'WhatsApp is opening now.' : '正在打开 WhatsApp。');
-  const url = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(buildOrderMessage(orderData))}`;
+  const url = `https://wa.me/${activeContactDetails().whatsapp}?text=${encodeURIComponent(buildOrderMessage(orderData))}`;
   window.open(url, '_blank', 'noopener');
 });
 
@@ -7217,5 +7349,17 @@ async function initializeApp() {
     openAdminModal();
   }
 }
+
+window.addEventListener('storage', event => {
+  if (event.key !== ADMIN_CONTENT_KEY || !event.newValue) return;
+  try {
+    refreshAdminContentConsumers({ adminEditor: Boolean(adminDashboard && !adminDashboard.hidden) });
+    if (!adminModal && adminAuthPanel && adminDashboard) {
+      renderAdminState();
+    }
+  } catch (error) {
+    console.warn('Unable to refresh admin content from another tab', error);
+  }
+});
 
 initializeApp();

@@ -63,9 +63,16 @@ function validConfig(config) {
     : null;
 }
 
+function isLocalPreviewHost() {
+  return typeof location !== 'undefined'
+    && /^(localhost|127\.0\.0\.1|\[::1\])$/i.test(location.hostname);
+}
+
 export async function loadGrowthCloudConfig() {
-  const apiConfig = validConfig(await readJson('/api/supabase-config'));
-  if (apiConfig) return apiConfig;
+  if (!isLocalPreviewHost()) {
+    const apiConfig = validConfig(await readJson('/api/supabase-config'));
+    if (apiConfig) return apiConfig;
+  }
 
   const localConfig = validConfig(await readJson('js/supabase-config.local.json?v=20260715-growth-cloud'));
   if (localConfig) return localConfig;

@@ -7,9 +7,20 @@ const LANG_KEY = 'np90_growth_language_v1';
 const GROWTH_ORDER_QUEUE_KEY = 'np90_growth_order_queue_v1';
 const SUPABASE_ADMIN_SESSION_KEY = 'np90_supabase_session_v1';
 const ADMIN_INVOICE_DRAFT_KEY = 'np90_admin_invoice_draft_v1';
-const BUSINESS_WHATSAPP = '018-949 0908';
-const BUSINESS_WHATSAPP_LINK = '60189490908';
-const BUSINESS_EMAIL = '9088project@gmail.com';
+const ADMIN_CONTENT_KEY = 'np90_admin_content_v1';
+const ADMIN_CONTENT_UPDATED_AT_KEY = 'np90_admin_content_updated_at_v1';
+const ADMIN_CONTENT_SYNC_STATE_KEY = 'np90_admin_content_sync_state_v1';
+const ADMIN_CONTENT_API_PATH = '/api/admin-content';
+const ADMIN_CONTENT_SETTING_KEY = 'admin_content';
+const DEFAULT_BUSINESS_WHATSAPP = '018-949 0908';
+const DEFAULT_BUSINESS_WHATSAPP_LINK = '60189490908';
+const DEFAULT_BUSINESS_EMAIL = '9088project@gmail.com';
+let businessContact = {
+  phone: DEFAULT_BUSINESS_WHATSAPP,
+  whatsappLink: DEFAULT_BUSINESS_WHATSAPP_LINK,
+  email: DEFAULT_BUSINESS_EMAIL
+};
+let adminContentSupabaseConfig = null;
 const translations = {
   zh: {
     language: '中文',
@@ -538,8 +549,176 @@ function busyLabel(key) {
   return t(key) || '处理中...';
 }
 
+function parseAdminContentValue(value) {
+  if (!value) return null;
+  if (typeof value === 'object') return value;
+  try {
+    return JSON.parse(value);
+  } catch (error) {
+    console.warn('Admin content is not valid JSON', error);
+    return null;
+  }
+}
+
+function normalizeBusinessWhatsappTarget(value = '') {
+  const digits = String(value || '').replace(/\D/g, '');
+  if (!digits) return DEFAULT_BUSINESS_WHATSAPP_LINK;
+  if (digits.startsWith('60')) return digits;
+  if (digits.startsWith('0')) return `60${digits.slice(1)}`;
+  return digits;
+}
+
+function applyAdminBusinessContent(content = {}) {
+  const site = content?.[language]?.site || content?.zh?.site || content?.en?.site || {};
+  const contact = site.contact || {};
+  const phone = String(contact.phone || DEFAULT_BUSINESS_WHATSAPP).trim();
+  businessContact = {
+    phone,
+    whatsappLink: normalizeBusinessWhatsappTarget(contact.whatsapp || phone || DEFAULT_BUSINESS_WHATSAPP_LINK),
+    email: String(contact.email || DEFAULT_BUSINESS_EMAIL).trim()
+  };
+}
+
+function loadLocalAdminContentForGrowth() {
+  try {
+    return parseAdminContentValue(localStorage.getItem(ADMIN_CONTENT_KEY));
+  } catch (error) {
+    console.warn('Unable to read local admin content', error);
+    return null;
+  }
+}
+
+function saveAdminContentForGrowth(content, meta = {}) {
+  localStorage.setItem(ADMIN_CONTENT_KEY, JSON.stringify(content));
+  const updatedAt = meta.updatedAt || new Date().toISOString();
+  localStorage.setItem(ADMIN_CONTENT_UPDATED_AT_KEY, updatedAt);
+  localStorage.setItem(ADMIN_CONTENT_SYNC_STATE_KEY, JSON.stringify({
+    source: meta.source || 'cloud',
+    updatedAt,
+    cloudSynced: true,
+    lastError: ''
+  }));
+}
+
+function isLocalPreviewHost() {
+  return /^(localhost|127\.0\.0\.1|\[::1\])$/i.test(window.location.hostname);
+}
+
+function validAdminContentSupabaseConfig(config) {
+  const url = String(config?.url || '').replace(/\/+$/, '');
+  const anonKey = String(config?.anonKey || '');
+  return /^https:\/\/[a-z0-9-]+\.supabase\.co$/i.test(url) && anonKey.length > 30
+    ? { url, anonKey }
+    : null;
+}
+
+async function readAdminContentJson(path) {
+  try {
+    const response = await fetch(path, { cache: 'no-store' });
+    if (!response.ok) return null;
+    const data = await response.json();
+    return data && typeof data === 'object' ? data : null;
+  } catch (error) {
+    return null;
+  }
+}
+
+async function loadAdminContentSupabaseConfigForGrowth() {
+  if (adminContentSupabaseConfig) return adminContentSupabaseConfig;
+
+  if (!isLocalPreviewHost()) {
+    const apiConfig = validAdminContentSupabaseConfig(await readAdminContentJson('/api/supabase-config'));
+    if (apiConfig) {
+      adminContentSupabaseConfig = apiConfig;
+      return adminContentSupabaseConfig;
+    }
+  }
+
+  const localConfig = validAdminContentSupabaseConfig(
+    await readAdminContentJson('js/supabase-config.local.json?v=20260715-growth-cloud')
+  );
+  if (localConfig) {
+    adminContentSupabaseConfig = localConfig;
+    return adminContentSupabaseConfig;
+  }
+
+  adminContentSupabaseConfig = validAdminContentSupabaseConfig(
+    await readAdminContentJson('js/supabase-config.json?v=20260715-growth-cloud')
+  ) || { url: '', anonKey: '' };
+  return adminContentSupabaseConfig;
+}
+
+async function loadAdminContentFromSupabaseForGrowth() {
+  const config = await loadAdminContentSupabaseConfigForGrowth();
+  if (!config?.url || !config?.anonKey) return null;
+
+  try {
+    const response = await fetch(
+      `${config.url}/rest/v1/site_settings?select=value,updated_at&key=eq.${encodeURIComponent(ADMIN_CONTENT_SETTING_KEY)}&limit=1`,
+      {
+        cache: 'no-store',
+        headers: {
+          apikey: config.anonKey,
+          Authorization: `Bearer ${config.anonKey}`,
+          Accept: 'application/json'
+        }
+      }
+    );
+    if (!response.ok) return null;
+    const rows = await response.json();
+    const content = parseAdminContentValue(rows?.[0]?.value);
+    if (content) {
+      saveAdminContentForGrowth(content, {
+        source: 'supabase-direct',
+        updatedAt: rows?.[0]?.updated_at
+      });
+    }
+    return content;
+  } catch (error) {
+    console.warn('Admin content Supabase load failed', error);
+    return null;
+  }
+}
+
+async function loadCloudAdminContentForGrowth() {
+  if (!isLocalPreviewHost()) {
+    try {
+      const response = await fetch(`${ADMIN_CONTENT_API_PATH}?v=${Date.now()}`, { cache: 'no-store' });
+      if (response.ok) {
+        const result = await response.json();
+        const content = parseAdminContentValue(result?.content);
+        if (content) {
+          saveAdminContentForGrowth(content, {
+            source: result?.source || 'cloud-api',
+            updatedAt: result?.updatedAt
+          });
+          return content;
+        }
+      }
+    } catch (error) {
+      console.warn('Admin content API load failed', error);
+    }
+  }
+
+  return loadAdminContentFromSupabaseForGrowth();
+}
+
+async function syncAdminBusinessContent() {
+  const content = await loadCloudAdminContentForGrowth() || loadLocalAdminContentForGrowth();
+  applyAdminBusinessContent(content || {});
+  return content;
+}
+
+function businessPhone() {
+  return businessContact.phone || DEFAULT_BUSINESS_WHATSAPP;
+}
+
+function businessEmail() {
+  return businessContact.email || DEFAULT_BUSINESS_EMAIL;
+}
+
 function businessWhatsAppUrl(message) {
-  return `https://wa.me/${BUSINESS_WHATSAPP_LINK}?text=${encodeURIComponent(message || '')}`;
+  return `https://wa.me/${businessContact.whatsappLink || DEFAULT_BUSINESS_WHATSAPP_LINK}?text=${encodeURIComponent(message || '')}`;
 }
 
 function memberLoginHelpMessage(identity = '') {
@@ -652,7 +831,8 @@ function applyLanguage() {
     element.setAttribute('placeholder', t(element.dataset.i18nPlaceholder));
   });
   document.querySelectorAll('[data-growth-language]').forEach(button => button.classList.toggle('active', button.dataset.growthLanguage === language));
-  document.title = page === 'member' ? t('memberMetaTitle') : page === 'referral' ? `${t('referral')} | 90 PROJECT` : `${t('rewards')} | 90 PROJECT`;
+  if (page === 'admin') document.title = '内容后台 | 90 PROJECT';
+  else document.title = page === 'member' ? t('memberMetaTitle') : page === 'referral' ? `${t('referral')} | 90 PROJECT` : `${t('rewards')} | 90 PROJECT`;
 }
 
 function shareUrl(code) {
@@ -762,7 +942,7 @@ function renderMemberDashboard() {
         <span><strong>${Number(referralStats.levelThree || 0)}</strong>${esc(t('referralLevelThree'))}</span>
         <span><strong>${Number(referralStats.completed || 0)}</strong>${esc(t('referralCompletedShort'))}</span>
       </div>
-      <a class="growth-button member-referral-whatsapp" target="_blank" rel="noopener" href="https://wa.me/60189490908?text=${encodeURIComponent(shareMessage)}">${esc(t('whatsappShareReferral'))}</a>
+      <a class="growth-button member-referral-whatsapp" target="_blank" rel="noopener" href="https://wa.me/?text=${encodeURIComponent(shareMessage)}">${esc(t('whatsappShareReferral'))}</a>
       <p class="member-referral-note">${esc(t('referralShareNote'))}</p>
     </div>`;
   } else {
@@ -1524,7 +1704,7 @@ function renderAdminInvoiceReceipt(data) {
     <div class="admin-receipt-paper" data-receipt-payment-state="${esc(paymentState)}">
       <div class="admin-receipt-brand">
         <img src="assets/images/logo/logo-icon-dark.jpg" alt="90 PROJECT logo">
-        <div><span>${esc(documentTitle)}</span><strong>九零食刻 90 PROJECT</strong><small>${esc(BUSINESS_WHATSAPP)} · ${esc(BUSINESS_EMAIL)}</small></div>
+        <div><span>${esc(documentTitle)}</span><strong>九零食刻 90 PROJECT</strong><small>${esc(businessPhone())} · ${esc(businessEmail())}</small></div>
         <mark class="admin-receipt-status">${esc(paymentText)}</mark>
       </div>
       <div class="admin-receipt-meta">
@@ -1718,7 +1898,7 @@ function buildAdminInvoiceMessage(data = collectAdminInvoiceInput()) {
     data.customerNotes ? `备注：${data.customerNotes}` : null,
     '',
     '请回复“确认订单”，我们会为你保留安排。',
-    `WhatsApp：${BUSINESS_WHATSAPP}`
+    `WhatsApp：${businessPhone()}`
   ];
   return lines.filter(line => line !== null).join('\n');
 }
@@ -2830,6 +3010,7 @@ function bindAdmin() {
 document.querySelectorAll('[data-growth-language]').forEach(button => button.addEventListener('click', () => {
   language = ['zh', 'en'].includes(button.dataset.growthLanguage) ? button.dataset.growthLanguage : 'zh';
   localStorage.setItem(LANG_KEY, language);
+  applyAdminBusinessContent(loadLocalAdminContentForGrowth() || {});
   applyLanguage();
   if (page === 'member') renderMemberDashboard();
 }));
@@ -2838,6 +3019,7 @@ document.addEventListener('click', event => {
   if (link) navigator.clipboard?.writeText(link.dataset.growthCopy);
 });
 
+await syncAdminBusinessContent();
 const cloudState = await cloud.init();
 cloudReady = Boolean(cloudState.configured);
 if (page === 'member') {
@@ -2860,6 +3042,23 @@ window.addEventListener('np90:growth-order-queued', async () => {
   if (imported && page === 'admin') {
     await saveSharedGrowthStateForAdmin();
     renderAdmin();
+  }
+});
+
+window.addEventListener('storage', event => {
+  if (event.key !== ADMIN_CONTENT_KEY || !event.newValue) return;
+  try {
+    applyAdminBusinessContent(parseAdminContentValue(event.newValue) || {});
+    if (page === 'member') {
+      if (typeof renderAuthState === 'function') renderAuthState();
+      renderMemberDashboard();
+    }
+    if (page === 'admin') {
+      updateAdminInvoicePreview();
+      renderAdmin();
+    }
+  } catch (error) {
+    console.warn('Unable to refresh growth page business content', error);
   }
 });
 

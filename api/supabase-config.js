@@ -8,6 +8,8 @@ function applyCors(request, response) {
   const allowedOrigins = new Set([
     'https://90project.online',
     'https://www.90project.online',
+    'http://127.0.0.1:3040',
+    'http://localhost:3040',
     'http://127.0.0.1:3050',
     'http://localhost:3050'
   ]);
@@ -16,7 +18,7 @@ function applyCors(request, response) {
     response.setHeader('Vary', 'Origin');
   }
   response.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS');
-  response.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  response.setHeader('Access-Control-Allow-Headers', 'Authorization,Content-Type');
 }
 
 module.exports = function handler(request, response) {

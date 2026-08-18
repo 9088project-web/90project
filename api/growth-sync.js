@@ -58,6 +58,8 @@ function applyCors(request, response) {
   const allowedOrigins = new Set([
     'https://90project.online',
     'https://www.90project.online',
+    'http://127.0.0.1:3040',
+    'http://localhost:3040',
     'http://127.0.0.1:3050',
     'http://localhost:3050'
   ]);
@@ -65,8 +67,8 @@ function applyCors(request, response) {
     response.setHeader('Access-Control-Allow-Origin', origin);
     response.setHeader('Vary', 'Origin');
   }
-  response.setHeader('Access-Control-Allow-Methods', 'GET,POST,PUT,OPTIONS');
-  response.setHeader('Access-Control-Allow-Headers', 'Content-Type,X-Admin-Email,X-Admin-Password');
+  response.setHeader('Access-Control-Allow-Methods', 'GET,POST,PUT,PATCH,OPTIONS');
+  response.setHeader('Access-Control-Allow-Headers', 'Authorization,Content-Type,X-Admin-Email,X-Admin-Password');
 }
 
 function readableCloudMessage(value, fallback = 'Growth cloud sync failed.') {
@@ -237,6 +239,7 @@ async function writeCloudState(state) {
       value: JSON.stringify(normalizeState(state))
     }
   });
+  return readCloudState();
 }
 
 async function readAuthUsers() {
@@ -807,8 +810,8 @@ async function loadMergedState() {
     loadGrowthTables()
   ]);
   const mergedState = mergeSupabaseGrowthTables(mergeProfilesIntoState(state, profiles, users), growthTables);
-  await writeCloudState(mergedState);
-  return { state: mergedState, updatedAt };
+  const written = await writeCloudState(mergedState);
+  return { state: written.state || mergedState, updatedAt: written.updatedAt || updatedAt };
 }
 
 module.exports = async function handler(request, response) {
@@ -842,8 +845,13 @@ module.exports = async function handler(request, response) {
       }
       const [profiles, users, growthTables] = await Promise.all([loadProfiles(), readAuthUsers(), loadGrowthTables()]);
       const state = mergeSupabaseGrowthTables(mergeProfilesIntoState(body.state || body.value || {}, profiles, users), growthTables);
-      await writeCloudState(state);
-      return send(response, 200, { ok: true, source: 'supabase', state });
+      const written = await writeCloudState(state);
+      return send(response, 200, {
+        ok: true,
+        source: 'supabase',
+        state: written.state || state,
+        updatedAt: written.updatedAt || null
+      });
     }
 
     return send(response, 405, { ok: false, message: 'Method not allowed.' });
