@@ -4908,3 +4908,431 @@ body.admin-page{min-height:100vh;overflow-x:hidden;background:radial-gradient(ci
     align-items:stretch;
   }
 }
+
+/* Quick order v10: compact POS counter with clearer totals and faster deposits. */
+.admin-section[data-admin-panel="orders"] .admin-pos-v10{
+  --pos-cream:#fffaf1;
+  --pos-cream-2:#f8eddb;
+  --pos-brown:#201208;
+  --pos-brown-2:#3a210f;
+  --pos-caramel:#a96922;
+  --pos-gold:#f5cc79;
+  --pos-muted:#6f5d49;
+  --pos-border:rgba(151,104,47,.23);
+  padding:16px;
+  background:
+    linear-gradient(180deg,rgba(255,250,241,.98),rgba(250,238,220,.96)),
+    radial-gradient(circle at 88% 12%,rgba(245,204,121,.24),transparent 30%);
+}
+
+.admin-section[data-admin-panel="orders"] .admin-pos-v10 .admin-pos-titlebar{
+  display:grid;
+  grid-template-columns:1fr auto;
+  gap:16px;
+  align-items:center;
+  padding:18px;
+  border:1px solid rgba(245,204,121,.28);
+  border-radius:20px;
+  box-shadow:0 18px 42px rgba(33,18,8,.18);
+}
+
+.admin-section[data-admin-panel="orders"] .admin-pos-v10 .admin-pos-title-copy h3{
+  margin-top:4px;
+  font-size:clamp(28px,3.4vw,42px);
+  letter-spacing:0;
+}
+
+.admin-section[data-admin-panel="orders"] .admin-pos-v10 .admin-pos-title-copy p{
+  margin-top:7px;
+  font-size:15px;
+}
+
+.admin-section[data-admin-panel="orders"] .admin-pos-v10 .admin-pos-status-pill{
+  min-width:142px;
+  padding:13px 16px;
+  border-radius:16px;
+  text-align:center;
+}
+
+.admin-section[data-admin-panel="orders"] .admin-pos-v10 .admin-pos-stats{
+  grid-template-columns:1.25fr repeat(3,1fr);
+  gap:10px;
+}
+
+.admin-section[data-admin-panel="orders"] .admin-pos-v10 .admin-pos-stats div{
+  min-height:76px;
+  padding:14px 16px;
+  border:1px solid var(--pos-border);
+  border-radius:18px;
+  background:#fffdf8;
+  box-shadow:0 14px 32px rgba(34,19,9,.08);
+}
+
+.admin-section[data-admin-panel="orders"] .admin-pos-v10 .admin-pos-stats span{
+  color:#8c755a;
+  font-size:12px;
+}
+
+.admin-section[data-admin-panel="orders"] .admin-pos-v10 .admin-pos-stats strong{
+  margin-top:4px;
+  color:#170d07;
+  font-size:clamp(20px,2vw,28px);
+}
+
+.admin-section[data-admin-panel="orders"] .admin-pos-v10 .admin-order-flow-strip{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:8px;
+  padding:8px;
+  border:1px solid rgba(245,204,121,.2);
+  border-radius:18px;
+  background:#110906;
+}
+
+.admin-section[data-admin-panel="orders"] .admin-pos-v10 .admin-order-flow-strip button{
+  width:100%;
+  min-height:64px;
+  border:1px solid rgba(245,204,121,.18);
+  border-radius:14px;
+  background:rgba(255,255,255,.04);
+  color:#f8e4bd;
+}
+
+.admin-section[data-admin-panel="orders"] .admin-pos-v10 .admin-order-flow-strip button.is-active{
+  background:linear-gradient(135deg,#f7d891,#b8792e);
+  color:#160d07;
+}
+
+.admin-section[data-admin-panel="orders"] .admin-pos-v10 .admin-order-flow-strip button span{
+  color:inherit;
+  opacity:.82;
+}
+
+.admin-section[data-admin-panel="orders"] .admin-pos-v10 .admin-pos-workspace{
+  grid-template-columns:minmax(270px,320px) minmax(520px,1fr) minmax(330px,400px);
+  align-items:start;
+}
+
+.admin-section[data-admin-panel="orders"] .admin-pos-v10 .admin-pos-card{
+  border:1px solid var(--pos-border);
+  border-radius:20px;
+  background:var(--pos-cream);
+  box-shadow:0 22px 50px rgba(48,30,12,.1);
+  overflow:hidden;
+}
+
+.admin-section[data-admin-panel="orders"] .admin-pos-v10 .admin-pos-card-head{
+  min-height:auto;
+  padding:16px 18px;
+  border-bottom:1px solid rgba(151,104,47,.14);
+  background:linear-gradient(180deg,#fffdf9,#fff5e5);
+}
+
+.admin-section[data-admin-panel="orders"] .admin-pos-v10 .admin-pos-card-head h3{
+  font-size:22px;
+  line-height:1.16;
+}
+
+.admin-section[data-admin-panel="orders"] .admin-pos-v10 .admin-pos-card-head span,
+.admin-section[data-admin-panel="orders"] .admin-pos-v10 .admin-pos-menu-card-head span,
+.admin-section[data-admin-panel="orders"] .admin-pos-v10 .admin-pos-free-head span{
+  color:#b37a2a;
+}
+
+.admin-section[data-admin-panel="orders"] .admin-pos-v10 .admin-pos-fieldset,
+.admin-section[data-admin-panel="orders"] .admin-pos-v10 .admin-pos-menu-card,
+.admin-section[data-admin-panel="orders"] .admin-pos-v10 .admin-pos-free-head,
+.admin-section[data-admin-panel="orders"] .admin-pos-v10 .admin-pos-quick-extra{
+  margin:12px;
+  border:1px solid var(--pos-border);
+  border-radius:16px;
+  background:#fffdf8;
+}
+
+.admin-section[data-admin-panel="orders"] .admin-pos-v10 .admin-pos-more{
+  margin:12px;
+  border-color:var(--pos-border);
+  border-radius:16px;
+  background:#fffaf1;
+}
+
+.admin-section[data-admin-panel="orders"] .admin-pos-v10 .admin-pos-more>summary{
+  min-height:48px;
+  padding:13px 16px;
+  color:#28180c;
+  font-size:15px;
+}
+
+.admin-section[data-admin-panel="orders"] .admin-pos-v10 label{
+  color:#372516;
+}
+
+.admin-section[data-admin-panel="orders"] .admin-pos-v10 input,
+.admin-section[data-admin-panel="orders"] .admin-pos-v10 select,
+.admin-section[data-admin-panel="orders"] .admin-pos-v10 textarea{
+  border-color:rgba(120,82,38,.22);
+  background:#fffdf8;
+  color:#160d07;
+}
+
+.admin-section[data-admin-panel="orders"] .admin-pos-v10 .admin-pos-set-grid{
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:10px;
+}
+
+.admin-section[data-admin-panel="orders"] .admin-pos-v10 .admin-pos-set-grid button{
+  position:relative;
+  display:grid;
+  gap:7px;
+  min-height:118px;
+  padding:14px;
+  border:1px solid rgba(151,104,47,.22);
+  border-radius:18px;
+  background:linear-gradient(180deg,#fffaf0,#f7ead6);
+  color:#1b120a;
+  box-shadow:0 12px 24px rgba(42,24,10,.08);
+}
+
+.admin-section[data-admin-panel="orders"] .admin-pos-v10 .admin-pos-set-grid button:hover,
+.admin-section[data-admin-panel="orders"] .admin-pos-v10 .admin-pos-set-grid button.is-active{
+  border-color:#d49a43;
+  background:linear-gradient(135deg,#fff0c8,#f3bf60);
+  box-shadow:0 18px 34px rgba(138,82,24,.2);
+  transform:translateY(-1px);
+}
+
+.admin-section[data-admin-panel="orders"] .admin-pos-v10 .admin-pos-set-grid button.is-active::after{
+  content:"已选择";
+  position:absolute;
+  right:10px;
+  top:10px;
+  padding:4px 8px;
+  border-radius:999px;
+  background:#1c1008;
+  color:#ffe2a3;
+  font-size:11px;
+  font-weight:900;
+}
+
+.admin-section[data-admin-panel="orders"] .admin-pos-v10 .admin-pos-set-grid button span{
+  font-size:26px;
+}
+
+.admin-section[data-admin-panel="orders"] .admin-pos-v10 .admin-pos-set-grid button small{
+  min-height:36px;
+  color:#5f4b36;
+  font-size:12px;
+  line-height:1.4;
+}
+
+.admin-section[data-admin-panel="orders"] .admin-pos-v10 .admin-pos-set-grid button b{
+  width:max-content;
+  justify-self:start;
+  padding:5px 10px;
+  border-radius:999px;
+  background:#1b120a;
+  color:#ffe4a7;
+  font-size:14px;
+}
+
+.admin-section[data-admin-panel="orders"] .admin-pos-v10 .admin-pos-set-note,
+.admin-section[data-admin-panel="orders"] .admin-pos-v10 .admin-pos-set-helper{
+  margin:10px 0 0;
+  padding:10px 12px;
+  border-radius:12px;
+  line-height:1.45;
+}
+
+.admin-section[data-admin-panel="orders"] .admin-pos-v10 .admin-pos-set-note{
+  background:#fff4dd;
+  color:#6b5438;
+}
+
+.admin-section[data-admin-panel="orders"] .admin-pos-v10 .admin-pos-set-helper{
+  border:1px solid rgba(169,105,34,.18);
+  background:#f6ead4;
+  color:#2b1b0f;
+  font-size:13px;
+  font-weight:900;
+}
+
+.admin-section[data-admin-panel="orders"] .admin-pos-v10 .admin-invoice-item-table{
+  margin:12px;
+  border:1px solid rgba(151,104,47,.18);
+  border-radius:16px;
+  background:#fffdf8;
+}
+
+.admin-section[data-admin-panel="orders"] .admin-pos-v10 .admin-invoice-item-heading{
+  background:#2a190d;
+  color:#f8d999;
+}
+
+.admin-section[data-admin-panel="orders"] .admin-pos-v10 .admin-invoice-item-row{
+  grid-template-columns:32px minmax(210px,1fr) 74px 98px 102px 38px;
+}
+
+.admin-section[data-admin-panel="orders"] .admin-pos-v10 .admin-invoice-empty{
+  padding:18px;
+  color:#846a4b;
+  font-weight:800;
+}
+
+.admin-section[data-admin-panel="orders"] .admin-pos-v10 .admin-pos-receipt-panel{
+  position:sticky;
+  top:96px;
+  border-color:rgba(245,204,121,.23);
+  background:
+    radial-gradient(circle at 80% 0%,rgba(245,204,121,.16),transparent 38%),
+    linear-gradient(180deg,#211307,#130a05);
+}
+
+.admin-section[data-admin-panel="orders"] .admin-pos-v10 .admin-pos-receipt-panel .admin-pos-card-head{
+  border-color:rgba(245,204,121,.18);
+  background:rgba(255,255,255,.04);
+}
+
+.admin-section[data-admin-panel="orders"] .admin-pos-v10 .admin-pos-receipt-panel .admin-pos-card-head h3{
+  color:#fff3d2;
+}
+
+.admin-section[data-admin-panel="orders"] .admin-pos-v10 .admin-pos-checkout-grid{
+  grid-template-columns:1fr;
+}
+
+.admin-section[data-admin-panel="orders"] .admin-pos-v10 .admin-pos-deposit-presets{
+  display:grid;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:8px;
+  align-self:end;
+}
+
+.admin-section[data-admin-panel="orders"] .admin-pos-v10 .admin-pos-deposit-presets button{
+  min-height:42px;
+  padding:8px;
+  border:1px solid rgba(245,204,121,.28);
+  border-radius:12px;
+  background:rgba(255,246,222,.08);
+  color:#ffe0a2;
+  font-size:12px;
+  font-weight:900;
+  cursor:pointer;
+}
+
+.admin-section[data-admin-panel="orders"] .admin-pos-v10 .admin-pos-deposit-presets button:hover{
+  background:#f3c66d;
+  color:#160d07;
+}
+
+.admin-section[data-admin-panel="orders"] .admin-pos-v10 .admin-pos-settlement{
+  border-color:rgba(245,204,121,.18);
+  border-radius:18px;
+  background:#fff4df;
+}
+
+.admin-section[data-admin-panel="orders"] .admin-pos-v10 .admin-pos-preview-drawer{
+  border-color:rgba(245,204,121,.16);
+  background:rgba(255,255,255,.04);
+}
+
+.admin-section[data-admin-panel="orders"] .admin-pos-v10 .admin-invoice-actions{
+  grid-template-columns:minmax(240px,1.5fr) repeat(4,minmax(112px,.8fr));
+  gap:10px;
+  margin-top:18px;
+  padding:12px;
+  border:1px solid rgba(151,104,47,.18);
+  border-radius:18px;
+  background:rgba(255,253,248,.88);
+  box-shadow:0 18px 34px rgba(37,22,10,.12);
+}
+
+.admin-section[data-admin-panel="orders"] .admin-pos-v10 .admin-invoice-actions .growth-button{
+  min-height:54px;
+  border-radius:14px;
+}
+
+@media (max-width:1260px){
+  .admin-section[data-admin-panel="orders"] .admin-pos-v10 .admin-pos-workspace{
+    grid-template-columns:minmax(270px,330px) minmax(0,1fr);
+  }
+
+  .admin-section[data-admin-panel="orders"] .admin-pos-v10 .admin-pos-receipt-panel{
+    position:relative;
+    top:auto;
+    grid-column:1 / -1;
+  }
+
+  .admin-section[data-admin-panel="orders"] .admin-pos-v10 .admin-pos-checkout-grid{
+    grid-template-columns:repeat(2,minmax(0,1fr));
+  }
+
+  .admin-section[data-admin-panel="orders"] .admin-pos-v10 .admin-pos-deposit-presets{
+    grid-column:1 / -1;
+  }
+}
+
+@media (max-width:860px){
+  .admin-section[data-admin-panel="orders"] .admin-pos-v10{
+    padding:10px;
+  }
+
+  .admin-section[data-admin-panel="orders"] .admin-pos-v10 .admin-pos-titlebar,
+  .admin-section[data-admin-panel="orders"] .admin-pos-v10 .admin-pos-workspace,
+  .admin-section[data-admin-panel="orders"] .admin-pos-v10 .admin-invoice-actions{
+    grid-template-columns:1fr;
+  }
+
+  .admin-section[data-admin-panel="orders"] .admin-pos-v10 .admin-pos-title-actions{
+    width:100%;
+  }
+
+  .admin-section[data-admin-panel="orders"] .admin-pos-v10 .admin-pos-title-actions .growth-button,
+  .admin-section[data-admin-panel="orders"] .admin-pos-v10 .admin-pos-status-pill{
+    width:100%;
+  }
+
+  .admin-section[data-admin-panel="orders"] .admin-pos-v10 .admin-pos-stats{
+    grid-template-columns:repeat(2,minmax(0,1fr));
+  }
+
+  .admin-section[data-admin-panel="orders"] .admin-pos-v10 .admin-order-flow-strip{
+    overflow:visible;
+  }
+
+  .admin-section[data-admin-panel="orders"] .admin-pos-v10 .admin-order-flow-strip button{
+    min-width:0;
+    min-height:58px;
+  }
+
+  .admin-section[data-admin-panel="orders"] .admin-pos-v10 .admin-pos-set-grid{
+    grid-template-columns:repeat(2,minmax(0,1fr));
+  }
+
+  .admin-section[data-admin-panel="orders"] .admin-pos-v10 .admin-invoice-item-table{
+    overflow-x:auto;
+  }
+}
+
+@media (max-width:560px){
+  .admin-section[data-admin-panel="orders"] .admin-pos-v10 .admin-pos-stats,
+  .admin-section[data-admin-panel="orders"] .admin-pos-v10 .admin-pos-form-grid,
+  .admin-section[data-admin-panel="orders"] .admin-pos-v10 .admin-pos-checkout-grid{
+    grid-template-columns:1fr;
+  }
+
+  .admin-section[data-admin-panel="orders"] .admin-pos-v10 .admin-pos-title-copy h3{
+    font-size:28px;
+  }
+
+  .admin-section[data-admin-panel="orders"] .admin-pos-v10 .admin-order-flow-strip{
+    grid-template-columns:1fr;
+  }
+
+  .admin-section[data-admin-panel="orders"] .admin-pos-v10 .admin-pos-set-grid{
+    grid-template-columns:1fr;
+  }
+
+  .admin-section[data-admin-panel="orders"] .admin-pos-v10 .admin-pos-deposit-presets{
+    grid-template-columns:repeat(2,minmax(0,1fr));
+  }
+}

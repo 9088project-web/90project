@@ -1441,8 +1441,9 @@ function adminInvoiceStageFromData(data = {}) {
 
 function syncAdminInvoiceStage(data = {}) {
   const stage = adminInvoiceStageFromData(data);
+  const visibleStage = ['deposit', 'complete'].includes(stage) ? 'receipt' : stage;
   document.querySelectorAll('[data-admin-order-stage]').forEach(button => {
-    const active = button.dataset.adminOrderStage === stage;
+    const active = button.dataset.adminOrderStage === visibleStage;
     button.classList.toggle('is-active', active);
     button.setAttribute('aria-pressed', active ? 'true' : 'false');
   });
@@ -1586,7 +1587,52 @@ function replaceAdminInvoiceSetItem(item = {}) {
 function clearAdminInvoicePresetActive() {
   document.querySelectorAll('[data-admin-invoice-preset].is-active').forEach(button => {
     button.classList.remove('is-active');
+    button.setAttribute('aria-pressed', 'false');
   });
+}
+
+function syncAdminInvoicePresetActiveFromItems(items = []) {
+  const setItem = items.find(item => isAdminInvoiceSetDescription(item.description));
+  const activeDescription = setItem?.description || '';
+  document.querySelectorAll('[data-admin-invoice-preset][data-preset-group="set"]').forEach(button => {
+    const active = Boolean(activeDescription) && activeDescription === (button.dataset.presetName || '');
+    button.classList.toggle('is-active', active);
+    button.setAttribute('aria-pressed', active ? 'true' : 'false');
+  });
+}
+
+function syncAdminInvoiceSetHelper(data = {}) {
+  const helper = document.querySelector('[data-admin-invoice-set-helper]');
+  if (!helper) return;
+  const items = Array.isArray(data.items) ? data.items : [];
+  const setItem = items.find(item => isAdminInvoiceSetDescription(item.description));
+  if (!setItem) {
+    helper.textContent = items.length ? '正在使用自由项目开单。' : '请选择 Set，或用自由项目开单。';
+    helper.classList.remove('is-ready');
+    return;
+  }
+  const qty = Math.max(10, invoiceQuantity(setItem.qty));
+  helper.textContent = `${setItem.description} 已套用：${qty} pax x ${formatMoney(setItem.unitPrice)} = ${formatMoney(setItem.amount)}。顾客仍可按 Set 规则确认菜单。`;
+  helper.classList.add('is-ready');
+}
+
+function setAdminInvoiceDeposit(value) {
+  const depositField = invoiceField('depositAmount');
+  if (!depositField) return;
+  depositField.value = money(Math.max(0, Number(value) || 0)).toFixed(2);
+}
+
+function setAdminInvoiceDepositRate(rate) {
+  const preview = updateAdminInvoicePreview();
+  const total = money(preview?.data?.totalAmount || 0);
+  if (!total) {
+    setInvoiceMessage('请先选择套餐或项目，才可以套用订金。', true);
+    return;
+  }
+  const safeRate = Math.max(0, Number(rate) || 0);
+  setAdminInvoiceDeposit(safeRate >= 1 ? total : total * safeRate);
+  updateAdminInvoicePreview();
+  setInvoiceMessage(safeRate >= 1 ? '已设为全额收款。' : `已套用 ${Math.round(safeRate * 100)}% 订金。`);
 }
 
 function collectAdminInvoiceInput() {
@@ -1683,6 +1729,8 @@ function updateAdminInvoicePreview() {
   if (!invoiceValue('invoiceNo')) invoiceField('invoiceNo').value = generateInvoiceNo();
   syncAdminInvoiceSetQtyFromPax();
   const data = collectAdminInvoiceInput();
+  syncAdminInvoicePresetActiveFromItems(data.items);
+  syncAdminInvoiceSetHelper(data);
   const balanceField = invoiceField('balanceAmount');
   if (balanceField) balanceField.value = data.balanceAmount.toFixed(2);
   updateAdminInvoiceKpis(data);
@@ -2479,6 +2527,18 @@ function bindAdmin() {
       setInvoiceMessage('项目已清空，可以重新选择。');
       return;
     }
+    const depositRateButton = event.target.closest('[data-admin-deposit-rate]');
+    if (depositRateButton) {
+      setAdminInvoiceDepositRate(Number(depositRateButton.dataset.adminDepositRate) || 0);
+      return;
+    }
+    const depositClearButton = event.target.closest('[data-admin-deposit-clear]');
+    if (depositClearButton) {
+      setAdminInvoiceDeposit(0);
+      updateAdminInvoicePreview();
+      setInvoiceMessage('订金已清零。');
+      return;
+    }
     const presetInvoiceButton = event.target.closest('[data-admin-invoice-preset]');
     if (presetInvoiceButton) {
       const presetQty = Number(presetInvoiceButton.dataset.presetQty) || 1;
@@ -2500,6 +2560,7 @@ function bindAdmin() {
       if (isSetPreset) {
         clearAdminInvoicePresetActive();
         presetInvoiceButton.classList.add('is-active');
+        presetInvoiceButton.setAttribute('aria-pressed', 'true');
         replaceAdminInvoiceSetItem(item);
         setInvoiceMessage('套餐已套用；活动餐饮 Set 会按 10 pax 起算。');
       } else {

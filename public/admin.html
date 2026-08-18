@@ -158,16 +158,16 @@
       <section class="admin-section growth-admin-section" data-admin-panel="orders" hidden>
         <div class="admin-section-head">
           <div>
-            <h2>快速开单</h2>
-            <p>三步开单：顾客资料、选择 Set / 自由项目、确认金额后 WhatsApp 发送；顾客实际消费后才人工确认计佣。</p>
+            <h2>开单给顾客</h2>
+            <p>像 POS 一样快速处理：填顾客资料、选择 Set 或自由项目、确认金额后保存并 WhatsApp 发送。顾客实际消费后才人工确认计佣。</p>
           </div>
         </div>
-        <form class="growth-form growth-panel admin-invoice-panel admin-pos-panel admin-pos-simplified" data-admin-invoice-form>
+        <form class="growth-form growth-panel admin-invoice-panel admin-pos-panel admin-pos-simplified admin-pos-v10" data-admin-invoice-form>
           <div class="admin-invoice-head admin-pos-titlebar">
             <div class="admin-pos-title-copy">
               <span>QUICK ORDER</span>
-              <h3>快速开单收银台</h3>
-              <p>顾客资料、套餐、加项、订金与余额会即时计算；保存和 WhatsApp 不会自动计佣。</p>
+              <h3>开单收银台</h3>
+              <p>姓名和 WhatsApp 是必填；Set A-D 会按人数自动计算，10 pax 起算。</p>
             </div>
             <div class="admin-pos-title-actions">
               <div class="admin-pos-status-pill">
@@ -188,28 +188,18 @@
           <div class="admin-order-flow-strip" data-admin-order-flow aria-label="开单流程">
             <button type="button" class="is-active" data-admin-order-stage="quote">
               <span>01</span>
-              <strong>资料</strong>
-              <small>顾客资料</small>
+              <strong>顾客</strong>
+              <small>姓名 / WhatsApp</small>
             </button>
             <button type="button" data-admin-order-stage="confirm">
               <span>02</span>
-              <strong>项目</strong>
-              <small>选 Set / 加项</small>
-            </button>
-            <button type="button" data-admin-order-stage="deposit">
-              <span>03</span>
-              <strong>收款</strong>
-              <small>订金余额</small>
-            </button>
-            <button type="button" data-admin-order-stage="complete">
-              <span>04</span>
-              <strong>验收</strong>
-              <small>人工计佣</small>
+              <strong>菜单</strong>
+              <small>Set / 自由项目</small>
             </button>
             <button type="button" data-admin-order-stage="receipt">
-              <span>05</span>
-              <strong>收据</strong>
-              <small>打印留档</small>
+              <span>03</span>
+              <strong>发送</strong>
+              <small>收款 / WhatsApp</small>
             </button>
           </div>
 
@@ -224,7 +214,7 @@
               <div class="admin-pos-fieldset">
                 <div class="admin-pos-fieldset-head">
                   <strong>顾客资料</strong>
-                  <span>先填姓名和 WhatsApp；日期、人数、地点可以展开补上。</span>
+                  <span>先填姓名和 WhatsApp，其余资料按需要补上。</span>
                 </div>
                 <div class="growth-form-grid admin-pos-form-grid">
                   <label>顾客姓名
@@ -237,10 +227,10 @@
               </div>
 
               <details class="admin-pos-more admin-pos-service-drawer" open>
-                <summary>活动 / Catering 资料</summary>
+                <summary>日期 / 人数 / 地点</summary>
                 <div class="admin-pos-fieldset-head">
-                  <strong>日期、人数、地点</strong>
-                  <span>这些资料会自动写进 WhatsApp 和收据。</span>
+                  <strong>订单资料</strong>
+                  <span>填写后会自动写进 WhatsApp 和收据。</span>
                 </div>
                 <div class="growth-form-grid admin-pos-form-grid">
                   <label>服务类型
@@ -270,7 +260,7 @@
                 </div>
               </details>
               <details class="admin-pos-more">
-                <summary>更多资料</summary>
+                <summary>内部资料 / 推荐码</summary>
                 <div class="growth-form-grid admin-pos-form-grid">
                   <label>开单编号
                     <input data-invoice-field="invoiceNo" type="text" readonly>
@@ -321,7 +311,7 @@
                     <span>套餐 Set</span>
                     <strong>Set A-D 快速选择</strong>
                   </div>
-                  <small>10 pax 起算，可再加自由项目。</small>
+                  <small>顾客可在规则内自由选菜单，也可以先 WhatsApp 确认。</small>
                 </div>
                 <div class="admin-pos-preset-strip admin-pos-set-grid" aria-label="活动餐饮套餐">
                   <button type="button" data-admin-invoice-preset data-preset-group="set" data-preset-name="活动餐饮 Set A" data-preset-qty="10" data-preset-price="29.90"><span>Set A</span><small>主食2 · 肉2 · 菜2</small><b>RM29.90</b></button>
@@ -329,7 +319,8 @@
                   <button type="button" data-admin-invoice-preset data-preset-group="set" data-preset-name="活动餐饮 Set C" data-preset-qty="10" data-preset-price="39.90"><span>Set C</span><small>主食2 · 肉2 · 菜2 · 海鲜1</small><b>RM39.90</b></button>
                   <button type="button" data-admin-invoice-preset data-preset-group="set" data-preset-name="活动餐饮 Set D" data-preset-qty="10" data-preset-price="43.90"><span>Set D</span><small>主食2 · 肉2 · 海鲜1 · 菜3</small><b>RM43.90</b></button>
                 </div>
-                <p class="admin-pos-set-note">顾客可以在套餐规定内自由选菜单；菜单还没确定时，也可以先开单后用 WhatsApp 确认。</p>
+                <p class="admin-pos-set-note">Set 会按人数自动计算，低于 10 pax 会用 10 pax 起算。</p>
+                <p class="admin-pos-set-helper" data-admin-invoice-set-helper>请选择 Set，或用自由项目开单。</p>
               </div>
 
               <div class="admin-pos-free-head">
@@ -371,20 +362,26 @@
             <aside class="admin-pos-card admin-pos-receipt-panel">
               <div class="admin-pos-card-head">
                 <div>
-                  <span>CHECKOUT</span>
-                  <h3>结账</h3>
+                  <span>STEP 3</span>
+                  <h3>收款与发送</h3>
                 </div>
               </div>
               <div class="growth-form-grid admin-pos-checkout-grid">
                 <label>已付订金 RM
                   <input data-invoice-field="depositAmount" type="number" min="0" step="0.01" value="0">
                 </label>
+                <div class="admin-pos-deposit-presets" aria-label="订金快捷按钮">
+                  <button type="button" data-admin-deposit-rate="0.3">订金 30%</button>
+                  <button type="button" data-admin-deposit-rate="0.5">订金 50%</button>
+                  <button type="button" data-admin-deposit-rate="1">已结清</button>
+                  <button type="button" data-admin-deposit-clear>清零</button>
+                </div>
                 <label>付款方式
                   <select data-invoice-field="paymentMethod">
                     <option value="Bank Transfer">Bank Transfer</option>
                     <option value="Cash">Cash</option>
                     <option value="Touch n Go">Touch n Go</option>
-                  <option value="Pending">待确认</option>
+                    <option value="Pending">待确认</option>
                   </select>
                 </label>
                 <label>运输费 RM
@@ -414,7 +411,7 @@
                   <div><dt>已收订金</dt><dd data-admin-invoice-kpi="deposit">RM0.00</dd></div>
                   <div class="admin-pos-settlement-balance"><dt>余额</dt><dd data-admin-invoice-kpi="balance">RM0.00</dd></div>
                 </dl>
-                <p>系统会自动计算：项目小计 + 运输费 + 服务费 - 优惠 - 订金 = 余额。</p>
+                <p>计算方式：项目小计 + 运输费 + 服务费 - 优惠 = 应付总额；应付总额 - 订金 = 余额。</p>
               </div>
               <details class="admin-pos-more admin-pos-preview-drawer" open>
                 <summary>收据预览 / WhatsApp 文案</summary>
