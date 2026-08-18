@@ -10,6 +10,8 @@ const ADMIN_INVOICE_DRAFT_KEY = 'np90_admin_invoice_draft_v1';
 const ADMIN_CONTENT_KEY = 'np90_admin_content_v1';
 const ADMIN_CONTENT_UPDATED_AT_KEY = 'np90_admin_content_updated_at_v1';
 const ADMIN_CONTENT_SYNC_STATE_KEY = 'np90_admin_content_sync_state_v1';
+const PASSWORD_RESET_COOLDOWN_KEY = 'np90_password_reset_cooldown_until_v1';
+const PASSWORD_RESET_COOLDOWN_SECONDS = 60;
 const ADMIN_CONTENT_API_PATH = '/api/admin-content';
 const ADMIN_CONTENT_SETTING_KEY = 'admin_content';
 const DEFAULT_BUSINESS_WHATSAPP = '018-949 0908';
@@ -400,6 +402,9 @@ Object.assign(translations.zh, {
   resetPasswordPhoneHelp: '手机号暂时不能自动重设密码，已为你打开 WhatsApp 协助。',
   resetPasswordSending: '正在发送重设密码邮件...',
   resetPasswordSent: '重设密码邮件已发送，请打开最新 Email 里的链接设置新密码。',
+  resetPasswordRateLimited: '重设密码邮件发送太频密，请等约 60 秒后再试；如果急用，可以点 WhatsApp 协助。',
+  resetPasswordCooldown: '刚刚已经发送过重设密码邮件，请等 {seconds} 秒后再试，或点 WhatsApp 协助。',
+  resetPasswordBadRequest: '重设密码请求没有成功。请检查 Email 是否完整，或点 WhatsApp 协助。',
   resetPasswordUnavailable: '自动重设暂时无法使用，已为你打开 WhatsApp 协助。',
   resetPasswordReady: '请设置新的会员密码。',
   resetPasswordNeedEmailLink: '这不是有效的重设链接。请回到登录框重新发送最新 Email，再从邮件打开链接。',
@@ -445,6 +450,9 @@ Object.assign(translations.en, {
   resetPasswordPhoneHelp: 'Mobile numbers cannot reset passwords automatically yet. WhatsApp help has been opened.',
   resetPasswordSending: 'Sending password reset email...',
   resetPasswordSent: 'Password reset email sent. Please open the latest email link to set a new password.',
+  resetPasswordRateLimited: 'Too many reset emails were requested. Please wait about 60 seconds, or use WhatsApp help.',
+  resetPasswordCooldown: 'A reset email was just sent. Please wait {seconds} seconds before trying again, or use WhatsApp help.',
+  resetPasswordBadRequest: 'The reset request was not completed. Please check the email address or use WhatsApp help.',
   resetPasswordUnavailable: 'Automatic reset is not available right now. WhatsApp help has been opened.',
   resetPasswordReady: 'Please set your new member password.',
   resetPasswordNeedEmailLink: 'This is not a valid reset link. Please send a new email from the login box and open the latest link.',
@@ -534,6 +542,45 @@ function cloudSyncProblemMessage(...results) {
   const firstProblem = results.find(result => result && !cloudSyncOk(result, false));
   if (!firstProblem) return '';
   return growthReadableCloudMessage(firstProblem.message || firstProblem.reason || firstProblem.status || '');
+}
+
+function passwordResetCooldownRemaining() {
+  try {
+    const until = Number(localStorage.getItem(PASSWORD_RESET_COOLDOWN_KEY) || 0);
+    if (!until || !Number.isFinite(until)) return 0;
+    return Math.max(0, Math.ceil((until - Date.now()) / 1000));
+  } catch (error) {
+    return 0;
+  }
+}
+
+function startPasswordResetCooldown(seconds = PASSWORD_RESET_COOLDOWN_SECONDS) {
+  try {
+    localStorage.setItem(PASSWORD_RESET_COOLDOWN_KEY, String(Date.now() + (seconds * 1000)));
+  } catch (error) {}
+}
+
+function passwordResetCooldownMessage(seconds) {
+  return t('resetPasswordCooldown').replace('{seconds}', String(Math.max(1, Number(seconds) || PASSWORD_RESET_COOLDOWN_SECONDS)));
+}
+
+function readableMemberAuthMessage(message, fallbackKey = 'resetPasswordUnavailable') {
+  const text = String(message || '').trim();
+  const lower = text.toLowerCase();
+  if (!text) return t(fallbackKey);
+  if (lower.includes('rate limit') || lower.includes('too many') || text.includes('发送太频繁') || text.includes('太频密')) {
+    return t('resetPasswordRateLimited');
+  }
+  if (lower.includes('bad request') || text.includes('云端拒绝') || lower.includes('invalid request')) {
+    return t('resetPasswordBadRequest');
+  }
+  if (lower.includes('invalid login credentials') || text.includes('手机号或密码不正确')) {
+    return t('loginError');
+  }
+  if (lower.includes('email not confirmed') || text.includes('确认 Email')) {
+    return t('loginError');
+  }
+  return text;
 }
 
 function setBusy(form, busy, label = '') {
@@ -1127,6 +1174,11 @@ function bindMemberPage() {
       setMessage(t('resetPasswordUnavailable'), true, 'login');
       return openLoginWhatsAppHelp();
     }
+    const remaining = passwordResetCooldownRemaining();
+    if (remaining > 0) {
+      setMessage(passwordResetCooldownMessage(remaining), true, 'login');
+      return;
+    }
 
     resetPasswordButton.disabled = true;
     resetPasswordButton.dataset.originalText = resetPasswordButton.textContent || '';
@@ -1136,8 +1188,15 @@ function bindMemberPage() {
     const result = await cloud.sendPasswordReset(identity, redirectTo);
     resetPasswordButton.disabled = false;
     resetPasswordButton.textContent = resetPasswordButton.dataset.originalText || t('forgotLogin');
-    setMessage(result.ok ? t('resetPasswordSent') : (result.message || t('resetPasswordUnavailable')), !result.ok, 'login');
-    if (!result.ok) openLoginWhatsAppHelp();
+    if (result.ok) {
+      startPasswordResetCooldown();
+      setMessage(t('resetPasswordSent'), false, 'login');
+      return;
+    }
+    const readableError = readableMemberAuthMessage(result.message || result.reason, 'resetPasswordUnavailable');
+    if (readableError === t('resetPasswordRateLimited')) startPasswordResetCooldown();
+    setMessage(readableError, true, 'login');
+    if (![t('resetPasswordRateLimited'), t('resetPasswordBadRequest')].includes(readableError)) openLoginWhatsAppHelp();
   });
 
   resetForm?.addEventListener('submit', async event => {
@@ -1153,7 +1212,7 @@ function bindMemberPage() {
     updateMessageElement(resetMessage, t('resetPasswordUpdating'), false);
     const result = await cloud.updatePassword(password);
     setBusy(resetForm, false);
-    if (!result.ok) return updateMessageElement(resetMessage, result.message || t('resetPasswordFailed'), true);
+    if (!result.ok) return updateMessageElement(resetMessage, readableMemberAuthMessage(result.message || result.reason, 'resetPasswordFailed'), true);
     resetForm.reset();
     updateMessageElement(resetMessage, t('resetPasswordUpdated'), false);
     setMessage(t('resetPasswordUpdated'), false, 'login');
