@@ -201,7 +201,8 @@ export function createGrowthCloud() {
     if (!configured()) return { ok: false, skipped: true };
     const body = { email: normalizeEmail(email) };
     if (redirectTo) body.redirect_to = redirectTo;
-    const response = await fetch(`${config.url}/auth/v1/recover`, {
+    const redirectQuery = redirectTo ? `?redirect_to=${encodeURIComponent(redirectTo)}` : '';
+    const response = await fetch(`${config.url}/auth/v1/recover${redirectQuery}`, {
       method: 'POST',
       headers: {
         apikey: config.anonKey,
@@ -218,11 +219,25 @@ export function createGrowthCloud() {
     const hashParams = new URLSearchParams(String(location.hash || '').replace(/^#/, ''));
     const searchParams = new URLSearchParams(String(location.search || '').replace(/^\?/, ''));
     const params = hashParams.get('access_token') ? hashParams : searchParams;
+    const resetValue = String(searchParams.get('reset') || hashParams.get('reset') || '').toLowerCase();
+    const typeValue = String(params.get('type') || hashParams.get('type') || searchParams.get('type') || '').toLowerCase();
+    const resetRequested = resetValue === 'password'
+      || resetValue === 'true'
+      || typeValue === 'recovery'
+      || hashParams.has('access_token')
+      || searchParams.has('access_token')
+      || hashParams.has('code')
+      || searchParams.has('code');
     const error = params.get('error_description') || params.get('error') || hashParams.get('error_description') || hashParams.get('error') || searchParams.get('error_description') || searchParams.get('error');
-    if (error) return { ok: false, message: cloudMessage(error) };
+    if (error) return { ok: false, resetRequested, message: cloudMessage(error) };
     const accessToken = params.get('access_token');
     const type = params.get('type') || hashParams.get('type') || searchParams.get('type');
-    if (!accessToken || (type && type !== 'recovery')) return { ok: false };
+    if (!accessToken) {
+      return resetRequested
+        ? { ok: false, resetRequested: true, reason: 'missing_recovery_session' }
+        : { ok: false };
+    }
+    if (type && String(type).toLowerCase() !== 'recovery') return { ok: false, resetRequested };
     const expiresIn = Number(params.get('expires_in')) || 3600;
     const session = {
       access_token: accessToken,
@@ -232,14 +247,15 @@ export function createGrowthCloud() {
     };
     setSession(session);
     if (typeof window !== 'undefined' && window.history?.replaceState) {
-      window.history.replaceState({}, document.title, `${location.pathname}${location.search && !location.search.includes('access_token') ? location.search : ''}`);
+      const cleanSearch = resetValue === 'password' ? '?reset=password' : '';
+      window.history.replaceState({}, document.title, `${location.pathname}${cleanSearch}`);
     }
     return { ok: true, session };
   }
 
   async function updatePassword(password, session = getSession()) {
     if (!configured()) return { ok: false, skipped: true };
-    if (!session?.access_token) return { ok: false, reason: 'missing_recovery_session' };
+    if (!session?.access_token) return { ok: false, reason: 'missing_recovery_session', message: '请重新打开最新的重设密码 Email 链接。' };
     const response = await fetch(`${config.url}/auth/v1/user`, {
       method: 'PUT',
       headers: {

@@ -390,6 +390,7 @@ Object.assign(translations.zh, {
   resetPasswordSent: '重设密码邮件已发送，请到 Email 收信并按照步骤更新密码。',
   resetPasswordUnavailable: '自动重设暂时无法使用，已为你打开 WhatsApp 协助。',
   resetPasswordReady: '请设置新的会员密码。',
+  resetPasswordNeedEmailLink: '请从最新的重设密码 Email 打开链接，页面才可以安全修改密码。',
   resetPasswordInvalid: '新密码至少需要 6 个字符。',
   resetPasswordUpdating: '正在更新密码...',
   resetPasswordUpdated: '密码已更新，请使用新密码登录。',
@@ -432,6 +433,7 @@ Object.assign(translations.en, {
   resetPasswordSent: 'Password reset email sent. Please check your email and follow the steps.',
   resetPasswordUnavailable: 'Automatic reset is not available right now. WhatsApp help has been opened.',
   resetPasswordReady: 'Please set your new member password.',
+  resetPasswordNeedEmailLink: 'Please open the latest password reset email link so this page can safely update your password.',
   resetPasswordInvalid: 'The new password needs at least 6 characters.',
   resetPasswordUpdating: 'Updating password...',
   resetPasswordUpdated: 'Password updated. Please log in with the new password.',
@@ -896,13 +898,33 @@ function bindMemberPage() {
     updateLoginHelpLinks();
     window.open(businessWhatsAppUrl(memberLoginHelpMessage(loginIdentityInput?.value)), '_blank', 'noopener');
   };
+  const isPasswordResetVisit = () => {
+    if (typeof window === 'undefined') return false;
+    const searchParams = new URLSearchParams(String(window.location.search || '').replace(/^\?/, ''));
+    const hashParams = new URLSearchParams(String(window.location.hash || '').replace(/^#/, ''));
+    const resetValue = String(searchParams.get('reset') || hashParams.get('reset') || '').toLowerCase();
+    const typeValue = String(searchParams.get('type') || hashParams.get('type') || '').toLowerCase();
+    return resetValue === 'password'
+      || resetValue === 'true'
+      || typeValue === 'recovery'
+      || searchParams.has('access_token')
+      || hashParams.has('access_token')
+      || searchParams.has('code')
+      || hashParams.has('code');
+  };
 
   const recovery = cloudReady && typeof cloud.recoverySessionFromUrl === 'function'
     ? cloud.recoverySessionFromUrl()
     : { ok: false };
-  if (recovery.ok && resetCard) {
+  const resetRequested = isPasswordResetVisit() || Boolean(recovery.resetRequested);
+  if ((recovery.ok || resetRequested) && resetCard) {
     resetCard.hidden = false;
-    updateMessageElement(resetMessage, t('resetPasswordReady'), false);
+    resetCard.dataset.resetReady = recovery.ok ? 'true' : 'false';
+    updateMessageElement(
+      resetMessage,
+      recovery.ok ? t('resetPasswordReady') : (recovery.message || t('resetPasswordNeedEmailLink')),
+      !recovery.ok
+    );
     resetCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
   } else if (recovery.message) {
     setMessage(recovery.message, true, 'login');
@@ -937,6 +959,7 @@ function bindMemberPage() {
     const password = String(new FormData(resetForm).get('password') || '');
     if (password.length < 6) return updateMessageElement(resetMessage, t('resetPasswordInvalid'), true);
     if (!cloudReady || typeof cloud.updatePassword !== 'function') return updateMessageElement(resetMessage, t('resetPasswordFailed'), true);
+    if (resetCard?.dataset.resetReady === 'false') return updateMessageElement(resetMessage, t('resetPasswordNeedEmailLink'), true);
     setBusy(resetForm, true, busyLabel('resetPasswordUpdating'));
     updateMessageElement(resetMessage, t('resetPasswordUpdating'), false);
     const result = await cloud.updatePassword(password);

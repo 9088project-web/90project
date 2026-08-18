@@ -1,3 +1,27 @@
+function redirectPasswordRecoveryToMember() {
+  const searchParams = new URLSearchParams(String(window.location.search || '').replace(/^\?/, ''));
+  const hashParams = new URLSearchParams(String(window.location.hash || '').replace(/^#/, ''));
+  const resetValue = String(searchParams.get('reset') || hashParams.get('reset') || '').toLowerCase();
+  const typeValue = String(searchParams.get('type') || hashParams.get('type') || '').toLowerCase();
+  const recoverySignal = resetValue === 'password'
+    || typeValue === 'recovery'
+    || searchParams.has('access_token')
+    || hashParams.has('access_token')
+    || searchParams.has('code')
+    || hashParams.has('code');
+  if (!recoverySignal || /\/member(?:\.html)?$/i.test(window.location.pathname)) return;
+
+  const isLocal = /^(localhost|127\.0\.0\.1)$/i.test(window.location.hostname);
+  const target = new URL(isLocal ? '/member.html' : '/member', window.location.origin);
+  target.searchParams.set('reset', 'password');
+  searchParams.forEach((value, key) => {
+    if (key !== 'refresh') target.searchParams.set(key, value);
+  });
+  window.location.replace(`${target.pathname}${target.search}${window.location.hash || ''}`);
+}
+
+redirectPasswordRecoveryToMember();
+
 const menuToggle = document.getElementById('menuToggle');
 const navLinks = document.getElementById('navLinks');
 const backTop = document.getElementById('backTop');
