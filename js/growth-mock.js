@@ -1155,7 +1155,7 @@ function bindMemberPage() {
     );
     resetCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
   } else if (recovery.message) {
-    setMessage(recovery.message, true, 'login');
+    setMessage(readableMemberAuthMessage(recovery.message, 'resetPasswordNeedEmailLink'), true, 'login');
   }
 
   resetPasswordButton?.addEventListener('click', async () => {
@@ -1297,12 +1297,15 @@ function bindMemberPage() {
     setBusy(loginForm, true, busyLabel('loginBusy'));
     const data = Object.fromEntries(new FormData(loginForm));
     let result = api.loginMember(data.identity, data.password);
+    let cloudLoginMessage = '';
     if (!result.ok && cloudReady) {
       const cloudLogin = await cloud.signIn(data.identity, data.password);
       if (cloudLogin.ok) {
         const profile = await cloud.loadProfile(cloudLogin.session);
         const imported = api.importMember(cloud.profileToMember(profile, cloudLogin.session, { email: data.identity, password: data.password }));
         result = imported.ok ? { ok: true, member: imported.member } : result;
+      } else {
+        cloudLoginMessage = cloudLogin.message || cloudLogin.reason || '';
       }
     } else if (result.ok && cloudReady) {
       const cloudLogin = await cloud.signIn(result.member.email, data.password);
@@ -1310,7 +1313,8 @@ function bindMemberPage() {
     }
     if (!result.ok) {
       setBusy(loginForm, false);
-      return setMessage(t('loginError'), true, 'login');
+      const cloudErrorMessage = readableMemberAuthMessage(cloudLoginMessage || result.message || result.reason, 'loginError');
+      return setMessage(cloudErrorMessage, true, 'login');
     }
     setMessage(cloudReady ? t('loginOkCloud') : t('loginOk'));
     await syncCloudDashboard(result.member);

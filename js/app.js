@@ -336,7 +336,7 @@ const CATERING_COMBOS = [
     label: 'SET A',
     price: 'RM29.90',
     desc: '主食 2 · 肉类 2 · 菜类 / 豆腐 / 炸料 2',
-    pax: 30,
+    pax: 10,
     service: 'event',
     requirements: { staple: 2, meat: 2, vegetable: 2 },
     items: ['腊肠炒饭', '炒米粉', '咖喱鸡', '黑胡椒鸡扒', '蒜蓉小白菜', '泰式豆腐']
@@ -347,7 +347,7 @@ const CATERING_COMBOS = [
     label: 'SET B',
     price: 'RM32.90',
     desc: '主食 2 · 肉类 1 · 菜类 / 炸料 / 豆腐 2 · 海鲜 1',
-    pax: 30,
+    pax: 10,
     service: 'event',
     requirements: { staple: 2, meat: 1, vegetable: 2, seafood: 1 },
     items: ['蛋炒饭', '福建面', 'Ginger Onion Chicken', '蒜蓉西兰花', '红烧豆腐', '炸鱼柳']
@@ -358,7 +358,7 @@ const CATERING_COMBOS = [
     label: 'SET C',
     price: 'RM39.90',
     desc: '主食 2 · 肉类 2 · 菜类 / 炸料 / 豆腐 2 · 海鲜 1',
-    pax: 30,
+    pax: 10,
     service: 'event',
     requirements: { staple: 2, meat: 2, vegetable: 2, seafood: 1 },
     items: ['扬州炒饭', '干炒河粉', '香料炸鸡', '糖醋肉', '炒高丽菜', '蒜蓉菠菜', '麦片虾']
@@ -369,7 +369,7 @@ const CATERING_COMBOS = [
     label: 'SET D',
     price: 'RM43.90',
     desc: '主食 2 · 肉类 2 · 海鲜 1 · 菜类 / 炸料 / 豆腐 3',
-    pax: 30,
+    pax: 10,
     service: 'event',
     requirements: { staple: 2, meat: 2, seafood: 1, vegetable: 3 },
     items: ['白饭', '炒米粉', '姜葱肉片', '黑胡椒鸡扒', '咸蛋奶油虾', '奶油杂菜', '蚝油生菜', '蒜蓉菜心']
@@ -1533,7 +1533,13 @@ function applyCateringCombo(comboId) {
   cateringMenuGrid.querySelectorAll('input[type="checkbox"]').forEach(input => {
     input.checked = false;
   });
-  if (cateringPax) cateringPax.value = String(combo.pax);
+  if (cateringPax) {
+    const config = editableCateringConfig();
+    const minimumPax = Math.max(Number.parseInt(config.minimumPax || CATERING_MINIMUM_PAX, 10) || CATERING_MINIMUM_PAX, 1);
+    const currentPax = Number.parseInt(cateringPax.value || '', 10);
+    const fallbackPax = Math.max(Number.parseInt(combo.pax || minimumPax, 10) || minimumPax, minimumPax);
+    cateringPax.value = String(Number.isFinite(currentPax) && currentPax >= minimumPax ? currentPax : fallbackPax);
+  }
   if (cateringServiceStyle) cateringServiceStyle.value = combo.service;
   setCateringMenuMode('buffet');
   activeCateringComboId = combo.id;
