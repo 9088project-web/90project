@@ -3635,7 +3635,7 @@ function updateStaticLanguage() {
   const editable = editableContentForLanguage();
   document.documentElement.lang = t.htmlLang;
   document.body.dataset.language = currentLanguage;
-  if (!document.body.classList.contains('detail-page-body')) {
+  if (!document.body.classList.contains('detail-page-body') && !document.body.classList.contains('admin-page')) {
     document.title = t.title;
     updateSeoMeta(t);
   }
