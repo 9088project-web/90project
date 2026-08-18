@@ -1,5 +1,5 @@
 import { createGrowthApi, money } from './growth-domain.mjs';
-import { createGrowthCloud } from './growth-cloud.mjs?v=20260818-reset-pos';
+import { createGrowthCloud } from './growth-cloud.mjs?v=20260818-reset-live';
 
 const api = createGrowthApi();
 const cloud = createGrowthCloud();
@@ -12,6 +12,7 @@ const ADMIN_CONTENT_UPDATED_AT_KEY = 'np90_admin_content_updated_at_v1';
 const ADMIN_CONTENT_SYNC_STATE_KEY = 'np90_admin_content_sync_state_v1';
 const PASSWORD_RESET_COOLDOWN_KEY = 'np90_password_reset_cooldown_until_v1';
 const PASSWORD_RESET_COOLDOWN_SECONDS = 60;
+const PASSWORD_RESET_REDIRECT_URL = 'https://www.90project.online/reset-password';
 const ADMIN_CONTENT_API_PATH = '/api/admin-content';
 const ADMIN_CONTENT_SETTING_KEY = 'admin_content';
 const DEFAULT_BUSINESS_WHATSAPP = '018-949 0908';
@@ -1118,13 +1119,7 @@ function bindMemberPage() {
   loginHelpLinks.forEach(link => link.addEventListener('click', updateLoginHelpLinks));
 
   const isEmailIdentity = value => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(value || '').trim());
-  const passwordResetRedirectUrl = () => {
-    if (typeof window === 'undefined') return 'https://www.90project.online/reset-password';
-    const origin = String(window.location.origin || '').replace(/\/+$/, '');
-    if (/^https:\/\/(www\.)?90project\.online$/i.test(origin)) return 'https://www.90project.online/reset-password';
-    if (/^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/i.test(origin)) return `${origin}/reset-password.html`;
-    return 'https://www.90project.online/reset-password';
-  };
+  const passwordResetRedirectUrl = () => PASSWORD_RESET_REDIRECT_URL;
   const openLoginWhatsAppHelp = () => {
     updateLoginHelpLinks();
     window.open(businessWhatsAppUrl(memberLoginHelpMessage(loginIdentityInput?.value)), '_blank', 'noopener');
