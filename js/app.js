@@ -236,6 +236,7 @@ const CATERING_COMBO_REQUIREMENTS = {
 const CATERING_MARKET_PRICE_ITEMS = new Set(['香煎鳕鱼']);
 const CATERING_REMOVED_CATEGORY_IDS = new Set(['sauce', 'sauce-style', 'sauce_style']);
 const CATERING_REMOVED_SERVICE_IDS = new Set(['packed', 'setup', 'buffet', 'small-buffet']);
+const CATERING_REMOVED_SERVICE_LABEL_PATTERN = /(餐盒|packed\s*meal|小型\s*buffet|setup)/i;
 const CATERING_SPECIAL_ITEM_RATES = [
   { pattern: /三文鱼|salmon/i, rate: 11 }
 ];
@@ -394,7 +395,7 @@ const DEFAULT_STYLING_CASES = [
   {
     label: 'FOOD DISPLAY',
     title: '餐饮展示台',
-    desc: '适合生日、公司活动、开张仪式、小型 Buffet 与社团聚会，菜色与品牌摆设一起呈现。',
+    desc: '适合生日、公司活动、开张仪式、家庭聚会与社团活动，菜色与品牌摆设一起呈现。',
     image: 'assets/images/event/catering-display-case.webp',
     alt: '九零食刻外餐餐饮展示台与 Buffet 摆设'
   },
@@ -499,7 +500,7 @@ const DEFAULT_DETAIL_CONTENT = {
     heroAlt: '活动餐饮自助餐台',
     kicker: 'EASY BUFFET BUILDER',
     introTitle: '',
-    introDesc: '适合家庭聚会、生日会、公司活动和小型 Buffet。先选择 Set A-D，再按套餐规定自由选菜；不想自己选，也可以直接发送给我们确认。',
+    introDesc: '适合家庭聚会、生日会、公司活动和活动餐饮。先选择 Set A-D，再按套餐规定自由选菜；不想自己选，也可以直接发送给我们确认。',
     contactTitle: '需要我们帮你配？',
     contactDesc: '把日期、地点和人数发给我们。',
     panelTitle: '菜单选择与预算',
@@ -1298,8 +1299,18 @@ function normalizeCateringServiceStyles(serviceStyles) {
       label,
       multiplier: Number.isFinite(multiplier) && multiplier > 0 ? multiplier : 1
     };
-  }).filter(style => style.id && style.label && !CATERING_REMOVED_SERVICE_IDS.has(style.id));
+  }).filter(style => (
+    style.id
+    && style.label
+    && !CATERING_REMOVED_SERVICE_IDS.has(style.id)
+    && !CATERING_REMOVED_SERVICE_LABEL_PATTERN.test(style.label)
+  ));
   return normalized.length ? normalized : defaultCateringServiceStyles();
+}
+
+function normalizeCateringMinimumPax() {
+  // Business rule: public catering estimates always start from 10 pax.
+  return CATERING_MINIMUM_PAX;
 }
 
 function cateringServiceStyleMap(styles = editableCateringConfig().serviceStyles) {
@@ -1535,9 +1546,9 @@ function applyCateringCombo(comboId) {
   });
   if (cateringPax) {
     const config = editableCateringConfig();
-    const minimumPax = Math.max(Number.parseInt(config.minimumPax || CATERING_MINIMUM_PAX, 10) || CATERING_MINIMUM_PAX, 1);
+    const minimumPax = normalizeCateringMinimumPax(config.minimumPax);
     const currentPax = Number.parseInt(cateringPax.value || '', 10);
-    const fallbackPax = Math.max(Number.parseInt(combo.pax || minimumPax, 10) || minimumPax, minimumPax);
+    const fallbackPax = minimumPax;
     cateringPax.value = String(Number.isFinite(currentPax) && currentPax >= minimumPax ? currentPax : fallbackPax);
   }
   if (cateringServiceStyle) cateringServiceStyle.value = combo.service;
@@ -1631,12 +1642,12 @@ function calculateCateringEstimate() {
   const service = serviceMap[cateringServiceStyle?.value] || serviceMap.event || Object.values(serviceMap)[0] || CATERING_SERVICE_STYLES.event;
   const items = selectedCateringItems();
   const combo = syncCateringComboState();
-  const pricedItems = items.filter(item => item.rate > 0);
+  const pricedItems = items.filter(item => item.rate > 0 && !item.marketPrice);
   const marketPriceItems = items.filter(item => item.marketPrice);
   const comboPerPax = combo ? parseCateringComboPrice(combo.price) : 0;
   const itemPerPax = pricedItems.reduce((sum, item) => sum + item.rate, 0);
   const perPax = roundMoney(comboPerPax || itemPerPax);
-  const minimumPax = Math.max(Number.parseInt(config.minimumPax || CATERING_MINIMUM_PAX, 10) || CATERING_MINIMUM_PAX, 1);
+  const minimumPax = normalizeCateringMinimumPax(config.minimumPax);
   const meetsMinimumPax = pax >= minimumPax;
   const subtotal = meetsMinimumPax && perPax ? roundMoney(pax * perPax * service.multiplier) : 0;
   const minimumTotal = Math.max(Number.parseFloat(config.minimumTotal || CATERING_MINIMUM_TOTAL) || 0, 0);
@@ -1747,9 +1758,13 @@ function renderCateringEstimate() {
     const ruleLine = estimate.combo
       ? `<p><b>套餐规则</b>：${escapeHtml(cateringRequirementSummary(status.requirements))}；${status.complete ? '已选满' : `还差 ${escapeHtml(status.missing.join('、') || '请 WhatsApp 确认')}`}</p>`
       : '';
-    const formula = estimate.meetsMinimumPax && estimate.perPax
-      ? `<p><b>计算</b>：${estimate.pax} pax × ${formatCurrency(estimate.perPax)} / pax = ${escapeHtml(totalLabel || '按时价')}${estimate.minimumTotalApplied ? `（最低预算 ${formatCurrency(estimate.minimumTotal)}）` : ''}</p>`
-      : `<p><b>计算</b>：${estimate.minimumPax} pax 起开始计算。</p>`;
+    const formula = !estimate.meetsMinimumPax
+      ? `<p><b>计算</b>：${estimate.minimumPax} pax 起开始计算。</p>`
+      : estimate.perPax
+        ? `<p><b>计算</b>：${estimate.pax} pax × ${formatCurrency(estimate.perPax)} / pax = ${escapeHtml(totalLabel || '按时价')}${estimate.minimumTotalApplied ? `（最低预算 ${formatCurrency(estimate.minimumTotal)}）` : ''}</p>`
+        : hasMarketPriceItems
+          ? '<p><b>计算</b>：含按时价菜式，固定预算需 WhatsApp 确认。</p>'
+          : '<p><b>计算</b>：请选择菜式开始计算。</p>';
     selectedCateringSummary.innerHTML = Object.entries(grouped).map(([category, items]) => (
       `<p><b>${escapeHtml(category)}</b>：${items.map(item => escapeHtml(item.marketPrice ? `${item.name}（按时价）` : item.name)).join('、')}</p>`
     )).join('') + ruleLine + formula;
@@ -2508,6 +2523,13 @@ function deepMerge(base, override) {
   return override === undefined || override === null || override === '' ? base : override;
 }
 
+function cleanDeprecatedAdminText(value) {
+  return String(value ?? '')
+    .replace(/小型\s*Buffet\s*\/?\s*Setup/gi, '活动餐饮 / Event Catering')
+    .replace(/Packed\s*Meal/gi, 'Event Catering')
+    .replace(/小型\s*Buffet/gi, '活动餐饮');
+}
+
 function siteContentDefaults(language) {
   const source = translations[language] || translations.zh;
   const site = {};
@@ -2608,7 +2630,7 @@ function normalizeDetailPage(page = {}, fallback = {}) {
   const legacyCateringIntroTitle = '从 1 + 4 + 2 + 1 开始，自由调整。';
   const introTitle = fallback === DEFAULT_DETAIL_CONTENT.catering && source.introTitle === legacyCateringIntroTitle
     ? ''
-    : String(source.introTitle || fallback.introTitle || '').trim();
+    : cleanDeprecatedAdminText(source.introTitle || fallback.introTitle || '').trim();
   const sourceGallery = Array.isArray(source.gallery) && source.gallery.length ? source.gallery : fallbackGallery;
   const isLegacyStylingGallery = fallback === DEFAULT_DETAIL_CONTENT.styling
     && sourceGallery.length < fallbackGallery.length
@@ -2617,22 +2639,22 @@ function normalizeDetailPage(page = {}, fallback = {}) {
     ? [...sourceGallery, ...fallbackGallery.filter(fallbackItem => !sourceGallery.some(item => item?.image === fallbackItem.image))]
     : sourceGallery;
   return {
-    eyebrow: String(source.eyebrow || fallback.eyebrow || '').trim(),
-    title: String(source.title || fallback.title || '').trim(),
-    heroDesc: String(source.heroDesc || fallback.heroDesc || '').trim(),
+    eyebrow: cleanDeprecatedAdminText(source.eyebrow || fallback.eyebrow || '').trim(),
+    title: cleanDeprecatedAdminText(source.title || fallback.title || '').trim(),
+    heroDesc: cleanDeprecatedAdminText(source.heroDesc || fallback.heroDesc || '').trim(),
     heroImage: String(source.heroImage || fallback.heroImage || '').trim(),
-    heroAlt: String(source.heroAlt || fallback.heroAlt || '').trim(),
-    kicker: String(source.kicker || fallback.kicker || '').trim(),
+    heroAlt: cleanDeprecatedAdminText(source.heroAlt || fallback.heroAlt || '').trim(),
+    kicker: cleanDeprecatedAdminText(source.kicker || fallback.kicker || '').trim(),
     introTitle,
-    introDesc: String(source.introDesc || fallback.introDesc || '').trim(),
-    contactTitle: String(source.contactTitle || fallback.contactTitle || '').trim(),
-    contactDesc: String(source.contactDesc || fallback.contactDesc || '').trim(),
-    panelTitle: String(source.panelTitle || fallback.panelTitle || '').trim(),
-    panelDesc: String(source.panelDesc || fallback.panelDesc || '').trim(),
+    introDesc: cleanDeprecatedAdminText(source.introDesc || fallback.introDesc || '').trim(),
+    contactTitle: cleanDeprecatedAdminText(source.contactTitle || fallback.contactTitle || '').trim(),
+    contactDesc: cleanDeprecatedAdminText(source.contactDesc || fallback.contactDesc || '').trim(),
+    panelTitle: cleanDeprecatedAdminText(source.panelTitle || fallback.panelTitle || '').trim(),
+    panelDesc: cleanDeprecatedAdminText(source.panelDesc || fallback.panelDesc || '').trim(),
     gallery: gallerySource.map((item, index) => ({
       image: String(item?.image || fallbackGallery[index]?.image || '').trim(),
-      alt: String(item?.alt || fallbackGallery[index]?.alt || '').trim(),
-      caption: String(item?.caption || fallbackGallery[index]?.caption || '').trim()
+      alt: cleanDeprecatedAdminText(item?.alt || fallbackGallery[index]?.alt || '').trim(),
+      caption: cleanDeprecatedAdminText(item?.caption || fallbackGallery[index]?.caption || '').trim()
     })).filter(item => item.image || item.alt || item.caption)
   };
 }
@@ -2863,7 +2885,7 @@ function normalizeAdminContent(content) {
     SITE_CONTENT_FIELDS.forEach(field => {
       const value = getPathValue(siteSource, field.path);
       if (value !== undefined && value !== null) {
-        setPathValue(normalized[language].site, field.path, String(value));
+        setPathValue(normalized[language].site, field.path, cleanDeprecatedAdminText(value));
       }
     });
 
@@ -2901,7 +2923,7 @@ function normalizeAdminContent(content) {
 
   const cateringSource = content?.catering || {};
   normalized.catering = {
-    minimumPax: Math.max(Number.parseInt(cateringSource.minimumPax || normalized.catering.minimumPax, 10) || CATERING_MINIMUM_PAX, 1),
+    minimumPax: normalizeCateringMinimumPax(cateringSource.minimumPax || normalized.catering.minimumPax),
     minimumTotal: Math.max(Number.parseFloat(cateringSource.minimumTotal || normalized.catering.minimumTotal) || CATERING_MINIMUM_TOTAL, 0),
     marketPriceItems: normalizeMarketPriceItems(cateringSource.marketPriceItems || normalized.catering.marketPriceItems),
     serviceStyles: normalizeCateringServiceStyles(cateringSource.serviceStyles || normalized.catering.serviceStyles),
@@ -3189,7 +3211,7 @@ function editableCateringConfig() {
 
 function syncCateringPaxMinimum() {
   if (!cateringPax) return;
-  const minimumPax = Math.max(Number.parseInt(editableCateringConfig().minimumPax || CATERING_MINIMUM_PAX, 10) || CATERING_MINIMUM_PAX, 1);
+  const minimumPax = normalizeCateringMinimumPax(editableCateringConfig().minimumPax);
   cateringPax.min = String(minimumPax);
   const current = Number.parseInt(cateringPax.value || '0', 10) || 0;
   if (current > 0 && current < minimumPax) cateringPax.value = String(minimumPax);
@@ -6125,7 +6147,7 @@ function collectAdminContent() {
   const minimumPax = Number.parseInt(adminCateringMinimumPax?.value || '', 10);
   const minimumTotal = Number.parseFloat(adminCateringMinimum?.value || '');
   content.catering = {
-    minimumPax: Number.isFinite(minimumPax) ? Math.max(minimumPax, 1) : CATERING_MINIMUM_PAX,
+    minimumPax: normalizeCateringMinimumPax(minimumPax),
     minimumTotal: Number.isFinite(minimumTotal) ? Math.max(minimumTotal, 0) : CATERING_MINIMUM_TOTAL,
     marketPriceItems: normalizeMarketPriceItems(adminCateringMarketItems?.value || ''),
     serviceStyles: [],
@@ -7272,7 +7294,16 @@ document.addEventListener('click', event => {
 
 cateringMenuGrid?.addEventListener('change', event => {
   const input = event.target instanceof HTMLInputElement ? event.target : null;
-  if (input?.matches('input[type="checkbox"]')) validateCateringMenuChoice(input);
+  if (input?.matches('input[type="checkbox"]')) {
+    const hasActiveCombo = Boolean(activeCateringCombo());
+    if (input.checked && cateringMenuMode === 'buffet' && !hasActiveCombo) {
+      setCateringMenuMode('free');
+      input.checked = true;
+      cateringSelectionMessage = '已切换自由搭配模式，可直接选择菜式后计算价格。';
+    } else {
+      validateCateringMenuChoice(input);
+    }
+  }
   renderCateringEstimate();
 });
 cateringPax?.addEventListener('input', renderCateringEstimate);

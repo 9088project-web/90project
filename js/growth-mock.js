@@ -402,13 +402,13 @@ Object.assign(translations.zh, {
   resetPasswordPrompt: '请先在登录框输入注册 Email，系统才可以自动发送重设密码邮件。',
   resetPasswordPhoneHelp: '手机号暂时不能自动重设密码，已为你打开 WhatsApp 协助。',
   resetPasswordSending: '正在发送重设密码邮件...',
-  resetPasswordSent: '重设密码邮件已发送，请打开最新 Email 里的链接设置新密码。',
+  resetPasswordSent: '重设密码邮件已发送，请打开最新 Email 里的链接设置新密码；旧邮件链接不要再使用。',
   resetPasswordRateLimited: '重设密码邮件发送太频密，请等约 60 秒后再试；如果急用，可以点 WhatsApp 协助。',
   resetPasswordCooldown: '刚刚已经发送过重设密码邮件，请等 {seconds} 秒后再试，或点 WhatsApp 协助。',
-  resetPasswordBadRequest: '重设密码请求没有成功。请检查 Email 是否完整，或点 WhatsApp 协助。',
+  resetPasswordBadRequest: '重设密码请求没有成功。通常是旧链接、过期链接或 Email 不完整；请等约 60 秒后重新发送最新 Email。',
   resetPasswordUnavailable: '自动重设暂时无法使用，已为你打开 WhatsApp 协助。',
   resetPasswordReady: '请设置新的会员密码。',
-  resetPasswordNeedEmailLink: '这不是有效的重设链接。请回到登录框重新发送最新 Email，再从邮件打开链接。',
+  resetPasswordNeedEmailLink: '这个重设链接已过期、已使用或不是最新邮件。请回到登录框重新发送，再打开最新一封 Email。',
   resetPasswordInvalid: '新密码至少需要 6 个字符。',
   resetPasswordMismatch: '两次输入的新密码不一致。',
   resetPasswordUpdating: '正在更新密码...',
@@ -450,13 +450,13 @@ Object.assign(translations.en, {
   resetPasswordPrompt: 'Please enter your registered email in the login box so the system can send a reset email.',
   resetPasswordPhoneHelp: 'Mobile numbers cannot reset passwords automatically yet. WhatsApp help has been opened.',
   resetPasswordSending: 'Sending password reset email...',
-  resetPasswordSent: 'Password reset email sent. Please open the latest email link to set a new password.',
+  resetPasswordSent: 'Password reset email sent. Please open the latest email link to set a new password; do not use older reset emails.',
   resetPasswordRateLimited: 'Too many reset emails were requested. Please wait about 60 seconds, or use WhatsApp help.',
   resetPasswordCooldown: 'A reset email was just sent. Please wait {seconds} seconds before trying again, or use WhatsApp help.',
-  resetPasswordBadRequest: 'The reset request was not completed. Please check the email address or use WhatsApp help.',
+  resetPasswordBadRequest: 'The reset request was not completed. It is usually caused by an old link, expired link or incomplete email. Please wait about 60 seconds and send a new reset email.',
   resetPasswordUnavailable: 'Automatic reset is not available right now. WhatsApp help has been opened.',
   resetPasswordReady: 'Please set your new member password.',
-  resetPasswordNeedEmailLink: 'This is not a valid reset link. Please send a new email from the login box and open the latest link.',
+  resetPasswordNeedEmailLink: 'This reset link has expired, was already used or is not the latest email. Please send a new reset email and open the latest link.',
   resetPasswordInvalid: 'The new password needs at least 6 characters.',
   resetPasswordMismatch: 'The two new passwords do not match.',
   resetPasswordUpdating: 'Updating password...',
@@ -474,6 +474,7 @@ const currentMember = () => api.currentMember();
 const adminEditableOrderStatuses = ['new', 'confirmed', 'deposit_paid', 'cancelled'];
 const page = document.body?.dataset.growthPage || (document.querySelector('[data-growth-admin]') ? 'admin' : '');
 let cloudReady = false;
+let memberPageBound = false;
 let cloudGrowthSnapshot = null;
 let cloudOrderLeadSync = { loading: false, lastAt: 0, count: 0, imported: 0, error: '' };
 let sharedGrowthStateSync = { loading: false, loaded: false, saving: false, lastAt: 0, error: '' };
@@ -582,6 +583,49 @@ function readableMemberAuthMessage(message, fallbackKey = 'resetPasswordUnavaila
     return t('loginError');
   }
   return text;
+}
+
+function isPasswordResetVisit() {
+  if (typeof window === 'undefined') return false;
+  const searchParams = new URLSearchParams(String(window.location.search || '').replace(/^\?/, ''));
+  const hashParams = new URLSearchParams(String(window.location.hash || '').replace(/^#/, ''));
+  const resetValue = String(searchParams.get('reset') || hashParams.get('reset') || '').toLowerCase();
+  const typeValue = String(searchParams.get('type') || hashParams.get('type') || '').toLowerCase();
+  const resetPath = /\/reset-password(?:\.html)?$/i.test(String(window.location.pathname || ''));
+  return resetValue === 'password'
+    || resetValue === 'true'
+    || resetPath
+    || typeValue === 'recovery'
+    || searchParams.has('access_token')
+    || hashParams.has('access_token')
+    || searchParams.has('code')
+    || hashParams.has('code');
+}
+
+function refreshMemberPasswordResetCard() {
+  const resetCard = document.querySelector('[data-member-reset-card]');
+  const resetMessage = document.querySelector('[data-growth-reset-message]');
+  if (!resetCard) return;
+  const recovery = cloudReady && typeof cloud.recoverySessionFromUrl === 'function'
+    ? cloud.recoverySessionFromUrl()
+    : { ok: false };
+  const resetRequested = isPasswordResetVisit() || Boolean(recovery.resetRequested);
+
+  if (recovery.ok || resetRequested) {
+    resetCard.hidden = false;
+    resetCard.dataset.resetReady = recovery.ok ? 'true' : 'false';
+    updateMessageElement(
+      resetMessage,
+      recovery.ok ? t('resetPasswordReady') : (recovery.message || t('resetPasswordNeedEmailLink')),
+      !recovery.ok
+    );
+    resetCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    return;
+  }
+
+  if (recovery.message) {
+    setMessage(readableMemberAuthMessage(recovery.message, 'resetPasswordNeedEmailLink'), true, 'login');
+  }
 }
 
 function setBusy(form, busy, label = '') {
@@ -1095,6 +1139,11 @@ function bindPromoterApplicationForm() {
 }
 
 function bindMemberPage() {
+  if (memberPageBound) {
+    refreshMemberPasswordResetCard();
+    return;
+  }
+  memberPageBound = true;
   const registerForm = document.getElementById('growthRegisterForm');
   const loginForm = document.getElementById('growthLoginForm');
   const loginIdentityInput = loginForm?.querySelector('input[name="identity"]');
@@ -1124,39 +1173,7 @@ function bindMemberPage() {
     updateLoginHelpLinks();
     window.open(businessWhatsAppUrl(memberLoginHelpMessage(loginIdentityInput?.value)), '_blank', 'noopener');
   };
-  const isPasswordResetVisit = () => {
-    if (typeof window === 'undefined') return false;
-    const searchParams = new URLSearchParams(String(window.location.search || '').replace(/^\?/, ''));
-    const hashParams = new URLSearchParams(String(window.location.hash || '').replace(/^#/, ''));
-    const resetValue = String(searchParams.get('reset') || hashParams.get('reset') || '').toLowerCase();
-    const typeValue = String(searchParams.get('type') || hashParams.get('type') || '').toLowerCase();
-    const resetPath = /\/reset-password(?:\.html)?$/i.test(String(window.location.pathname || ''));
-    return resetValue === 'password'
-      || resetValue === 'true'
-      || resetPath
-      || typeValue === 'recovery'
-      || searchParams.has('access_token')
-      || hashParams.has('access_token')
-      || searchParams.has('code')
-      || hashParams.has('code');
-  };
-
-  const recovery = cloudReady && typeof cloud.recoverySessionFromUrl === 'function'
-    ? cloud.recoverySessionFromUrl()
-    : { ok: false };
-  const resetRequested = isPasswordResetVisit() || Boolean(recovery.resetRequested);
-  if ((recovery.ok || resetRequested) && resetCard) {
-    resetCard.hidden = false;
-    resetCard.dataset.resetReady = recovery.ok ? 'true' : 'false';
-    updateMessageElement(
-      resetMessage,
-      recovery.ok ? t('resetPasswordReady') : (recovery.message || t('resetPasswordNeedEmailLink')),
-      !recovery.ok
-    );
-    resetCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
-  } else if (recovery.message) {
-    setMessage(readableMemberAuthMessage(recovery.message, 'resetPasswordNeedEmailLink'), true, 'login');
-  }
+  refreshMemberPasswordResetCard();
 
   resetPasswordButton?.addEventListener('click', async () => {
     const identity = String(loginIdentityInput?.value || '').trim();
@@ -3085,6 +3102,12 @@ document.addEventListener('click', event => {
   const link = event.target.closest('[data-growth-copy]');
   if (link) navigator.clipboard?.writeText(link.dataset.growthCopy);
 });
+
+if (page === 'member') {
+  bindMemberPage();
+  renderAuthState();
+  renderMemberDashboard();
+}
 
 await syncAdminBusinessContent();
 const cloudState = await cloud.init();

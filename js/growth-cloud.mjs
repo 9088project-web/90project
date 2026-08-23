@@ -19,9 +19,11 @@ const otpPhone = value => {
 
 const cloudMessage = value => {
   let text = String(value || '').trim();
+  let code = '';
   if (text.startsWith('{')) {
     try {
       const payload = JSON.parse(text);
+      code = String(payload.error_code || payload.code || payload.status || payload.statusCode || '').trim();
       text = String(
         payload.error_description
         || payload.msg
@@ -33,10 +35,19 @@ const cloudMessage = value => {
     } catch {}
   }
 
-  const lower = text.toLowerCase();
+  const lower = `${text} ${code}`.toLowerCase();
   if (!text) return '云端请求暂时无法完成，请稍后再试。';
-  if (lower.includes('bad request')) return '云端拒绝了这个请求。请检查资料是否完整、格式是否正确，然后再试。';
-  if (lower.includes('rate limit')) return '重设密码邮件发送太频繁，请稍后再试；如果急用，请点击 WhatsApp 协助。';
+  if (lower.includes('rate limit')
+    || lower.includes('rate_limit')
+    || lower.includes('too many requests')
+    || lower.includes('after 60 seconds')
+    || code === '429') {
+    return '重设密码邮件发送太频繁，请等约 60 秒后再试；如果急用，请点击 WhatsApp 协助。';
+  }
+  if (lower.includes('expired') || lower.includes('invalid token') || lower.includes('already been used')) {
+    return '这个重设密码链接已经过期或已使用。请重新发送最新 Email，再打开最新链接。';
+  }
+  if (lower.includes('bad request')) return '云端没有接受这个请求。请确认使用最新 Email 链接，或重新发送重设密码邮件。';
   if (lower.includes('invalid login credentials')) return 'Email / 手机号或密码不正确。';
   if (lower.includes('email not confirmed')) return '请先确认 Email，再重新登录。';
   if (lower.includes('already registered')) return '这个 Email 已经注册，请直接登录。';
