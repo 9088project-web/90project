@@ -3217,6 +3217,13 @@ function syncCateringPaxMinimum() {
   if (current > 0 && current < minimumPax) cateringPax.value = String(minimumPax);
 }
 
+function enforceCateringMinimumPax() {
+  if (!cateringPax) return;
+  const minimumPax = normalizeCateringMinimumPax(editableCateringConfig().minimumPax);
+  const current = Number.parseInt(cateringPax.value || '', 10);
+  if (!Number.isFinite(current) || current < minimumPax) cateringPax.value = String(minimumPax);
+}
+
 function refreshCateringInterface() {
   populateCateringServiceStyleOptions();
   syncCateringPaxMinimum();
@@ -7312,8 +7319,13 @@ document.querySelectorAll('[data-catering-mode]').forEach(button => {
   button.addEventListener('click', () => setCateringMenuMode(button.dataset.cateringMode || 'buffet'));
 });
 calculateCateringPrice?.addEventListener('click', () => {
+  enforceCateringMinimumPax();
   renderCateringEstimate();
   document.querySelector('.estimate-box')?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+});
+cateringWhatsApp?.addEventListener('click', () => {
+  enforceCateringMinimumPax();
+  renderCateringEstimate();
 });
 
 form?.addEventListener('input', () => {
