@@ -6050,7 +6050,7 @@ function setAdminPanel(panel = 'site') {
   });
   const drawerGroups = [
     { id: 'site-content', panels: new Set(['site', 'meal', 'catering', 'media', 'pages']) },
-    { id: 'operations', panels: new Set(['orders', 'inquiries', 'members', 'tracking', 'growth']) }
+    { id: 'operations', panels: new Set(['inquiries', 'members', 'tracking', 'growth']) }
   ];
   drawerGroups.forEach(group => {
     const drawerLabel = document.querySelector(`[data-admin-drawer-current="${group.id}"]`);

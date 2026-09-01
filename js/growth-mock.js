@@ -6,7 +6,6 @@ const cloud = createGrowthCloud();
 const LANG_KEY = 'np90_growth_language_v1';
 const GROWTH_ORDER_QUEUE_KEY = 'np90_growth_order_queue_v1';
 const SUPABASE_ADMIN_SESSION_KEY = 'np90_supabase_session_v1';
-const ADMIN_INVOICE_DRAFT_KEY = 'np90_admin_invoice_draft_v1';
 const ADMIN_CONTENT_KEY = 'np90_admin_content_v1';
 const ADMIN_CONTENT_UPDATED_AT_KEY = 'np90_admin_content_updated_at_v1';
 const ADMIN_CONTENT_SYNC_STATE_KEY = 'np90_admin_content_sync_state_v1';
@@ -480,7 +479,6 @@ let cloudOrderLeadSync = { loading: false, lastAt: 0, count: 0, imported: 0, err
 let sharedGrowthStateSync = { loading: false, loaded: false, saving: false, lastAt: 0, error: '' };
 let adminGrowthSearch = '';
 let adminGrowthFilters = { order: 'all', withdrawal: 'all' };
-let adminInvoiceHistoryFilters = { query: '', status: 'all' };
 let phoneVerification = { phone: '', code: '', verified: false, cloudSession: null };
 
 function setText(selector, value) {
@@ -503,10 +501,6 @@ function setMessage(message, error = false, target = 'general') {
   }
   updateMessageElement(loginMessage, '', false);
   document.querySelectorAll('[data-growth-message]').forEach(element => updateMessageElement(element, message, error));
-}
-
-function setInvoiceMessage(message, error = false) {
-  updateMessageElement(document.querySelector('[data-admin-invoice-message]'), message, error);
 }
 
 function growthReadableCloudMessage(value, fallback = '云端同步暂时失败，请重新登录后台后再试。') {
@@ -1477,28 +1471,6 @@ function cloudLeadToGrowthPayload(row) {
   };
 }
 
-function generateInvoiceNo() {
-  const date = new Date();
-  const stamp = [
-    date.getFullYear(),
-    String(date.getMonth() + 1).padStart(2, '0'),
-    String(date.getDate()).padStart(2, '0')
-  ].join('');
-  return `90-${stamp}-${String(Date.now()).slice(-5)}`;
-}
-
-function invoiceField(name) {
-  return document.querySelector(`[data-invoice-field="${name}"]`);
-}
-
-function invoiceValue(name) {
-  return invoiceField(name)?.value?.trim() || '';
-}
-
-function invoiceNumber(name) {
-  return money(Number(invoiceValue(name)) || 0);
-}
-
 function adminWhatsAppNumber(phone) {
   const digits = String(phone || '').replace(/\D/g, '');
   if (!digits) return '';
@@ -1510,541 +1482,6 @@ function adminWhatsAppNumber(phone) {
 function adminWhatsAppUrl(phone, message) {
   const normalized = adminWhatsAppNumber(phone);
   return normalized ? `https://wa.me/${normalized}?text=${encodeURIComponent(message || '')}` : '';
-}
-
-function formatInvoiceDate(value) {
-  if (!value) return '';
-  const date = new Date(`${value}T00:00:00`);
-  return Number.isNaN(date.getTime()) ? value : date.toLocaleDateString('zh-MY', { year: 'numeric', month: 'short', day: 'numeric' });
-}
-
-function formatInvoiceTime(value) {
-  if (!value) return '';
-  const [hour, minute] = String(value).split(':');
-  if (!hour || !minute) return value;
-  const date = new Date();
-  date.setHours(Number(hour), Number(minute), 0, 0);
-  return date.toLocaleTimeString('zh-MY', { hour: 'numeric', minute: '2-digit' });
-}
-
-function invoiceCleanNumber(value) {
-  return money(Number(String(value ?? '').replace(/[^\d.-]/g, '')) || 0);
-}
-
-function invoiceQuantity(value) {
-  return Math.max(0, Number(String(value ?? '').replace(/[^\d.]/g, '')) || 0);
-}
-
-function invoiceQuantityLabel(value) {
-  const number = invoiceQuantity(value);
-  return Number.isInteger(number) ? String(number) : number.toFixed(2).replace(/0+$/, '').replace(/\.$/, '');
-}
-
-function adminInvoiceRows() {
-  return Array.from(document.querySelectorAll('[data-admin-invoice-item]'));
-}
-
-function adminInvoiceItemTemplate(item = {}, index = 0) {
-  const qty = item.qty !== undefined ? item.qty : 1;
-  const unitPrice = item.unitPrice !== undefined ? item.unitPrice : 0;
-  const amount = money(invoiceQuantity(qty) * invoiceCleanNumber(unitPrice));
-  const lineNumber = String(index + 1).padStart(2, '0');
-  return `
-    <div class="admin-invoice-item-row" data-admin-invoice-item>
-      <span class="admin-invoice-line-no">${lineNumber}</span>
-      <input data-invoice-item-field="description" type="text" value="${esc(item.description || '')}" placeholder="项目 / 菜单 / 服务 ${index + 1}" aria-label="项目名称">
-      <input data-invoice-item-field="qty" type="number" min="0" step="1" value="${esc(qty)}" aria-label="数量">
-      <input data-invoice-item-field="unitPrice" type="number" min="0" step="0.01" value="${esc(Number(unitPrice || 0).toFixed(2))}" aria-label="单价">
-      <span class="admin-invoice-item-amount" data-invoice-item-amount>${formatMoney(amount)}</span>
-      <button class="admin-invoice-item-remove" type="button" data-admin-invoice-remove-item aria-label="删除项目"><i class="ri-close-line" aria-hidden="true"></i></button>
-    </div>
-  `;
-}
-
-function renderAdminInvoiceItems(items = []) {
-  const container = document.querySelector('[data-admin-invoice-items]');
-  if (!container) return;
-  const source = Array.isArray(items) ? items : [];
-  if (!source.length) {
-    container.innerHTML = '<div class="admin-invoice-empty">先点 Set A-D，或用「+ 自由加项」临时加入项目。</div>';
-    return;
-  }
-  container.innerHTML = source.map((item, index) => adminInvoiceItemTemplate(item, index)).join('');
-}
-
-function clearAdminInvoiceItems() {
-  renderAdminInvoiceItems([]);
-}
-
-function setAdminInvoiceMinimumPax(minimumPax = 10) {
-  const paxField = invoiceField('pax');
-  if (!paxField) return;
-  const minimum = Math.max(1, invoiceQuantity(minimumPax));
-  const current = invoiceQuantity(paxField.value);
-  if (current >= minimum) return;
-  paxField.value = String(minimum);
-  paxField.dispatchEvent(new Event('input', { bubbles: true }));
-  paxField.dispatchEvent(new Event('change', { bubbles: true }));
-}
-
-function isAdminInvoiceSetDescription(description = '') {
-  return /\bSet\s*[A-D]\b/i.test(String(description || '').trim());
-}
-
-function syncAdminInvoiceSetQtyFromPax() {
-  const paxField = invoiceField('pax');
-  const pax = Math.max(10, invoiceQuantity(paxField?.value) || 10);
-  let changed = false;
-  let hasSetItem = false;
-  adminInvoiceRows().forEach(row => {
-    const description = row.querySelector('[data-invoice-item-field="description"]')?.value || '';
-    if (!isAdminInvoiceSetDescription(description)) return;
-    hasSetItem = true;
-    const qtyField = row.querySelector('[data-invoice-item-field="qty"]');
-    if (!qtyField) return;
-    const currentQty = invoiceQuantity(qtyField.value);
-    if (currentQty === pax) return;
-    qtyField.value = invoiceQuantityLabel(pax);
-    changed = true;
-  });
-  if (hasSetItem && paxField && invoiceQuantity(paxField.value) !== pax) {
-    paxField.value = String(pax);
-    changed = true;
-  }
-  return changed;
-}
-
-function collectAdminInvoiceItems() {
-  const rows = adminInvoiceRows();
-  return rows.map(row => {
-    const description = row.querySelector('[data-invoice-item-field="description"]')?.value?.trim() || '';
-    const qty = invoiceQuantity(row.querySelector('[data-invoice-item-field="qty"]')?.value);
-    const unitPrice = invoiceCleanNumber(row.querySelector('[data-invoice-item-field="unitPrice"]')?.value);
-    const amount = money(qty * unitPrice);
-    const amountElement = row.querySelector('[data-invoice-item-amount]');
-    if (amountElement) amountElement.textContent = formatMoney(amount);
-    return { description, qty, unitPrice, amount };
-  }).filter(item => item.description || item.unitPrice > 0);
-}
-
-function buildInvoiceItemsSummary(items = []) {
-  return items.map((item, index) => {
-    const amount = money(item.amount ?? invoiceQuantity(item.qty) * invoiceCleanNumber(item.unitPrice));
-    return `${index + 1}. ${item.description || '项目'} x${invoiceQuantityLabel(item.qty)} @ ${formatMoney(item.unitPrice)} = ${formatMoney(amount)}`;
-  }).join('\n');
-}
-
-function adminInvoiceServiceText(serviceType) {
-  return ({
-    'Meal Plan': '包伙食',
-    'Event Catering': '活动餐饮',
-    'Event Styling': '场地布置',
-    'Cocktail Service': '鸡尾酒服务',
-    Other: '其他服务'
-  })[serviceType] || serviceType || '-';
-}
-
-function adminInvoiceStatusText(status) {
-  return ({
-    new: '待确认',
-    confirmed: '已确认',
-    deposit_paid: '已收订金',
-    completed: '已完成',
-    service_completed: '已完成',
-    fully_paid: '已结清',
-    cancelled: '已取消',
-    refunded: '已退款',
-    partially_refunded: '部分退款'
-  })[status] || status || '-';
-}
-
-function adminInvoiceSafeManualStatus(data = {}) {
-  const status = String(data.status || '').trim();
-  if (adminEditableOrderStatuses.includes(status)) return status;
-  if (money(data.depositAmount) > 0 || (money(data.totalAmount) > 0 && money(data.balanceAmount) <= 0)) return 'deposit_paid';
-  return 'confirmed';
-}
-
-function updateAdminInvoiceKpis(data) {
-  const set = (key, value) => {
-    document.querySelectorAll(`[data-admin-invoice-kpi="${key}"]`).forEach(element => {
-      element.textContent = value;
-    });
-  };
-  const itemCount = Array.isArray(data.items) ? data.items.length : 0;
-  const paymentState = data.totalAmount > 0 && data.balanceAmount <= 0
-    ? 'paid'
-    : data.depositAmount > 0
-      ? 'partial'
-      : 'unpaid';
-  const paymentText = paymentState === 'paid' ? '已结清' : paymentState === 'partial' ? '部分收款' : '未收款';
-  const form = document.querySelector('[data-admin-invoice-form]');
-  if (form) form.dataset.paymentState = paymentState;
-  set('invoiceNo', data.invoiceNo || '-');
-  set('items', `${itemCount} 项`);
-  set('subtotal', formatMoney(data.originalAmount));
-  set('deliveryFee', formatMoney(data.deliveryFee));
-  set('serviceFee', formatMoney(data.serviceFee));
-  set('discount', `-${formatMoney(data.discountAmount)}`);
-  set('total', formatMoney(data.totalAmount));
-  set('deposit', formatMoney(data.depositAmount));
-  set('balance', formatMoney(data.balanceAmount));
-  set('paymentStatus', paymentText);
-  syncAdminInvoiceStage(data);
-}
-
-function adminInvoiceStageFromData(data = {}) {
-  const status = String(data.status || '');
-  const documentType = String(data.documentType || '');
-  if (documentType === 'receipt' || status === 'fully_paid') return 'receipt';
-  if (status === 'service_completed' || status === 'completed') return 'complete';
-  if (status === 'deposit_paid' || Number(data.depositAmount || 0) > 0) return 'deposit';
-  if (status === 'confirmed') return 'confirm';
-  return 'quote';
-}
-
-function syncAdminInvoiceStage(data = {}) {
-  const stage = adminInvoiceStageFromData(data);
-  const visibleStage = ['deposit', 'complete'].includes(stage) ? 'receipt' : stage;
-  document.querySelectorAll('[data-admin-order-stage]').forEach(button => {
-    const active = button.dataset.adminOrderStage === visibleStage;
-    button.classList.toggle('is-active', active);
-    button.setAttribute('aria-pressed', active ? 'true' : 'false');
-  });
-}
-
-function applyAdminInvoiceStage(stage) {
-  const statusField = invoiceField('status');
-  const documentField = invoiceField('documentType');
-  const depositField = invoiceField('depositAmount');
-  const current = collectAdminInvoiceInput();
-  const total = Number(current.totalAmount || 0);
-  let message = '开单阶段已更新。';
-
-  if (stage === 'quote') {
-    if (statusField) statusField.value = 'new';
-    if (documentField) documentField.value = 'quotation';
-    message = '已切换成报价单，可以先发给顾客确认。';
-  } else if (stage === 'confirm') {
-    if (statusField) statusField.value = 'confirmed';
-    if (documentField) documentField.value = 'invoice';
-    message = '订单已标记为确认，可以收订金或安排服务。';
-  } else if (stage === 'deposit') {
-    if (statusField) statusField.value = 'deposit_paid';
-    if (documentField) documentField.value = 'invoice';
-    if (depositField && total > 0 && !(Number(depositField.value) > 0)) {
-      const suggestedDeposit = Math.min(total, Math.max(50, total * 0.3));
-      depositField.value = suggestedDeposit.toFixed(2);
-    }
-    message = total > 0 ? '已进入订金阶段，系统已准备付款余额。' : '请先加入项目和金额，再记录订金。';
-  } else if (stage === 'complete') {
-    if (documentField) documentField.value = 'invoice';
-    if (statusField && !adminEditableOrderStatuses.includes(statusField.value)) statusField.value = adminInvoiceSafeManualStatus(current);
-    message = '顾客实际消费后，请到「开单记录中心」点击「人工确认完成计佣」。';
-  } else if (stage === 'receipt') {
-    if (documentField) documentField.value = 'receipt';
-    if (depositField && total > 0) depositField.value = total.toFixed(2);
-    if (statusField && !['confirmed', 'deposit_paid'].includes(statusField.value)) statusField.value = total > 0 ? 'deposit_paid' : 'confirmed';
-    message = total > 0 ? '已生成收据金额；推荐佣金仍需在订单记录人工确认。' : '请先加入项目和金额，再生成收据。';
-  }
-
-  updateAdminInvoicePreview();
-  setInvoiceMessage(message);
-}
-
-function renderAdminInvoiceReceipt(data) {
-  const receipt = document.querySelector('[data-admin-invoice-receipt]');
-  if (!receipt) return;
-  const items = Array.isArray(data.items) ? data.items : [];
-  const eventLine = [formatInvoiceDate(data.eventDate), formatInvoiceTime(data.eventTime)].filter(Boolean).join(' · ') || '-';
-  const issuedLine = new Date().toLocaleString('zh-MY', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-    hour: 'numeric',
-    minute: '2-digit'
-  });
-  const paymentState = data.totalAmount > 0 && data.balanceAmount <= 0
-    ? 'paid'
-    : data.depositAmount > 0
-      ? 'partial'
-      : 'unpaid';
-  const paymentText = paymentState === 'paid' ? '已结清 Paid' : paymentState === 'partial' ? '部分收款 Partial' : '未收款 Unpaid';
-  const documentTitle = ({
-    quotation: 'Quotation',
-    invoice: 'Invoice',
-    receipt: 'Official Receipt'
-  })[data.documentType] || 'Invoice';
-  const itemRows = items.length
-    ? items.map((item, index) => `
-      <div class="admin-receipt-line">
-        <em>${String(index + 1).padStart(2, '0')}</em>
-        <span><strong>${esc(item.description || '项目')}</strong><small>${invoiceQuantityLabel(item.qty)} x ${formatMoney(item.unitPrice)}</small></span>
-        <b>${formatMoney(item.amount)}</b>
-      </div>
-    `).join('')
-    : '<p class="admin-receipt-empty">还没有项目明细。</p>';
-  receipt.innerHTML = `
-    <div class="admin-receipt-paper" data-receipt-payment-state="${esc(paymentState)}">
-      <div class="admin-receipt-brand">
-        <img src="assets/images/logo/logo-icon-dark.jpg" alt="90 PROJECT logo">
-        <div><span>${esc(documentTitle)}</span><strong>九零食刻 90 PROJECT</strong><small>${esc(businessPhone())} · ${esc(businessEmail())}</small></div>
-        <mark class="admin-receipt-status">${esc(paymentText)}</mark>
-      </div>
-      <div class="admin-receipt-meta">
-        <div><span>Invoice No</span><strong>${esc(data.invoiceNo || '-')}</strong></div>
-        <div><span>Status</span><strong>${esc(adminInvoiceStatusText(data.status))}</strong></div>
-        <div><span>Issued</span><strong>${esc(issuedLine)}</strong></div>
-        <div><span>Payment Due</span><strong>${esc(formatInvoiceDate(data.paymentDue) || '-')}</strong></div>
-        <div><span>Pax</span><strong>${data.pax ? `${esc(data.pax)} pax` : '-'}</strong></div>
-        <div><span>Customer</span><strong>${esc(data.name || '-')}</strong></div>
-        <div><span>Company</span><strong>${esc(data.companyName || '-')}</strong></div>
-        <div><span>WhatsApp</span><strong>${esc(data.phone || '-')}</strong></div>
-        <div><span>Email</span><strong>${esc(data.email || '-')}</strong></div>
-        <div><span>Service</span><strong>${esc(adminInvoiceServiceText(data.serviceType))}</strong></div>
-        <div><span>Payment</span><strong>${esc(data.paymentMethod || '-')}</strong></div>
-        <div><span>Date / Time</span><strong>${esc(eventLine)}</strong></div>
-        <div><span>Location</span><strong>${esc(data.location || '-')}</strong></div>
-        <div><span>Referral</span><strong>${esc(data.referralCode || '-')}</strong></div>
-      </div>
-      <div class="admin-receipt-lines">${itemRows}</div>
-      <div class="admin-receipt-total">
-        <div><span>Items Subtotal</span><strong>${formatMoney(data.originalAmount)}</strong></div>
-        <div><span>Delivery Fee</span><strong>${formatMoney(data.deliveryFee)}</strong></div>
-        <div><span>Service Fee</span><strong>${formatMoney(data.serviceFee)}</strong></div>
-        <div><span>Discount</span><strong>-${formatMoney(data.discountAmount)}</strong></div>
-        <div><span>Total</span><strong>${formatMoney(data.totalAmount)}</strong></div>
-        <div><span>Deposit</span><strong>${formatMoney(data.depositAmount)}</strong></div>
-        <div class="is-balance"><span>Balance</span><strong>${formatMoney(data.balanceAmount)}</strong></div>
-      </div>
-      ${data.customerNotes ? `<p class="admin-receipt-note"><strong>顾客备注：</strong>${esc(data.customerNotes)}</p>` : ''}
-      <p class="admin-receipt-note">备注：此收据为订单确认记录；实际供应、运输、餐具与现场服务以最终确认安排为准。</p>
-    </div>
-  `;
-}
-
-function addAdminInvoiceItem(item = {}) {
-  const current = collectAdminInvoiceItems();
-  const next = [...current, {
-    description: item.description || '',
-    qty: item.qty !== undefined ? item.qty : 1,
-    unitPrice: item.unitPrice !== undefined ? item.unitPrice : 0
-  }];
-  renderAdminInvoiceItems(next);
-  updateAdminInvoicePreview();
-}
-
-function replaceAdminInvoiceSetItem(item = {}) {
-  const current = collectAdminInvoiceItems();
-  const qty = Math.max(10, invoiceQuantity(item.qty !== undefined ? item.qty : 10));
-  setAdminInvoiceMinimumPax(qty);
-  const next = current.filter(entry => !isAdminInvoiceSetDescription(entry.description));
-  next.push({
-    description: item.description || '活动餐饮 Set',
-    qty,
-    unitPrice: item.unitPrice !== undefined ? item.unitPrice : 0
-  });
-  renderAdminInvoiceItems(next);
-  updateAdminInvoicePreview();
-}
-
-function clearAdminInvoicePresetActive() {
-  document.querySelectorAll('[data-admin-invoice-preset].is-active').forEach(button => {
-    button.classList.remove('is-active');
-    button.setAttribute('aria-pressed', 'false');
-  });
-}
-
-function syncAdminInvoicePresetActiveFromItems(items = []) {
-  const setItem = items.find(item => isAdminInvoiceSetDescription(item.description));
-  const activeDescription = setItem?.description || '';
-  document.querySelectorAll('[data-admin-invoice-preset][data-preset-group="set"]').forEach(button => {
-    const active = Boolean(activeDescription) && activeDescription === (button.dataset.presetName || '');
-    button.classList.toggle('is-active', active);
-    button.setAttribute('aria-pressed', active ? 'true' : 'false');
-  });
-}
-
-function syncAdminInvoiceSetHelper(data = {}) {
-  const helper = document.querySelector('[data-admin-invoice-set-helper]');
-  if (!helper) return;
-  const items = Array.isArray(data.items) ? data.items : [];
-  const setItem = items.find(item => isAdminInvoiceSetDescription(item.description));
-  if (!setItem) {
-    helper.textContent = items.length ? '正在使用自由项目开单。' : '请选择 Set，或用自由项目开单。';
-    helper.classList.remove('is-ready');
-    return;
-  }
-  const qty = Math.max(10, invoiceQuantity(setItem.qty));
-  helper.textContent = `${setItem.description} 已套用：${qty} pax x ${formatMoney(setItem.unitPrice)} = ${formatMoney(setItem.amount)}。顾客仍可按 Set 规则确认菜单。`;
-  helper.classList.add('is-ready');
-}
-
-function setAdminInvoiceDeposit(value) {
-  const depositField = invoiceField('depositAmount');
-  if (!depositField) return;
-  depositField.value = money(Math.max(0, Number(value) || 0)).toFixed(2);
-}
-
-function setAdminInvoiceDepositRate(rate) {
-  const preview = updateAdminInvoicePreview();
-  const total = money(preview?.data?.totalAmount || 0);
-  if (!total) {
-    setInvoiceMessage('请先选择套餐或项目，才可以套用订金。', true);
-    return;
-  }
-  const safeRate = Math.max(0, Number(rate) || 0);
-  setAdminInvoiceDeposit(safeRate >= 1 ? total : total * safeRate);
-  updateAdminInvoicePreview();
-  setInvoiceMessage(safeRate >= 1 ? '已设为全额收款。' : `已套用 ${Math.round(safeRate * 100)}% 订金。`);
-}
-
-function collectAdminInvoiceInput() {
-  const invoiceNo = invoiceValue('invoiceNo') || generateInvoiceNo();
-  const items = collectAdminInvoiceItems();
-  const itemSubtotal = money(items.reduce((sum, item) => sum + Number(item.amount || 0), 0));
-  const itemsSummary = items.length ? buildInvoiceItemsSummary(items) : '';
-  const originalAmount = items.length ? itemSubtotal : 0;
-  const deliveryFee = invoiceNumber('deliveryFee');
-  const serviceFee = invoiceNumber('serviceFee');
-  const discountAmount = invoiceNumber('discountAmount');
-  const depositAmount = invoiceNumber('depositAmount');
-  const totalAmount = money(Math.max(0, originalAmount + deliveryFee + serviceFee - discountAmount));
-  const balanceAmount = money(Math.max(0, totalAmount - depositAmount));
-  const summaryField = invoiceField('itemsSummary');
-  const originalField = invoiceField('originalAmount');
-  if (summaryField) summaryField.value = itemsSummary;
-  if (originalField) originalField.value = originalAmount.toFixed(2);
-  return {
-    invoiceNo,
-    documentType: invoiceValue('documentType') || 'invoice',
-    name: invoiceValue('name'),
-    companyName: invoiceValue('companyName'),
-    phone: invoiceValue('phone'),
-    email: invoiceValue('email'),
-    serviceType: invoiceValue('serviceType') || 'Event Catering',
-    status: invoiceValue('status') || 'confirmed',
-    eventDate: invoiceValue('eventDate'),
-    eventTime: invoiceValue('eventTime'),
-    paymentDue: invoiceValue('paymentDue'),
-    paymentMethod: invoiceValue('paymentMethod') || 'Bank Transfer',
-    pax: Number(invoiceValue('pax')) || 0,
-    referralCode: invoiceValue('referralCode').toUpperCase(),
-    location: invoiceValue('location'),
-    items,
-    itemsSummary,
-    originalAmount,
-    deliveryFee,
-    serviceFee,
-    discountAmount,
-    depositAmount,
-    totalAmount,
-    balanceAmount,
-    customerNotes: invoiceValue('customerNotes'),
-    adminNotes: invoiceValue('adminNotes')
-  };
-}
-
-function buildAdminInvoiceMessage(data = collectAdminInvoiceInput()) {
-  const serviceLabels = {
-    'Meal Plan': '包伙食',
-    'Event Catering': '活动餐饮',
-    'Event Styling': '场地布置',
-    'Cocktail Service': '鸡尾酒服务',
-    Other: '其他服务'
-  };
-  const lines = [
-    '九零食刻 90 PROJECT',
-    '',
-    `开单编号：${data.invoiceNo || '-'}`,
-    `顾客：${data.name || '-'}`,
-    data.companyName ? `公司 / 单位：${data.companyName}` : null,
-    `服务：${serviceLabels[data.serviceType] || data.serviceType || '-'}`,
-    data.eventDate ? `日期：${formatInvoiceDate(data.eventDate)}` : null,
-    data.eventTime ? `时间：${formatInvoiceTime(data.eventTime)}` : null,
-    data.paymentDue ? `付款期限：${formatInvoiceDate(data.paymentDue)}` : null,
-    data.location ? `地点：${data.location}` : null,
-    data.pax ? `人数：${data.pax} pax` : null,
-    '',
-    '菜单 / 项目：',
-    data.itemsSummary || '-',
-    '',
-    '费用：',
-    `项目原额：${formatMoney(data.originalAmount)}`,
-    data.deliveryFee ? `运输费：${formatMoney(data.deliveryFee)}` : null,
-    data.serviceFee ? `服务 / 布置费：${formatMoney(data.serviceFee)}` : null,
-    data.discountAmount ? `优惠 / 调整：-${formatMoney(data.discountAmount)}` : null,
-    `应付总额：${formatMoney(data.totalAmount)}`,
-    data.depositAmount ? `已付订金：${formatMoney(data.depositAmount)}` : null,
-    `余额：${formatMoney(data.balanceAmount)}`,
-    data.paymentMethod ? `付款方式：${data.paymentMethod}` : null,
-    data.referralCode ? `推荐码：${data.referralCode}` : null,
-    data.customerNotes ? `备注：${data.customerNotes}` : null,
-    '',
-    '请回复“确认订单”，我们会为你保留安排。',
-    `WhatsApp：${businessPhone()}`
-  ];
-  return lines.filter(line => line !== null).join('\n');
-}
-
-function updateAdminInvoicePreview() {
-  const form = document.querySelector('[data-admin-invoice-form]');
-  if (!form) return null;
-  if (!invoiceValue('invoiceNo')) invoiceField('invoiceNo').value = generateInvoiceNo();
-  syncAdminInvoiceSetQtyFromPax();
-  const data = collectAdminInvoiceInput();
-  syncAdminInvoicePresetActiveFromItems(data.items);
-  syncAdminInvoiceSetHelper(data);
-  const balanceField = invoiceField('balanceAmount');
-  if (balanceField) balanceField.value = data.balanceAmount.toFixed(2);
-  updateAdminInvoiceKpis(data);
-  renderAdminInvoiceReceipt(data);
-  const preview = document.querySelector('[data-admin-invoice-preview]');
-  const message = buildAdminInvoiceMessage(data);
-  if (preview) preview.value = message;
-  localStorage.setItem(ADMIN_INVOICE_DRAFT_KEY, JSON.stringify(data));
-  return { data, message };
-}
-
-function renderAdminInvoiceForm() {
-  const form = document.querySelector('[data-admin-invoice-form]');
-  if (!form || form.dataset.invoiceReady === '1') return;
-  let draft = null;
-  try {
-    draft = JSON.parse(localStorage.getItem(ADMIN_INVOICE_DRAFT_KEY) || 'null');
-    if (draft && typeof draft === 'object') {
-      Object.entries(draft).forEach(([key, value]) => {
-        const field = invoiceField(key);
-        if (field && value !== undefined && value !== null) field.value = value;
-      });
-    }
-  } catch {
-    localStorage.removeItem(ADMIN_INVOICE_DRAFT_KEY);
-  }
-  if (!invoiceValue('invoiceNo')) invoiceField('invoiceNo').value = generateInvoiceNo();
-  renderAdminInvoiceItems(Array.isArray(draft?.items) ? draft.items : []);
-  form.dataset.invoiceReady = '1';
-  updateAdminInvoicePreview();
-}
-
-function resetAdminInvoiceForm() {
-  const form = document.querySelector('[data-admin-invoice-form]');
-  if (!form) return;
-  form.reset();
-  invoiceField('invoiceNo').value = generateInvoiceNo();
-  invoiceField('discountAmount').value = '0';
-  invoiceField('depositAmount').value = '0';
-  if (invoiceField('deliveryFee')) invoiceField('deliveryFee').value = '0';
-  if (invoiceField('serviceFee')) invoiceField('serviceFee').value = '0';
-  invoiceField('status').value = 'new';
-  invoiceField('serviceType').value = 'Event Catering';
-  if (invoiceField('documentType')) invoiceField('documentType').value = 'quotation';
-  if (invoiceField('paymentMethod')) invoiceField('paymentMethod').value = 'Bank Transfer';
-  clearAdminInvoiceItems();
-  clearAdminInvoicePresetActive();
-  localStorage.removeItem(ADMIN_INVOICE_DRAFT_KEY);
-  updateAdminInvoicePreview();
-  setInvoiceMessage('已准备新开单。');
 }
 
 async function copyText(value) {
@@ -2068,150 +1505,34 @@ async function copyText(value) {
   return ok;
 }
 
-function printAdminInvoiceReceipt() {
-  const preview = updateAdminInvoicePreview();
-  if (!preview?.data?.originalAmount) {
-    setInvoiceMessage('请先加入项目明细，才可以打印收据。', true);
-    return;
-  }
-  window.print();
-  setInvoiceMessage('收据已准备打印，也可以在打印窗口另存 PDF。');
-}
-
-async function saveAdminInvoice(options = {}) {
-  const form = document.querySelector('[data-admin-invoice-form]');
-  if (!form) return { ok: false, reason: 'form_not_found' };
-  if (!form.reportValidity()) return { ok: false, reason: 'invalid_form' };
-  let preview = updateAdminInvoicePreview();
-  let data = preview?.data;
-  let message = preview?.message || '';
-  if (!data?.originalAmount) {
-    setInvoiceMessage('请填写项目金额，系统才可以准确开单。', true);
-    return { ok: false, reason: 'missing_amount' };
-  }
-  const safeStatus = adminInvoiceSafeManualStatus(data);
-  if (data.status !== safeStatus) {
-    const statusField = invoiceField('status');
-    if (statusField) statusField.value = safeStatus;
-    preview = updateAdminInvoicePreview();
-    data = preview?.data;
-    message = preview?.message || message;
-  }
-  const payload = {
-    externalInquiryId: data.invoiceNo,
-    sourceInquiryId: data.invoiceNo,
-    invoiceNo: data.invoiceNo,
-    name: data.name,
-    phone: data.phone,
-    email: data.email,
-    serviceType: data.serviceType,
-    eventDate: data.eventDate,
-    eventTime: data.eventTime,
-    location: data.location,
-    pax: data.pax,
-    foodChoice: data.itemsSummary,
-    itemsSummary: data.itemsSummary,
-    lineItems: data.items,
-    budget: data.totalAmount,
-    totalAmount: data.totalAmount,
-    originalAmount: data.originalAmount,
-    discountAmount: data.discountAmount,
-    deliveryFee: data.deliveryFee,
-    extraLabourFee: data.serviceFee,
-    depositAmount: data.depositAmount,
-    balanceAmount: data.balanceAmount,
-    adminNotes: [
-      data.companyName ? `Company: ${data.companyName}` : '',
-      data.paymentMethod ? `Payment Method: ${data.paymentMethod}` : '',
-      data.paymentDue ? `Payment Due: ${data.paymentDue}` : '',
-      data.customerNotes ? `Customer Notes: ${data.customerNotes}` : '',
-      data.adminNotes || ''
-    ].filter(Boolean).join('\n'),
-    referralCode: data.referralCode,
-    status: data.status,
-    whatsappMessage: message,
-    sentAt: options.sent ? new Date().toISOString() : '',
-    source: 'admin-whatsapp-invoice'
-  };
-  const lead = api.upsertOrderLead(payload);
-  if (!lead.ok) {
-    setInvoiceMessage(`订单无法保存：${lead.reason}`, true);
-    return lead;
-  }
-  const updated = api.updateOrder(lead.order.id, payload, 'admin-whatsapp-invoice');
-  if (!updated.ok) {
-    setInvoiceMessage(`订单无法更新：${updated.reason}`, true);
-    renderAdmin();
-    return updated;
-  }
-  const cloudResult = await syncOrderUpdateToCloud(updated.order, payload);
-  const stateResult = await saveSharedGrowthStateForAdmin();
-  const fullySynced = cloudSyncOk(cloudResult) && cloudSyncOk(stateResult, false);
-  setInvoiceMessage(fullySynced ? '开单已保存，并已同步云端。' : `开单已保存在本机；${cloudSyncProblemMessage(cloudResult, stateResult) || '云端同步需要后台重新登录后再保存一次。'}`, !fullySynced);
-  renderAdmin();
-  return { ok: true, data, message, order: updated.order, cloudResult, stateResult };
-}
-
-function adminInvoiceItemsFromOrder(order = {}) {
-  if (Array.isArray(order.lineItems) && order.lineItems.length) {
-    return order.lineItems.map(item => {
-      const qty = invoiceQuantity(item.qty ?? 1) || 1;
-      const unitPrice = invoiceCleanNumber(item.unitPrice);
-      return {
-        description: String(item.description || '').trim(),
-        qty,
-        unitPrice,
-        amount: money(item.amount ?? qty * unitPrice)
-      };
-    }).filter(item => item.description || item.amount > 0);
-  }
-  const summary = String(order.itemsSummary || '').replace(/\n+/g, ' / ').replace(/\s+/g, ' ').trim();
-  if (!summary) return [];
-  const amount = money(order.originalAmount || order.totalAmount || 0);
-  return [{
-    description: summary.replace(/\b\d+\.\s*/g, '').trim() || '订单项目',
-    qty: 1,
-    unitPrice: amount,
-    amount
-  }];
-}
-
 function findAdminOrderWhatsApp(orderId) {
   const snapshot = api.adminSnapshot();
   const order = snapshot.orders.find(item => item.id === orderId);
   if (!order) return null;
   const member = snapshot.members.find(item => item.id === order.memberId);
   const relation = snapshot.relations.find(item => item.memberId === order.memberId);
-  const items = adminInvoiceItemsFromOrder(order);
-  const data = {
-    invoiceNo: order.invoiceNo || order.externalInquiryId || order.id,
-    name: member?.name || '顾客',
-    phone: member?.phone || '',
-    email: member?.email || '',
-    serviceType: order.serviceType || 'Event Catering',
-    status: order.status || 'confirmed',
-    documentType: 'invoice',
-    eventDate: order.eventDate || '',
-    eventTime: order.eventTime || '',
-    paymentDue: '',
-    paymentMethod: 'Bank Transfer',
-    pax: Number(order.pax) || 0,
-    referralCode: relation?.referralCode || '',
-    location: order.location || '',
-    items,
-    itemsSummary: order.itemsSummary || buildInvoiceItemsSummary(items),
-    originalAmount: money(order.originalAmount || order.totalAmount),
-    deliveryFee: money(order.deliveryFee),
-    serviceFee: money(order.extraLabourFee),
-    discountAmount: money(order.discountAmount),
-    depositAmount: money(order.depositAmount),
-    totalAmount: money(order.totalAmount),
-    balanceAmount: money(order.balanceAmount ?? Math.max(0, Number(order.totalAmount || 0) - Number(order.depositAmount || 0))),
-    customerNotes: '',
-    adminNotes: order.adminNotes || ''
-  };
-  const message = order.whatsappMessage || buildAdminInvoiceMessage(data);
-  return { order, member, data, message, url: adminWhatsAppUrl(member?.phone, message) };
+  const balanceAmount = money(order.balanceAmount ?? Math.max(0, Number(order.totalAmount || 0) - Number(order.depositAmount || 0)));
+  const lines = [
+    '九零食刻 90 PROJECT',
+    '',
+    `顾客：${member?.name || '顾客'}`,
+    `服务：${order.serviceType || '-'}`,
+    order.eventDate ? `日期：${adminHistoryDate(order.eventDate)}` : null,
+    order.eventTime ? `时间：${order.eventTime}` : null,
+    order.location ? `地点：${order.location}` : null,
+    Number(order.pax || 0) ? `人数：${Number(order.pax)} pax` : null,
+    order.itemsSummary ? `菜单 / 备注：${order.itemsSummary}` : null,
+    '',
+    Number(order.totalAmount || 0) ? `总额：${formatMoney(order.totalAmount)}` : null,
+    Number(order.depositAmount || 0) ? `已收订金：${formatMoney(order.depositAmount)}` : null,
+    Number(order.totalAmount || 0) ? `余额：${formatMoney(balanceAmount)}` : null,
+    relation?.referralCode ? `推荐码：${relation.referralCode}` : null,
+    '',
+    '如资料需要更改，可以直接回复我们确认。',
+    `WhatsApp：${businessPhone()}`
+  ].filter(line => line !== null);
+  const message = lines.join('\n');
+  return { order, member, message, url: adminWhatsAppUrl(member?.phone, message) };
 }
 
 function adminOrderDisplayStatus(status) {
@@ -2253,8 +1574,8 @@ function adminOrderNextStep(order) {
   if (status === 'service_completed' || order.completedAt) {
     return balance > 0 ? `服务已完成，还需跟进余款 ${formatMoney(balance)}。` : '服务已完成，可以查看推荐佣金和会员记录。';
   }
-  if (status === 'new') return '先确认订单，再发送 WhatsApp 给顾客。';
-  if (!total) return '先补上金额，系统才可以准确开单。';
+  if (status === 'new') return '先确认订单，再用 WhatsApp 跟进顾客。';
+  if (!total) return '先补上金额，系统才可以准确确认订单。';
   if (deposit <= 0) return '下一步：收订金，或直接结清。';
   if (balance > 0) return `下一步：跟进余款 ${formatMoney(balance)}；顾客实际消费后再人工确认计佣。`;
   return '下一步：顾客实际消费 / 服务完成后，点击「人工确认完成计佣」。';
@@ -2293,7 +1614,7 @@ async function applyAdminOrderQuickAction(orderId, action) {
   const snapshot = api.adminSnapshot();
   const order = snapshot.orders.find(item => item.id === orderId);
   if (!order) {
-    setInvoiceMessage('找不到这张订单。', true);
+    setMessage('找不到这张订单。', true);
     return;
   }
   const total = money(order.totalAmount);
@@ -2313,7 +1634,7 @@ async function applyAdminOrderQuickAction(orderId, action) {
     if (input === null) return;
     const received = money(Number(input));
     if (received <= 0) {
-      setInvoiceMessage('订金金额必须大过 RM0。', true);
+      setMessage('订金金额必须大过 RM0。', true);
       return;
     }
     const nextDeposit = money(Math.min(total, deposit + received));
@@ -2351,7 +1672,7 @@ async function applyAdminOrderQuickAction(orderId, action) {
     } : null;
   }
   if (!result?.ok) {
-    setInvoiceMessage(`订单无法更新：${result?.reason || 'unknown'}`, true);
+    setMessage(`订单无法更新：${result?.reason || 'unknown'}`, true);
     renderAdmin();
     return;
   }
@@ -2365,146 +1686,13 @@ async function applyAdminOrderQuickAction(orderId, action) {
     paid: '余额已结清',
     complete: '已人工确认消费，推荐佣金已计算'
   })[action] || '订单已更新';
-  setInvoiceMessage(synced ? `${actionLabel}，并已同步云端。` : `${actionLabel}；${cloudSyncProblemMessage(cloudResult, stateResult) || '本次云端同步暂时失败。'}`, !synced);
+  setMessage(synced ? `${actionLabel}，并已同步云端。` : `${actionLabel}；${cloudSyncProblemMessage(cloudResult, stateResult) || '本次云端同步暂时失败。'}`, !synced);
 }
 
 function adminHistoryDate(value) {
   if (!value) return '-';
   const date = new Date(value);
   return Number.isNaN(date.getTime()) ? value : date.toLocaleDateString('zh-MY', { year: 'numeric', month: 'short', day: 'numeric' });
-}
-
-function fillAdminInvoiceForm(data = {}) {
-  Object.entries(data).forEach(([key, value]) => {
-    const field = invoiceField(key);
-    if (!field || Array.isArray(value)) return;
-    if (key === 'status' && !adminEditableOrderStatuses.includes(String(value || ''))) {
-      field.value = adminInvoiceSafeManualStatus(data);
-      return;
-    }
-    if (field.type === 'date' && String(value || '').includes('T')) field.value = String(value).slice(0, 10);
-    else field.value = value ?? '';
-  });
-  renderAdminInvoiceItems(Array.isArray(data.items) ? data.items : []);
-  clearAdminInvoicePresetActive();
-  updateAdminInvoicePreview();
-}
-
-function loadAdminInvoiceFromOrder(orderId) {
-  const found = findAdminOrderWhatsApp(orderId);
-  if (!found) {
-    setInvoiceMessage('找不到这张订单。', true);
-    return false;
-  }
-  const order = found.order;
-  const data = {
-    ...found.data,
-    companyName: '',
-    customerNotes: '',
-    adminNotes: order.adminNotes || '',
-    serviceFee: money(order.extraLabourFee),
-    paymentMethod: 'Bank Transfer',
-    paymentDue: '',
-    documentType: 'invoice'
-  };
-  fillAdminInvoiceForm(data);
-  document.querySelector('[data-admin-invoice-form]')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  setInvoiceMessage(`已载入 ${data.invoiceNo || '订单'}，可以修改后再保存或重发 WhatsApp。`);
-  return true;
-}
-
-function renderAdminInvoiceHistory(snapshot = api.adminSnapshot()) {
-  const list = document.querySelector('[data-admin-invoice-history]');
-  if (!list) return;
-  const memberById = new Map(snapshot.members.map(member => [member.id, member]));
-  const relationByMemberId = new Map(snapshot.relations.map(relation => [relation.memberId, relation]));
-  const query = String(adminInvoiceHistoryFilters.query || '').trim().toLowerCase();
-  const statusFilter = adminInvoiceHistoryFilters.status || 'all';
-  const orders = [...snapshot.orders].sort((a, b) => new Date(b.updatedAt || b.createdAt || 0) - new Date(a.updatedAt || a.createdAt || 0));
-  const visible = orders.filter(order => {
-    const member = memberById.get(order.memberId);
-    const relation = relationByMemberId.get(order.memberId);
-    const statusOk = statusFilter === 'all' || order.status === statusFilter;
-    const haystack = [
-      order.invoiceNo,
-      order.externalInquiryId,
-      order.serviceType,
-      order.location,
-      order.itemsSummary,
-      order.status,
-      member?.name,
-      member?.phone,
-      member?.email,
-      relation?.referralCode
-    ].map(value => String(value || '').toLowerCase());
-    return statusOk && (!query || haystack.some(value => value.includes(query)));
-  });
-  const total = visible.reduce((sum, order) => sum + Number(order.totalAmount || 0), 0);
-  const balance = visible.reduce((sum, order) => sum + Number(order.balanceAmount ?? Math.max(0, Number(order.totalAmount || 0) - Number(order.depositAmount || 0))), 0);
-  const countElement = document.querySelector('[data-admin-order-history-count]');
-  const totalElement = document.querySelector('[data-admin-order-history-total]');
-  const balanceElement = document.querySelector('[data-admin-order-history-balance]');
-  if (countElement) countElement.textContent = String(visible.length);
-  if (totalElement) totalElement.textContent = formatMoney(total);
-  if (balanceElement) balanceElement.textContent = formatMoney(balance);
-  const syncElement = document.querySelector('[data-admin-order-sync-status]');
-  if (syncElement) {
-    const syncText = sharedGrowthStateSync.saving ? '云端保存中'
-      : sharedGrowthStateSync.loading ? '云端读取中'
-        : sharedGrowthStateSync.error ? '云端同步失败'
-          : sharedGrowthStateSync.loaded ? '云端已同步'
-            : cloudReady ? '云端已连接' : '本地记录';
-    syncElement.textContent = syncText;
-    syncElement.classList.toggle('is-good', !sharedGrowthStateSync.error && (sharedGrowthStateSync.loaded || cloudReady));
-    syncElement.classList.toggle('is-bad', Boolean(sharedGrowthStateSync.error));
-  }
-  list.innerHTML = visible.length ? visible.map(order => {
-    const member = memberById.get(order.memberId);
-    const relation = relationByMemberId.get(order.memberId);
-    const invoiceNo = order.invoiceNo || order.externalInquiryId || order.id;
-    const balanceAmount = money(order.balanceAmount ?? Math.max(0, Number(order.totalAmount || 0) - Number(order.depositAmount || 0)));
-    const payment = adminOrderPaymentSummary(order);
-    const quickActions = adminOrderQuickActionButtons(order);
-    const itemPreview = adminInvoiceItemsFromOrder(order).slice(0, 3).map(item => item.description).filter(Boolean).join(' · ') || order.itemsSummary || '暂无项目明细';
-    const manualVerification = order.manualVerifiedAt || order.completedAt
-      ? `<small>人工确认：${esc(adminHistoryDate(order.manualVerifiedAt || order.completedAt))}</small>`
-      : '';
-    return `
-      <article class="admin-order-card">
-        <div class="admin-order-card-head">
-          <div>
-            <span>${esc(invoiceNo)}</span>
-            <h4>${esc(member?.name || '顾客')}</h4>
-            <p>${esc(member?.phone || '-')} ${relation?.referralCode ? `· 推荐码 ${esc(relation.referralCode)}` : ''}</p>
-          </div>
-          <mark class="${adminOrderStatusClass(order.status)}">${esc(adminOrderDisplayStatus(order.status))}</mark>
-        </div>
-        <div class="admin-order-card-meta">
-          <div><span>服务</span><strong>${esc(adminInvoiceServiceText(order.serviceType))}</strong></div>
-          <div><span>日期</span><strong>${esc(adminHistoryDate(order.eventDate || order.createdAt))}</strong></div>
-          <div><span>人数</span><strong>${Number(order.pax || 0) ? `${Number(order.pax)} pax` : '-'}</strong></div>
-          <div><span>总额</span><strong>${formatMoney(order.totalAmount)}</strong></div>
-          <div><span>订金</span><strong>${formatMoney(order.depositAmount)}</strong></div>
-          <div><span>余额</span><strong>${formatMoney(balanceAmount)}</strong></div>
-        </div>
-        <div class="admin-order-card-followup">
-          <div>
-            <span>收款状态</span>
-            <strong class="${esc(payment.className)}">${esc(payment.label)}</strong>
-          </div>
-          <p>${esc(adminOrderNextStep(order))}${manualVerification}</p>
-        </div>
-        <p class="admin-order-card-items">${esc(itemPreview)}</p>
-        ${quickActions ? `<div class="admin-order-card-actions admin-order-progress-actions">${quickActions}</div>` : ''}
-        <div class="admin-order-card-actions">
-          <button class="growth-button secondary" type="button" data-admin-load-invoice="${esc(order.id)}">载入修改</button>
-          <button class="growth-button secondary" type="button" data-copy-order-whatsapp="${esc(order.id)}">复制 WhatsApp</button>
-          ${member?.phone ? `<button class="growth-button" type="button" data-open-order-whatsapp="${esc(order.id)}">发给顾客</button>` : ''}
-          <button class="growth-button secondary" type="button" data-admin-print-order="${esc(order.id)}">打印收据</button>
-        </div>
-      </article>
-    `;
-  }).join('') : '<div class="admin-order-empty">还没有符合筛选的开单记录。保存一张订单后会出现在这里。</div>';
 }
 
 function orderStatusOptions(status) {
@@ -2632,7 +1820,6 @@ async function syncCloudOrderLeads(force = false) {
 function renderAdmin() {
   const root = document.querySelector('[data-growth-admin]');
   if (!root) return;
-  renderAdminInvoiceForm();
   const queuedImportCount = importQueuedGrowthOrders();
   if (queuedImportCount) saveSharedGrowthStateForAdmin();
   syncCloudOrderLeads(false);
@@ -2704,11 +1891,10 @@ function renderAdmin() {
       const invoiceNo = item.invoiceNo || item.externalInquiryId || item.id;
       const eventLine = [item.eventDate, item.eventTime].filter(Boolean).join(' ');
       const balanceAmount = money(item.balanceAmount ?? Math.max(0, Number(item.totalAmount || 0) - Number(item.depositAmount || 0)));
-      const whatsappActions = `<button class="growth-button secondary" data-copy-order-whatsapp="${esc(item.id)}">复制开单</button>${member?.phone ? `<button class="growth-button secondary" data-open-order-whatsapp="${esc(item.id)}">WhatsApp</button>` : ''}`;
+      const whatsappActions = `<button class="growth-button secondary" data-copy-order-whatsapp="${esc(item.id)}">复制跟进</button>${member?.phone ? `<button class="growth-button secondary" data-open-order-whatsapp="${esc(item.id)}">WhatsApp</button>` : ''}`;
       return `<tr data-admin-order-row="${esc(item.id)}"><td class="admin-order-invoice"><strong>${esc(invoiceNo)}</strong><br><small>${esc(member?.name || item.memberId)} · ${esc(member?.phone || '-')}</small><br><small>${esc(item.externalInquiryId || item.source || '-')}</small></td><td><label class="growth-inline-field">服务<input data-order-field="serviceType" value="${esc(item.serviceType || '')}" ${locked ? 'disabled' : ''}></label><label class="growth-inline-field">状态<select data-order-field="status" ${locked ? 'disabled' : ''}>${orderStatusOptions(item.status)}</select></label>${relation ? `<small>推荐码 ${esc(relation.referralCode)}</small>` : ''}${eventLine ? `<br><small>${esc(eventLine)}</small>` : ''}${item.location ? `<br><small>${esc(item.location)}</small>` : ''}</td><td><label class="growth-inline-field">金额 RM<input data-order-field="totalAmount" type="number" min="0" step="0.01" value="${Number(item.totalAmount || 0).toFixed(2)}" ${locked ? 'disabled' : ''}></label><small>订金 ${formatMoney(item.depositAmount || 0)} · 余额 ${formatMoney(balanceAmount)}</small><br><small>合资格 ${formatMoney(eligibleAmountForAdmin(item))}</small><label class="growth-inline-field">备注<textarea data-order-field="adminNotes" rows="2" ${locked ? 'disabled' : ''}>${esc(item.adminNotes || '')}</textarea></label></td><td><div class="growth-admin-actions">${whatsappActions}${locked ? '<span class="growth-muted">已锁定</span>' : `<button class="growth-button secondary" data-save-order="${esc(item.id)}">保存订单</button>${canComplete ? `<button class="growth-button" data-complete-order="${esc(item.id)}">人工确认完成计佣</button>` : ''}`}</div></td></tr>`;
     }).join('') : '<tr><td colspan="4">没有符合筛选的订单。</td></tr>';
   }
-  renderAdminInvoiceHistory(snapshot);
   const commissionRows = document.querySelector('[data-growth-admin-commissions]');
   const visibleCommissions = snapshot.commissions.filter(item => {
     const promoter = promoterById.get(item.promoterId);
@@ -2768,136 +1954,6 @@ function bindAdmin() {
     });
   });
   document.addEventListener('click', async event => {
-    const newInvoiceButton = event.target.closest('[data-admin-new-invoice]');
-    if (newInvoiceButton) {
-      resetAdminInvoiceForm();
-      return;
-    }
-    const orderStageButton = event.target.closest('[data-admin-order-stage]');
-    if (orderStageButton) {
-      applyAdminInvoiceStage(orderStageButton.dataset.adminOrderStage || 'quote');
-      return;
-    }
-    const addInvoiceItemButton = event.target.closest('[data-admin-invoice-add-item]');
-    if (addInvoiceItemButton) {
-      addAdminInvoiceItem();
-      return;
-    }
-    const clearInvoiceItemsButton = event.target.closest('[data-admin-invoice-clear-items]');
-    if (clearInvoiceItemsButton) {
-      clearAdminInvoiceItems();
-      clearAdminInvoicePresetActive();
-      updateAdminInvoicePreview();
-      setInvoiceMessage('项目已清空，可以重新选择。');
-      return;
-    }
-    const depositRateButton = event.target.closest('[data-admin-deposit-rate]');
-    if (depositRateButton) {
-      setAdminInvoiceDepositRate(Number(depositRateButton.dataset.adminDepositRate) || 0);
-      return;
-    }
-    const depositClearButton = event.target.closest('[data-admin-deposit-clear]');
-    if (depositClearButton) {
-      setAdminInvoiceDeposit(0);
-      updateAdminInvoicePreview();
-      setInvoiceMessage('订金已清零。');
-      return;
-    }
-    const presetInvoiceButton = event.target.closest('[data-admin-invoice-preset]');
-    if (presetInvoiceButton) {
-      const presetQty = Number(presetInvoiceButton.dataset.presetQty) || 1;
-      const currentPax = Number(invoiceValue('pax')) || 0;
-      const isSetPreset = presetInvoiceButton.dataset.presetGroup === 'set';
-      const qty = isSetPreset ? Math.max(currentPax || presetQty, presetQty, 10) : (currentPax || presetQty);
-      const paxField = invoiceField('pax');
-      if (paxField && (!currentPax || (isSetPreset && currentPax < 10))) {
-        setAdminInvoiceMinimumPax(qty);
-      }
-      if (isSetPreset && invoiceField('serviceType')) {
-        invoiceField('serviceType').value = 'Event Catering';
-      }
-      const item = {
-        description: presetInvoiceButton.dataset.presetName || presetInvoiceButton.textContent?.trim() || '项目',
-        qty,
-        unitPrice: Number(presetInvoiceButton.dataset.presetPrice) || 0
-      };
-      if (isSetPreset) {
-        clearAdminInvoicePresetActive();
-        presetInvoiceButton.classList.add('is-active');
-        presetInvoiceButton.setAttribute('aria-pressed', 'true');
-        replaceAdminInvoiceSetItem(item);
-        setInvoiceMessage('套餐已套用；活动餐饮 Set 会按 10 pax 起算。');
-      } else {
-        addAdminInvoiceItem(item);
-        setInvoiceMessage('项目已加入开单明细。');
-      }
-      return;
-    }
-    const removeInvoiceItemButton = event.target.closest('[data-admin-invoice-remove-item]');
-    if (removeInvoiceItemButton) {
-      const row = removeInvoiceItemButton.closest('[data-admin-invoice-item]');
-      row?.remove();
-      if (!adminInvoiceRows().length) clearAdminInvoiceItems();
-      if (!collectAdminInvoiceItems().some(item => isAdminInvoiceSetDescription(item.description))) {
-        clearAdminInvoicePresetActive();
-      }
-      updateAdminInvoicePreview();
-      return;
-    }
-    const previewInvoiceButton = event.target.closest('[data-admin-invoice-preview-button]');
-    if (previewInvoiceButton) {
-      updateAdminInvoicePreview();
-      setInvoiceMessage('WhatsApp 文案已生成。');
-      return;
-    }
-    const printInvoiceButton = event.target.closest('[data-admin-invoice-print]');
-    if (printInvoiceButton) {
-      printAdminInvoiceReceipt();
-      return;
-    }
-    const copyInvoiceButton = event.target.closest('[data-admin-invoice-copy]');
-    if (copyInvoiceButton) {
-      const result = await saveAdminInvoice();
-      if (result.ok) {
-        await copyText(result.message);
-        setInvoiceMessage('开单已保存，WhatsApp 文案已复制。');
-      }
-      return;
-    }
-    const openInvoiceButton = event.target.closest('[data-admin-invoice-open]');
-    if (openInvoiceButton) {
-      const result = await saveAdminInvoice({ sent: true });
-      if (result.ok) {
-        const url = adminWhatsAppUrl(result.data.phone, result.message);
-        if (!url) {
-          setInvoiceMessage('请填写顾客手机号，才可以打开 WhatsApp。', true);
-          return;
-        }
-        window.open(url, '_blank', 'noopener');
-        setInvoiceMessage('已打开 WhatsApp，开单也已保存。');
-      }
-      return;
-    }
-    const refreshInvoiceHistoryButton = event.target.closest('[data-admin-history-refresh]');
-    if (refreshInvoiceHistoryButton) {
-      setInvoiceMessage('正在同步云端开单记录...');
-      await loadSharedGrowthStateForAdmin();
-      await syncCloudOrderLeads(true);
-      renderAdmin();
-      const syncError = sharedGrowthStateSync.error || cloudOrderLeadSync.error;
-      setInvoiceMessage(syncError ? growthReadableCloudMessage(syncError) : '云端开单记录已同步。', Boolean(syncError));
-      return;
-    }
-    const loadInvoiceButton = event.target.closest('[data-admin-load-invoice]');
-    if (loadInvoiceButton) {
-      loadAdminInvoiceFromOrder(loadInvoiceButton.dataset.adminLoadInvoice);
-      return;
-    }
-    const printOrderButton = event.target.closest('[data-admin-print-order]');
-    if (printOrderButton) {
-      if (loadAdminInvoiceFromOrder(printOrderButton.dataset.adminPrintOrder)) printAdminInvoiceReceipt();
-      return;
-    }
     const copyOrderWhatsAppButton = event.target.closest('[data-copy-order-whatsapp]');
     if (copyOrderWhatsAppButton) {
       const result = findAdminOrderWhatsApp(copyOrderWhatsAppButton.dataset.copyOrderWhatsapp);
@@ -3035,21 +2091,6 @@ function bindAdmin() {
     const copyButton = event.target.closest('[data-copy-growth]');
     if (copyButton) navigator.clipboard?.writeText(copyButton.dataset.copyGrowth);
   });
-  const invoiceForm = document.querySelector('[data-admin-invoice-form]');
-  invoiceForm?.addEventListener('submit', async event => {
-    event.preventDefault();
-    await saveAdminInvoice();
-  });
-  invoiceForm?.addEventListener('input', () => updateAdminInvoicePreview());
-  invoiceForm?.addEventListener('change', () => updateAdminInvoicePreview());
-  document.querySelector('[data-admin-order-history-search]')?.addEventListener('input', event => {
-    adminInvoiceHistoryFilters.query = event.target.value || '';
-    renderAdminInvoiceHistory();
-  });
-  document.querySelector('[data-admin-order-history-status]')?.addEventListener('change', event => {
-    adminInvoiceHistoryFilters.status = event.target.value || 'all';
-    renderAdminInvoiceHistory();
-  });
   document.querySelector('[data-growth-config-form]')?.addEventListener('submit', async event => {
     event.preventDefault();
     const config = api.getState().config;
@@ -3144,7 +2185,6 @@ window.addEventListener('storage', event => {
       renderMemberDashboard();
     }
     if (page === 'admin') {
-      updateAdminInvoicePreview();
       renderAdmin();
     }
   } catch (error) {
