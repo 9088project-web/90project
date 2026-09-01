@@ -7,6 +7,7 @@ const outDir = path.join(root, 'public');
 const entries = [
   'index.html',
   'admin.html',
+  'pos.html',
   'catering.html',
   'cocktail.html',
   'styling.html',

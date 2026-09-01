@@ -25,3 +25,7 @@ public/site.webmanifest
 .env*
 js/supabase-config.local.json
 supabase/.temp/
+android-pos/.gradle/
+android-pos/build/
+android-pos/app/build/
+output/*.apk

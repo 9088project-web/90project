@@ -5,6 +5,8 @@
   "scripts": {
     "dev": "node scripts/serve-static-site.mjs",
     "build": "node scripts/build-static-site.mjs",
+    "sync:apk-assets": "node scripts/sync-pos-apk-assets.mjs",
+    "build:apk": "powershell -ExecutionPolicy Bypass -File scripts/build-pos-apk.ps1",
     "start": "node scripts/serve-static-site.mjs",
     "test:growth": "node --test tests/growth-domain.test.mjs"
   },

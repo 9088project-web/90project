@@ -1,0 +1,173 @@
+<!doctype html>
+<html lang="zh-Hans">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#16100b" />
+  <title>90 PROJECT POS 开单系统</title>
+  <link rel="icon" type="image/jpeg" href="assets/images/logo/logo-icon-dark.jpg" />
+  <link rel="stylesheet" href="css/pos.css" />
+</head>
+<body class="pos-page">
+  <header class="pos-topbar">
+    <a class="pos-brand" href="index.html" aria-label="返回 90 PROJECT 网站">
+      <img src="assets/images/logo/logo-icon-dark.jpg" alt="90 PROJECT logo" />
+      <span>
+        <strong>九零食刻</strong>
+        <small>90 PROJECT POS</small>
+      </span>
+    </a>
+    <div class="pos-topbar-actions">
+      <button class="pos-ghost" type="button" id="posNewOrderTop">新单</button>
+      <a class="pos-ghost" href="admin.html">后台</a>
+    </div>
+  </header>
+
+  <main class="pos-shell">
+    <section class="pos-hero">
+      <div>
+        <span>QUICK BILLING</span>
+        <h1>专业开单 POS</h1>
+        <p>快速开报价单、Invoice 或收据，可以直接 WhatsApp 顾客，也可以打印或另存 PDF。</p>
+      </div>
+      <div class="pos-live-total" aria-live="polite">
+        <small>应收总额</small>
+        <strong id="posHeroTotal">RM0.00</strong>
+        <span id="posHeroBalance">余额 RM0.00</span>
+      </div>
+    </section>
+
+    <form class="pos-layout" id="posForm">
+      <section class="pos-workbench">
+        <div class="pos-section-head">
+          <div>
+            <span>STEP 1</span>
+            <h2>顾客资料</h2>
+          </div>
+          <label class="pos-compact-field">单据
+            <select id="posDocType">
+              <option value="invoice">Invoice</option>
+              <option value="quotation">报价单</option>
+              <option value="receipt">收据</option>
+            </select>
+          </label>
+        </div>
+
+        <div class="pos-grid">
+          <label>顾客姓名
+            <input id="posCustomerName" type="text" placeholder="例如：王小姐" required />
+          </label>
+          <label>顾客 WhatsApp
+            <input id="posCustomerPhone" type="tel" placeholder="018-xxxx xxxx" required />
+          </label>
+          <label>开单编号
+            <input id="posInvoiceNo" type="text" readonly />
+          </label>
+          <label>服务日期
+            <input id="posEventDate" type="date" />
+          </label>
+          <label>时间
+            <input id="posEventTime" type="time" />
+          </label>
+          <label>服务类型
+            <select id="posServiceType">
+              <option value="活动餐饮">活动餐饮</option>
+              <option value="包伙食">包伙食</option>
+              <option value="场地布置">场地布置</option>
+              <option value="鸡尾酒服务">鸡尾酒服务</option>
+              <option value="其他服务">其他服务</option>
+            </select>
+          </label>
+          <label class="pos-wide">地点
+            <input id="posLocation" type="text" placeholder="地址 / Venue / Area" />
+          </label>
+          <label class="pos-wide">备注
+            <textarea id="posNotes" rows="3" placeholder="菜单、送达、餐具、付款备注"></textarea>
+          </label>
+        </div>
+
+        <div class="pos-section-head pos-spaced">
+          <div>
+            <span>STEP 2</span>
+            <h2>快速加入项目</h2>
+          </div>
+        </div>
+
+        <div class="pos-tab-strip" role="tablist" aria-label="项目分类">
+          <button class="active" type="button" data-pos-filter="catering">Catering Set</button>
+          <button type="button" data-pos-filter="meal">包伙食配套</button>
+          <button type="button" data-pos-filter="service">服务项目</button>
+        </div>
+        <div class="pos-package-grid" id="posPackageGrid" aria-label="快速项目"></div>
+
+        <div class="pos-manual-row">
+          <input id="posManualDesc" type="text" placeholder="自由项目名称" />
+          <input id="posManualQty" type="number" min="0" step="1" value="1" aria-label="数量" />
+          <input id="posManualPrice" type="number" min="0" step="0.01" placeholder="单价 RM" aria-label="单价" />
+          <button type="button" id="posAddManual">加入</button>
+        </div>
+
+        <div class="pos-items-head">
+          <strong>项目明细</strong>
+          <button class="pos-link-btn" type="button" id="posClearItems">清空项目</button>
+        </div>
+        <div class="pos-items" id="posItems"></div>
+      </section>
+
+      <aside class="pos-summary">
+        <div class="pos-section-head">
+          <div>
+            <span>STEP 3</span>
+            <h2>收款与发送</h2>
+          </div>
+        </div>
+
+        <div class="pos-money-grid">
+          <label>运输 / 服务费 RM
+            <input id="posDeliveryFee" type="number" min="0" step="0.01" value="0" />
+          </label>
+          <label>折扣 RM
+            <input id="posDiscount" type="number" min="0" step="0.01" value="0" />
+          </label>
+          <label>已收订金 RM
+            <input id="posDeposit" type="number" min="0" step="0.01" value="0" />
+          </label>
+          <label>付款方式
+            <select id="posPaymentMethod">
+              <option value="Bank Transfer">Bank Transfer</option>
+              <option value="Cash">Cash</option>
+              <option value="Touch 'n Go">Touch 'n Go</option>
+              <option value="Pending">待确认</option>
+            </select>
+          </label>
+        </div>
+
+        <div class="pos-deposit-row">
+          <button type="button" data-pos-deposit="0.3">30%</button>
+          <button type="button" data-pos-deposit="0.5">50%</button>
+          <button type="button" data-pos-deposit="1">全额</button>
+          <button type="button" data-pos-deposit="0">清零</button>
+        </div>
+
+        <section class="pos-receipt" id="posReceiptPreview" aria-label="单据预览"></section>
+
+        <div class="pos-actions">
+          <button class="pos-primary" type="button" id="posWhatsApp">WhatsApp 顾客</button>
+          <button type="button" id="posPrint">打印 / 保存 PDF</button>
+          <button type="button" id="posCopy">复制文案</button>
+          <button type="button" id="posSave">保存记录</button>
+        </div>
+
+        <p class="pos-message" id="posMessage" aria-live="polite"></p>
+
+        <details class="pos-history" open>
+          <summary>最近开单</summary>
+          <div id="posHistoryList"></div>
+        </details>
+      </aside>
+    </form>
+  </main>
+
+  <script src="js/pos.js"></script>
+</body>
+</html>
