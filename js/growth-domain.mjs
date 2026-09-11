@@ -13,6 +13,10 @@ export const DEFAULT_GROWTH_CONFIG = {
   maxCommissionPercentPerOrder: 5,
   autoReleaseCommissions: true,
   pointsPerMyr: 1,
+  orderCenter: {
+    categories: ['活动餐饮', '包伙食', '场地布置', '鸡尾酒服务', '其他服务'],
+    assignees: ['未分配', 'LIYAN & KS', 'Tom', 'KS']
+  },
   levels: [
     { id: 'member', name: '90 Member', spendThreshold: 0, orderThreshold: 0, discountPercent: 0, pointsMultiplier: 1, active: true },
     { id: 'silver', name: '90 Silver', spendThreshold: 500, orderThreshold: 2, discountPercent: 2, pointsMultiplier: 1.25, active: true },
@@ -86,6 +90,12 @@ function withDefaults(raw) {
       ...base.config,
       ...(source.config || {}),
       defaultCommission: { ...base.config.defaultCommission, ...(source.config?.defaultCommission || {}) },
+      orderCenter: {
+        ...base.config.orderCenter,
+        ...(source.config?.orderCenter || {}),
+        categories: Array.isArray(source.config?.orderCenter?.categories) && source.config.orderCenter.categories.length ? source.config.orderCenter.categories : base.config.orderCenter.categories,
+        assignees: Array.isArray(source.config?.orderCenter?.assignees) && source.config.orderCenter.assignees.length ? source.config.orderCenter.assignees : base.config.orderCenter.assignees
+      },
       levels: Array.isArray(source.config?.levels) && source.config.levels.length ? source.config.levels : base.config.levels,
       commissionRules: Array.isArray(source.config?.commissionRules) && source.config.commissionRules.length ? source.config.commissionRules : base.config.commissionRules,
       referralCommissionRates: Array.isArray(source.config?.referralCommissionRates) && source.config.referralCommissionRates.length ? source.config.referralCommissionRates : base.config.referralCommissionRates

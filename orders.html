@@ -98,6 +98,32 @@
         <h2>负责人业绩</h2>
         <div class="order-staff-bars" data-order-staff-analysis></div>
       </article>
+      <article class="order-card order-settings-card">
+        <div class="order-section-head">
+          <h2>名单设置</h2>
+          <span class="order-settings-status" data-order-settings-status>跟随云端</span>
+        </div>
+        <div class="order-settings-grid">
+          <section>
+            <h3>类别</h3>
+            <p>开单时会出现在类别下拉名单。</p>
+            <div class="order-settings-input">
+              <input data-order-config-input="categories" type="text" placeholder="新增类别，例如：烧腊" />
+              <button type="button" data-order-config-add="categories">新增</button>
+            </div>
+            <div class="order-chip-list" data-order-config-items="categories"></div>
+          </section>
+          <section>
+            <h3>负责人</h3>
+            <p>开单、分析和打印单据都会使用这个名单。</p>
+            <div class="order-settings-input">
+              <input data-order-config-input="assignees" type="text" placeholder="新增负责人，例如：Ah Ming" />
+              <button type="button" data-order-config-add="assignees">新增</button>
+            </div>
+            <div class="order-chip-list" data-order-config-items="assignees"></div>
+          </section>
+        </div>
+      </article>
     </section>
   </main>
 

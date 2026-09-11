@@ -24,6 +24,15 @@ const statusLabels = {
 };
 
 const statusOrder = ['new', 'deposit_paid', 'fully_paid', 'service_completed', 'cancelled'];
+const CUSTOM_OPTION_VALUE = '__order_add_new__';
+const orderSettingDefaults = {
+  categories: ['活动餐饮', '包伙食', '场地布置', '鸡尾酒服务', '其他服务'],
+  assignees: ['未分配', 'LIYAN & KS', 'Tom', 'KS']
+};
+const orderSettingLabels = {
+  categories: { singular: '类别', empty: '还没有类别，先新增一个。' },
+  assignees: { singular: '负责人', empty: '还没有负责人，先新增一个。' }
+};
 
 const state = {
   view: 'overview',
@@ -59,6 +68,15 @@ const els = {
   statusAnalysis: document.querySelector('[data-order-status-analysis]'),
   monthIncome: document.querySelector('[data-order-month-income]'),
   staffAnalysis: document.querySelector('[data-order-staff-analysis]'),
+  settingsStatus: document.querySelector('[data-order-settings-status]'),
+  configInputs: {
+    categories: document.querySelector('[data-order-config-input="categories"]'),
+    assignees: document.querySelector('[data-order-config-input="assignees"]')
+  },
+  configLists: {
+    categories: document.querySelector('[data-order-config-items="categories"]'),
+    assignees: document.querySelector('[data-order-config-items="assignees"]')
+  },
   sheet: document.querySelector('[data-order-sheet]'),
   form: document.querySelector('[data-order-form]'),
   formMessage: document.querySelector('[data-order-form-message]'),
@@ -218,6 +236,155 @@ function getSnapshot() {
       commissions: []
     };
   }
+}
+
+function cleanSettingValue(value) {
+  return String(value || '').replace(/\s+/g, ' ').trim().slice(0, 60);
+}
+
+function normalizeSettingList(values = [], fallback = []) {
+  const seen = new Set();
+  const output = [];
+  const source = Array.isArray(values) && values.length ? values : fallback;
+  source.forEach(item => {
+    const value = cleanSettingValue(item);
+    if (!value) return;
+    const key = value.toLocaleLowerCase();
+    if (seen.has(key)) return;
+    seen.add(key);
+    output.push(value);
+  });
+  return output;
+}
+
+function savedOrderSettings() {
+  const config = growthApi.getState()?.config?.orderCenter || {};
+  return {
+    categories: normalizeSettingList(config.categories, orderSettingDefaults.categories),
+    assignees: normalizeSettingList(config.assignees, orderSettingDefaults.assignees)
+  };
+}
+
+function orderSettingsWithUsage(orders = []) {
+  const saved = savedOrderSettings();
+  const categoryUsage = orders.flatMap(order => [order.serviceType, order.category]);
+  const assigneeUsage = orders.map(order => order.assignee || orderAssignee(order));
+  return {
+    categories: normalizeSettingList([...saved.categories, ...categoryUsage], orderSettingDefaults.categories),
+    assignees: normalizeSettingList([...saved.assignees, ...assigneeUsage], orderSettingDefaults.assignees)
+  };
+}
+
+function sanitizeOrderSettings(settings = {}) {
+  const next = {
+    categories: normalizeSettingList(settings.categories, orderSettingDefaults.categories),
+    assignees: normalizeSettingList(settings.assignees, orderSettingDefaults.assignees)
+  };
+  if (!next.assignees.some(item => item === '未分配')) next.assignees.unshift('未分配');
+  return next;
+}
+
+function settingUsageCount(group, value, orders = []) {
+  const target = cleanSettingValue(value).toLocaleLowerCase();
+  if (!target) return 0;
+  return orders.filter(order => {
+    if (group === 'categories') {
+      return [order.serviceType, order.category].some(item => cleanSettingValue(item).toLocaleLowerCase() === target);
+    }
+    return cleanSettingValue(order.assignee || orderAssignee(order)).toLocaleLowerCase() === target;
+  }).length;
+}
+
+function setSettingsStatus(message, good = false) {
+  if (!els.settingsStatus) return;
+  els.settingsStatus.textContent = message || '';
+  els.settingsStatus.classList.toggle('is-good', good);
+  els.settingsStatus.classList.toggle('is-bad', !good && /失败|不能|错误/.test(message || ''));
+}
+
+function updateAssigneeNote(notes, assignee) {
+  const value = `负责人：${assignee}`;
+  const text = String(notes || '').trim();
+  if (!text) return value;
+  if (/负责人[:：]\s*[^\n]*/.test(text)) return text.replace(/负责人[:：]\s*[^\n]*/, value);
+  return `${value}\n${text}`;
+}
+
+function applySettingRenameToOrders(orders = [], group, oldValue, newValue) {
+  const oldKey = cleanSettingValue(oldValue).toLocaleLowerCase();
+  if (!oldKey || cleanSettingValue(newValue).toLocaleLowerCase() === oldKey) return orders;
+  return orders.map(order => {
+    const next = { ...order };
+    if (group === 'categories' && cleanSettingValue(order.serviceType).toLocaleLowerCase() === oldKey) {
+      next.serviceType = newValue;
+    }
+    if (group === 'assignees' && cleanSettingValue(order.assignee || orderAssignee(order)).toLocaleLowerCase() === oldKey) {
+      next.assignee = newValue;
+      next.adminNotes = updateAssigneeNote(order.adminNotes, newValue);
+      if (cleanSettingValue(order.manualVerifiedBy).toLocaleLowerCase() === oldKey) next.manualVerifiedBy = newValue;
+    }
+    return next;
+  });
+}
+
+async function saveOrderSettings(settings, options = {}) {
+  const current = growthApi.getState();
+  const nextSettings = sanitizeOrderSettings(settings);
+  const nextState = {
+    ...current,
+    config: {
+      ...(current.config || {}),
+      orderCenter: nextSettings
+    }
+  };
+  if (options.rename) {
+    nextState.orders = applySettingRenameToOrders(current.orders || [], options.rename.group, options.rename.oldValue, options.rename.newValue);
+  }
+  growthApi.replaceState(nextState);
+  setSettingsStatus('同步中');
+  const result = await syncCloudState();
+  setSettingsStatus(result.ok ? '已同步云端' : '已保存在本机', Boolean(result.ok));
+  render();
+  return result;
+}
+
+function settingsAfterAdd(group, value) {
+  const name = cleanSettingValue(value);
+  if (!orderSettingLabels[group] || !name) return null;
+  const settings = savedOrderSettings();
+  settings[group] = normalizeSettingList([...settings[group], name], orderSettingDefaults[group]);
+  return { settings, name };
+}
+
+async function addOrderSetting(group, rawValue) {
+  const next = settingsAfterAdd(group, rawValue);
+  if (!next) {
+    setSettingsStatus(`请输入${orderSettingLabels[group]?.singular || '名单'}名称。`);
+    return '';
+  }
+  await saveOrderSettings(next.settings);
+  return next.name;
+}
+
+async function editOrderSetting(group, oldValue) {
+  const label = orderSettingLabels[group]?.singular || '名单';
+  const cleanOld = cleanSettingValue(oldValue);
+  if (!cleanOld || (group === 'assignees' && cleanOld === '未分配')) return;
+  const nextValue = cleanSettingValue(window.prompt(`更改${label}名称`, cleanOld));
+  if (!nextValue || nextValue === cleanOld) return;
+  const settings = savedOrderSettings();
+  settings[group] = normalizeSettingList(settings[group].map(item => (
+    cleanSettingValue(item).toLocaleLowerCase() === cleanOld.toLocaleLowerCase() ? nextValue : item
+  )), orderSettingDefaults[group]);
+  await saveOrderSettings(settings, { rename: { group, oldValue: cleanOld, newValue: nextValue } });
+}
+
+async function removeOrderSetting(group, value) {
+  const cleanValue = cleanSettingValue(value);
+  if (!orderSettingLabels[group] || !cleanValue || (group === 'assignees' && cleanValue === '未分配')) return;
+  const settings = savedOrderSettings();
+  settings[group] = settings[group].filter(item => cleanSettingValue(item).toLocaleLowerCase() !== cleanValue.toLocaleLowerCase());
+  await saveOrderSettings(settings);
 }
 
 function orderAssignee(order) {
@@ -672,6 +839,52 @@ function renderStaffAnalysis(orders) {
     : '<div class="order-empty">还没有负责人资料。</div>';
 }
 
+function setManagedSelectOptions(select, group, values, selectedValue = '') {
+  if (!select || !orderSettingLabels[group]) return;
+  const label = orderSettingLabels[group].singular;
+  const current = cleanSettingValue(selectedValue || select.value);
+  const options = normalizeSettingList(current ? [...values, current] : values, orderSettingDefaults[group]);
+  select.innerHTML = `${options.map(value => `<option value="${escapeHtml(value)}">${escapeHtml(value)}</option>`).join('')}<option value="${CUSTOM_OPTION_VALUE}">+ 新增${escapeHtml(label)}</option>`;
+  select.value = current && options.includes(current) ? current : (options[0] || '');
+  select.dataset.previousValue = select.value;
+}
+
+function renderOrderSelects(orders = currentOrders(), selected = {}) {
+  const settings = orderSettingsWithUsage(orders);
+  setManagedSelectOptions(formFields.serviceType, 'categories', settings.categories, selected.serviceType);
+  setManagedSelectOptions(formFields.assignee, 'assignees', settings.assignees, selected.assignee);
+}
+
+function renderSettingsGroup(group, values, orders = []) {
+  const target = els.configLists[group];
+  if (!target) return;
+  target.innerHTML = values.length
+    ? values.map(value => {
+      const count = settingUsageCount(group, value, orders);
+      const fixed = group === 'assignees' && value === '未分配';
+      return `
+        <span class="order-chip">
+          <button type="button" data-order-config-edit="${escapeHtml(group)}" data-order-config-value="${escapeHtml(value)}" ${fixed ? 'disabled' : ''}>
+            <span>${escapeHtml(value)}</span>
+            <small>${count ? `${count} 单` : '名单'}</small>
+          </button>
+          <button class="order-chip-remove" type="button" data-order-config-remove="${escapeHtml(group)}" data-order-config-value="${escapeHtml(value)}" ${fixed ? 'disabled' : ''} aria-label="删除${escapeHtml(value)}">
+            <i class="ri-close-line" aria-hidden="true"></i>
+          </button>
+        </span>
+      `;
+    }).join('')
+    : `<div class="order-empty">${escapeHtml(orderSettingLabels[group]?.empty || '还没有名单。')}</div>`;
+}
+
+function renderOrderSettings(orders = currentOrders()) {
+  const settings = orderSettingsWithUsage(orders);
+  renderSettingsGroup('categories', settings.categories, orders);
+  renderSettingsGroup('assignees', settings.assignees, orders);
+  const label = state.syncState === 'ok' ? '已同步云端' : state.cloudReady ? state.syncMessage : '本机设置';
+  setSettingsStatus(label, state.syncState === 'ok');
+}
+
 function renderPanels() {
   els.tabs.forEach(tab => tab.classList.toggle('active', tab.dataset.orderView === state.view));
   els.panels.forEach(panel => {
@@ -693,8 +906,11 @@ function render() {
   renderStatusAnalysis(orders);
   renderMonthIncome(orders);
   renderStaffAnalysis(orders);
+  renderOrderSelects(orders);
+  renderOrderSettings(orders);
   window.NP90OrderCenter = {
     orders,
+    settings: orderSettingsWithUsage(orders),
     demoMode: state.demoMode,
     totals: totalsFor(orders)
   };
@@ -708,6 +924,7 @@ function setView(view) {
 function openOrderSheet(orderId = '', forcedDate = '') {
   const order = orderId ? findOrder(orderId) : null;
   const isDemo = order?.source === 'demo';
+  renderOrderSelects(currentOrders(), { serviceType: order?.serviceType, assignee: order?.assignee });
   formFields.id.value = order && !isDemo ? order.id : '';
   formFields.customerName.value = order?.customerName || '';
   formFields.phone.value = order?.phone || '';
@@ -1289,7 +1506,57 @@ function bind() {
     if (event.target.closest('[data-clear-date-filter]')) {
       state.dateFilter = '';
       render();
+      return;
     }
+
+    const configAdd = event.target.closest('[data-order-config-add]');
+    if (configAdd) {
+      const group = configAdd.dataset.orderConfigAdd;
+      const input = els.configInputs[group];
+      const added = await addOrderSetting(group, input?.value || '');
+      if (added && input) input.value = '';
+      return;
+    }
+
+    const configEdit = event.target.closest('[data-order-config-edit]');
+    if (configEdit) {
+      await editOrderSetting(configEdit.dataset.orderConfigEdit, configEdit.dataset.orderConfigValue);
+      return;
+    }
+
+    const configRemove = event.target.closest('[data-order-config-remove]');
+    if (configRemove) {
+      await removeOrderSetting(configRemove.dataset.orderConfigRemove, configRemove.dataset.orderConfigValue);
+    }
+  });
+
+  Object.entries(els.configInputs).forEach(([group, input]) => {
+    input?.addEventListener('keydown', async event => {
+      if (event.key !== 'Enter') return;
+      event.preventDefault();
+      const added = await addOrderSetting(group, input.value);
+      if (added) input.value = '';
+    });
+  });
+
+  [['categories', formFields.serviceType], ['assignees', formFields.assignee]].forEach(([group, select]) => {
+    select?.addEventListener('focus', () => {
+      select.dataset.previousValue = select.value || '';
+    });
+    select?.addEventListener('change', async () => {
+      if (select.value !== CUSTOM_OPTION_VALUE) {
+        select.dataset.previousValue = select.value || '';
+        return;
+      }
+      const label = orderSettingLabels[group]?.singular || '名单';
+      const value = cleanSettingValue(window.prompt(`新增${label}`));
+      if (!value) {
+        renderOrderSelects(currentOrders(), { [group === 'categories' ? 'serviceType' : 'assignee']: select.dataset.previousValue || '' });
+        return;
+      }
+      const added = await addOrderSetting(group, value);
+      renderOrderSelects(currentOrders(), { [group === 'categories' ? 'serviceType' : 'assignee']: added || value });
+    });
   });
 
   els.search?.addEventListener('input', event => {
