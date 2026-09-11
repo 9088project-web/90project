@@ -221,7 +221,7 @@ http://127.0.0.1:3040/#admin-login
 本地测试密码：
 
 ```text
-admin123456
+admin123
 ```
 
 保存后的内容会储存在浏览器 `localStorage`，刷新页面仍会保留。这个版本适合 offline 测试；真实上线后建议改成数据库后台和正式管理员登录。
@@ -249,7 +249,7 @@ Admin 后台可以导出 JSON，本地保存以下资料：
 
 ```text
 9088project@gmail.com
-admin123456
+admin123
 ```
 
 4. 在 SQL Editor 把该用户设成 admin：

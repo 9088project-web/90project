@@ -1,6 +1,6 @@
 const ADMIN_CONTENT_SETTING_KEY = 'admin_content';
 const DEFAULT_ADMIN_EMAIL = '9088project@gmail.com';
-const DEFAULT_ADMIN_PASSWORD_HASH = '3b523443';
+const DEFAULT_ADMIN_PASSWORD_HASH = '7045830c';
 
 function send(response, status, payload) {
   response.setHeader('Cache-Control', 'no-store');

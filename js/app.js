@@ -174,7 +174,7 @@ const ADMIN_CONTENT_SETTING_KEY = 'admin_content';
 const ADMIN_CONTENT_API_PATH = '/api/admin-content';
 const MEMBER_SYNC_API_PATH = '/api/member-sync';
 const ADMIN_EMAIL = '9088project@gmail.com';
-const ADMIN_PASSWORD_HASH = '3b523443';
+const ADMIN_PASSWORD_HASH = '7045830c';
 const WHATSAPP_NUMBER = '60189490908';
 const DEFAULT_MEMBER_WHATSAPP_TEMPLATES = {
   zh: `你好 {name}，这里是九零食刻 90 PROJECT。

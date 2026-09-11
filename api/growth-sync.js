@@ -1,6 +1,6 @@
 const GROWTH_STATE_SETTING_KEY = 'growth_state';
 const DEFAULT_ADMIN_EMAIL = '9088project@gmail.com';
-const DEFAULT_ADMIN_PASSWORD_HASH = '3b523443';
+const DEFAULT_ADMIN_PASSWORD_HASH = '7045830c';
 
 const GROWTH_ARRAY_KEYS = [
   'members',
