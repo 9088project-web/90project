@@ -38,6 +38,7 @@ const clone = value => value === undefined ? undefined : JSON.parse(JSON.stringi
 const normalize = value => String(value || '').trim().toLowerCase();
 const normalizePhone = value => String(value || '').replace(/\D/g, '');
 const normalizeReferralCode = value => String(value || '').trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
+const normalizeReceiptLanguage = value => String(value || '').trim().toLowerCase() === 'en' ? 'en' : 'zh';
 const money = value => Math.round((Number(value) || 0) * 100) / 100;
 const dateValue = value => new Date(value || Date.now()).toISOString();
 const hasValue = value => value !== undefined && value !== null && value !== '';
@@ -495,6 +496,7 @@ export function createGrowthApi(storage = defaultStorage(), options = {}) {
       externalInquiryId,
       invoiceNo: input.invoiceNo || externalInquiryId,
       serviceType: input.serviceType || enquiry.serviceType,
+      packageName: input.packageName || enquiry.packageName || '',
       totalAmount,
       originalAmount: money(input.originalAmount || input.totalAmount || input.budget),
       discountAmount: money(input.discountAmount),
@@ -515,6 +517,7 @@ export function createGrowthApi(storage = defaultStorage(), options = {}) {
       adminNotes: input.adminNotes || '',
       whatsappMessage: input.whatsappMessage || '',
       sentAt: input.sentAt || null,
+      receiptLanguage: normalizeReceiptLanguage(input.receiptLanguage || input.language),
       status: input.status || 'confirmed',
       source: input.source || 'whatsapp-inquiry',
       createdAt: input.createdAt || dateValue(now()),
@@ -587,7 +590,7 @@ export function createGrowthApi(storage = defaultStorage(), options = {}) {
     if (!enquiry) return { ok: false, reason: 'enquiry_not_found' };
     const totalAmount = money(input.totalAmount);
     const depositAmount = money(input.depositAmount);
-    const order = { id: id('order'), enquiryId, memberId, externalInquiryId: input.externalInquiryId || enquiry.externalInquiryId || '', invoiceNo: input.invoiceNo || input.externalInquiryId || enquiry.invoiceNo || enquiry.externalInquiryId || '', serviceType: input.serviceType || enquiry.serviceType, totalAmount, originalAmount: money(input.originalAmount || input.totalAmount), discountAmount: money(input.discountAmount), depositAmount, balanceAmount: orderBalance(input, totalAmount, depositAmount), sstAmount: money(input.sstAmount), deliveryFee: money(input.deliveryFee), extraLabourFee: money(input.extraLabourFee), thirdPartyFee: money(input.thirdPartyFee), couponDiscount: money(input.couponDiscount), refundedAmount: 0, eventDate: input.eventDate || enquiry.eventDate || '', eventTime: input.eventTime || enquiry.eventTime || '', location: input.location || enquiry.location || '', pax: Number(input.pax) || Number(enquiry.pax) || 0, itemsSummary: input.itemsSummary || enquiry.foodChoice || '', lineItems: normalizeOrderLineItems(input.lineItems), adminNotes: input.adminNotes || '', whatsappMessage: input.whatsappMessage || '', sentAt: input.sentAt || null, status: input.status || 'confirmed', source: input.source || 'manual-order', createdAt: dateValue(now()), updatedAt: dateValue(now()), completedAt: null, manualVerifiedAt: null, manualVerifiedBy: '' };
+    const order = { id: id('order'), enquiryId, memberId, externalInquiryId: input.externalInquiryId || enquiry.externalInquiryId || '', invoiceNo: input.invoiceNo || input.externalInquiryId || enquiry.invoiceNo || enquiry.externalInquiryId || '', serviceType: input.serviceType || enquiry.serviceType, packageName: input.packageName || enquiry.packageName || '', totalAmount, originalAmount: money(input.originalAmount || input.totalAmount), discountAmount: money(input.discountAmount), depositAmount, balanceAmount: orderBalance(input, totalAmount, depositAmount), sstAmount: money(input.sstAmount), deliveryFee: money(input.deliveryFee), extraLabourFee: money(input.extraLabourFee), thirdPartyFee: money(input.thirdPartyFee), couponDiscount: money(input.couponDiscount), refundedAmount: 0, eventDate: input.eventDate || enquiry.eventDate || '', eventTime: input.eventTime || enquiry.eventTime || '', location: input.location || enquiry.location || '', pax: Number(input.pax) || Number(enquiry.pax) || 0, itemsSummary: input.itemsSummary || enquiry.foodChoice || '', lineItems: normalizeOrderLineItems(input.lineItems), adminNotes: input.adminNotes || '', whatsappMessage: input.whatsappMessage || '', sentAt: input.sentAt || null, receiptLanguage: normalizeReceiptLanguage(input.receiptLanguage || input.language), status: input.status || 'confirmed', source: input.source || 'manual-order', createdAt: dateValue(now()), updatedAt: dateValue(now()), completedAt: null, manualVerifiedAt: null, manualVerifiedBy: '' };
     const next = clone(current);
     next.orders.unshift(order);
     audit(next, 'order.created', memberId, 'order', order.id, 'MOCK order');
@@ -605,9 +608,10 @@ export function createGrowthApi(storage = defaultStorage(), options = {}) {
 
     const next = clone(current);
     const target = next.orders.find(item => item.id === orderId);
-    ['serviceType', 'source', 'invoiceNo', 'eventDate', 'eventTime', 'location', 'itemsSummary', 'whatsappMessage', 'sentAt', 'paymentStatus', 'manualVerifiedBy'].forEach(field => {
+    ['serviceType', 'source', 'invoiceNo', 'eventDate', 'eventTime', 'location', 'itemsSummary', 'whatsappMessage', 'sentAt', 'paymentStatus', 'manualVerifiedBy', 'receiptLanguage', 'packageName'].forEach(field => {
       if (input[field] !== undefined) target[field] = String(input[field] || '').trim();
     });
+    if (input.receiptLanguage !== undefined) target.receiptLanguage = normalizeReceiptLanguage(input.receiptLanguage);
     ['totalAmount', 'sstAmount', 'deliveryFee', 'extraLabourFee', 'thirdPartyFee', 'couponDiscount', 'originalAmount', 'discountAmount', 'depositAmount', 'balanceAmount', 'pax'].forEach(field => {
       if (input[field] !== undefined) target[field] = money(input[field]);
     });

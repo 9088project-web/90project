@@ -1100,9 +1100,12 @@ body.order-center-page [hidden]{display:none!important}
 @media print{
   body.order-center-page{
     background:#fff;
+    font-size:11px;
+    line-height:1.32;
   }
   @page{
-    margin:14mm;
+    size:A4;
+    margin:8mm;
   }
   .order-app,
   .order-lock,
@@ -1111,46 +1114,54 @@ body.order-center-page [hidden]{display:none!important}
   }
   .order-print{
     display:block;
-    width:100%;
+    width:194mm;
+    max-height:281mm;
+    overflow:hidden;
     color:#101828;
     font-family:Arial,"Microsoft YaHei",sans-serif;
+    font-size:11px;
+    line-height:1.32;
   }
   .order-print-paper{
-    width:100%;
+    width:194mm;
+    max-height:281mm;
+    margin:0 auto;
     padding:0;
+    overflow:hidden;
   }
   .order-print-letterhead{
     display:grid;
-    grid-template-columns:minmax(0,1fr) 210px;
-    gap:22px;
+    grid-template-columns:minmax(0,1fr) 180px;
+    gap:14px;
     align-items:start;
-    padding-bottom:18px;
-    margin-bottom:16px;
-    border-bottom:3px solid #101828;
+    padding-bottom:10px;
+    margin-bottom:8px;
+    border-bottom:2px solid #101828;
   }
   .order-print-brand{
     display:flex;
-    gap:14px;
+    gap:10px;
     align-items:flex-start;
   }
   .order-print-brand img{
-    width:58px;
-    height:58px;
+    width:46px;
+    height:46px;
     border-radius:50%;
     object-fit:cover;
   }
   .order-print-brand strong{
     display:block;
-    font-size:26px;
-    line-height:1.1;
+    font-size:21px;
+    line-height:1.05;
   }
   .order-print-brand span,
   .order-print-brand small{
     display:block;
     color:#667085;
-    font-size:11px;
+    font-size:9px;
     font-weight:700;
-    line-height:1.45;
+    line-height:1.32;
+    letter-spacing:0;
   }
   .order-print-doc{
     text-align:right;
@@ -1158,19 +1169,19 @@ body.order-center-page [hidden]{display:none!important}
   .order-print-doc span{
     display:block;
     color:#9a6a2e;
-    font-size:11px;
+    font-size:9px;
     font-weight:900;
-    letter-spacing:2px;
+    letter-spacing:0;
   }
   .order-print-doc strong{
     display:block;
-    margin-top:5px;
-    font-size:22px;
+    margin-top:3px;
+    font-size:18px;
   }
   .order-print-doc em{
     display:inline-flex;
-    margin-top:10px;
-    padding:6px 12px;
+    margin-top:6px;
+    padding:4px 9px;
     border:1px solid #9a6a2e;
     border-radius:999px;
     color:#7a4d16;
@@ -1181,8 +1192,8 @@ body.order-center-page [hidden]{display:none!important}
   .order-print-two{
     display:grid;
     grid-template-columns:repeat(4,1fr);
-    gap:8px;
-    margin-bottom:12px;
+    gap:6px;
+    margin-bottom:7px;
   }
   .order-print-meta div,
   .order-print-box,
@@ -1190,24 +1201,24 @@ body.order-center-page [hidden]{display:none!important}
   .order-print-payment,
   .order-print-terms,
   .order-print-sign div{
-    padding:10px;
+    padding:7px;
     border:1px solid #d0d5dd;
-    border-radius:8px;
+    border-radius:6px;
     background:#fff;
   }
   .order-print-meta span,
   .order-print-total span{
     display:block;
     color:#667085;
-    font-size:10px;
+    font-size:8px;
     font-weight:900;
-    letter-spacing:.3px;
+    letter-spacing:0;
     text-transform:uppercase;
   }
   .order-print-meta strong{
     display:block;
-    margin-top:4px;
-    font-size:13px;
+    margin-top:2px;
+    font-size:10.5px;
     overflow-wrap:anywhere;
   }
   .order-print-two{
@@ -1215,47 +1226,47 @@ body.order-center-page [hidden]{display:none!important}
   }
   .order-print-box h3,
   .order-print-section h3,
-  .order-print-pay-note h3,
-  .order-print-terms h3{
-    margin:0 0 8px;
-    font-size:13px;
+    .order-print-pay-note h3,
+    .order-print-terms h3{
+    margin:0 0 5px;
+    font-size:11px;
   }
   .order-print-box p,
   .order-print-pay-note p{
-    margin:3px 0;
+    margin:2px 0;
     color:#344054;
-    font-size:12px;
-    line-height:1.5;
+    font-size:10px;
+    line-height:1.32;
   }
   .order-print-box b{
     color:#101828;
-    font-size:14px;
+    font-size:12px;
   }
   .order-print-section{
-    margin-bottom:12px;
+    margin-bottom:7px;
   }
   .order-print-items{
     width:100%;
     border-collapse:collapse;
-    font-size:12px;
+    font-size:10px;
   }
   .order-print-items th{
-    padding:8px 6px;
+    padding:4px 5px;
     border-bottom:1px solid #98a2b3;
     color:#475467;
-    font-size:10px;
-    letter-spacing:.8px;
+    font-size:8px;
+    letter-spacing:0;
     text-align:left;
     text-transform:uppercase;
   }
   .order-print-items td{
-    padding:10px 6px;
+    padding:5px;
     border-bottom:1px solid #eaecf0;
     vertical-align:top;
   }
   .order-print-items td:nth-child(1),
   .order-print-items td:nth-child(3){
-    width:42px;
+    width:34px;
     text-align:center;
   }
   .order-print-items td:nth-child(4),
@@ -1269,53 +1280,60 @@ body.order-center-page [hidden]{display:none!important}
     display:block;
   }
   .order-print-items span{
-    margin-top:3px;
+    margin-top:1px;
     color:#667085;
   }
   .order-print-menu{
     display:grid;
-    grid-template-columns:repeat(2,1fr);
-    gap:8px;
+    grid-template-columns:repeat(3,1fr);
+    gap:6px;
   }
   .order-print-menu-group{
-    padding:10px;
+    padding:7px;
     border:1px solid #eaecf0;
-    border-radius:8px;
+    border-radius:6px;
     background:#f8fafc;
   }
   .order-print-menu-group strong{
     display:block;
-    margin-bottom:5px;
+    margin-bottom:3px;
     color:#7a4d16;
+    font-size:10.5px;
   }
   .order-print-menu-group ul{
     margin:0;
-    padding-left:17px;
+    padding-left:14px;
     color:#344054;
-    line-height:1.45;
+    line-height:1.25;
+  }
+  .order-print-menu-note{
+    grid-column:1/-1;
+    color:#7a4d16;
+    font-size:9px;
+    font-weight:900;
   }
   .order-print-payment{
     display:grid;
-    grid-template-columns:minmax(0,1fr) 270px;
-    gap:12px;
-    margin-bottom:12px;
+    grid-template-columns:minmax(0,1fr) 230px;
+    gap:8px;
+    margin-bottom:7px;
   }
   .order-print-total{
-    padding-left:12px;
-    border-left:4px solid #101828;
+    padding-left:8px;
+    border-left:3px solid #101828;
   }
   .order-print-total div{
     display:flex;
     justify-content:space-between;
-    gap:18px;
-    padding:5px 0;
+    gap:12px;
+    padding:3px 0;
     border-bottom:1px solid #eaecf0;
   }
   .order-print-total div:last-child{
     border-bottom:0;
   }
   .order-print-total strong{
-    font-size:18px;
+    font-size:15px;
   }
   .order-print-total .is-due strong{
     color:#b42318;
@@ -1323,35 +1341,40 @@ body.order-center-page [hidden]{display:none!important}
   .order-print-total .is-clear strong{
     color:#0f9f6e;
   }
+  .order-print-footer-grid{
+    display:grid;
+    grid-template-columns:minmax(0,1fr) 240px;
+    gap:8px;
+    align-items:stretch;
+  }
   .order-print-terms ol{
     margin:0;
-    padding-left:18px;
+    padding-left:15px;
     color:#344054;
-    font-size:11px;
-    line-height:1.5;
+    font-size:9px;
+    line-height:1.32;
   }
   .order-print-sign{
     display:grid;
     grid-template-columns:1fr 1fr;
-    gap:12px;
-    margin-top:24px;
+    gap:8px;
   }
   .order-print-sign div{
-    min-height:64px;
+    min-height:50px;
     display:flex;
     flex-direction:column;
     justify-content:flex-end;
   }
   .order-print-sign span{
     display:block;
-    padding-top:6px;
+    padding-top:4px;
     border-top:1px solid #98a2b3;
     color:#475467;
-    font-size:11px;
+    font-size:9px;
     font-weight:900;
   }
   .order-print-sign b{
-    margin-top:3px;
-    font-size:12px;
+    margin-top:2px;
+    font-size:10px;
   }
 }

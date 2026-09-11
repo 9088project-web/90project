@@ -23,6 +23,37 @@ const statusLabels = {
   cancelled: '已取消'
 };
 
+const statusLabelsEn = {
+  new: 'Unpaid',
+  confirmed: 'Unpaid',
+  deposit_paid: 'Partially Paid',
+  fully_paid: 'Paid',
+  service_completed: 'Completed',
+  cancelled: 'Cancelled'
+};
+
+const serviceTypeLabelsEn = {
+  '活动餐饮': 'Event Catering',
+  '包伙食': 'Meal Plan',
+  '场地布置': 'Styling',
+  '鸡尾酒服务': 'Canape & Cocktail',
+  '其他服务': 'Other Service'
+};
+
+const menuTitleLabelsEn = {
+  '菜单 / 备注': 'Menu / Notes',
+  '菜单': 'Menu',
+  '备注': 'Notes',
+  '主食': 'Staple',
+  '肉类': 'Meat',
+  '海鲜': 'Seafood',
+  '菜': 'Vegetables',
+  '蔬菜': 'Vegetables',
+  '饮料': 'Beverage',
+  '甜品': 'Dessert',
+  '水果': 'Fruit'
+};
+
 const statusOrder = ['new', 'deposit_paid', 'fully_paid', 'service_completed', 'cancelled'];
 const CUSTOM_OPTION_VALUE = '__order_add_new__';
 const orderSettingDefaults = {
@@ -98,7 +129,8 @@ const formFields = {
   location: document.querySelector('[data-order-field="location"]'),
   totalAmount: document.querySelector('[data-order-field="totalAmount"]'),
   paidAmount: document.querySelector('[data-order-field="paidAmount"]'),
-  status: document.querySelector('[data-order-field="status"]')
+  status: document.querySelector('[data-order-field="status"]'),
+  receiptLanguage: document.querySelector('[data-order-field="receiptLanguage"]')
 };
 
 function money(value) {
@@ -214,6 +246,35 @@ function displayStatus(order) {
   if (status === 'confirmed') return 'new';
   if (statusLabels[status]) return status;
   return 'new';
+}
+
+function receiptLanguage(value) {
+  return String(value || '').toLowerCase() === 'en' ? 'en' : 'zh';
+}
+
+function receiptLanguageLabel(value) {
+  return receiptLanguage(value) === 'en' ? 'English receipt' : '中文单据';
+}
+
+function serviceTypeLabel(value, lang = 'zh') {
+  const text = String(value || '').trim();
+  return lang === 'en' ? (serviceTypeLabelsEn[text] || text || 'Service') : (text || '服务');
+}
+
+function assigneeLabel(value, lang = 'zh') {
+  const text = String(value || '').trim();
+  if (lang === 'en' && (!text || text === '未分配')) return 'Unassigned';
+  return text || (lang === 'en' ? 'Unassigned' : '未分配');
+}
+
+function statusLabelFor(status, lang = 'zh') {
+  const labels = lang === 'en' ? statusLabelsEn : statusLabels;
+  return labels[status] || labels.new;
+}
+
+function menuTitleLabel(title, lang = 'zh') {
+  const text = String(title || '').trim();
+  return lang === 'en' ? (menuTitleLabelsEn[text] || text || 'Menu') : (text || '菜单');
 }
 
 function derivePaymentStatus(total, paid, requestedStatus) {
@@ -468,6 +529,7 @@ function mapGrowthOrders() {
       balanceAmount: balance,
       status: displayStatus(order),
       rawStatus: order.status || 'new',
+      receiptLanguage: receiptLanguage(order.receiptLanguage || member.language),
       source: 'growth',
       createdAt: order.createdAt || new Date().toISOString(),
       locked: String(order.status || '') === 'service_completed'
@@ -703,6 +765,7 @@ function renderOrderCard(order) {
           <span><i class="ri-refund-2-line" aria-hidden="true"></i>待收 ${escapeHtml(formatMoney(balance))}</span>
           ${order.location ? `<span><i class="ri-map-pin-2-line" aria-hidden="true"></i>${escapeHtml(order.location)}</span>` : ''}
           ${order.assignee ? `<span><i class="ri-user-star-line" aria-hidden="true"></i>${escapeHtml(order.assignee)}</span>` : ''}
+          <span><i class="ri-translate-2" aria-hidden="true"></i>${escapeHtml(receiptLanguageLabel(order.receiptLanguage))}</span>
         </div>
         <div class="order-card-actions">
           <button class="order-card-action" type="button" data-order-edit="${escapeHtml(order.id)}"><i class="ri-edit-line" aria-hidden="true"></i>编辑</button>
@@ -1057,6 +1120,7 @@ function openOrderSheet(orderId = '', forcedDate = '') {
   formFields.totalAmount.value = order ? money(order.totalAmount).toFixed(2) : '';
   formFields.paidAmount.value = order ? money(order.paidAmount).toFixed(2) : '0';
   formFields.status.value = order?.status || 'new';
+  formFields.receiptLanguage.value = receiptLanguage(order?.receiptLanguage);
   document.getElementById('orderSheetTitle').textContent = order && !isDemo ? '编辑订单' : '新增订单';
   setFormMessage(isDemo ? '这是示例资料，保存后会成为真实订单。' : '');
   els.sheet.hidden = false;
@@ -1089,7 +1153,8 @@ function collectFormData() {
     paidAmount: paid,
     balanceAmount: Math.max(0, money(total - paid)),
     status,
-    requestedStatus
+    requestedStatus,
+    receiptLanguage: receiptLanguage(formFields.receiptLanguage?.value)
   };
 }
 
@@ -1172,6 +1237,7 @@ async function saveOrderFromForm({ close = true } = {}) {
     balanceAmount: data.balanceAmount,
     paymentStatus,
     status: data.requestedStatus === 'service_completed' ? (paymentStatus || 'confirmed') : data.status,
+    receiptLanguage: data.receiptLanguage,
     adminNotes: `负责人：${data.assignee}`,
     source: 'order-center',
     createdAt: new Date().toISOString()
@@ -1187,6 +1253,8 @@ async function saveOrderFromForm({ close = true } = {}) {
       balanceAmount: data.balanceAmount,
       paymentStatus,
       status: data.requestedStatus === 'service_completed' ? (paymentStatus || 'confirmed') : data.status,
+      receiptLanguage: data.receiptLanguage,
+      packageName: data.title,
       eventDate: data.eventDate,
       eventTime: data.eventTime,
       location: data.location,
@@ -1218,6 +1286,27 @@ async function saveOrderFromForm({ close = true } = {}) {
 
 function buildWhatsAppMessage(order) {
   const balance = Math.max(0, money(order.totalAmount) - money(order.paidAmount));
+  const lang = receiptLanguage(order.receiptLanguage);
+  if (lang === 'en') {
+    return [
+      '90 PROJECT',
+      `Order: ${order.invoiceNo || '-'}`,
+      '',
+      `Customer: ${order.customerName || '-'}`,
+      `Service: ${order.title || serviceTypeLabel(order.serviceType, lang) || '-'}`,
+      order.eventDate ? `Date: ${order.eventDate}${order.eventTime ? ` ${order.eventTime}` : ''}` : '',
+      order.location ? `Venue: ${order.location}` : '',
+      '',
+      'Menu / Notes:',
+      order.itemsSummary || '-',
+      '',
+      `Total: ${formatMoney(order.totalAmount)}`,
+      `Paid: ${formatMoney(order.paidAmount)}`,
+      `Balance: ${formatMoney(balance)}`,
+      '',
+      'Please reply to this WhatsApp if anything needs to be adjusted.'
+    ].filter(Boolean).join('\n');
+  }
   return [
     '九零食刻 90 PROJECT',
     `订单：${order.invoiceNo || '-'}`,
@@ -1249,7 +1338,7 @@ function openWhatsApp(order) {
   window.open(`https://wa.me/${phone}?text=${encodeURIComponent(message)}`, '_blank', 'noopener');
 }
 
-function printDateTime(dateValue, timeValue = '') {
+function printDateTime(dateValue, timeValue = '', lang = 'zh') {
   if (!dateValue) return '-';
   const raw = [dateValue, timeValue].filter(Boolean).join(' ');
   const date = new Date(`${dateValue}T${timeValue || '00:00'}:00`);
@@ -1259,7 +1348,7 @@ function printDateTime(dateValue, timeValue = '') {
     String(date.getMonth() + 1).padStart(2, '0'),
     String(date.getDate()).padStart(2, '0')
   ].join('/');
-  const weekday = date.toLocaleDateString('zh-MY', { weekday: 'short' });
+  const weekday = date.toLocaleDateString(lang === 'en' ? 'en-MY' : 'zh-MY', { weekday: 'short' });
   return `${formatted} ${weekday}${timeValue ? ` ${timeValue}` : ''}`;
 }
 
@@ -1274,16 +1363,16 @@ function issuedDateTime() {
   });
 }
 
-function printPaymentStatus(order, balance) {
-  if (balance <= 0) return '已结清';
-  if (money(order.paidAmount) > 0) return '部分付款';
-  return statusLabels[displayStatus(order)] || '待确认';
+function printPaymentStatus(order, balance, lang = 'zh') {
+  if (balance <= 0) return lang === 'en' ? 'Paid in full' : '已结清';
+  if (money(order.paidAmount) > 0) return lang === 'en' ? 'Partially paid' : '部分付款';
+  return statusLabelFor(displayStatus(order), lang) || (lang === 'en' ? 'Pending' : '待确认');
 }
 
-function printItems(order) {
+function printItems(order, lang = 'zh') {
   const sourceItems = Array.isArray(order.lineItems) ? order.lineItems : [];
   const items = sourceItems.length ? sourceItems : [{
-    description: order.title || order.serviceType || '90 PROJECT 服务',
+    description: order.title || serviceTypeLabel(order.serviceType, lang) || (lang === 'en' ? '90 PROJECT service' : '90 PROJECT 服务'),
     qty: 1,
     unitPrice: order.totalAmount,
     amount: order.totalAmount
@@ -1293,7 +1382,7 @@ function printItems(order) {
     const unitPrice = money(item.unitPrice ?? item.amount ?? order.totalAmount);
     const computedAmount = money(qty * unitPrice);
     return {
-      description: item.description || order.title || order.serviceType || '90 PROJECT 服务',
+      description: item.description || order.title || serviceTypeLabel(order.serviceType, lang) || (lang === 'en' ? '90 PROJECT service' : '90 PROJECT 服务'),
       qty,
       unitPrice,
       amount: money(item.amount ?? (computedAmount || order.totalAmount))
@@ -1301,13 +1390,13 @@ function printItems(order) {
   });
 }
 
-function printItemRows(order) {
-  return printItems(order).map((item, index) => `
+function printItemRows(order, lang = 'zh') {
+  return printItems(order, lang).map((item, index) => `
     <tr>
       <td>${index + 1}</td>
       <td>
         <strong>${escapeHtml(item.description)}</strong>
-        <span>${escapeHtml(order.serviceType || '活动餐饮')}</span>
+        <span>${escapeHtml(serviceTypeLabel(order.serviceType, lang))}</span>
       </td>
       <td>${escapeHtml(String(item.qty))}</td>
       <td>${escapeHtml(formatMoney(item.unitPrice))}</td>
@@ -1343,155 +1432,269 @@ function menuSections(summary) {
   return [{ title: '菜单 / 备注', items: lines.length ? lines : ['-'] }];
 }
 
-function printMenuHtml(summary) {
-  return menuSections(summary).map(section => `
+function printMenuHtml(summary, lang = 'zh') {
+  const maxSections = 6;
+  const maxItems = 28;
+  let usedItems = 0;
+  let hiddenItems = 0;
+  const visibleSections = [];
+
+  menuSections(summary).forEach(section => {
+    const items = Array.isArray(section.items) && section.items.length ? section.items : ['-'];
+    const room = maxItems - usedItems;
+    if (visibleSections.length >= maxSections || room <= 0) {
+      hiddenItems += items.length;
+      return;
+    }
+    const visibleItems = items.slice(0, room);
+    hiddenItems += Math.max(0, items.length - visibleItems.length);
+    usedItems += visibleItems.length;
+    visibleSections.push({ ...section, items: visibleItems });
+  });
+
+  const note = hiddenItems > 0
+    ? `<div class="order-print-menu-note">${
+        lang === 'en'
+          ? `${hiddenItems} more menu / note item(s) should follow the final WhatsApp confirmation.`
+          : `另有 ${hiddenItems} 项菜单 / 备注请以 WhatsApp 确认为准。`
+      }</div>`
+    : '';
+
+  return `${visibleSections.map(section => `
     <div class="order-print-menu-group">
-      <strong>${escapeHtml(section.title)}</strong>
+      <strong>${escapeHtml(menuTitleLabel(section.title, lang))}</strong>
       <ul>
         ${section.items.map(item => `<li>${escapeHtml(item)}</li>`).join('')}
       </ul>
     </div>
-  `).join('');
+  `).join('')}${note}`;
 }
 
 function renderPrint(order) {
   if (!els.print || !order) return;
   const balance = Math.max(0, money(order.totalAmount) - money(order.paidAmount));
-  const status = printPaymentStatus(order, balance);
+  const lang = receiptLanguage(order.receiptLanguage);
+  const status = printPaymentStatus(order, balance, lang);
+  const t = lang === 'en'
+    ? {
+      htmlLang: 'en',
+      brandLine: 'Catering · Meal Plan · Event Service',
+      docEyebrow: 'ORDER CONFIRMATION',
+      docTitle: 'Order Confirmation',
+      invoiceNo: 'Invoice No.',
+      issuedAt: 'Issued At',
+      assignee: 'PIC',
+      paymentStatus: 'Payment Status',
+      customerDetails: 'Customer Details',
+      phone: 'Phone / WhatsApp',
+      source: 'Source',
+      sampleOrder: 'Sample Order',
+      orderCenter: 'Order Center',
+      eventDetails: 'Event Details',
+      dateTime: 'Date & Time',
+      venue: 'Venue',
+      pendingVenue: 'To be confirmed',
+      itemDetails: 'Item Details',
+      itemNo: '#',
+      item: 'Item',
+      qty: 'Qty',
+      unitPrice: 'Unit Price',
+      amount: 'Amount',
+      menuNotes: 'Menu / Service Notes',
+      paymentNotes: 'Payment Notes',
+      paymentLine1: 'Payment method follows the details confirmed by WhatsApp.',
+      paymentLine2: 'Deposit confirms the order. Balance should be settled before delivery or before service completion.',
+      total: 'Total',
+      paid: 'Paid',
+      balance: 'Balance',
+      termsTitle: 'Confirmation Notes',
+      terms: [
+        'This document is prepared based on the current pax, menu and service details.',
+        'Final pricing depends on location, portion, transport, tableware and on-site service.',
+        'Any menu or timing changes should be confirmed by WhatsApp to avoid omissions.'
+      ],
+      customerSign: 'Customer Confirmation',
+      companySign: '90 PROJECT Confirmation'
+    }
+    : {
+      htmlLang: 'zh-Hans',
+      brandLine: 'Catering · Meal Plan · Event Service',
+      docEyebrow: 'ORDER CONFIRMATION',
+      docTitle: '订单确认单',
+      invoiceNo: '单据编号',
+      issuedAt: '开单时间',
+      assignee: '负责人',
+      paymentStatus: '付款状态',
+      customerDetails: '顾客资料',
+      phone: '电话 / WhatsApp',
+      source: '订单来源',
+      sampleOrder: '样品订单',
+      orderCenter: '订单经营中心',
+      eventDetails: '活动资料',
+      dateTime: '日期时间',
+      venue: '地点',
+      pendingVenue: '待确认',
+      itemDetails: '项目明细',
+      itemNo: '#',
+      item: '项目',
+      qty: '数量',
+      unitPrice: '单价',
+      amount: '金额',
+      menuNotes: '菜单内容 / 服务备注',
+      paymentNotes: '付款说明',
+      paymentLine1: '付款方式：按 WhatsApp 确认的付款资料处理。',
+      paymentLine2: '订金确认订单；余额请在送餐前或现场服务完成前确认。',
+      total: '应收总额',
+      paid: '已收款',
+      balance: '余额',
+      termsTitle: '确认事项',
+      terms: [
+        '此单据按目前人数、菜单和服务资料制作。',
+        '最终报价会按地点、份量、运输、餐具和现场服务确认。',
+        '菜单或时间如需调整，请通过 WhatsApp 确认，避免遗漏。'
+      ],
+      customerSign: '顾客确认',
+      companySign: '90 PROJECT 确认'
+    };
   els.print.innerHTML = `
-    <article class="order-print-paper">
+    <article class="order-print-paper" lang="${escapeHtml(t.htmlLang)}">
       <header class="order-print-letterhead">
         <div class="order-print-brand">
           <img src="${LOGO_PATH}" alt="90 PROJECT logo" />
           <div>
             <strong>九零食刻 90 PROJECT</strong>
-            <span>Catering · Meal Plan · Event Service</span>
+            <span>${escapeHtml(t.brandLine)}</span>
             <small>WhatsApp ${BUSINESS_PHONE_DISPLAY} · ${BUSINESS_EMAIL} · ${BUSINESS_WEBSITE}</small>
           </div>
         </div>
         <div class="order-print-doc">
-          <span>ORDER CONFIRMATION</span>
-          <strong>订单确认单</strong>
+          <span>${escapeHtml(t.docEyebrow)}</span>
+          <strong>${escapeHtml(t.docTitle)}</strong>
           <em>${escapeHtml(status)}</em>
         </div>
       </header>
 
       <section class="order-print-meta">
-        <div><span>单据编号</span><strong>${escapeHtml(order.invoiceNo || '-')}</strong></div>
-        <div><span>开单时间</span><strong>${escapeHtml(issuedDateTime())}</strong></div>
-        <div><span>负责人</span><strong>${escapeHtml(order.assignee || '未分配')}</strong></div>
-        <div><span>付款状态</span><strong>${escapeHtml(status)}</strong></div>
+        <div><span>${escapeHtml(t.invoiceNo)}</span><strong>${escapeHtml(order.invoiceNo || '-')}</strong></div>
+        <div><span>${escapeHtml(t.issuedAt)}</span><strong>${escapeHtml(issuedDateTime())}</strong></div>
+        <div><span>${escapeHtml(t.assignee)}</span><strong>${escapeHtml(assigneeLabel(order.assignee, lang))}</strong></div>
+        <div><span>${escapeHtml(t.paymentStatus)}</span><strong>${escapeHtml(status)}</strong></div>
       </section>
 
       <section class="order-print-two">
         <div class="order-print-box">
-          <h3>顾客资料</h3>
+          <h3>${escapeHtml(t.customerDetails)}</h3>
           <p><b>${escapeHtml(order.customerName || '-')}</b></p>
-          <p>电话 / WhatsApp：${escapeHtml(order.phone || '-')}</p>
-          <p>订单来源：${escapeHtml(order.source === 'demo' ? '样品订单' : '订单经营中心')}</p>
+          <p>${escapeHtml(t.phone)}: ${escapeHtml(order.phone || '-')}</p>
+          <p>${escapeHtml(t.source)}: ${escapeHtml(order.source === 'demo' ? t.sampleOrder : t.orderCenter)}</p>
         </div>
         <div class="order-print-box">
-          <h3>活动资料</h3>
-          <p><b>${escapeHtml(order.title || order.serviceType || '-')}</b></p>
-          <p>日期时间：${escapeHtml(printDateTime(order.eventDate, order.eventTime))}</p>
-          <p>地点：${escapeHtml(order.location || '待确认')}</p>
+          <h3>${escapeHtml(t.eventDetails)}</h3>
+          <p><b>${escapeHtml(order.title || serviceTypeLabel(order.serviceType, lang) || '-')}</b></p>
+          <p>${escapeHtml(t.dateTime)}: ${escapeHtml(printDateTime(order.eventDate, order.eventTime, lang))}</p>
+          <p>${escapeHtml(t.venue)}: ${escapeHtml(order.location || t.pendingVenue)}</p>
         </div>
       </section>
 
       <section class="order-print-section">
-        <h3>项目明细</h3>
+        <h3>${escapeHtml(t.itemDetails)}</h3>
         <table class="order-print-items">
-          <thead><tr><th>#</th><th>项目</th><th>数量</th><th>单价</th><th>金额</th></tr></thead>
-          <tbody>${printItemRows(order)}</tbody>
+          <thead><tr><th>${escapeHtml(t.itemNo)}</th><th>${escapeHtml(t.item)}</th><th>${escapeHtml(t.qty)}</th><th>${escapeHtml(t.unitPrice)}</th><th>${escapeHtml(t.amount)}</th></tr></thead>
+          <tbody>${printItemRows(order, lang)}</tbody>
         </table>
       </section>
 
       <section class="order-print-section">
-        <h3>菜单内容 / 服务备注</h3>
-        <div class="order-print-menu">${printMenuHtml(order.itemsSummary)}</div>
+        <h3>${escapeHtml(t.menuNotes)}</h3>
+        <div class="order-print-menu">${printMenuHtml(order.itemsSummary, lang)}</div>
       </section>
 
       <section class="order-print-payment">
         <div class="order-print-pay-note">
-          <h3>付款说明</h3>
-          <p>付款方式：按 WhatsApp 确认的付款资料处理。</p>
-          <p>订金确认订单；余额请在送餐前或现场服务完成前确认。</p>
+          <h3>${escapeHtml(t.paymentNotes)}</h3>
+          <p>${escapeHtml(t.paymentLine1)}</p>
+          <p>${escapeHtml(t.paymentLine2)}</p>
         </div>
         <div class="order-print-total">
-          <div><span>应收总额</span><strong>${escapeHtml(formatMoney(order.totalAmount))}</strong></div>
-          <div><span>已收款</span><strong>${escapeHtml(formatMoney(order.paidAmount))}</strong></div>
-          <div class="${balance > 0 ? 'is-due' : 'is-clear'}"><span>余额</span><strong>${escapeHtml(formatMoney(balance))}</strong></div>
+          <div><span>${escapeHtml(t.total)}</span><strong>${escapeHtml(formatMoney(order.totalAmount))}</strong></div>
+          <div><span>${escapeHtml(t.paid)}</span><strong>${escapeHtml(formatMoney(order.paidAmount))}</strong></div>
+          <div class="${balance > 0 ? 'is-due' : 'is-clear'}"><span>${escapeHtml(t.balance)}</span><strong>${escapeHtml(formatMoney(balance))}</strong></div>
         </div>
       </section>
 
-      <section class="order-print-terms">
-        <h3>确认事项</h3>
-        <ol>
-          <li>此单据按目前人数、菜单和服务资料制作。</li>
-          <li>最终报价会按地点、份量、运输、餐具和现场服务确认。</li>
-          <li>菜单或时间如需调整，请通过 WhatsApp 确认，避免遗漏。</li>
-        </ol>
-      </section>
+      <section class="order-print-footer-grid">
+        <section class="order-print-terms">
+          <h3>${escapeHtml(t.termsTitle)}</h3>
+          <ol>
+            ${t.terms.map(term => `<li>${escapeHtml(term)}</li>`).join('')}
+          </ol>
+        </section>
 
-      <footer class="order-print-sign">
-        <div><span>顾客确认</span></div>
-        <div><span>90 PROJECT 确认</span><b>${escapeHtml(order.assignee || '')}</b></div>
-      </footer>
+        <footer class="order-print-sign">
+          <div><span>${escapeHtml(t.customerSign)}</span></div>
+          <div><span>${escapeHtml(t.companySign)}</span><b>${escapeHtml(assigneeLabel(order.assignee, lang))}</b></div>
+        </footer>
+      </section>
     </article>
   `;
 }
 
 function buildPrintDocument() {
+  const lang = els.print?.querySelector('.order-print-paper')?.getAttribute('lang') || 'zh-Hans';
   return `<!doctype html>
-<html lang="zh-Hans">
+<html lang="${escapeHtml(lang)}">
 <head>
   <meta charset="utf-8">
   <title>90 PROJECT 订单</title>
   <style>
     *{box-sizing:border-box}
-    body{margin:0;background:#fff;color:#101828;font-family:Arial,"Microsoft YaHei",sans-serif}
-    .order-print-paper{width:100%;max-width:780px;margin:0 auto;padding:26px}
-    .order-print-letterhead{display:grid;grid-template-columns:minmax(0,1fr) 210px;gap:22px;align-items:start;border-bottom:3px solid #101828;padding-bottom:18px;margin-bottom:16px}
-    .order-print-brand{display:flex;gap:14px;align-items:flex-start}
-    .order-print-brand img{width:58px;height:58px;border-radius:50%;object-fit:cover}
-    .order-print-brand strong{display:block;font-size:26px;line-height:1.1}
-    .order-print-brand span,.order-print-brand small{display:block;color:#667085;font-size:11px;font-weight:700;line-height:1.45}
+    @page{size:A4;margin:8mm}
+    html,body{width:210mm;min-height:297mm}
+    body{margin:0;background:#fff;color:#101828;font-family:Arial,"Microsoft YaHei",sans-serif;font-size:11px;line-height:1.32}
+    .order-print-paper{width:194mm;max-height:281mm;margin:0 auto;padding:0;overflow:hidden}
+    .order-print-letterhead{display:grid;grid-template-columns:minmax(0,1fr) 180px;gap:14px;align-items:start;border-bottom:2px solid #101828;padding-bottom:10px;margin-bottom:8px}
+    .order-print-brand{display:flex;gap:10px;align-items:flex-start}
+    .order-print-brand img{width:46px;height:46px;border-radius:50%;object-fit:cover}
+    .order-print-brand strong{display:block;font-size:21px;line-height:1.05}
+    .order-print-brand span,.order-print-brand small{display:block;color:#667085;font-size:9px;font-weight:700;line-height:1.32;letter-spacing:0}
     .order-print-doc{text-align:right}
-    .order-print-doc span{display:block;color:#9a6a2e;font-size:11px;font-weight:900;letter-spacing:2px}
-    .order-print-doc strong{display:block;margin-top:5px;font-size:22px}
-    .order-print-doc em{display:inline-flex;margin-top:10px;border:1px solid #9a6a2e;border-radius:999px;padding:6px 12px;color:#7a4d16;font-style:normal;font-weight:900}
-    .order-print-meta,.order-print-two{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:12px}
-    .order-print-meta div,.order-print-box,.order-print-section,.order-print-payment,.order-print-terms,.order-print-sign div{border:1px solid #d0d5dd;border-radius:8px;background:#fff;padding:10px}
-    .order-print-meta span,.order-print-total span{display:block;color:#667085;font-size:10px;font-weight:900;letter-spacing:.3px;text-transform:uppercase}
-    .order-print-meta strong{display:block;margin-top:4px;font-size:13px;overflow-wrap:anywhere}
+    .order-print-doc span{display:block;color:#9a6a2e;font-size:9px;font-weight:900;letter-spacing:0}
+    .order-print-doc strong{display:block;margin-top:3px;font-size:18px}
+    .order-print-doc em{display:inline-flex;margin-top:6px;border:1px solid #9a6a2e;border-radius:999px;padding:4px 9px;color:#7a4d16;font-style:normal;font-weight:900}
+    .order-print-meta,.order-print-two{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:7px}
+    .order-print-meta div,.order-print-box,.order-print-section,.order-print-payment,.order-print-terms,.order-print-sign div{border:1px solid #d0d5dd;border-radius:6px;background:#fff;padding:7px}
+    .order-print-meta span,.order-print-total span{display:block;color:#667085;font-size:8px;font-weight:900;letter-spacing:0;text-transform:uppercase}
+    .order-print-meta strong{display:block;margin-top:2px;font-size:10.5px;overflow-wrap:anywhere}
     .order-print-two{grid-template-columns:1fr 1fr}
-    .order-print-box h3,.order-print-section h3,.order-print-pay-note h3,.order-print-terms h3{margin:0 0 8px;font-size:13px}
-    .order-print-box p,.order-print-pay-note p{margin:3px 0;color:#344054;font-size:12px;line-height:1.5}
-    .order-print-box b{color:#101828;font-size:14px}
-    .order-print-section{margin-bottom:12px}
-    .order-print-items{width:100%;border-collapse:collapse;font-size:12px}
-    .order-print-items th{text-align:left;border-bottom:1px solid #98a2b3;padding:8px 6px;color:#475467;font-size:10px;letter-spacing:.8px;text-transform:uppercase}
-    .order-print-items td{border-bottom:1px solid #eaecf0;padding:10px 6px;vertical-align:top}
-    .order-print-items td:nth-child(1),.order-print-items td:nth-child(3){width:42px;text-align:center}
+    .order-print-box h3,.order-print-section h3,.order-print-pay-note h3,.order-print-terms h3{margin:0 0 5px;font-size:11px}
+    .order-print-box p,.order-print-pay-note p{margin:2px 0;color:#344054;font-size:10px;line-height:1.32}
+    .order-print-box b{color:#101828;font-size:12px}
+    .order-print-section{margin-bottom:7px}
+    .order-print-items{width:100%;border-collapse:collapse;font-size:10px}
+    .order-print-items th{text-align:left;border-bottom:1px solid #98a2b3;padding:4px 5px;color:#475467;font-size:8px;letter-spacing:0;text-transform:uppercase}
+    .order-print-items td{border-bottom:1px solid #eaecf0;padding:5px;vertical-align:top}
+    .order-print-items td:nth-child(1),.order-print-items td:nth-child(3){width:34px;text-align:center}
     .order-print-items td:nth-child(4),.order-print-items td:nth-child(5),.order-print-items th:nth-child(4),.order-print-items th:nth-child(5){text-align:right}
     .order-print-items strong{display:block}
-    .order-print-items span{display:block;color:#667085;margin-top:3px}
-    .order-print-menu{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
-    .order-print-menu-group{border:1px solid #eaecf0;border-radius:8px;background:#f8fafc;padding:10px}
-    .order-print-menu-group strong{display:block;margin-bottom:5px;color:#7a4d16}
-    .order-print-menu-group ul{margin:0;padding-left:17px;color:#344054;line-height:1.45}
-    .order-print-payment{display:grid;grid-template-columns:minmax(0,1fr) 270px;gap:12px;margin-bottom:12px}
-    .order-print-total{border-left:4px solid #101828;padding-left:12px}
-    .order-print-total div{display:flex;justify-content:space-between;gap:18px;padding:5px 0;border-bottom:1px solid #eaecf0}
+    .order-print-items span{display:block;color:#667085;margin-top:1px}
+    .order-print-menu{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+    .order-print-menu-group{border:1px solid #eaecf0;border-radius:6px;background:#f8fafc;padding:7px}
+    .order-print-menu-group strong{display:block;margin-bottom:3px;color:#7a4d16;font-size:10.5px}
+    .order-print-menu-group ul{margin:0;padding-left:14px;color:#344054;line-height:1.25}
+    .order-print-menu-note{grid-column:1/-1;color:#7a4d16;font-size:9px;font-weight:900}
+    .order-print-payment{display:grid;grid-template-columns:minmax(0,1fr) 230px;gap:8px;margin-bottom:7px}
+    .order-print-total{border-left:3px solid #101828;padding-left:8px}
+    .order-print-total div{display:flex;justify-content:space-between;gap:12px;padding:3px 0;border-bottom:1px solid #eaecf0}
     .order-print-total div:last-child{border-bottom:0}
-    .order-print-total strong{font-size:18px}
+    .order-print-total strong{font-size:15px}
     .order-print-total .is-due strong{color:#b42318}
     .order-print-total .is-clear strong{color:#0f9f6e}
-    .order-print-terms ol{margin:0;padding-left:18px;color:#344054;font-size:11px;line-height:1.5}
-    .order-print-sign{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:24px}
-    .order-print-sign div{min-height:64px;display:flex;flex-direction:column;justify-content:flex-end}
-    .order-print-sign span{display:block;border-top:1px solid #98a2b3;padding-top:6px;color:#475467;font-size:11px;font-weight:900}
-    .order-print-sign b{margin-top:3px;font-size:12px}
+    .order-print-footer-grid{display:grid;grid-template-columns:minmax(0,1fr) 240px;gap:8px;align-items:stretch}
+    .order-print-terms ol{margin:0;padding-left:15px;color:#344054;font-size:9px;line-height:1.32}
+    .order-print-sign{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+    .order-print-sign div{min-height:50px;display:flex;flex-direction:column;justify-content:flex-end}
+    .order-print-sign span{display:block;border-top:1px solid #98a2b3;padding-top:4px;color:#475467;font-size:9px;font-weight:900}
+    .order-print-sign b{margin-top:2px;font-size:10px}
   </style>
 </head>
 <body>${els.print?.innerHTML || ''}</body>
