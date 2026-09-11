@@ -470,7 +470,7 @@ const esc = value => String(value ?? '').replace(/[&<>'"]/g, char => ({ '&': '&a
 const formatMoney = value => `RM${money(value).toFixed(2)}`;
 const eligibleAmountForAdmin = order => money(Math.max(0, Number(order?.totalAmount || 0) - Number(order?.sstAmount || 0) - Number(order?.deliveryFee || 0) - Number(order?.extraLabourFee || 0) - Number(order?.thirdPartyFee || 0) - Number(order?.couponDiscount || 0)));
 const currentMember = () => api.currentMember();
-const adminEditableOrderStatuses = ['new', 'confirmed', 'deposit_paid', 'fully_paid', 'cancelled'];
+const adminEditableOrderStatuses = ['new', 'confirmed', 'deposit_paid', 'cancelled'];
 const page = document.body?.dataset.growthPage || (document.querySelector('[data-growth-admin]') ? 'admin' : '');
 let cloudReady = false;
 let memberPageBound = false;
@@ -1484,21 +1484,6 @@ function adminWhatsAppUrl(phone, message) {
   return normalized ? `https://wa.me/${normalized}?text=${encodeURIComponent(message || '')}` : '';
 }
 
-function adminOrderBalanceAmount(order = {}) {
-  const total = money(order.totalAmount);
-  const deposit = money(order.depositAmount);
-  const status = String(order.status || '');
-  const paymentStatus = String(order.paymentStatus || '');
-  const hasExplicitBalance = order.balanceAmount !== undefined && order.balanceAmount !== null && order.balanceAmount !== '';
-  const explicitBalance = hasExplicitBalance ? money(order.balanceAmount) : null;
-  const closedStatus = ['service_completed', 'fully_paid', 'cancelled', 'refunded', 'partially_refunded'].includes(status);
-  if (status === 'fully_paid' || paymentStatus === 'fully_paid') return explicitBalance && explicitBalance > 0 ? explicitBalance : 0;
-  if (!hasExplicitBalance || (explicitBalance === 0 && total > 0 && deposit < total && !closedStatus)) {
-    return money(Math.max(0, total - deposit));
-  }
-  return money(explicitBalance || 0);
-}
-
 async function copyText(value) {
   if (navigator.clipboard?.writeText) {
     try {
@@ -1526,7 +1511,7 @@ function findAdminOrderWhatsApp(orderId) {
   if (!order) return null;
   const member = snapshot.members.find(item => item.id === order.memberId);
   const relation = snapshot.relations.find(item => item.memberId === order.memberId);
-  const balanceAmount = adminOrderBalanceAmount(order);
+  const balanceAmount = money(order.balanceAmount ?? Math.max(0, Number(order.totalAmount || 0) - Number(order.depositAmount || 0)));
   const lines = [
     '九零食刻 90 PROJECT',
     '',
@@ -1564,16 +1549,16 @@ function adminOrderDisplayStatus(status) {
 }
 
 function adminOrderStatusClass(status) {
-  if (status === 'service_completed') return 'is-good';
+  if (['service_completed', 'fully_paid'].includes(status)) return 'is-good';
   if (['cancelled', 'refunded', 'partially_refunded'].includes(status)) return 'is-bad';
-  if (['deposit_paid', 'fully_paid'].includes(status)) return 'is-paid';
+  if (status === 'deposit_paid') return 'is-paid';
   return 'is-waiting';
 }
 
 function adminOrderPaymentSummary(order) {
   const total = money(order.totalAmount);
   const deposit = money(order.depositAmount);
-  const balance = adminOrderBalanceAmount(order);
+  const balance = money(order.balanceAmount ?? Math.max(0, total - deposit));
   if (!total) return { label: '未填写金额', className: 'is-waiting', balance };
   if (balance <= 0) return { label: '已结清', className: 'is-good', balance };
   if (deposit > 0) return { label: `已收 ${formatMoney(deposit)}`, className: 'is-paid', balance };
@@ -1584,7 +1569,7 @@ function adminOrderNextStep(order) {
   const status = String(order.status || '');
   const total = money(order.totalAmount);
   const deposit = money(order.depositAmount);
-  const balance = adminOrderBalanceAmount(order);
+  const balance = money(order.balanceAmount ?? Math.max(0, total - deposit));
   if (['cancelled', 'refunded', 'partially_refunded'].includes(status)) return '这张订单已经结束，保留记录即可。';
   if (status === 'service_completed' || order.completedAt) {
     return balance > 0 ? `服务已完成，还需跟进余款 ${formatMoney(balance)}。` : '服务已完成，可以查看推荐佣金和会员记录。';
@@ -1600,10 +1585,9 @@ function adminOrderQuickActionButtons(order) {
   const status = String(order.status || '');
   const total = money(order.totalAmount);
   const deposit = money(order.depositAmount);
-  const balance = adminOrderBalanceAmount(order);
+  const balance = money(order.balanceAmount ?? Math.max(0, total - deposit));
   const isClosed = ['cancelled', 'refunded', 'partially_refunded'].includes(status);
   const isCompleted = status === 'service_completed' || Boolean(order.completedAt);
-  const canComplete = ['confirmed', 'deposit_paid', 'fully_paid'].includes(status) && total > 0;
   const buttons = [];
   if (status === 'new') {
     buttons.push(`<button class="admin-order-action-btn" type="button" data-admin-order-quick-action="confirm" data-order-id="${esc(order.id)}">确认订单</button>`);
@@ -1614,7 +1598,7 @@ function adminOrderQuickActionButtons(order) {
   if (!isClosed && !isCompleted && total > 0 && balance > 0) {
     buttons.push(`<button class="admin-order-action-btn" type="button" data-admin-order-quick-action="paid" data-order-id="${esc(order.id)}">结清余额</button>`);
   }
-  if (!isClosed && !isCompleted && canComplete) {
+  if (!isClosed && !isCompleted) {
     buttons.push(`<button class="admin-order-action-btn is-primary" type="button" data-admin-order-quick-action="complete" data-order-id="${esc(order.id)}">人工确认完成计佣</button>`);
   }
   return buttons.join('');
@@ -1635,7 +1619,7 @@ async function applyAdminOrderQuickAction(orderId, action) {
   }
   const total = money(order.totalAmount);
   const deposit = money(order.depositAmount);
-  const balance = adminOrderBalanceAmount(order);
+  const balance = money(order.balanceAmount ?? Math.max(0, total - deposit));
   let payload = null;
   let result = null;
   if (action === 'confirm') {
@@ -1655,7 +1639,7 @@ async function applyAdminOrderQuickAction(orderId, action) {
     }
     const nextDeposit = money(Math.min(total, deposit + received));
     payload = {
-      status: nextDeposit >= total ? 'fully_paid' : 'deposit_paid',
+      status: order.status === 'new' ? 'confirmed' : order.status,
       paymentStatus: nextDeposit >= total ? 'fully_paid' : 'deposit_paid',
       depositAmount: nextDeposit,
       balanceAmount: Math.max(0, money(total - nextDeposit)),
@@ -1664,7 +1648,7 @@ async function applyAdminOrderQuickAction(orderId, action) {
     result = api.updateOrder(orderId, payload, 'admin-order-center');
   } else if (action === 'paid') {
     payload = {
-      status: 'fully_paid',
+      status: order.status === 'new' ? 'confirmed' : order.status,
       paymentStatus: 'fully_paid',
       depositAmount: total,
       balanceAmount: 0,
@@ -1716,7 +1700,6 @@ function orderStatusOptions(status) {
     new: '新订单',
     confirmed: '已确认',
     deposit_paid: '已付订金',
-    fully_paid: '已结清',
     cancelled: '已取消'
   };
   return adminEditableOrderStatuses.map(value => `<option value="${value}" ${value === status ? 'selected' : ''}>${labels[value]}</option>`).join('');
@@ -1732,66 +1715,6 @@ function collectAdminOrderInput(orderId) {
     totalAmount: Number(value('totalAmount')) || 0,
     adminNotes: value('adminNotes')
   };
-}
-
-function renderAdminOrderSyncPill() {
-  const pill = document.querySelector('[data-admin-order-sync-status]');
-  if (!pill) return;
-  pill.classList.remove('is-good', 'is-bad');
-  if (cloudOrderLeadSync.loading) {
-    pill.textContent = '同步线上订单中';
-  } else if (cloudOrderLeadSync.error) {
-    pill.textContent = '云端暂未连接';
-    pill.classList.add('is-bad');
-  } else {
-    pill.textContent = `${Number(cloudOrderLeadSync.count || 0)} 条线上线索`;
-    pill.classList.add('is-good');
-  }
-}
-
-function renderAdminOrderCard(item, member, relation) {
-  const canComplete = ['confirmed', 'deposit_paid', 'fully_paid'].includes(item.status);
-  const locked = !adminEditableOrderStatuses.includes(item.status);
-  const invoiceNo = item.invoiceNo || item.externalInquiryId || item.id;
-  const eventLine = [item.eventDate ? adminHistoryDate(item.eventDate) : '', item.eventTime].filter(Boolean).join(' · ');
-  const balanceAmount = adminOrderBalanceAmount(item);
-  const payment = adminOrderPaymentSummary(item);
-  const quickActions = adminOrderQuickActionButtons(item);
-  const whatsappActions = `<button class="growth-button secondary" data-copy-order-whatsapp="${esc(item.id)}">复制跟进</button>${member?.phone ? `<button class="growth-button secondary" data-open-order-whatsapp="${esc(item.id)}">WhatsApp</button>` : ''}`;
-  const sourceLine = item.externalInquiryId || item.source || 'manual-order';
-  const eventMeta = [eventLine || '-', Number(item.pax || 0) ? `${Number(item.pax)} pax` : '-'].filter(Boolean).join(' / ');
-  const menuText = item.itemsSummary || item.whatsappMessage || '暂时没有菜单备注。';
-  return `<article class="admin-order-card" data-admin-order-row="${esc(item.id)}">
-    <div class="admin-order-card-head">
-      <div>
-        <span>${esc(sourceLine)}</span>
-        <h4>${esc(invoiceNo)}</h4>
-        <p>${esc(member?.name || item.memberId)} · ${esc(member?.phone || '-')}</p>
-      </div>
-      <mark class="${adminOrderStatusClass(item.status)}">${adminOrderDisplayStatus(item.status)}</mark>
-    </div>
-    <div class="admin-order-card-meta">
-      <div><span>服务</span><strong>${esc(item.serviceType || '-')}</strong></div>
-      <div><span>日期 / 人数</span><strong>${esc(eventMeta)}</strong></div>
-      <div><span>地点</span><strong>${esc(item.location || '-')}</strong></div>
-      <div><span>总额</span><strong>${formatMoney(item.totalAmount || 0)}</strong></div>
-      <div><span>已收</span><strong>${formatMoney(item.depositAmount || 0)}</strong></div>
-      <div><span>余额</span><strong>${formatMoney(balanceAmount)}</strong></div>
-    </div>
-    <p class="admin-order-card-items">${esc(menuText)}</p>
-    <div class="admin-order-card-followup">
-      <div><span>收款状态</span><strong class="${payment.className}">${esc(payment.label)}</strong></div>
-      <p>${esc(adminOrderNextStep(item))}${relation?.referralCode ? `<br><small>推荐码 ${esc(relation.referralCode)}</small>` : ''}</p>
-    </div>
-    <div class="admin-order-card-edit-grid">
-      <label class="growth-inline-field">服务<input data-order-field="serviceType" value="${esc(item.serviceType || '')}" ${locked ? 'disabled' : ''}></label>
-      <label class="growth-inline-field">状态<select data-order-field="status" ${locked ? 'disabled' : ''}>${orderStatusOptions(item.status)}</select></label>
-      <label class="growth-inline-field">金额 RM<input data-order-field="totalAmount" type="number" min="0" step="0.01" value="${Number(item.totalAmount || 0).toFixed(2)}" ${locked ? 'disabled' : ''}></label>
-      <label class="growth-inline-field admin-order-card-note">备注<textarea data-order-field="adminNotes" rows="2" ${locked ? 'disabled' : ''}>${esc(item.adminNotes || '')}</textarea></label>
-    </div>
-    <div class="admin-order-progress-actions">${quickActions || '<span class="growth-muted">这张订单暂时没有下一步操作。</span>'}</div>
-    <div class="admin-order-card-actions">${whatsappActions}${locked ? '<span class="growth-muted">已锁定</span>' : `<button class="growth-button secondary" data-save-order="${esc(item.id)}">保存订单</button>`}</div>
-  </article>`;
 }
 
 async function syncOrderUpdateToCloud(order, input = {}) {
@@ -1814,7 +1737,7 @@ async function syncOrderUpdateToCloud(order, input = {}) {
     deliveryFee: input.deliveryFee ?? order.deliveryFee ?? 0,
     extraLabourFee: input.extraLabourFee ?? order.extraLabourFee ?? 0,
     depositAmount: input.depositAmount ?? order.depositAmount ?? 0,
-    balanceAmount: input.balanceAmount ?? adminOrderBalanceAmount(order),
+    balanceAmount: input.balanceAmount ?? order.balanceAmount ?? 0,
     paymentStatus: input.paymentStatus ?? order.paymentStatus ?? '',
     whatsappMessage: input.whatsappMessage ?? order.whatsappMessage ?? ''
   }, token);
@@ -1917,18 +1840,14 @@ function renderAdmin() {
   snapshot.relations.forEach(relation => {
     if (relation.promoterId && relation.referralCode) codeByPromoterId.set(relation.promoterId, relation.referralCode);
   });
-  const activeOrders = snapshot.orders.filter(item => ['new', 'confirmed', 'deposit_paid', 'fully_paid'].includes(item.status));
-  setText('[data-admin-growth="orders"]', activeOrders.length);
-  setText('[data-admin-growth="promoters"]', snapshot.promoters.filter(item => item.status === 'approved').length);
-  setText('[data-admin-growth="commission"]', formatMoney(snapshot.commissions.reduce((sum, item) => sum + Number(item.commissionAmount || 0), 0)));
-  setText('[data-admin-growth="withdrawals"]', snapshot.withdrawals.filter(item => !['paid', 'rejected', 'cancelled'].includes(item.status)).length);
-  setText('[data-admin-growth="pending-commissions"]', snapshot.commissions.filter(item => item.status === 'confirming').length);
-  setText('[data-admin-growth="risk-flags"]', snapshot.riskFlags.length);
-  setText('[data-admin-growth="cloud-leads"]', cloudOrderLeadSync.loading ? '同步中' : cloudOrderLeadSync.error ? '未连接' : cloudOrderLeadSync.count);
-  setText('[data-admin-order-summary="new"]', snapshot.orders.filter(item => item.status === 'new').length);
-  setText('[data-admin-order-summary="collect"]', activeOrders.filter(item => adminOrderBalanceAmount(item) > 0).length);
-  setText('[data-admin-order-summary="complete"]', activeOrders.filter(item => ['confirmed', 'deposit_paid', 'fully_paid'].includes(item.status) && Number(item.totalAmount || 0) > 0).length);
-  renderAdminOrderSyncPill();
+  const metric = (selector, value) => { const element = document.querySelector(selector); if (element) element.textContent = String(value); };
+  metric('[data-admin-growth="orders"]', snapshot.orders.filter(item => ['confirmed', 'deposit_paid'].includes(item.status)).length);
+  metric('[data-admin-growth="promoters"]', snapshot.promoters.filter(item => item.status === 'approved').length);
+  metric('[data-admin-growth="commission"]', formatMoney(snapshot.commissions.reduce((sum, item) => sum + Number(item.commissionAmount || 0), 0)));
+  metric('[data-admin-growth="withdrawals"]', snapshot.withdrawals.filter(item => !['paid', 'rejected', 'cancelled'].includes(item.status)).length);
+  metric('[data-admin-growth="pending-commissions"]', snapshot.commissions.filter(item => item.status === 'confirming').length);
+  metric('[data-admin-growth="risk-flags"]', snapshot.riskFlags.length);
+  metric('[data-admin-growth="cloud-leads"]', cloudOrderLeadSync.loading ? '同步中' : cloudOrderLeadSync.error ? '未连接' : cloudOrderLeadSync.count);
   const memberRows = document.querySelector('[data-growth-admin-members]');
   const visibleMembers = snapshot.members.filter(member => {
     const promoter = snapshot.promoters.find(item => item.memberId === member.id);
@@ -1967,8 +1886,14 @@ function renderAdmin() {
     orderRows.innerHTML = visibleOrders.length ? visibleOrders.map(item => {
       const member = memberById.get(item.memberId);
       const relation = relationByMemberId.get(item.memberId);
-      return renderAdminOrderCard(item, member, relation);
-    }).join('') : '<div class="admin-order-empty">没有符合筛选的订单。</div>';
+      const canComplete = ['confirmed', 'deposit_paid'].includes(item.status);
+      const locked = !adminEditableOrderStatuses.includes(item.status);
+      const invoiceNo = item.invoiceNo || item.externalInquiryId || item.id;
+      const eventLine = [item.eventDate, item.eventTime].filter(Boolean).join(' ');
+      const balanceAmount = money(item.balanceAmount ?? Math.max(0, Number(item.totalAmount || 0) - Number(item.depositAmount || 0)));
+      const whatsappActions = `<button class="growth-button secondary" data-copy-order-whatsapp="${esc(item.id)}">复制跟进</button>${member?.phone ? `<button class="growth-button secondary" data-open-order-whatsapp="${esc(item.id)}">WhatsApp</button>` : ''}`;
+      return `<tr data-admin-order-row="${esc(item.id)}"><td class="admin-order-invoice"><strong>${esc(invoiceNo)}</strong><br><small>${esc(member?.name || item.memberId)} · ${esc(member?.phone || '-')}</small><br><small>${esc(item.externalInquiryId || item.source || '-')}</small></td><td><label class="growth-inline-field">服务<input data-order-field="serviceType" value="${esc(item.serviceType || '')}" ${locked ? 'disabled' : ''}></label><label class="growth-inline-field">状态<select data-order-field="status" ${locked ? 'disabled' : ''}>${orderStatusOptions(item.status)}</select></label>${relation ? `<small>推荐码 ${esc(relation.referralCode)}</small>` : ''}${eventLine ? `<br><small>${esc(eventLine)}</small>` : ''}${item.location ? `<br><small>${esc(item.location)}</small>` : ''}</td><td><label class="growth-inline-field">金额 RM<input data-order-field="totalAmount" type="number" min="0" step="0.01" value="${Number(item.totalAmount || 0).toFixed(2)}" ${locked ? 'disabled' : ''}></label><small>订金 ${formatMoney(item.depositAmount || 0)} · 余额 ${formatMoney(balanceAmount)}</small><br><small>合资格 ${formatMoney(eligibleAmountForAdmin(item))}</small><label class="growth-inline-field">备注<textarea data-order-field="adminNotes" rows="2" ${locked ? 'disabled' : ''}>${esc(item.adminNotes || '')}</textarea></label></td><td><div class="growth-admin-actions">${whatsappActions}${locked ? '<span class="growth-muted">已锁定</span>' : `<button class="growth-button secondary" data-save-order="${esc(item.id)}">保存订单</button>${canComplete ? `<button class="growth-button" data-complete-order="${esc(item.id)}">人工确认完成计佣</button>` : ''}`}</div></td></tr>`;
+    }).join('') : '<tr><td colspan="4">没有符合筛选的订单。</td></tr>';
   }
   const commissionRows = document.querySelector('[data-growth-admin-commissions]');
   const visibleCommissions = snapshot.commissions.filter(item => {
@@ -2120,7 +2045,7 @@ function bindAdmin() {
       const order = snapshot.orders.find(item => item.id === orderId);
       const total = money(order?.totalAmount || 0);
       const deposit = money(order?.depositAmount || 0);
-      const balance = adminOrderBalanceAmount(order);
+      const balance = money(order?.balanceAmount ?? Math.max(0, total - deposit));
       const confirmText = balance > 0
         ? `这张订单还有余款 ${formatMoney(balance)}。\n\n只有确认顾客已经实际消费 / 服务已经完成，才可以计算推荐佣金。\n\n确定要人工确认完成并计佣吗？`
         : '请确认顾客已经实际消费 / 服务已经完成。\n\n确认后系统会计算三代推荐佣金，并锁定这张订单。';

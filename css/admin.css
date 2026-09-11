@@ -3349,7 +3349,6 @@ body.admin-page{min-height:100vh;overflow-x:hidden;background:radial-gradient(ci
 .admin-order-history-panel{
   margin-top:24px;
   padding:24px;
-  scroll-margin-top:118px;
   border:1px solid rgba(255,214,141,.22);
   border-radius:22px;
   background:
@@ -3573,126 +3572,6 @@ body.admin-page{min-height:100vh;overflow-x:hidden;background:radial-gradient(ci
   min-height:42px;
   padding:0 16px;
 }
-.admin-page .growth-panel.admin-order-history-panel{
-  color:#1c1209;
-  background:
-    linear-gradient(180deg,#fffaf1 0%,#f0e2cf 100%),
-    radial-gradient(circle at 88% 0%,rgba(213,153,57,.2),transparent 34%);
-  border-color:#c79b57;
-  box-shadow:0 22px 58px rgba(21,13,7,.24);
-}
-.admin-page .growth-panel.admin-order-history-panel p,
-.admin-page .growth-panel.admin-order-history-panel .growth-muted{
-  color:#5e4b35;
-}
-.admin-page .growth-panel.admin-order-history-panel .admin-order-history-head span,
-.admin-page .growth-panel.admin-order-history-panel .admin-order-history-summary span,
-.admin-page .growth-panel.admin-order-history-panel .admin-order-card-head span,
-.admin-page .growth-panel.admin-order-history-panel .admin-order-card-meta span,
-.admin-page .growth-panel.admin-order-history-panel .admin-order-card-followup span{
-  color:#98601d;
-}
-.admin-page .growth-panel.admin-order-history-panel .admin-order-history-head h3,
-.admin-page .growth-panel.admin-order-history-panel .admin-order-card-head h4{
-  color:#1c1209;
-}
-.admin-page .growth-panel.admin-order-history-panel .admin-order-sync-pill{
-  color:#1f6034;
-  background:#e7f5df;
-  border-color:#b9dfb5;
-}
-.admin-page .growth-panel.admin-order-history-panel .admin-order-sync-pill.is-bad{
-  color:#913626;
-  background:#ffe4dc;
-  border-color:#e7b09f;
-}
-.admin-page .growth-panel.admin-order-history-panel .admin-order-history-summary div,
-.admin-page .growth-panel.admin-order-history-panel .admin-order-card{
-  color:#1c1209;
-  background:#fffdf8;
-  border-color:#d4b47f;
-  box-shadow:0 12px 28px rgba(70,40,15,.08);
-}
-.admin-page .growth-panel.admin-order-history-panel .admin-order-history-summary strong,
-.admin-page .growth-panel.admin-order-history-panel .admin-order-card-meta strong{
-  color:#24160c;
-}
-.admin-page .growth-panel.admin-order-history-panel .admin-order-card-meta div,
-.admin-page .growth-panel.admin-order-history-panel .admin-order-card-followup,
-.admin-page .growth-panel.admin-order-history-panel .admin-order-card-edit-grid{
-  color:#1c1209;
-  background:#f1e5d3;
-  border-color:#d3b681;
-}
-.admin-page .growth-panel.admin-order-history-panel .admin-order-card-items,
-.admin-page .growth-panel.admin-order-history-panel .admin-order-card-followup p{
-  color:#3b2c1f;
-}
-.admin-page .growth-panel.admin-order-history-panel .admin-order-card-followup strong{
-  color:#7b4f16;
-}
-.admin-page .growth-panel.admin-order-history-panel .admin-order-card-followup strong.is-good{
-  color:#1f6034;
-}
-.admin-page .growth-panel.admin-order-history-panel .admin-order-card-followup strong.is-paid{
-  color:#8a5b1d;
-}
-.admin-page .growth-panel.admin-order-history-panel .admin-order-card-edit-grid .growth-inline-field{
-  color:#5a3e20;
-}
-.admin-page .growth-panel.admin-order-history-panel .admin-order-card-followup small{
-  color:#7b5b33;
-}
-.admin-page .growth-panel.admin-order-history-panel .admin-order-action-btn{
-  color:#5a3612;
-  background:#fff8ea;
-  border-color:#d1a764;
-}
-.admin-page .growth-panel.admin-order-history-panel .admin-order-action-btn:hover,
-.admin-page .growth-panel.admin-order-history-panel .admin-order-action-btn:focus-visible{
-  color:#1a1008;
-  background:#ffe7af;
-  border-color:#b97922;
-}
-.admin-page .growth-panel.admin-order-history-panel .admin-order-action-btn.is-primary{
-  color:#140d08;
-  background:linear-gradient(135deg,#ffdf8b,#b87827);
-  border-color:#b87827;
-}
-.admin-page .growth-panel.admin-order-history-panel .admin-order-card-actions .growth-button.secondary{
-  color:#9b641d;
-  background:#fffaf1;
-}
-.admin-order-card-edit-grid{
-  display:grid;
-  grid-template-columns:1fr 160px 150px;
-  gap:10px;
-  margin:0 0 12px;
-  padding:12px;
-  border:1px solid rgba(255,214,141,.16);
-  border-radius:15px;
-  background:rgba(0,0,0,.18);
-}
-.admin-order-card-edit-grid .growth-inline-field{
-  margin:0;
-  color:#ffe8b8;
-}
-.admin-order-card-edit-grid .growth-inline-field input,
-.admin-order-card-edit-grid .growth-inline-field select,
-.admin-order-card-edit-grid .growth-inline-field textarea{
-  min-width:0;
-  color:#1b130c;
-  background:#fff8ea;
-  border-color:rgba(255,214,141,.34);
-}
-.admin-order-card-note{
-  grid-column:1 / -1;
-}
-.admin-order-card-followup small{
-  display:inline-block;
-  margin-top:4px;
-  color:#e1cda8;
-}
 .admin-order-empty{
   padding:22px;
   border:1px dashed rgba(255,214,141,.35);
@@ -3741,7 +3620,6 @@ body.admin-page{min-height:100vh;overflow-x:hidden;background:radial-gradient(ci
   .admin-order-history-toolbar,
   .admin-order-history-summary,
   .admin-order-card-meta,
-  .admin-order-card-edit-grid,
   .admin-order-card-followup{
     grid-template-columns:1fr;
   }
