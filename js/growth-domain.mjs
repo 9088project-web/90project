@@ -36,6 +36,12 @@ const normalizePhone = value => String(value || '').replace(/\D/g, '');
 const normalizeReferralCode = value => String(value || '').trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
 const money = value => Math.round((Number(value) || 0) * 100) / 100;
 const dateValue = value => new Date(value || Date.now()).toISOString();
+const hasValue = value => value !== undefined && value !== null && value !== '';
+const orderBalance = (input = {}, totalAmount = 0, depositAmount = 0) => {
+  if (hasValue(input.balanceAmount)) return money(input.balanceAmount);
+  if (input.status === 'fully_paid' || input.paymentStatus === 'fully_paid') return 0;
+  return money(Math.max(0, money(totalAmount) - money(depositAmount)));
+};
 const normalizeOrderLineItems = items => Array.isArray(items)
   ? items.map(item => ({
       description: String(item?.description || '').trim(),
@@ -470,6 +476,8 @@ export function createGrowthApi(storage = defaultStorage(), options = {}) {
       createdAt: input.createdAt || dateValue(now()),
       updatedAt: dateValue(now())
     };
+    const totalAmount = money(input.totalAmount || input.budget);
+    const depositAmount = money(input.depositAmount);
     const order = {
       id: id('order'),
       enquiryId: enquiry.id,
@@ -477,11 +485,11 @@ export function createGrowthApi(storage = defaultStorage(), options = {}) {
       externalInquiryId,
       invoiceNo: input.invoiceNo || externalInquiryId,
       serviceType: input.serviceType || enquiry.serviceType,
-      totalAmount: money(input.totalAmount || input.budget),
+      totalAmount,
       originalAmount: money(input.originalAmount || input.totalAmount || input.budget),
       discountAmount: money(input.discountAmount),
-      depositAmount: money(input.depositAmount),
-      balanceAmount: money(input.balanceAmount),
+      depositAmount,
+      balanceAmount: orderBalance(input, totalAmount, depositAmount),
       sstAmount: money(input.sstAmount),
       deliveryFee: money(input.deliveryFee),
       extraLabourFee: money(input.extraLabourFee),
@@ -567,7 +575,9 @@ export function createGrowthApi(storage = defaultStorage(), options = {}) {
     const current = read();
     const enquiry = current.enquiries.find(item => item.id === enquiryId && item.memberId === memberId);
     if (!enquiry) return { ok: false, reason: 'enquiry_not_found' };
-    const order = { id: id('order'), enquiryId, memberId, externalInquiryId: input.externalInquiryId || enquiry.externalInquiryId || '', invoiceNo: input.invoiceNo || input.externalInquiryId || enquiry.invoiceNo || enquiry.externalInquiryId || '', serviceType: input.serviceType || enquiry.serviceType, totalAmount: money(input.totalAmount), originalAmount: money(input.originalAmount || input.totalAmount), discountAmount: money(input.discountAmount), depositAmount: money(input.depositAmount), balanceAmount: money(input.balanceAmount), sstAmount: money(input.sstAmount), deliveryFee: money(input.deliveryFee), extraLabourFee: money(input.extraLabourFee), thirdPartyFee: money(input.thirdPartyFee), couponDiscount: money(input.couponDiscount), refundedAmount: 0, eventDate: input.eventDate || enquiry.eventDate || '', eventTime: input.eventTime || enquiry.eventTime || '', location: input.location || enquiry.location || '', pax: Number(input.pax) || Number(enquiry.pax) || 0, itemsSummary: input.itemsSummary || enquiry.foodChoice || '', lineItems: normalizeOrderLineItems(input.lineItems), adminNotes: input.adminNotes || '', whatsappMessage: input.whatsappMessage || '', sentAt: input.sentAt || null, status: input.status || 'confirmed', source: input.source || 'manual-order', createdAt: dateValue(now()), updatedAt: dateValue(now()), completedAt: null, manualVerifiedAt: null, manualVerifiedBy: '' };
+    const totalAmount = money(input.totalAmount);
+    const depositAmount = money(input.depositAmount);
+    const order = { id: id('order'), enquiryId, memberId, externalInquiryId: input.externalInquiryId || enquiry.externalInquiryId || '', invoiceNo: input.invoiceNo || input.externalInquiryId || enquiry.invoiceNo || enquiry.externalInquiryId || '', serviceType: input.serviceType || enquiry.serviceType, totalAmount, originalAmount: money(input.originalAmount || input.totalAmount), discountAmount: money(input.discountAmount), depositAmount, balanceAmount: orderBalance(input, totalAmount, depositAmount), sstAmount: money(input.sstAmount), deliveryFee: money(input.deliveryFee), extraLabourFee: money(input.extraLabourFee), thirdPartyFee: money(input.thirdPartyFee), couponDiscount: money(input.couponDiscount), refundedAmount: 0, eventDate: input.eventDate || enquiry.eventDate || '', eventTime: input.eventTime || enquiry.eventTime || '', location: input.location || enquiry.location || '', pax: Number(input.pax) || Number(enquiry.pax) || 0, itemsSummary: input.itemsSummary || enquiry.foodChoice || '', lineItems: normalizeOrderLineItems(input.lineItems), adminNotes: input.adminNotes || '', whatsappMessage: input.whatsappMessage || '', sentAt: input.sentAt || null, status: input.status || 'confirmed', source: input.source || 'manual-order', createdAt: dateValue(now()), updatedAt: dateValue(now()), completedAt: null, manualVerifiedAt: null, manualVerifiedBy: '' };
     const next = clone(current);
     next.orders.unshift(order);
     audit(next, 'order.created', memberId, 'order', order.id, 'MOCK order');
@@ -596,6 +606,20 @@ export function createGrowthApi(storage = defaultStorage(), options = {}) {
     if (input.lineItems !== undefined) target.lineItems = normalizeOrderLineItems(input.lineItems);
     if (input.completedAt !== undefined) target.completedAt = input.completedAt || null;
     if (input.manualVerifiedAt !== undefined) target.manualVerifiedAt = input.manualVerifiedAt || null;
+    if (input.balanceAmount === undefined && (
+      input.totalAmount !== undefined
+      || input.depositAmount !== undefined
+      || input.paymentStatus !== undefined
+      || input.status !== undefined
+    )) {
+      if (target.status === 'fully_paid' || target.paymentStatus === 'fully_paid') {
+        target.paymentStatus = 'fully_paid';
+        target.depositAmount = target.totalAmount;
+        target.balanceAmount = 0;
+      } else {
+        target.balanceAmount = orderBalance({}, target.totalAmount, target.depositAmount);
+      }
+    }
     target.updatedAt = dateValue(now());
 
     const enquiry = next.enquiries.find(item => item.id === target.enquiryId);

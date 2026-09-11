@@ -29,7 +29,7 @@ try {
 
   $apkSource = Join-Path $root "android-pos\app\build\outputs\apk\release\app-release.apk"
   $apkOutputDir = Join-Path $root "output"
-  $apkOutput = Join-Path $apkOutputDir "90project-pos.apk"
+  $apkOutput = Join-Path $apkOutputDir "90project-order-center.apk"
   New-Item -ItemType Directory -Force $apkOutputDir | Out-Null
   Copy-Item -LiteralPath $apkSource -Destination $apkOutput -Force
   Write-Host "APK ready: $apkOutput"

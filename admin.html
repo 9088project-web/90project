@@ -18,6 +18,7 @@
     </a>
     <div class="admin-topbar-actions">
       <a class="btn btn-outline" href="index.html#top"><i class="ri-external-link-line" aria-hidden="true"></i>查看网站</a>
+      <a class="btn btn-outline" href="orders.html"><i class="ri-file-list-3-line" aria-hidden="true"></i>订单经营</a>
       <span class="admin-status-dot"><i class="ri-cloud-line" aria-hidden="true"></i> 云端内容后台</span>
     </div>
   </header>
@@ -72,7 +73,7 @@
           <summary class="admin-nav-drawer-summary">
             <span class="admin-nav-drawer-title">
               <strong>运营管理</strong>
-              <small>顾客 / 会员 / 增长</small>
+              <small>订单 / 顾客 / 会员</small>
             </span>
             <span class="admin-nav-drawer-current">
               <i class="ri-briefcase-4-line" aria-hidden="true"></i>
@@ -84,7 +85,7 @@
             <button type="button" data-admin-panel-tab="inquiries">顾客询问</button>
             <button type="button" data-admin-panel-tab="members">会员资料</button>
             <button type="button" data-admin-panel-tab="tracking">转化追踪</button>
-            <button type="button" data-admin-panel-tab="growth">增长系统</button>
+            <button type="button" data-admin-panel-tab="growth">订单经营中心</button>
           </div>
         </details>
       </div>
@@ -185,7 +186,7 @@
       </section>
 
       <section class="admin-section growth-admin-section" data-admin-panel="growth" hidden>
-        <div class="admin-section-head"><div><h2>会员推荐与会员奖励</h2><p>查看会员推荐码、三层佣金、订单消费人工确认、提现审核和默认规则。</p></div></div>
+        <div class="admin-section-head"><div><h2>订单经营中心</h2><p>集中处理订单跟进、订金与余额、WhatsApp 回复、顾客消费确认、推荐佣金和提现审核。</p></div></div>
         <div data-growth-admin>
           <div class="growth-admin-toolbar">
             <label>搜索会员 / 推荐码
@@ -216,11 +217,27 @@
             <button class="growth-button secondary" type="button" data-growth-sync-leads>同步线上线索</button>
           </div>
           <div class="growth-metric-grid">
-            <div class="growth-metric"><strong>待完成订单</strong><b data-admin-growth="orders">0</b></div>
+            <div class="growth-metric"><strong>待跟进订单</strong><b data-admin-growth="orders">0</b></div>
             <div class="growth-metric"><strong>推荐会员</strong><b data-admin-growth="promoters">0</b></div>
             <div class="growth-metric"><strong>佣金总额</strong><b data-admin-growth="commission">RM0.00</b></div>
             <div class="growth-metric"><strong>待处理提现</strong><b data-admin-growth="withdrawals">0</b></div>
             <div class="growth-metric"><strong>线上订单线索</strong><b data-admin-growth="cloud-leads">0</b></div>
+          </div>
+          <div class="growth-panel admin-order-history-panel">
+            <div class="admin-order-history-head">
+              <div>
+                <span>ORDER OPS</span>
+                <h3>订单跟进与消费确认</h3>
+                <p>先确认订单，再记录订金或结清；顾客实际消费 / 服务完成后才人工确认计佣。</p>
+              </div>
+              <span class="admin-order-sync-pill" data-admin-order-sync-status>等待同步</span>
+            </div>
+            <div class="admin-order-history-summary">
+              <div><span>待确认</span><strong data-admin-order-summary="new">0</strong></div>
+              <div><span>待收款 / 余款</span><strong data-admin-order-summary="collect">0</strong></div>
+              <div><span>可确认完成</span><strong data-admin-order-summary="complete">0</strong></div>
+            </div>
+            <div class="admin-order-history-list" data-growth-admin-orders></div>
           </div>
           <div class="growth-panel">
             <h3>会员与推荐码概览</h3>
@@ -229,11 +246,6 @@
           <div class="growth-panel">
             <h3>推荐关系记录</h3>
             <div class="growth-table-wrap"><table class="growth-table"><thead><tr><th>下线会员</th><th>直属推荐人</th><th>推荐码</th><th>绑定时间</th></tr></thead><tbody data-growth-admin-relations></tbody></table></div>
-          </div>
-          <div class="growth-panel">
-            <h3>人工确认完成订单</h3>
-            <p class="growth-muted">只有确认顾客已经实际消费 / 服务已经完成，才点击确认完成并计佣。</p>
-            <div class="growth-table-wrap"><table class="growth-table"><thead><tr><th>订单 / 顾客</th><th>服务 / 状态</th><th>金额</th><th>操作</th></tr></thead><tbody data-growth-admin-orders></tbody></table></div>
           </div>
           <div class="growth-panel">
             <h3>佣金账本</h3>

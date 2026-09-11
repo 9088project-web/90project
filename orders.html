@@ -1,0 +1,184 @@
+<!doctype html>
+<html lang="zh-Hans">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="robots" content="noindex, nofollow" />
+  <meta name="theme-color" content="#f4f7fc" />
+  <title>订单经营中心｜90 PROJECT</title>
+  <link rel="icon" type="image/jpeg" href="assets/images/logo/logo-icon-dark.jpg" />
+  <link rel="manifest" href="orders.webmanifest" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/remixicon@4.6.0/fonts/remixicon.css" />
+  <link rel="stylesheet" href="css/order-center.css?v=20260911-independent" />
+</head>
+<body class="order-center-page">
+  <main class="order-app" data-order-app hidden>
+    <header class="order-header">
+      <div>
+        <div class="order-brand">
+          <img src="assets/images/logo/logo-icon-dark.jpg" alt="90 PROJECT logo" />
+          <h1>90 Project <span>| 订单经营中心</span></h1>
+        </div>
+        <p>共享订单 · 收款 · 日历 · 营业分析</p>
+      </div>
+      <div class="order-header-actions">
+        <strong data-order-sync-status>同步中</strong>
+        <a href="admin.html?panel=growth" aria-label="返回后台"><i class="ri-settings-3-line" aria-hidden="true"></i></a>
+      </div>
+    </header>
+
+    <nav class="order-tabs" aria-label="订单经营分类">
+      <button type="button" class="active" data-order-view="overview">经营总览</button>
+      <button type="button" data-order-view="calendar">订单日历</button>
+      <button type="button" data-order-view="orders">全部订单</button>
+      <button type="button" data-order-view="analysis">经营分析</button>
+    </nav>
+
+    <section class="order-panel active" data-order-panel="overview">
+      <div class="order-stats" data-order-stats></div>
+      <article class="order-card">
+        <div class="order-section-head">
+          <h2>近期订单</h2>
+          <button class="order-primary" type="button" data-order-new><i class="ri-add-line" aria-hidden="true"></i>新增订单</button>
+        </div>
+        <div class="order-list" data-order-recent-list></div>
+      </article>
+    </section>
+
+    <section class="order-panel" data-order-panel="calendar" hidden>
+      <article class="order-card">
+        <div class="order-calendar-head">
+          <button class="order-icon-btn" type="button" data-calendar-prev aria-label="上个月"><i class="ri-arrow-left-s-line" aria-hidden="true"></i></button>
+          <h2 data-calendar-title>订单日历</h2>
+          <button class="order-icon-btn" type="button" data-calendar-next aria-label="下个月"><i class="ri-arrow-right-s-line" aria-hidden="true"></i></button>
+        </div>
+        <div class="order-weekdays" aria-hidden="true">
+          <span>日</span><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span>
+        </div>
+        <div class="order-calendar-grid" data-calendar-grid></div>
+      </article>
+    </section>
+
+    <section class="order-panel" data-order-panel="orders" hidden>
+      <article class="order-card">
+        <div class="order-section-head">
+          <h2>全部订单</h2>
+          <button class="order-primary" type="button" data-order-new><i class="ri-add-line" aria-hidden="true"></i>新增</button>
+        </div>
+        <div class="order-filters">
+          <input data-order-search type="search" placeholder="搜索顾客 / 地点 / 类别" />
+          <select data-order-status-filter aria-label="筛选订单状态">
+            <option value="all">全部状态</option>
+            <option value="new">未付款</option>
+            <option value="deposit_paid">部分付款</option>
+            <option value="fully_paid">已付款</option>
+            <option value="service_completed">已完成</option>
+            <option value="cancelled">已取消</option>
+          </select>
+        </div>
+        <div class="order-date-chip" data-order-date-chip hidden></div>
+        <div class="order-list" data-order-all-list></div>
+      </article>
+    </section>
+
+    <section class="order-panel" data-order-panel="analysis" hidden>
+      <article class="order-card">
+        <h2>类别分析</h2>
+        <div class="order-table" data-order-category-analysis></div>
+      </article>
+      <article class="order-card">
+        <h2>订单状态</h2>
+        <div class="order-status-bars" data-order-status-analysis></div>
+      </article>
+      <article class="order-card">
+        <h2>每月收入</h2>
+        <div class="order-month-income" data-order-month-income></div>
+      </article>
+      <article class="order-card">
+        <h2>负责人业绩</h2>
+        <div class="order-staff-bars" data-order-staff-analysis></div>
+      </article>
+    </section>
+  </main>
+
+  <section class="order-lock" data-order-lock>
+    <article>
+      <img src="assets/images/logo/logo-icon-dark.jpg" alt="90 PROJECT logo" />
+      <span>90 PROJECT</span>
+      <h1>订单经营中心</h1>
+      <p>使用后台账号进入独立订单系统。</p>
+      <form data-order-login-form>
+        <label>管理员 Email<input data-order-login-email type="email" value="9088project@gmail.com" autocomplete="username" required></label>
+        <label>管理员密码<input data-order-login-password type="password" autocomplete="current-password" required></label>
+        <button class="order-primary" type="submit"><i class="ri-login-box-line" aria-hidden="true"></i>进入系统</button>
+      </form>
+      <p class="order-message" data-order-login-message aria-live="polite"></p>
+    </article>
+  </section>
+
+  <div class="order-sheet-backdrop" data-order-sheet hidden>
+    <aside class="order-sheet" role="dialog" aria-modal="true" aria-labelledby="orderSheetTitle">
+      <form data-order-form>
+        <header>
+          <div>
+            <span>ORDER</span>
+            <h2 id="orderSheetTitle">新增订单</h2>
+          </div>
+          <button class="order-icon-btn" type="button" data-order-close aria-label="关闭"><i class="ri-close-line" aria-hidden="true"></i></button>
+        </header>
+
+        <input data-order-id type="hidden" />
+        <div class="order-form-grid">
+          <label>顾客姓名<input data-order-field="customerName" type="text" placeholder="例如：lau" required></label>
+          <label>WhatsApp<input data-order-field="phone" type="tel" placeholder="018-xxxx xxxx"></label>
+          <label>日期<input data-order-field="eventDate" type="date" required></label>
+          <label>时间<input data-order-field="eventTime" type="time"></label>
+          <label>类别
+            <select data-order-field="serviceType">
+              <option value="活动餐饮">活动餐饮</option>
+              <option value="包伙食">包伙食</option>
+              <option value="场地布置">场地布置</option>
+              <option value="鸡尾酒服务">鸡尾酒服务</option>
+              <option value="其他服务">其他服务</option>
+            </select>
+          </label>
+          <label>负责人
+            <select data-order-field="assignee">
+              <option value="未分配">未分配</option>
+              <option value="LIYAN & KS">LIYAN & KS</option>
+              <option value="Tom">Tom</option>
+              <option value="KS">KS</option>
+              <option value="Ks">Ks</option>
+            </select>
+          </label>
+          <label class="order-wide">订单标题<input data-order-field="title" type="text" placeholder="例如：10pax buffet" required></label>
+          <label class="order-wide">菜单 / 备注<textarea data-order-field="itemsSummary" rows="5" placeholder="主食、肉类、海鲜、菜、地址备注"></textarea></label>
+          <label class="order-wide">地点<input data-order-field="location" type="text" placeholder="地址 / Venue / Area"></label>
+          <label>总额 RM<input data-order-field="totalAmount" type="number" min="0" step="0.01" required></label>
+          <label>已收 RM<input data-order-field="paidAmount" type="number" min="0" step="0.01" value="0"></label>
+          <label>状态
+            <select data-order-field="status">
+              <option value="new">未付款</option>
+              <option value="deposit_paid">部分付款</option>
+              <option value="fully_paid">已付款</option>
+              <option value="service_completed">已完成</option>
+              <option value="cancelled">已取消</option>
+            </select>
+          </label>
+        </div>
+
+        <p class="order-message" data-order-form-message aria-live="polite"></p>
+        <div class="order-sheet-actions">
+          <button class="order-primary" type="submit"><i class="ri-save-3-line" aria-hidden="true"></i>保存订单</button>
+          <button type="button" data-order-form-whatsapp><i class="ri-whatsapp-line" aria-hidden="true"></i>WhatsApp</button>
+          <button type="button" data-order-form-print><i class="ri-printer-line" aria-hidden="true"></i>打印</button>
+        </div>
+      </form>
+    </aside>
+  </div>
+
+  <section class="order-print" data-order-print></section>
+
+  <script type="module" src="js/order-center.js?v=20260911-independent"></script>
+</body>
+</html>

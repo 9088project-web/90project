@@ -22,6 +22,8 @@ import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 
 public class MainActivity extends Activity {
+    private static final String APP_HOST = "www.90project.online";
+    private static final String ROOT_HOST = "90project.online";
     private WebView webView;
     private WebView printWebView;
 
@@ -47,7 +49,7 @@ public class MainActivity extends Activity {
         webView.setWebChromeClient(new WebChromeClient());
         webView.setWebViewClient(new PosWebViewClient());
         webView.addJavascriptInterface(new PosBridge(), "AndroidPosBridge");
-        webView.loadUrl("file:///android_asset/pos.html");
+        webView.loadUrl("https://www.90project.online/orders");
     }
 
     @Override
@@ -66,6 +68,8 @@ public class MainActivity extends Activity {
             if (uri == null) return false;
             String scheme = uri.getScheme();
             if ("file".equalsIgnoreCase(scheme)) return false;
+            String host = uri.getHost();
+            if (APP_HOST.equalsIgnoreCase(host) || ROOT_HOST.equalsIgnoreCase(host)) return false;
             openExternal(uri);
             return true;
         }
