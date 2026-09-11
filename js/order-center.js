@@ -80,6 +80,7 @@ const els = {
   sheet: document.querySelector('[data-order-sheet]'),
   form: document.querySelector('[data-order-form]'),
   formMessage: document.querySelector('[data-order-form-message]'),
+  categoryDelete: document.querySelector('[data-order-category-delete]'),
   assigneeDelete: document.querySelector('[data-order-assignee-delete]'),
   print: document.querySelector('[data-order-print]')
 };
@@ -401,7 +402,7 @@ async function editOrderSetting(group, oldValue) {
 
 async function removeOrderSetting(group, value, options = {}) {
   const cleanValue = cleanSettingValue(value);
-  if (!orderSettingLabels[group] || !cleanValue || (group === 'assignees' && cleanValue === '未分配')) return;
+  if (!orderSettingLabels[group] || !cleanValue || (group === 'assignees' && cleanValue === '未分配')) return '';
   const orders = currentOrders();
   const usage = settingUsageCount(group, cleanValue, orders);
   const settings = savedOrderSettings();
@@ -410,9 +411,18 @@ async function removeOrderSetting(group, value, options = {}) {
   if (usage > 0 && options.confirm !== false) {
     const label = orderSettingLabels[group].singular;
     const ok = window.confirm(`删除${label}「${cleanValue}」？已有 ${usage} 张订单会改成「${replacement}」。`);
-    if (!ok) return;
+    if (!ok) return '';
   }
   await saveOrderSettings(settings, { remove: { group, value: cleanValue, replacement } });
+  return replacement;
+}
+
+function confirmRemoveSetting(group, value, replacement) {
+  const cleanValue = cleanSettingValue(value);
+  const usage = settingUsageCount(group, cleanValue, currentOrders());
+  if (usage <= 0) return true;
+  const label = orderSettingLabels[group]?.singular || '名单';
+  return window.confirm(`删除${label}「${cleanValue}」？已有 ${usage} 张订单会改成「${replacement}」。`);
 }
 
 function orderAssignee(order) {
@@ -885,11 +895,24 @@ function updateAssigneeDeleteButton() {
   els.assigneeDelete.title = canDelete ? `删除负责人：${value}` : '选择负责人后可以删除';
 }
 
+function updateCategoryDeleteButton() {
+  if (!els.categoryDelete || !formFields.serviceType) return;
+  const value = cleanSettingValue(formFields.serviceType.value);
+  const canDelete = Boolean(value && value !== CUSTOM_OPTION_VALUE);
+  els.categoryDelete.disabled = !canDelete;
+  els.categoryDelete.title = canDelete ? `删除类别：${value}` : '选择类别后可以删除';
+}
+
+function updateFormDeleteButtons() {
+  updateCategoryDeleteButton();
+  updateAssigneeDeleteButton();
+}
+
 function renderOrderSelects(orders = currentOrders(), selected = {}) {
   const settings = orderSettingsWithUsage(orders);
   setManagedSelectOptions(formFields.serviceType, 'categories', settings.categories, selected.serviceType);
   setManagedSelectOptions(formFields.assignee, 'assignees', settings.assignees, selected.assignee);
-  updateAssigneeDeleteButton();
+  updateFormDeleteButtons();
 }
 
 function renderSettingsGroup(group, values, orders = []) {
@@ -969,7 +992,7 @@ function openOrderSheet(orderId = '', forcedDate = '') {
   formFields.eventTime.value = order?.eventTime || '';
   formFields.serviceType.value = order?.serviceType || '活动餐饮';
   formFields.assignee.value = order?.assignee || '未分配';
-  updateAssigneeDeleteButton();
+  updateFormDeleteButtons();
   formFields.title.value = order?.title || '';
   formFields.itemsSummary.value = order?.itemsSummary || '';
   formFields.location.value = order?.location || '';
@@ -1490,13 +1513,30 @@ function bind() {
       return;
     }
 
+    if (event.target.closest('[data-order-category-delete]')) {
+      const currentCategory = cleanSettingValue(formFields.serviceType?.value || '');
+      const settings = savedOrderSettings();
+      const fallback = settings.categories.find(item => cleanSettingValue(item).toLocaleLowerCase() !== currentCategory.toLocaleLowerCase())
+        || orderSettingDefaults.categories.find(item => cleanSettingValue(item).toLocaleLowerCase() !== currentCategory.toLocaleLowerCase())
+        || '其他服务';
+      if (!currentCategory || !confirmRemoveSetting('categories', currentCategory, fallback)) return;
+      if (formFields.serviceType) formFields.serviceType.value = fallback;
+      updateFormDeleteButtons();
+      const replacement = await removeOrderSetting('categories', currentCategory, { confirm: false });
+      if (formFields.serviceType) formFields.serviceType.value = replacement || fallback;
+      updateFormDeleteButtons();
+      setFormMessage(currentCategory ? `类别「${currentCategory}」已删除，当前订单改为「${formFields.serviceType.value}」。` : '', true);
+      return;
+    }
+
     if (event.target.closest('[data-order-assignee-delete]')) {
       const currentAssignee = cleanSettingValue(formFields.assignee?.value || '');
+      if (!currentAssignee || !confirmRemoveSetting('assignees', currentAssignee, '未分配')) return;
       if (formFields.assignee) formFields.assignee.value = '未分配';
-      updateAssigneeDeleteButton();
-      await removeOrderSetting('assignees', currentAssignee);
+      updateFormDeleteButtons();
+      await removeOrderSetting('assignees', currentAssignee, { confirm: false });
       if (formFields.assignee) formFields.assignee.value = '未分配';
-      updateAssigneeDeleteButton();
+      updateFormDeleteButtons();
       setFormMessage(currentAssignee ? `负责人「${currentAssignee}」已删除，当前订单改为未分配。` : '', true);
       return;
     }
@@ -1595,19 +1635,19 @@ function bind() {
     select?.addEventListener('change', async () => {
       if (select.value !== CUSTOM_OPTION_VALUE) {
         select.dataset.previousValue = select.value || '';
-        updateAssigneeDeleteButton();
+        updateFormDeleteButtons();
         return;
       }
       const label = orderSettingLabels[group]?.singular || '名单';
       const value = cleanSettingValue(window.prompt(`新增${label}`));
       if (!value) {
         renderOrderSelects(currentOrders(), { [group === 'categories' ? 'serviceType' : 'assignee']: select.dataset.previousValue || '' });
-        updateAssigneeDeleteButton();
+        updateFormDeleteButtons();
         return;
       }
       const added = await addOrderSetting(group, value);
       renderOrderSelects(currentOrders(), { [group === 'categories' ? 'serviceType' : 'assignee']: added || value });
-      updateAssigneeDeleteButton();
+      updateFormDeleteButtons();
     });
   });
 

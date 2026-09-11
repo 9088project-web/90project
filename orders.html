@@ -160,13 +160,16 @@
           <label>日期<input data-order-field="eventDate" type="date" required></label>
           <label>时间<input data-order-field="eventTime" type="time"></label>
           <label>类别
-            <select data-order-field="serviceType">
-              <option value="活动餐饮">活动餐饮</option>
-              <option value="包伙食">包伙食</option>
-              <option value="场地布置">场地布置</option>
-              <option value="鸡尾酒服务">鸡尾酒服务</option>
-              <option value="其他服务">其他服务</option>
-            </select>
+            <span class="order-select-action">
+              <select data-order-field="serviceType">
+                <option value="活动餐饮">活动餐饮</option>
+                <option value="包伙食">包伙食</option>
+                <option value="场地布置">场地布置</option>
+                <option value="鸡尾酒服务">鸡尾酒服务</option>
+                <option value="其他服务">其他服务</option>
+              </select>
+              <button class="order-field-delete" type="button" data-order-category-delete aria-label="删除当前类别" title="删除当前类别" disabled><i class="ri-delete-bin-6-line" aria-hidden="true"></i></button>
+            </span>
           </label>
           <label>负责人
             <span class="order-select-action">
