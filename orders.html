@@ -169,13 +169,16 @@
             </select>
           </label>
           <label>负责人
-            <select data-order-field="assignee">
-              <option value="未分配">未分配</option>
-              <option value="LIYAN & KS">LIYAN & KS</option>
-              <option value="Tom">Tom</option>
-              <option value="KS">KS</option>
-              <option value="Ks">Ks</option>
-            </select>
+            <span class="order-select-action">
+              <select data-order-field="assignee">
+                <option value="未分配">未分配</option>
+                <option value="LIYAN & KS">LIYAN & KS</option>
+                <option value="Tom">Tom</option>
+                <option value="KS">KS</option>
+                <option value="Ks">Ks</option>
+              </select>
+              <button class="order-field-delete" type="button" data-order-assignee-delete aria-label="删除当前负责人" title="删除当前负责人" disabled><i class="ri-delete-bin-6-line" aria-hidden="true"></i></button>
+            </span>
           </label>
           <label class="order-wide">订单标题<input data-order-field="title" type="text" placeholder="例如：10pax buffet" required></label>
           <label class="order-wide">菜单 / 备注<textarea data-order-field="itemsSummary" rows="5" placeholder="主食、肉类、海鲜、菜、地址备注"></textarea></label>

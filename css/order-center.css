@@ -142,7 +142,8 @@ body.order-center-page [hidden]{display:none!important}
 .order-card-action:focus-visible,
 .order-icon-btn:focus-visible,
 .order-settings-input button:focus-visible,
-.order-chip button:focus-visible{
+.order-chip button:focus-visible,
+.order-field-delete:focus-visible{
   outline:3px solid rgba(47,99,216,.22);
   outline-offset:2px;
 }
@@ -386,6 +387,32 @@ body.order-center-page [hidden]{display:none!important}
 .order-lock input:focus{
   border-color:var(--oc-blue);
   box-shadow:0 0 0 3px rgba(47,99,216,.13);
+}
+.order-select-action{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) 50px;
+  gap:8px;
+  align-items:stretch;
+}
+.order-field-delete{
+  width:50px;
+  min-height:50px;
+  border:1px solid #f1c0b8;
+  border-radius:8px;
+  color:var(--oc-red);
+  background:#fff7f5;
+  font-size:20px;
+}
+.order-field-delete:hover:not(:disabled){
+  color:#fff;
+  background:var(--oc-red);
+  border-color:var(--oc-red);
+}
+.order-field-delete:disabled{
+  color:#a4adba;
+  background:#f4f6fa;
+  border-color:#d7dde9;
+  cursor:default;
 }
 .order-date-chip{
   width:max-content;

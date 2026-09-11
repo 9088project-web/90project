@@ -80,6 +80,7 @@ const els = {
   sheet: document.querySelector('[data-order-sheet]'),
   form: document.querySelector('[data-order-form]'),
   formMessage: document.querySelector('[data-order-form-message]'),
+  assigneeDelete: document.querySelector('[data-order-assignee-delete]'),
   print: document.querySelector('[data-order-print]')
 };
 
@@ -327,6 +328,23 @@ function applySettingRenameToOrders(orders = [], group, oldValue, newValue) {
   });
 }
 
+function applySettingRemoveToOrders(orders = [], group, value, replacement) {
+  const targetKey = cleanSettingValue(value).toLocaleLowerCase();
+  if (!targetKey) return orders;
+  return orders.map(order => {
+    const next = { ...order };
+    if (group === 'categories' && cleanSettingValue(order.serviceType).toLocaleLowerCase() === targetKey) {
+      next.serviceType = replacement || '其他服务';
+    }
+    if (group === 'assignees' && cleanSettingValue(order.assignee || orderAssignee(order)).toLocaleLowerCase() === targetKey) {
+      next.assignee = replacement || '未分配';
+      next.adminNotes = updateAssigneeNote(order.adminNotes, next.assignee);
+      if (cleanSettingValue(order.manualVerifiedBy).toLocaleLowerCase() === targetKey) next.manualVerifiedBy = '';
+    }
+    return next;
+  });
+}
+
 async function saveOrderSettings(settings, options = {}) {
   const current = growthApi.getState();
   const nextSettings = sanitizeOrderSettings(settings);
@@ -339,6 +357,8 @@ async function saveOrderSettings(settings, options = {}) {
   };
   if (options.rename) {
     nextState.orders = applySettingRenameToOrders(current.orders || [], options.rename.group, options.rename.oldValue, options.rename.newValue);
+  } else if (options.remove) {
+    nextState.orders = applySettingRemoveToOrders(current.orders || [], options.remove.group, options.remove.value, options.remove.replacement);
   }
   growthApi.replaceState(nextState);
   setSettingsStatus('同步中');
@@ -379,12 +399,20 @@ async function editOrderSetting(group, oldValue) {
   await saveOrderSettings(settings, { rename: { group, oldValue: cleanOld, newValue: nextValue } });
 }
 
-async function removeOrderSetting(group, value) {
+async function removeOrderSetting(group, value, options = {}) {
   const cleanValue = cleanSettingValue(value);
   if (!orderSettingLabels[group] || !cleanValue || (group === 'assignees' && cleanValue === '未分配')) return;
+  const orders = currentOrders();
+  const usage = settingUsageCount(group, cleanValue, orders);
   const settings = savedOrderSettings();
   settings[group] = settings[group].filter(item => cleanSettingValue(item).toLocaleLowerCase() !== cleanValue.toLocaleLowerCase());
-  await saveOrderSettings(settings);
+  const replacement = group === 'assignees' ? '未分配' : (settings[group][0] || orderSettingDefaults[group][0] || '');
+  if (usage > 0 && options.confirm !== false) {
+    const label = orderSettingLabels[group].singular;
+    const ok = window.confirm(`删除${label}「${cleanValue}」？已有 ${usage} 张订单会改成「${replacement}」。`);
+    if (!ok) return;
+  }
+  await saveOrderSettings(settings, { remove: { group, value: cleanValue, replacement } });
 }
 
 function orderAssignee(order) {
@@ -849,10 +877,19 @@ function setManagedSelectOptions(select, group, values, selectedValue = '') {
   select.dataset.previousValue = select.value;
 }
 
+function updateAssigneeDeleteButton() {
+  if (!els.assigneeDelete || !formFields.assignee) return;
+  const value = cleanSettingValue(formFields.assignee.value);
+  const canDelete = Boolean(value && value !== '未分配' && value !== CUSTOM_OPTION_VALUE);
+  els.assigneeDelete.disabled = !canDelete;
+  els.assigneeDelete.title = canDelete ? `删除负责人：${value}` : '选择负责人后可以删除';
+}
+
 function renderOrderSelects(orders = currentOrders(), selected = {}) {
   const settings = orderSettingsWithUsage(orders);
   setManagedSelectOptions(formFields.serviceType, 'categories', settings.categories, selected.serviceType);
   setManagedSelectOptions(formFields.assignee, 'assignees', settings.assignees, selected.assignee);
+  updateAssigneeDeleteButton();
 }
 
 function renderSettingsGroup(group, values, orders = []) {
@@ -932,6 +969,7 @@ function openOrderSheet(orderId = '', forcedDate = '') {
   formFields.eventTime.value = order?.eventTime || '';
   formFields.serviceType.value = order?.serviceType || '活动餐饮';
   formFields.assignee.value = order?.assignee || '未分配';
+  updateAssigneeDeleteButton();
   formFields.title.value = order?.title || '';
   formFields.itemsSummary.value = order?.itemsSummary || '';
   formFields.location.value = order?.location || '';
@@ -1452,6 +1490,17 @@ function bind() {
       return;
     }
 
+    if (event.target.closest('[data-order-assignee-delete]')) {
+      const currentAssignee = cleanSettingValue(formFields.assignee?.value || '');
+      if (formFields.assignee) formFields.assignee.value = '未分配';
+      updateAssigneeDeleteButton();
+      await removeOrderSetting('assignees', currentAssignee);
+      if (formFields.assignee) formFields.assignee.value = '未分配';
+      updateAssigneeDeleteButton();
+      setFormMessage(currentAssignee ? `负责人「${currentAssignee}」已删除，当前订单改为未分配。` : '', true);
+      return;
+    }
+
     if (event.target === els.sheet) {
       closeOrderSheet();
       return;
@@ -1546,16 +1595,19 @@ function bind() {
     select?.addEventListener('change', async () => {
       if (select.value !== CUSTOM_OPTION_VALUE) {
         select.dataset.previousValue = select.value || '';
+        updateAssigneeDeleteButton();
         return;
       }
       const label = orderSettingLabels[group]?.singular || '名单';
       const value = cleanSettingValue(window.prompt(`新增${label}`));
       if (!value) {
         renderOrderSelects(currentOrders(), { [group === 'categories' ? 'serviceType' : 'assignee']: select.dataset.previousValue || '' });
+        updateAssigneeDeleteButton();
         return;
       }
       const added = await addOrderSetting(group, value);
       renderOrderSelects(currentOrders(), { [group === 'categories' ? 'serviceType' : 'assignee']: added || value });
+      updateAssigneeDeleteButton();
     });
   });
 
