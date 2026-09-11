@@ -855,25 +855,83 @@ function renderMonthIncome(orders) {
   `;
 }
 
+function staffDateText(dateValue, timeValue = '') {
+  if (!dateValue) return '未排期';
+  const day = shortDate(dateValue);
+  return timeValue ? `${day} ${timeValue}` : day;
+}
+
+function orderSortKey(order) {
+  return `${order.eventDate || ''} ${order.eventTime || ''}`;
+}
+
 function renderStaffAnalysis(orders) {
   if (!els.staffAnalysis) return;
   const rows = Array.from(orders.reduce((map, order) => {
     const key = order.assignee || '未分配';
-    const current = map.get(key) || { total: 0, count: 0 };
+    const current = map.get(key) || {
+      total: 0,
+      paid: 0,
+      balance: 0,
+      count: 0,
+      completed: 0,
+      orders: []
+    };
     current.total = money(current.total + order.totalAmount);
+    current.paid = money(current.paid + order.paidAmount);
+    current.balance = money(current.balance + Math.max(0, money(order.totalAmount) - money(order.paidAmount)));
     current.count += 1;
+    if (displayStatus(order) === 'service_completed') current.completed += 1;
+    current.orders.push(order);
     map.set(key, current);
     return map;
   }, new Map()).entries()).sort((a, b) => b[1].total - a[1].total);
-  const max = Math.max(1, ...rows.map(([, item]) => item.total));
+
   els.staffAnalysis.innerHTML = rows.length
-    ? rows.map(([name, item]) => `
-      <div class="order-bar-row">
-        <span>${escapeHtml(name)}</span>
-        <div class="order-bar"><i style="width:${Math.max(4, Math.round((item.total / max) * 100))}%"></i></div>
-        <strong>${escapeHtml(formatMoney(item.total))}</strong>
-      </div>
-    `).join('')
+    ? rows.map(([name, item]) => {
+      const ordered = item.orders.sort((a, b) => orderSortKey(b).localeCompare(orderSortKey(a)));
+      const datedOrders = ordered.filter(order => order.eventDate);
+      const newestDate = datedOrders[0]?.eventDate || '';
+      const oldestDate = datedOrders[datedOrders.length - 1]?.eventDate || '';
+      const dateRange = datedOrders.length
+        ? `${staffDateText(oldestDate)} - ${staffDateText(newestDate)}`
+        : '还没有日期';
+      const recentRows = ordered.slice(0, 5).map(order => {
+        const status = displayStatus(order);
+        return `
+          <li>
+            <time>${escapeHtml(staffDateText(order.eventDate, order.eventTime))}</time>
+            <span>
+              <b>${escapeHtml(order.customerName || '-')}</b>
+              <small>${escapeHtml(order.title || order.serviceType || '-')} · ${escapeHtml(statusLabels[status] || '未付款')}</small>
+            </span>
+            <strong>${escapeHtml(formatMoney(order.totalAmount))}</strong>
+          </li>
+        `;
+      }).join('');
+      return `
+        <section class="order-staff-card">
+          <div class="order-staff-head">
+            <div>
+              <span>负责人</span>
+              <h3>${escapeHtml(name)}</h3>
+            </div>
+            <strong>${item.count} 单</strong>
+          </div>
+          <div class="order-staff-metrics">
+            <span><small>营业额</small><b>${escapeHtml(formatMoney(item.total))}</b></span>
+            <span><small>已收</small><b>${escapeHtml(formatMoney(item.paid))}</b></span>
+            <span><small>待收</small><b>${escapeHtml(formatMoney(item.balance))}</b></span>
+            <span><small>完成</small><b>${item.completed} 单</b></span>
+          </div>
+          <div class="order-staff-dates">
+            <span><i class="ri-calendar-check-line" aria-hidden="true"></i>日期范围</span>
+            <b>${escapeHtml(dateRange)}</b>
+          </div>
+          <ul class="order-staff-records">${recentRows}</ul>
+        </section>
+      `;
+    }).join('')
     : '<div class="order-empty">还没有负责人资料。</div>';
 }
 
