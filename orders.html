@@ -9,7 +9,7 @@
   <link rel="icon" type="image/jpeg" href="assets/images/logo/logo-icon-dark.jpg" />
   <link rel="manifest" href="orders.webmanifest" />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/remixicon@4.6.0/fonts/remixicon.css" />
-  <link rel="stylesheet" href="css/order-center.css?v=20260913-multi-category" />
+  <link rel="stylesheet" href="css/order-center.css?v=20260913-auto-title" />
 </head>
 <body class="order-center-page">
   <main class="order-app" data-order-app hidden>
@@ -154,6 +154,7 @@
         </header>
 
         <input data-order-id type="hidden" />
+        <input data-order-field="title" type="hidden" />
         <div class="order-form-grid">
           <label>顾客姓名<input data-order-field="customerName" type="text" placeholder="例如：lau" required></label>
           <label>WhatsApp<input data-order-field="phone" type="tel" placeholder="018-xxxx xxxx"></label>
@@ -179,7 +180,6 @@
               <button class="order-field-delete" type="button" data-order-assignee-delete aria-label="删除当前负责人" title="删除当前负责人" disabled><i class="ri-delete-bin-6-line" aria-hidden="true"></i></button>
             </span>
           </label>
-          <label class="order-wide">订单标题<input data-order-field="title" type="text" placeholder="例如：10pax buffet" required></label>
           <label class="order-wide">菜单 / 备注<textarea data-order-field="itemsSummary" rows="5" placeholder="主食、肉类、海鲜、菜、地址备注"></textarea></label>
           <label class="order-wide">地点<input data-order-field="location" type="text" placeholder="地址 / Venue / Area"></label>
           <label>总额 RM<input data-order-field="totalAmount" type="number" min="0" step="0.01" required></label>
@@ -213,6 +213,6 @@
 
   <section class="order-print" data-order-print></section>
 
-  <script type="module" src="js/order-center.js?v=20260913-multi-category"></script>
+  <script type="module" src="js/order-center.js?v=20260913-auto-title"></script>
 </body>
 </html>

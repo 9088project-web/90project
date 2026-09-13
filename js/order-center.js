@@ -360,6 +360,14 @@ function categoryText(order = {}, lang = 'zh') {
   return orderCategories(order).map(value => serviceTypeLabel(value, lang)).join(' / ');
 }
 
+function autoOrderTitle({ categories = [], serviceType = '', itemsSummary = '', fallback = '' } = {}) {
+  const fromCategories = categoryValuesFrom(categories, serviceType).join(' / ');
+  return firstLine(fromCategories)
+    || firstLine(itemsSummary)
+    || firstLine(fallback)
+    || '90 PROJECT 订单';
+}
+
 function normalizeSettingList(values = [], fallback = []) {
   const seen = new Set();
   const output = [];
@@ -1209,7 +1217,7 @@ function openOrderSheet(orderId = '', forcedDate = '') {
   formFields.serviceType.value = categories[0] || '活动餐饮';
   formFields.assignee.value = order?.assignee || '未分配';
   updateFormDeleteButtons();
-  formFields.title.value = order?.title || '';
+  if (formFields.title) formFields.title.value = order?.title || '';
   formFields.itemsSummary.value = order?.itemsSummary || '';
   formFields.location.value = order?.location || '';
   formFields.totalAmount.value = order ? money(order.totalAmount).toFixed(2) : '';
@@ -1234,6 +1242,13 @@ function collectFormData() {
   const status = derivePaymentStatus(total, paid, requestedStatus);
   const categories = selectedCategoryValues();
   const serviceType = categories[0] || formFields.serviceType.value || '活动餐饮';
+  const itemsSummary = formFields.itemsSummary.value.trim();
+  const title = autoOrderTitle({
+    categories: categories.length ? categories : [serviceType],
+    serviceType,
+    itemsSummary,
+    fallback: formFields.title?.value
+  });
   return {
     id: formFields.id.value || '',
     invoiceNo: invoiceNo(),
@@ -1244,8 +1259,8 @@ function collectFormData() {
     serviceType,
     categories: categories.length ? categories : [serviceType],
     assignee: formFields.assignee.value || '未分配',
-    title: formFields.title.value.trim(),
-    itemsSummary: formFields.itemsSummary.value.trim(),
+    title,
+    itemsSummary,
     location: formFields.location.value.trim(),
     totalAmount: total,
     paidAmount: paid,
@@ -1259,7 +1274,6 @@ function collectFormData() {
 function validateOrderData(data) {
   if (!data.customerName) return '请填写顾客姓名。';
   if (!data.categories?.length) return '请选择至少一个类别。';
-  if (!data.title) return '请填写订单标题。';
   if (!data.eventDate) return '请选择日期。';
   if (data.totalAmount <= 0) return '总额必须大过 RM0。';
   return '';
