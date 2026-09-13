@@ -185,17 +185,38 @@ function hashLocalSecret(value) {
   return (hash >>> 0).toString(16).padStart(8, '0');
 }
 
-function isAdminLoggedIn() {
-  if (/^(localhost|127\.0\.0\.1|\[::1\])$/i.test(window.location.hostname)
-    && new URLSearchParams(window.location.search).get('preview') === '1') {
-    return true;
+function isPreviewMode() {
+  return /^(localhost|127\.0\.0\.1|\[::1\])$/i.test(window.location.hostname)
+    && new URLSearchParams(window.location.search).get('preview') === '1';
+}
+
+function adminCloudPassword() {
+  try {
+    return sessionStorage.getItem(ADMIN_CLOUD_PASSWORD_SESSION_KEY) || '';
+  } catch {
+    return '';
   }
-  return localStorage.getItem(ADMIN_SESSION_KEY) === '1';
+}
+
+function hasStaleAdminLogin() {
+  return localStorage.getItem(ADMIN_SESSION_KEY) === '1' && !adminCloudPassword();
+}
+
+function isAdminLoggedIn() {
+  if (isPreviewMode()) return true;
+  return localStorage.getItem(ADMIN_SESSION_KEY) === '1' && Boolean(adminCloudPassword());
 }
 
 function setAdminLoggedIn(password) {
   localStorage.setItem(ADMIN_SESSION_KEY, '1');
   if (password) sessionStorage.setItem(ADMIN_CLOUD_PASSWORD_SESSION_KEY, password);
+}
+
+function clearAdminLoggedIn() {
+  localStorage.removeItem(ADMIN_SESSION_KEY);
+  try {
+    sessionStorage.removeItem(ADMIN_CLOUD_PASSWORD_SESSION_KEY);
+  } catch {}
 }
 
 function setLoginMessage(message, good = false) {
@@ -1192,6 +1213,13 @@ async function syncCloudState() {
       state.syncMessage = '已同步';
       return result;
     }
+    if (result.reason === 'missing_admin_session') {
+      clearAdminLoggedIn();
+      state.syncState = 'error';
+      state.syncMessage = '请重新登录';
+      renderAccess();
+      return result;
+    }
     state.syncState = result.skipped ? 'local' : 'error';
     state.syncMessage = result.skipped ? '本机' : '云端失败';
     return result;
@@ -1727,6 +1755,13 @@ async function loadCloudState() {
       state.syncMessage = '已同步';
       return;
     }
+    if (result.reason === 'missing_admin_session') {
+      clearAdminLoggedIn();
+      state.syncState = 'error';
+      state.syncMessage = '请重新登录';
+      renderAccess();
+      return;
+    }
     state.syncState = result.skipped ? 'local' : 'error';
     state.syncMessage = result.skipped ? '本机' : '云端失败';
   } catch {
@@ -1736,6 +1771,9 @@ async function loadCloudState() {
 }
 
 function renderAccess() {
+  if (!isPreviewMode() && hasStaleAdminLogin()) {
+    setLoginMessage('请重新输入管理员密码，订单才可以同步云端。');
+  }
   const loggedIn = isAdminLoggedIn();
   els.app.hidden = !loggedIn;
   els.lock.hidden = loggedIn;
