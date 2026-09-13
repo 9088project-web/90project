@@ -14,8 +14,9 @@ const PASSWORD_RESET_COOLDOWN_SECONDS = 60;
 const PASSWORD_RESET_REDIRECT_URL = 'https://www.90project.online/reset-password';
 const ADMIN_CONTENT_API_PATH = '/api/admin-content';
 const ADMIN_CONTENT_SETTING_KEY = 'admin_content';
-const DEFAULT_BUSINESS_WHATSAPP = '018-949 0908';
-const DEFAULT_BUSINESS_WHATSAPP_LINK = '60189490908';
+const DEFAULT_BUSINESS_WHATSAPP = '019-690 9088';
+const DEFAULT_BUSINESS_WHATSAPP_LINK = '60196909088';
+const LEGACY_BUSINESS_WHATSAPP_DIGITS = new Set(['0189490908', '60189490908']);
 const DEFAULT_BUSINESS_EMAIL = '9088project@gmail.com';
 let businessContact = {
   phone: DEFAULT_BUSINESS_WHATSAPP,
@@ -653,6 +654,7 @@ function parseAdminContentValue(value) {
 function normalizeBusinessWhatsappTarget(value = '') {
   const digits = String(value || '').replace(/\D/g, '');
   if (!digits) return DEFAULT_BUSINESS_WHATSAPP_LINK;
+  if (LEGACY_BUSINESS_WHATSAPP_DIGITS.has(digits)) return DEFAULT_BUSINESS_WHATSAPP_LINK;
   if (digits.startsWith('60')) return digits;
   if (digits.startsWith('0')) return `60${digits.slice(1)}`;
   return digits;
@@ -661,7 +663,10 @@ function normalizeBusinessWhatsappTarget(value = '') {
 function applyAdminBusinessContent(content = {}) {
   const site = content?.[language]?.site || content?.zh?.site || content?.en?.site || {};
   const contact = site.contact || {};
-  const phone = String(contact.phone || DEFAULT_BUSINESS_WHATSAPP).trim();
+  const phoneDigits = String(contact.phone || '').replace(/\D/g, '');
+  const phone = !phoneDigits || LEGACY_BUSINESS_WHATSAPP_DIGITS.has(phoneDigits)
+    ? DEFAULT_BUSINESS_WHATSAPP
+    : String(contact.phone || DEFAULT_BUSINESS_WHATSAPP).trim();
   businessContact = {
     phone,
     whatsappLink: normalizeBusinessWhatsappTarget(contact.whatsapp || phone || DEFAULT_BUSINESS_WHATSAPP_LINK),

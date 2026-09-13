@@ -2,7 +2,7 @@
   const STORE_KEY = 'np90_pos_orders_v1';
   const DRAFT_KEY = 'np90_pos_draft_v1';
   const LOGO_PATH = 'assets/images/logo/logo-icon-dark.jpg';
-  const BUSINESS_PHONE = '0189490908';
+  const BUSINESS_PHONE = '0196909088';
 
   const packages = [
     { group: 'catering', name: 'Set A', desc: '主食 2 · 肉类 2 · 菜 / 豆腐 / 炸料 2', qty: 10, price: 29.9, service: '活动餐饮' },

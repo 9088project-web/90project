@@ -5,8 +5,8 @@ const ADMIN_SESSION_KEY = 'np90_admin_session_v1';
 const ADMIN_CLOUD_PASSWORD_SESSION_KEY = 'np90_admin_cloud_password_session_v1';
 const ADMIN_EMAIL = '9088project@gmail.com';
 const ADMIN_PASSWORD_HASH = '7045830c';
-const BUSINESS_WHATSAPP = '60189490908';
-const BUSINESS_PHONE_DISPLAY = '+60 18-949 0908';
+const BUSINESS_WHATSAPP = '60196909088';
+const BUSINESS_PHONE_DISPLAY = '+60 19-690 9088';
 const BUSINESS_EMAIL = '9088project@gmail.com';
 const BUSINESS_WEBSITE = 'www.90project.online';
 const LOGO_PATH = 'assets/images/logo/logo-icon-dark.jpg';
@@ -623,7 +623,7 @@ function demoOrders() {
       id: 'demo-lau',
       invoiceNo: '90P-DEMO-001',
       customerName: 'lau',
-      phone: '0189490908',
+      phone: '0196909088',
       serviceType: '活动餐饮',
       category: '10pax buffet',
       title: '10pax buffet',
@@ -642,7 +642,7 @@ function demoOrders() {
       id: 'demo-roast',
       invoiceNo: '90P-DEMO-002',
       customerName: 'Gelang patah',
-      phone: '0189490908',
+      phone: '0196909088',
       serviceType: '活动餐饮',
       category: '烧腊',
       title: '烧腊',
@@ -661,7 +661,7 @@ function demoOrders() {
       id: 'demo-buffet-roast',
       invoiceNo: '90P-DEMO-003',
       customerName: 'Tan',
-      phone: '0189490908',
+      phone: '0196909088',
       serviceType: '活动餐饮',
       category: '20人份buffet 29.9 / 烧腊',
       title: '20人份buffet 29.9 / 烧腊',
@@ -680,7 +680,7 @@ function demoOrders() {
       id: 'demo-mid-autumn',
       invoiceNo: '90P-DEMO-004',
       customerName: 'Lim',
-      phone: '0189490908',
+      phone: '0196909088',
       serviceType: '活动餐饮',
       category: '20人份中元节套餐',
       title: '20人份中元节套餐 / 烧肉 / 烧鸡',
@@ -699,7 +699,7 @@ function demoOrders() {
       id: 'demo-choco',
       invoiceNo: '90P-DEMO-005',
       customerName: 'Wong',
-      phone: '0189490908',
+      phone: '0196909088',
       serviceType: '活动餐饮',
       category: '35人份buffet+choco tart',
       title: '35人份buffet+choco tart',
@@ -718,7 +718,7 @@ function demoOrders() {
       id: 'demo-canape',
       invoiceNo: '90P-DEMO-006',
       customerName: 'Event A',
-      phone: '0189490908',
+      phone: '0196909088',
       serviceType: '鸡尾酒服务',
       category: 'Canape Package A',
       title: 'Canape Package A',
@@ -737,7 +737,7 @@ function demoOrders() {
       id: 'demo-80pax',
       invoiceNo: '90P-DEMO-007',
       customerName: 'Company Dinner',
-      phone: '0189490908',
+      phone: '0196909088',
       serviceType: '活动餐饮',
       category: '80人buffet 29.9',
       title: '80人buffet 29.9',
@@ -756,7 +756,7 @@ function demoOrders() {
       id: 'demo-delivery',
       invoiceNo: '90P-DEMO-008',
       customerName: 'Delivery',
-      phone: '0189490908',
+      phone: '0196909088',
       serviceType: '其他服务',
       category: '配送费',
       title: '配送费',

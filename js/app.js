@@ -175,7 +175,9 @@ const ADMIN_CONTENT_API_PATH = '/api/admin-content';
 const MEMBER_SYNC_API_PATH = '/api/member-sync';
 const ADMIN_EMAIL = '9088project@gmail.com';
 const ADMIN_PASSWORD_HASH = '7045830c';
-const WHATSAPP_NUMBER = '60189490908';
+const WHATSAPP_NUMBER = '60196909088';
+const BUSINESS_PHONE_DISPLAY = '019-690 9088';
+const LEGACY_WHATSAPP_DIGITS = new Set(['0189490908', '60189490908']);
 const DEFAULT_MEMBER_WHATSAPP_TEMPLATES = {
   zh: `你好 {name}，这里是九零食刻 90 PROJECT。
 
@@ -684,7 +686,7 @@ const translations = {
       catering: '活动餐饮',
       styling: '场地布置',
       faq: 'FAQ',
-      whatsapp: '018-949 0908',
+      whatsapp: BUSINESS_PHONE_DISPLAY,
       mobileWhatsApp: 'WhatsApp 下单',
       menu: '打开菜单',
       backTop: '返回顶部'
@@ -755,7 +757,7 @@ const translations = {
       startLabel: '开始日期',
       endLabel: '结束日期',
       periodEmpty: '请选择日期，系统会计算工作日餐数。',
-      periodButton: '立即订购 (018-949 0908)'
+      periodButton: `立即订购 (${BUSINESS_PHONE_DISPLAY})`
     },
     prices: [
       {
@@ -1041,7 +1043,7 @@ const translations = {
       startLabel: 'Start date',
       endLabel: 'End date',
       periodEmpty: 'Choose dates to calculate your working-day meals.',
-      periodButton: 'Order now (018-949 0908)'
+      periodButton: `Order now (${BUSINESS_PHONE_DISPLAY})`
     },
     prices: [
       {
@@ -2525,6 +2527,8 @@ function deepMerge(base, override) {
 
 function cleanDeprecatedAdminText(value) {
   return String(value ?? '')
+    .replace(/018-?949\s?0908/g, BUSINESS_PHONE_DISPLAY)
+    .replace(/60189490908/g, WHATSAPP_NUMBER)
     .replace(/小型\s*Buffet\s*\/?\s*Setup/gi, '活动餐饮 / Event Catering')
     .replace(/Packed\s*Meal/gi, 'Event Catering')
     .replace(/小型\s*Buffet/gi, '活动餐饮');
@@ -2536,7 +2540,7 @@ function siteContentDefaults(language) {
   SITE_CONTENT_FIELDS.forEach(field => {
     setPathValue(site, field.path, getPathValue(source, field.path) ?? '');
   });
-  setPathValue(site, 'contact.phone', '018-949 0908');
+  setPathValue(site, 'contact.phone', BUSINESS_PHONE_DISPLAY);
   setPathValue(site, 'contact.whatsapp', WHATSAPP_NUMBER);
   setPathValue(site, 'contact.email', '9088project@gmail.com');
   setPathValue(site, 'contact.footer', '© 2026 九零食刻 90 PROJECT. All Rights Reserved.');
@@ -3255,6 +3259,7 @@ function languageText() {
 function normalizeWhatsappNumber(value = '') {
   const digits = String(value || '').replace(/\D/g, '');
   if (!digits) return WHATSAPP_NUMBER;
+  if (LEGACY_WHATSAPP_DIGITS.has(digits)) return WHATSAPP_NUMBER;
   if (digits.startsWith('60')) return digits;
   if (digits.startsWith('0')) return `60${digits.slice(1)}`;
   return digits;
@@ -3262,7 +3267,10 @@ function normalizeWhatsappNumber(value = '') {
 
 function activeContactDetails(source = languageText()) {
   const contact = source?.contact || {};
-  const phone = String(contact.phone || '018-949 0908').trim();
+  const phoneDigits = String(contact.phone || '').replace(/\D/g, '');
+  const phone = !phoneDigits || LEGACY_WHATSAPP_DIGITS.has(phoneDigits)
+    ? BUSINESS_PHONE_DISPLAY
+    : String(contact.phone || BUSINESS_PHONE_DISPLAY).trim();
   const email = String(contact.email || '9088project@gmail.com').trim();
   return {
     phone,
@@ -3688,13 +3696,13 @@ function updateStaticLanguage() {
       link.textContent = value;
     });
   });
-  setHtml('.nav-whatsapp', `<i class="ri-whatsapp-line" aria-hidden="true"></i> ${t.nav.whatsapp}`);
+  const navContact = activeContactDetails(t);
+  setHtml('.nav-whatsapp', `<i class="ri-whatsapp-line" aria-hidden="true"></i> ${escapeHtml(navContact.phone)}`);
   updateMemberButton();
   const quickMessage = currentLanguage === 'en'
     ? 'Hi, I would like to ask about 90 PROJECT.'
     : '你好，我想询问九零食刻 90 PROJECT。';
   const navWhatsapp = document.querySelector('.nav-whatsapp');
-  const navContact = activeContactDetails(t);
   if (navWhatsapp) navWhatsapp.href = `https://wa.me/${navContact.whatsapp}?text=${encodeURIComponent(quickMessage)}`;
   setText('.mobile-wa', t.nav.mobileWhatsApp);
   menuToggle?.setAttribute('aria-label', t.nav.menu);
