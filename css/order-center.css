@@ -394,6 +394,63 @@ body.order-center-page [hidden]{display:none!important}
   gap:8px;
   align-items:stretch;
 }
+.order-category-field small{
+  color:var(--oc-muted);
+  font-size:12px;
+  font-weight:850;
+}
+.order-category-action{
+  align-items:start;
+}
+.order-category-picker{
+  min-height:50px;
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px;
+  padding:8px;
+  border:1px solid #d7dde9;
+  border-radius:8px;
+  background:#fff;
+}
+.order-category-option{
+  display:block!important;
+}
+.order-category-option input{
+  position:absolute;
+  width:1px;
+  height:1px;
+  overflow:hidden;
+  opacity:0;
+}
+.order-category-option span,
+.order-category-add{
+  min-height:34px;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  padding:7px 11px;
+  border:1px solid #d7dde9;
+  border-radius:8px;
+  color:#203864;
+  background:#f8fbff;
+  font-size:13px;
+  font-weight:950;
+  line-height:1.1;
+}
+.order-category-option input:checked + span{
+  color:#fff;
+  border-color:var(--oc-blue);
+  background:var(--oc-blue);
+}
+.order-category-option input:focus-visible + span,
+.order-category-add:focus-visible{
+  outline:3px solid rgba(47,99,216,.18);
+  outline-offset:2px;
+}
+.order-category-add{
+  color:var(--oc-blue);
+  background:#edf3ff;
+}
 .order-field-delete{
   width:50px;
   min-height:50px;

@@ -39,6 +39,19 @@ const normalize = value => String(value || '').trim().toLowerCase();
 const normalizePhone = value => String(value || '').replace(/\D/g, '');
 const normalizeReferralCode = value => String(value || '').trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
 const normalizeReceiptLanguage = value => String(value || '').trim().toLowerCase() === 'en' ? 'en' : 'zh';
+const normalizeCategories = (...values) => {
+  const seen = new Set();
+  const output = [];
+  values.flat().forEach(item => {
+    const value = String(item || '').replace(/\s+/g, ' ').trim();
+    if (!value) return;
+    const key = value.toLowerCase();
+    if (seen.has(key)) return;
+    seen.add(key);
+    output.push(value);
+  });
+  return output;
+};
 const money = value => Math.round((Number(value) || 0) * 100) / 100;
 const dateValue = value => new Date(value || Date.now()).toISOString();
 const hasValue = value => value !== undefined && value !== null && value !== '';
@@ -471,6 +484,7 @@ export function createGrowthApi(storage = defaultStorage(), options = {}) {
       externalInquiryId,
       invoiceNo: input.invoiceNo || externalInquiryId,
       serviceType: input.serviceType || '',
+      categories: normalizeCategories(input.categories, input.serviceType),
       packageName: input.packageName || '',
       eventDate: input.eventDate || '',
       eventTime: input.eventTime || '',
@@ -496,6 +510,7 @@ export function createGrowthApi(storage = defaultStorage(), options = {}) {
       externalInquiryId,
       invoiceNo: input.invoiceNo || externalInquiryId,
       serviceType: input.serviceType || enquiry.serviceType,
+      categories: normalizeCategories(input.categories, input.serviceType || enquiry.serviceType),
       packageName: input.packageName || enquiry.packageName || '',
       totalAmount,
       originalAmount: money(input.originalAmount || input.totalAmount || input.budget),
@@ -576,7 +591,7 @@ export function createGrowthApi(storage = defaultStorage(), options = {}) {
   function createEnquiry(memberId, input = {}) {
     const current = read();
     if (!findMember(current, memberId)) return { ok: false, reason: 'member_not_found' };
-    const enquiry = { id: id('enquiry'), memberId, referralCode: getRelationForMember(current, memberId)?.referralCode || null, serviceType: input.serviceType || '', packageName: input.packageName || '', eventDate: input.eventDate || '', eventTime: input.eventTime || '', location: input.location || '', pax: Number(input.pax) || 0, foodChoice: input.foodChoice || '', stylingNeeds: input.stylingNeeds || '', beverageNeeds: input.beverageNeeds || '', budget: money(input.budget), notes: input.notes || '', referenceImages: Array.isArray(input.referenceImages) ? input.referenceImages : [], status: 'new', createdAt: dateValue(now()), updatedAt: dateValue(now()) };
+    const enquiry = { id: id('enquiry'), memberId, referralCode: getRelationForMember(current, memberId)?.referralCode || null, serviceType: input.serviceType || '', categories: normalizeCategories(input.categories, input.serviceType), packageName: input.packageName || '', eventDate: input.eventDate || '', eventTime: input.eventTime || '', location: input.location || '', pax: Number(input.pax) || 0, foodChoice: input.foodChoice || '', stylingNeeds: input.stylingNeeds || '', beverageNeeds: input.beverageNeeds || '', budget: money(input.budget), notes: input.notes || '', referenceImages: Array.isArray(input.referenceImages) ? input.referenceImages : [], status: 'new', createdAt: dateValue(now()), updatedAt: dateValue(now()) };
     const next = clone(current);
     next.enquiries.unshift(enquiry);
     audit(next, 'enquiry.created', memberId, 'enquiry', enquiry.id);
@@ -590,7 +605,7 @@ export function createGrowthApi(storage = defaultStorage(), options = {}) {
     if (!enquiry) return { ok: false, reason: 'enquiry_not_found' };
     const totalAmount = money(input.totalAmount);
     const depositAmount = money(input.depositAmount);
-    const order = { id: id('order'), enquiryId, memberId, externalInquiryId: input.externalInquiryId || enquiry.externalInquiryId || '', invoiceNo: input.invoiceNo || input.externalInquiryId || enquiry.invoiceNo || enquiry.externalInquiryId || '', serviceType: input.serviceType || enquiry.serviceType, packageName: input.packageName || enquiry.packageName || '', totalAmount, originalAmount: money(input.originalAmount || input.totalAmount), discountAmount: money(input.discountAmount), depositAmount, balanceAmount: orderBalance(input, totalAmount, depositAmount), sstAmount: money(input.sstAmount), deliveryFee: money(input.deliveryFee), extraLabourFee: money(input.extraLabourFee), thirdPartyFee: money(input.thirdPartyFee), couponDiscount: money(input.couponDiscount), refundedAmount: 0, eventDate: input.eventDate || enquiry.eventDate || '', eventTime: input.eventTime || enquiry.eventTime || '', location: input.location || enquiry.location || '', pax: Number(input.pax) || Number(enquiry.pax) || 0, itemsSummary: input.itemsSummary || enquiry.foodChoice || '', lineItems: normalizeOrderLineItems(input.lineItems), adminNotes: input.adminNotes || '', whatsappMessage: input.whatsappMessage || '', sentAt: input.sentAt || null, receiptLanguage: normalizeReceiptLanguage(input.receiptLanguage || input.language), status: input.status || 'confirmed', source: input.source || 'manual-order', createdAt: dateValue(now()), updatedAt: dateValue(now()), completedAt: null, manualVerifiedAt: null, manualVerifiedBy: '' };
+    const order = { id: id('order'), enquiryId, memberId, externalInquiryId: input.externalInquiryId || enquiry.externalInquiryId || '', invoiceNo: input.invoiceNo || input.externalInquiryId || enquiry.invoiceNo || enquiry.externalInquiryId || '', serviceType: input.serviceType || enquiry.serviceType, categories: normalizeCategories(input.categories, input.serviceType || enquiry.serviceType), packageName: input.packageName || enquiry.packageName || '', totalAmount, originalAmount: money(input.originalAmount || input.totalAmount), discountAmount: money(input.discountAmount), depositAmount, balanceAmount: orderBalance(input, totalAmount, depositAmount), sstAmount: money(input.sstAmount), deliveryFee: money(input.deliveryFee), extraLabourFee: money(input.extraLabourFee), thirdPartyFee: money(input.thirdPartyFee), couponDiscount: money(input.couponDiscount), refundedAmount: 0, eventDate: input.eventDate || enquiry.eventDate || '', eventTime: input.eventTime || enquiry.eventTime || '', location: input.location || enquiry.location || '', pax: Number(input.pax) || Number(enquiry.pax) || 0, itemsSummary: input.itemsSummary || enquiry.foodChoice || '', lineItems: normalizeOrderLineItems(input.lineItems), adminNotes: input.adminNotes || '', whatsappMessage: input.whatsappMessage || '', sentAt: input.sentAt || null, receiptLanguage: normalizeReceiptLanguage(input.receiptLanguage || input.language), status: input.status || 'confirmed', source: input.source || 'manual-order', createdAt: dateValue(now()), updatedAt: dateValue(now()), completedAt: null, manualVerifiedAt: null, manualVerifiedBy: '' };
     const next = clone(current);
     next.orders.unshift(order);
     audit(next, 'order.created', memberId, 'order', order.id, 'MOCK order');
@@ -612,6 +627,7 @@ export function createGrowthApi(storage = defaultStorage(), options = {}) {
       if (input[field] !== undefined) target[field] = String(input[field] || '').trim();
     });
     if (input.receiptLanguage !== undefined) target.receiptLanguage = normalizeReceiptLanguage(input.receiptLanguage);
+    if (input.categories !== undefined) target.categories = normalizeCategories(input.categories, target.serviceType);
     ['totalAmount', 'sstAmount', 'deliveryFee', 'extraLabourFee', 'thirdPartyFee', 'couponDiscount', 'originalAmount', 'discountAmount', 'depositAmount', 'balanceAmount', 'pax'].forEach(field => {
       if (input[field] !== undefined) target[field] = money(input[field]);
     });
@@ -639,6 +655,7 @@ export function createGrowthApi(storage = defaultStorage(), options = {}) {
     const enquiry = next.enquiries.find(item => item.id === target.enquiryId);
     if (enquiry) {
       if (input.serviceType !== undefined) enquiry.serviceType = target.serviceType;
+      if (input.categories !== undefined) enquiry.categories = normalizeCategories(input.categories, target.serviceType);
       if (input.totalAmount !== undefined) enquiry.budget = target.totalAmount;
       if (input.adminNotes !== undefined) enquiry.adminNotes = target.adminNotes;
       if (input.invoiceNo !== undefined) enquiry.invoiceNo = target.invoiceNo;

@@ -9,7 +9,7 @@
   <link rel="icon" type="image/jpeg" href="assets/images/logo/logo-icon-dark.jpg" />
   <link rel="manifest" href="orders.webmanifest" />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/remixicon@4.6.0/fonts/remixicon.css" />
-  <link rel="stylesheet" href="css/order-center.css?v=20260913-cloud-sync" />
+  <link rel="stylesheet" href="css/order-center.css?v=20260913-multi-category" />
 </head>
 <body class="order-center-page">
   <main class="order-app" data-order-app hidden>
@@ -159,17 +159,13 @@
           <label>WhatsApp<input data-order-field="phone" type="tel" placeholder="018-xxxx xxxx"></label>
           <label>日期<input data-order-field="eventDate" type="date" required></label>
           <label>时间<input data-order-field="eventTime" type="time"></label>
-          <label>类别
-            <span class="order-select-action">
-              <select data-order-field="serviceType">
-                <option value="活动餐饮">活动餐饮</option>
-                <option value="包伙食">包伙食</option>
-                <option value="场地布置">场地布置</option>
-                <option value="鸡尾酒服务">鸡尾酒服务</option>
-                <option value="其他服务">其他服务</option>
-              </select>
+          <label class="order-wide order-category-field">类别
+            <input data-order-field="serviceType" type="hidden" value="活动餐饮">
+            <span class="order-select-action order-category-action">
+              <span class="order-category-picker" data-order-category-picker></span>
               <button class="order-field-delete" type="button" data-order-category-delete aria-label="删除当前类别" title="删除当前类别" disabled><i class="ri-delete-bin-6-line" aria-hidden="true"></i></button>
             </span>
+            <small>可同时选择多项，第一项会作为主类别。</small>
           </label>
           <label>负责人
             <span class="order-select-action">
@@ -217,6 +213,6 @@
 
   <section class="order-print" data-order-print></section>
 
-  <script type="module" src="js/order-center.js?v=20260913-cloud-sync"></script>
+  <script type="module" src="js/order-center.js?v=20260913-multi-category"></script>
 </body>
 </html>

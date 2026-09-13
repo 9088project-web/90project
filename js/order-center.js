@@ -100,6 +100,7 @@ const els = {
   monthIncome: document.querySelector('[data-order-month-income]'),
   staffAnalysis: document.querySelector('[data-order-staff-analysis]'),
   settingsStatus: document.querySelector('[data-order-settings-status]'),
+  categoryPicker: document.querySelector('[data-order-category-picker]'),
   configInputs: {
     categories: document.querySelector('[data-order-config-input="categories"]'),
     assignees: document.querySelector('[data-order-config-input="assignees"]')
@@ -326,6 +327,39 @@ function cleanSettingValue(value) {
   return String(value || '').replace(/\s+/g, ' ').trim().slice(0, 60);
 }
 
+function categoryValuesFrom(...sources) {
+  const values = [];
+  sources.forEach(source => {
+    if (Array.isArray(source)) {
+      values.push(...source);
+      return;
+    }
+    const value = cleanSettingValue(source);
+    if (value) values.push(value);
+  });
+  return normalizeSettingList(values, []);
+}
+
+function orderCategories(order = {}) {
+  const stored = categoryValuesFrom(order.categories);
+  if (stored.length) return stored;
+  const primary = categoryValuesFrom(order.serviceType);
+  if (primary.length) return primary;
+  const legacy = String(order.category || '').split(/\s*(?:\/|,|，|、|\|)\s*/);
+  const values = categoryValuesFrom(legacy);
+  return values.length ? values : ['活动餐饮'];
+}
+
+function selectedCategoryValues() {
+  const selected = Array.from(document.querySelectorAll('[data-order-category-option]:checked'))
+    .map(input => input.value);
+  return categoryValuesFrom(selected);
+}
+
+function categoryText(order = {}, lang = 'zh') {
+  return orderCategories(order).map(value => serviceTypeLabel(value, lang)).join(' / ');
+}
+
 function normalizeSettingList(values = [], fallback = []) {
   const seen = new Set();
   const output = [];
@@ -351,7 +385,7 @@ function savedOrderSettings() {
 
 function orderSettingsWithUsage(orders = []) {
   const saved = savedOrderSettings();
-  const categoryUsage = orders.flatMap(order => [order.serviceType, order.category]);
+  const categoryUsage = orders.flatMap(order => orderCategories(order));
   const assigneeUsage = orders.map(order => order.assignee || orderAssignee(order));
   return {
     categories: normalizeSettingList([...saved.categories, ...categoryUsage], orderSettingDefaults.categories),
@@ -373,7 +407,7 @@ function settingUsageCount(group, value, orders = []) {
   if (!target) return 0;
   return orders.filter(order => {
     if (group === 'categories') {
-      return [order.serviceType, order.category].some(item => cleanSettingValue(item).toLocaleLowerCase() === target);
+      return orderCategories(order).some(item => cleanSettingValue(item).toLocaleLowerCase() === target);
     }
     return cleanSettingValue(order.assignee || orderAssignee(order)).toLocaleLowerCase() === target;
   }).length;
@@ -399,8 +433,18 @@ function applySettingRenameToOrders(orders = [], group, oldValue, newValue) {
   if (!oldKey || cleanSettingValue(newValue).toLocaleLowerCase() === oldKey) return orders;
   return orders.map(order => {
     const next = { ...order };
-    if (group === 'categories' && cleanSettingValue(order.serviceType).toLocaleLowerCase() === oldKey) {
-      next.serviceType = newValue;
+    if (group === 'categories') {
+      let changed = false;
+      const categories = orderCategories(order).map(item => {
+        if (cleanSettingValue(item).toLocaleLowerCase() !== oldKey) return item;
+        changed = true;
+        return newValue;
+      });
+      if (changed) {
+        next.categories = normalizeSettingList(categories, []);
+        next.serviceType = next.categories[0] || newValue;
+        if (cleanSettingValue(order.category).toLocaleLowerCase() === oldKey) next.category = newValue;
+      }
     }
     if (group === 'assignees' && cleanSettingValue(order.assignee || orderAssignee(order)).toLocaleLowerCase() === oldKey) {
       next.assignee = newValue;
@@ -416,8 +460,13 @@ function applySettingRemoveToOrders(orders = [], group, value, replacement) {
   if (!targetKey) return orders;
   return orders.map(order => {
     const next = { ...order };
-    if (group === 'categories' && cleanSettingValue(order.serviceType).toLocaleLowerCase() === targetKey) {
-      next.serviceType = replacement || '其他服务';
+    if (group === 'categories') {
+      const categories = orderCategories(order).filter(item => cleanSettingValue(item).toLocaleLowerCase() !== targetKey);
+      if (categories.length !== orderCategories(order).length) {
+        next.categories = normalizeSettingList(categories.length ? categories : [replacement || '其他服务'], []);
+        next.serviceType = next.categories[0] || replacement || '其他服务';
+        if (cleanSettingValue(order.category).toLocaleLowerCase() === targetKey) next.category = next.serviceType;
+      }
     }
     if (group === 'assignees' && cleanSettingValue(order.assignee || orderAssignee(order)).toLocaleLowerCase() === targetKey) {
       next.assignee = replacement || '未分配';
@@ -530,14 +579,16 @@ function mapGrowthOrders() {
     const total = money(order.totalAmount);
     const paid = paidAmount(order);
     const balance = Math.max(0, money(total - paid));
+    const categories = categoryValuesFrom(order.categories, order.serviceType || '活动餐饮');
     return {
       id: order.id,
       invoiceNo: order.invoiceNo || order.externalInquiryId || order.id,
       externalInquiryId: order.externalInquiryId || order.invoiceNo || order.id,
       customerName: member.name || order.customerName || '90 Customer',
       phone: member.phone || order.phone || '',
-      serviceType: order.serviceType || '活动餐饮',
-      category: order.serviceType || title,
+      serviceType: categories[0] || '活动餐饮',
+      categories,
+      category: categories.join(' / ') || title,
       title,
       itemsSummary: summary,
       lineItems,
@@ -782,6 +833,7 @@ function renderOrderCard(order) {
         <p class="order-note">${escapeHtml(order.itemsSummary || '-')}</p>
         <div class="order-meta">
           <span class="order-status ${escapeHtml(status)}">${escapeHtml(statusLabels[status] || '未付款')}</span>
+          <span><i class="ri-price-tag-3-line" aria-hidden="true"></i>${escapeHtml(categoryText(order))}</span>
           <span><i class="ri-wallet-3-line" aria-hidden="true"></i>已收 ${escapeHtml(formatMoney(order.paidAmount))}</span>
           <span><i class="ri-refund-2-line" aria-hidden="true"></i>待收 ${escapeHtml(formatMoney(balance))}</span>
           ${order.location ? `<span><i class="ri-map-pin-2-line" aria-hidden="true"></i>${escapeHtml(order.location)}</span>` : ''}
@@ -815,8 +867,7 @@ function filteredOrders(orders) {
     const haystack = [
       order.customerName,
       order.phone,
-      order.serviceType,
-      order.category,
+      ...orderCategories(order),
       order.title,
       order.itemsSummary,
       order.location,
@@ -879,11 +930,12 @@ function renderCalendar(orders) {
 function renderCategoryAnalysis(orders) {
   if (!els.categoryAnalysis) return;
   const rows = Array.from(orders.reduce((map, order) => {
-    const key = order.category || order.serviceType || '其他';
-    const current = map.get(key) || { count: 0, total: 0 };
-    current.count += 1;
-    current.total = money(current.total + order.totalAmount);
-    map.set(key, current);
+    orderCategories(order).forEach(key => {
+      const current = map.get(key) || { count: 0, total: 0 };
+      current.count += 1;
+      current.total = money(current.total + order.totalAmount);
+      map.set(key, current);
+    });
     return map;
   }, new Map()).entries()).sort((a, b) => b[1].total - a[1].total);
 
@@ -1029,6 +1081,27 @@ function setManagedSelectOptions(select, group, values, selectedValue = '') {
   select.dataset.previousValue = select.value;
 }
 
+function setCategoryPickerOptions(values, selectedValues = []) {
+  if (!els.categoryPicker) return;
+  const selected = categoryValuesFrom(selectedValues);
+  const selectedSet = new Set(selected.map(value => value.toLocaleLowerCase()));
+  const options = normalizeSettingList([...values, ...selected], orderSettingDefaults.categories);
+  const active = selected.length ? selected : [options[0] || '活动餐饮'];
+  const activeSet = new Set(active.map(value => value.toLocaleLowerCase()));
+  els.categoryPicker.innerHTML = `${options.map(value => {
+    const id = `order-category-${hashLocalSecret(value).slice(0, 6)}`;
+    const checked = activeSet.has(value.toLocaleLowerCase());
+    return `
+      <label class="order-category-option" for="${escapeHtml(id)}">
+        <input id="${escapeHtml(id)}" data-order-category-option type="checkbox" value="${escapeHtml(value)}" ${checked ? 'checked' : ''}>
+        <span>${escapeHtml(value)}</span>
+      </label>
+    `;
+  }).join('')}<button class="order-category-add" type="button" data-order-category-add-inline>+ 新增类别</button>`;
+  formFields.serviceType.value = active[0] || '';
+  els.categoryPicker.dataset.previousValue = selectedSet.size ? active.join('||') : '';
+}
+
 function updateAssigneeDeleteButton() {
   if (!els.assigneeDelete || !formFields.assignee) return;
   const value = cleanSettingValue(formFields.assignee.value);
@@ -1039,7 +1112,7 @@ function updateAssigneeDeleteButton() {
 
 function updateCategoryDeleteButton() {
   if (!els.categoryDelete || !formFields.serviceType) return;
-  const value = cleanSettingValue(formFields.serviceType.value);
+  const value = selectedCategoryValues()[0] || cleanSettingValue(formFields.serviceType.value);
   const canDelete = Boolean(value && value !== CUSTOM_OPTION_VALUE);
   els.categoryDelete.disabled = !canDelete;
   els.categoryDelete.title = canDelete ? `删除类别：${value}` : '选择类别后可以删除';
@@ -1052,7 +1125,7 @@ function updateFormDeleteButtons() {
 
 function renderOrderSelects(orders = currentOrders(), selected = {}) {
   const settings = orderSettingsWithUsage(orders);
-  setManagedSelectOptions(formFields.serviceType, 'categories', settings.categories, selected.serviceType);
+  setCategoryPickerOptions(settings.categories, selected.categories || [selected.serviceType]);
   setManagedSelectOptions(formFields.assignee, 'assignees', settings.assignees, selected.assignee);
   updateFormDeleteButtons();
 }
@@ -1126,13 +1199,14 @@ function setView(view) {
 function openOrderSheet(orderId = '', forcedDate = '') {
   const order = orderId ? findOrder(orderId) : null;
   const isDemo = order?.source === 'demo';
-  renderOrderSelects(currentOrders(), { serviceType: order?.serviceType, assignee: order?.assignee });
+  const categories = order ? orderCategories(order) : ['活动餐饮'];
+  renderOrderSelects(currentOrders(), { categories, assignee: order?.assignee });
   formFields.id.value = order && !isDemo ? order.id : '';
   formFields.customerName.value = order?.customerName || '';
   formFields.phone.value = order?.phone || '';
   formFields.eventDate.value = forcedDate || order?.eventDate || todayDate();
   formFields.eventTime.value = order?.eventTime || '';
-  formFields.serviceType.value = order?.serviceType || '活动餐饮';
+  formFields.serviceType.value = categories[0] || '活动餐饮';
   formFields.assignee.value = order?.assignee || '未分配';
   updateFormDeleteButtons();
   formFields.title.value = order?.title || '';
@@ -1158,6 +1232,8 @@ function collectFormData() {
   const paid = Math.min(total, money(formFields.paidAmount.value));
   const requestedStatus = formFields.status.value || 'new';
   const status = derivePaymentStatus(total, paid, requestedStatus);
+  const categories = selectedCategoryValues();
+  const serviceType = categories[0] || formFields.serviceType.value || '活动餐饮';
   return {
     id: formFields.id.value || '',
     invoiceNo: invoiceNo(),
@@ -1165,7 +1241,8 @@ function collectFormData() {
     phone: formFields.phone.value.trim(),
     eventDate: formFields.eventDate.value || todayDate(),
     eventTime: formFields.eventTime.value || '',
-    serviceType: formFields.serviceType.value || '活动餐饮',
+    serviceType,
+    categories: categories.length ? categories : [serviceType],
     assignee: formFields.assignee.value || '未分配',
     title: formFields.title.value.trim(),
     itemsSummary: formFields.itemsSummary.value.trim(),
@@ -1181,6 +1258,7 @@ function collectFormData() {
 
 function validateOrderData(data) {
   if (!data.customerName) return '请填写顾客姓名。';
+  if (!data.categories?.length) return '请选择至少一个类别。';
   if (!data.title) return '请填写订单标题。';
   if (!data.eventDate) return '请选择日期。';
   if (data.totalAmount <= 0) return '总额必须大过 RM0。';
@@ -1252,6 +1330,7 @@ async function saveOrderFromForm({ close = true } = {}) {
     phone: data.phone,
     email: data.phone ? '' : `${sourceId}@orders.90project.local`,
     serviceType: data.serviceType,
+    categories: data.categories,
     packageName: data.title,
     eventDate: data.eventDate,
     eventTime: data.eventTime,
@@ -1275,6 +1354,7 @@ async function saveOrderFromForm({ close = true } = {}) {
   if (data.id) {
     result = growthApi.updateOrder(data.id, {
       serviceType: data.serviceType,
+      categories: data.categories,
       totalAmount: data.totalAmount,
       originalAmount: data.totalAmount,
       depositAmount: data.paidAmount,
@@ -1322,6 +1402,7 @@ function buildWhatsAppMessage(order) {
       '',
       `Customer: ${order.customerName || '-'}`,
       `Service: ${order.title || serviceTypeLabel(order.serviceType, lang) || '-'}`,
+      `Category: ${categoryText(order, lang) || '-'}`,
       order.eventDate ? `Date: ${order.eventDate}${order.eventTime ? ` ${order.eventTime}` : ''}` : '',
       order.location ? `Venue: ${order.location}` : '',
       '',
@@ -1341,6 +1422,7 @@ function buildWhatsAppMessage(order) {
     '',
     `顾客：${order.customerName || '-'}`,
     `服务：${order.title || order.serviceType || '-'}`,
+    `类别：${categoryText(order) || '-'}`,
     order.eventDate ? `日期：${order.eventDate}${order.eventTime ? ` ${order.eventTime}` : ''}` : '',
     order.location ? `地点：${order.location}` : '',
     '',
@@ -1424,7 +1506,7 @@ function printItemRows(order, lang = 'zh') {
       <td>${index + 1}</td>
       <td>
         <strong>${escapeHtml(item.description)}</strong>
-        <span>${escapeHtml(serviceTypeLabel(order.serviceType, lang))}</span>
+        <span>${escapeHtml(categoryText(order, lang))}</span>
       </td>
       <td>${escapeHtml(String(item.qty))}</td>
       <td>${escapeHtml(formatMoney(item.unitPrice))}</td>
@@ -1519,6 +1601,7 @@ function renderPrint(order) {
       sampleOrder: 'Sample Order',
       orderCenter: 'Order Center',
       eventDetails: 'Event Details',
+      category: 'Category',
       dateTime: 'Date & Time',
       venue: 'Venue',
       pendingVenue: 'To be confirmed',
@@ -1559,6 +1642,7 @@ function renderPrint(order) {
       sampleOrder: '样品订单',
       orderCenter: '订单经营中心',
       eventDetails: '活动资料',
+      category: '类别',
       dateTime: '日期时间',
       venue: '地点',
       pendingVenue: '待确认',
@@ -1619,6 +1703,7 @@ function renderPrint(order) {
         <div class="order-print-box">
           <h3>${escapeHtml(t.eventDetails)}</h3>
           <p><b>${escapeHtml(order.title || serviceTypeLabel(order.serviceType, lang) || '-')}</b></p>
+          <p>${escapeHtml(t.category)}: ${escapeHtml(categoryText(order, lang) || '-')}</p>
           <p>${escapeHtml(t.dateTime)}: ${escapeHtml(printDateTime(order.eventDate, order.eventTime, lang))}</p>
           <p>${escapeHtml(t.venue)}: ${escapeHtml(order.location || t.pendingVenue)}</p>
         </div>
@@ -1813,18 +1898,20 @@ function bind() {
     }
 
     if (event.target.closest('[data-order-category-delete]')) {
-      const currentCategory = cleanSettingValue(formFields.serviceType?.value || '');
+      const selectedCategories = selectedCategoryValues();
+      const currentCategory = selectedCategories[0] || cleanSettingValue(formFields.serviceType?.value || '');
       const settings = savedOrderSettings();
       const fallback = settings.categories.find(item => cleanSettingValue(item).toLocaleLowerCase() !== currentCategory.toLocaleLowerCase())
         || orderSettingDefaults.categories.find(item => cleanSettingValue(item).toLocaleLowerCase() !== currentCategory.toLocaleLowerCase())
         || '其他服务';
       if (!currentCategory || !confirmRemoveSetting('categories', currentCategory, fallback)) return;
-      if (formFields.serviceType) formFields.serviceType.value = fallback;
+      const remainingSelected = selectedCategories.filter(item => cleanSettingValue(item).toLocaleLowerCase() !== currentCategory.toLocaleLowerCase());
+      if (formFields.serviceType) formFields.serviceType.value = remainingSelected[0] || fallback;
       updateFormDeleteButtons();
       const replacement = await removeOrderSetting('categories', currentCategory, { confirm: false });
-      if (formFields.serviceType) formFields.serviceType.value = replacement || fallback;
+      renderOrderSelects(currentOrders(), { categories: remainingSelected.length ? remainingSelected : [replacement || fallback], assignee: formFields.assignee?.value || '未分配' });
       updateFormDeleteButtons();
-      setFormMessage(currentCategory ? `类别「${currentCategory}」已删除，当前订单改为「${formFields.serviceType.value}」。` : '', true);
+      setFormMessage(currentCategory ? `类别「${currentCategory}」已删除，当前订单保留「${(selectedCategoryValues()[0] || replacement || fallback)}」。` : '', true);
       return;
     }
 
@@ -1927,7 +2014,7 @@ function bind() {
     });
   });
 
-  [['categories', formFields.serviceType], ['assignees', formFields.assignee]].forEach(([group, select]) => {
+  [[ 'assignees', formFields.assignee ]].forEach(([group, select]) => {
     select?.addEventListener('focus', () => {
       select.dataset.previousValue = select.value || '';
     });
@@ -1945,9 +2032,31 @@ function bind() {
         return;
       }
       const added = await addOrderSetting(group, value);
-      renderOrderSelects(currentOrders(), { [group === 'categories' ? 'serviceType' : 'assignee']: added || value });
+      renderOrderSelects(currentOrders(), { assignee: added || value });
       updateFormDeleteButtons();
     });
+  });
+
+  els.categoryPicker?.addEventListener('change', event => {
+    if (!event.target.closest('[data-order-category-option]')) return;
+    const selected = selectedCategoryValues();
+    if (!selected.length) {
+      event.target.checked = true;
+      setFormMessage('每张订单至少保留一个类别。');
+      return;
+    }
+    formFields.serviceType.value = selected[0] || '活动餐饮';
+    updateFormDeleteButtons();
+  });
+
+  els.categoryPicker?.addEventListener('click', async event => {
+    if (!event.target.closest('[data-order-category-add-inline]')) return;
+    const value = cleanSettingValue(window.prompt('新增类别'));
+    if (!value) return;
+    const selected = selectedCategoryValues();
+    const added = await addOrderSetting('categories', value);
+    renderOrderSelects(currentOrders(), { categories: normalizeSettingList([...selected, added || value], []) });
+    updateFormDeleteButtons();
   });
 
   els.search?.addEventListener('input', event => {
