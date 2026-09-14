@@ -9,7 +9,7 @@
   <link rel="icon" type="image/jpeg" href="assets/images/logo/logo-icon-dark.jpg" />
   <link rel="manifest" href="orders.webmanifest" />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/remixicon@4.6.0/fonts/remixicon.css" />
-  <link rel="stylesheet" href="css/order-center.css?v=20260913-auto-title" />
+  <link rel="stylesheet" href="css/order-center.css?v=20260914-category-lines" />
 </head>
 <body class="order-center-page">
   <main class="order-app" data-order-app hidden>
@@ -160,14 +160,21 @@
           <label>WhatsApp<input data-order-field="phone" type="tel" placeholder="018-xxxx xxxx"></label>
           <label>日期<input data-order-field="eventDate" type="date" required></label>
           <label>时间<input data-order-field="eventTime" type="time"></label>
-          <label class="order-wide order-category-field">类别
+          <section class="order-wide order-category-field">
+            <div class="order-category-heading">
+              <span>订单类别（可无限添加）</span>
+              <small>每项类别可填写金额和菜单内容。</small>
+            </div>
             <input data-order-field="serviceType" type="hidden" value="活动餐饮">
-            <span class="order-select-action order-category-action">
-              <span class="order-category-picker" data-order-category-picker></span>
-              <button class="order-field-delete" type="button" data-order-category-delete aria-label="删除当前类别" title="删除当前类别" disabled><i class="ri-delete-bin-6-line" aria-hidden="true"></i></button>
-            </span>
-            <small>可同时选择多项，第一项会作为主类别。</small>
-          </label>
+            <div class="order-category-lines" data-order-category-lines></div>
+            <button class="order-category-add-line" type="button" data-order-category-add-line>
+              <i class="ri-add-line" aria-hidden="true"></i> 添加类别
+            </button>
+            <div class="order-category-shortcuts">
+              <span>以往类别：</span>
+              <div data-order-category-shortcuts></div>
+            </div>
+          </section>
           <label>负责人
             <span class="order-select-action">
               <select data-order-field="assignee">
@@ -213,6 +220,6 @@
 
   <section class="order-print" data-order-print></section>
 
-  <script type="module" src="js/order-center.js?v=20260913-auto-title"></script>
+  <script type="module" src="js/order-center.js?v=20260914-category-lines"></script>
 </body>
 </html>

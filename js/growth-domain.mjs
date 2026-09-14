@@ -63,6 +63,7 @@ const orderBalance = (input = {}, totalAmount = 0, depositAmount = 0) => {
 const normalizeOrderLineItems = items => Array.isArray(items)
   ? items.map(item => ({
       description: String(item?.description || '').trim(),
+      note: String(item?.note || '').trim(),
       qty: Number(item?.qty) || 1,
       unitPrice: money(item?.unitPrice),
       amount: money(item?.amount ?? (Number(item?.qty || 1) * Number(item?.unitPrice || 0)))

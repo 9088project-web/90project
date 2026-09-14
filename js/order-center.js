@@ -100,7 +100,8 @@ const els = {
   monthIncome: document.querySelector('[data-order-month-income]'),
   staffAnalysis: document.querySelector('[data-order-staff-analysis]'),
   settingsStatus: document.querySelector('[data-order-settings-status]'),
-  categoryPicker: document.querySelector('[data-order-category-picker]'),
+  categoryLines: document.querySelector('[data-order-category-lines]'),
+  categoryShortcuts: document.querySelector('[data-order-category-shortcuts]'),
   configInputs: {
     categories: document.querySelector('[data-order-config-input="categories"]'),
     assignees: document.querySelector('[data-order-config-input="assignees"]')
@@ -350,10 +351,55 @@ function orderCategories(order = {}) {
   return values.length ? values : ['活动餐饮'];
 }
 
+function cleanCategoryLine(line = {}) {
+  const description = cleanSettingValue(line.description || line.name || line.title);
+  const note = String(line.note || line.notes || line.summary || '').trim();
+  const amount = money(line.amount ?? line.total ?? line.unitPrice ?? 0);
+  return {
+    description,
+    note,
+    qty: 1,
+    unitPrice: amount,
+    amount
+  };
+}
+
+function categoryLinesTotal(lines = []) {
+  return money(lines.reduce((sum, line) => sum + money(line.amount), 0));
+}
+
+function orderCategoryLines(order = {}) {
+  const sourceItems = Array.isArray(order.lineItems) ? order.lineItems : [];
+  const categories = orderCategories(order);
+  const summary = String(order.itemsSummary || '').trim();
+  if (sourceItems.length) {
+    const lines = sourceItems.map((item, index) => cleanCategoryLine({
+      description: item.description || categories[index] || order.serviceType,
+      note: item.note || (sourceItems.length === 1 ? summary : ''),
+      amount: item.amount ?? item.unitPrice ?? 0
+    })).filter(line => line.description || line.note || line.amount > 0);
+    if (lines.length) return lines;
+  }
+  return categories.map((category, index) => cleanCategoryLine({
+    description: category,
+    note: index === 0 ? summary : '',
+    amount: index === 0 ? order.totalAmount : 0
+  })).filter(line => line.description || line.note || line.amount > 0);
+}
+
+function readCategoryLines({ keepEmpty = false } = {}) {
+  if (!els.categoryLines) return [];
+  return Array.from(els.categoryLines.querySelectorAll('[data-order-category-row]'))
+    .map(row => cleanCategoryLine({
+      description: row.querySelector('[data-order-category-name]')?.value || '',
+      amount: row.querySelector('[data-order-category-amount]')?.value || '',
+      note: row.querySelector('[data-order-category-note]')?.value || ''
+    }))
+    .filter(line => keepEmpty || line.description || line.note || line.amount > 0);
+}
+
 function selectedCategoryValues() {
-  const selected = Array.from(document.querySelectorAll('[data-order-category-option]:checked'))
-    .map(input => input.value);
-  return categoryValuesFrom(selected);
+  return categoryValuesFrom(readCategoryLines().map(line => line.description));
 }
 
 function categoryText(order = {}, lang = 'zh') {
@@ -1089,25 +1135,69 @@ function setManagedSelectOptions(select, group, values, selectedValue = '') {
   select.dataset.previousValue = select.value;
 }
 
-function setCategoryPickerOptions(values, selectedValues = []) {
-  if (!els.categoryPicker) return;
-  const selected = categoryValuesFrom(selectedValues);
-  const selectedSet = new Set(selected.map(value => value.toLocaleLowerCase()));
-  const options = normalizeSettingList([...values, ...selected], orderSettingDefaults.categories);
-  const active = selected.length ? selected : [options[0] || '活动餐饮'];
-  const activeSet = new Set(active.map(value => value.toLocaleLowerCase()));
-  els.categoryPicker.innerHTML = `${options.map(value => {
-    const id = `order-category-${hashLocalSecret(value).slice(0, 6)}`;
-    const checked = activeSet.has(value.toLocaleLowerCase());
-    return `
-      <label class="order-category-option" for="${escapeHtml(id)}">
-        <input id="${escapeHtml(id)}" data-order-category-option type="checkbox" value="${escapeHtml(value)}" ${checked ? 'checked' : ''}>
-        <span>${escapeHtml(value)}</span>
+function categoryLineTemplate(line = {}, index = 0) {
+  const amountValue = line.amount > 0 ? money(line.amount).toFixed(2) : '';
+  return `
+    <article class="order-category-line" data-order-category-row>
+      <div class="order-category-line-top">
+        <label>
+          <span>类别 ${index + 1}</span>
+          <input data-order-category-name type="text" value="${escapeHtml(line.description || '')}" placeholder="例如：10pax buffet">
+        </label>
+        <label>
+          <span>金额 RM</span>
+          <input data-order-category-amount type="number" min="0" step="0.01" inputmode="decimal" value="${escapeHtml(amountValue)}" placeholder="0.00">
+        </label>
+      </div>
+      <label class="order-category-note">
+        <span>菜单 / 备注</span>
+        <textarea data-order-category-note rows="4" placeholder="主食、肉类、配送、备注">${escapeHtml(line.note || '')}</textarea>
       </label>
-    `;
-  }).join('')}<button class="order-category-add" type="button" data-order-category-add-inline>+ 新增类别</button>`;
-  formFields.serviceType.value = active[0] || '';
-  els.categoryPicker.dataset.previousValue = selectedSet.size ? active.join('||') : '';
+      <button class="order-category-remove" type="button" data-order-category-remove>
+        <i class="ri-delete-bin-6-line" aria-hidden="true"></i> 删除
+      </button>
+    </article>
+  `;
+}
+
+function renderCategoryShortcuts(values = []) {
+  if (!els.categoryShortcuts) return;
+  const options = normalizeSettingList(values, orderSettingDefaults.categories);
+  els.categoryShortcuts.innerHTML = options.map(value => `
+    <button type="button" data-order-category-shortcut="${escapeHtml(value)}">${escapeHtml(value)}</button>
+  `).join('');
+}
+
+function syncCategoryFormState({ updateTotal = false } = {}) {
+  const lines = readCategoryLines();
+  const categories = categoryValuesFrom(lines.map(line => line.description));
+  if (formFields.serviceType) formFields.serviceType.value = categories[0] || '';
+  const total = categoryLinesTotal(lines);
+  if (updateTotal && total > 0 && formFields.totalAmount) {
+    formFields.totalAmount.value = total.toFixed(2);
+  }
+  updateFormDeleteButtons();
+}
+
+function setCategoryPickerOptions(values, selectedLines = []) {
+  const lines = Array.isArray(selectedLines)
+    ? selectedLines.map(line => (typeof line === 'string' ? cleanCategoryLine({ description: line }) : cleanCategoryLine(line)))
+    : [];
+  if (els.categoryLines) {
+    els.categoryLines.innerHTML = lines.map(categoryLineTemplate).join('');
+  }
+  renderCategoryShortcuts(values);
+  syncCategoryFormState();
+}
+
+function addCategoryLine(line = {}) {
+  const lines = readCategoryLines({ keepEmpty: true });
+  lines.push(cleanCategoryLine(line));
+  setCategoryPickerOptions(orderSettingsWithUsage(currentOrders()).categories, lines);
+  window.setTimeout(() => {
+    const rows = els.categoryLines?.querySelectorAll('[data-order-category-row]');
+    rows?.[rows.length - 1]?.querySelector('[data-order-category-name]')?.focus();
+  }, 20);
 }
 
 function updateAssigneeDeleteButton() {
@@ -1133,7 +1223,10 @@ function updateFormDeleteButtons() {
 
 function renderOrderSelects(orders = currentOrders(), selected = {}) {
   const settings = orderSettingsWithUsage(orders);
-  setCategoryPickerOptions(settings.categories, selected.categories || [selected.serviceType]);
+  const categoryLines = Array.isArray(selected.categoryLines)
+    ? selected.categoryLines
+    : (selected.categories || (selected.serviceType ? [selected.serviceType] : []));
+  setCategoryPickerOptions(settings.categories, categoryLines);
   setManagedSelectOptions(formFields.assignee, 'assignees', settings.assignees, selected.assignee);
   updateFormDeleteButtons();
 }
@@ -1207,14 +1300,15 @@ function setView(view) {
 function openOrderSheet(orderId = '', forcedDate = '') {
   const order = orderId ? findOrder(orderId) : null;
   const isDemo = order?.source === 'demo';
-  const categories = order ? orderCategories(order) : ['活动餐饮'];
-  renderOrderSelects(currentOrders(), { categories, assignee: order?.assignee });
+  const categoryLines = order ? orderCategoryLines(order) : [];
+  const categories = categoryValuesFrom(categoryLines.map(line => line.description));
+  renderOrderSelects(currentOrders(), { categoryLines, assignee: order?.assignee });
   formFields.id.value = order && !isDemo ? order.id : '';
   formFields.customerName.value = order?.customerName || '';
   formFields.phone.value = order?.phone || '';
   formFields.eventDate.value = forcedDate || order?.eventDate || todayDate();
   formFields.eventTime.value = order?.eventTime || '';
-  formFields.serviceType.value = categories[0] || '活动餐饮';
+  formFields.serviceType.value = categories[0] || '';
   formFields.assignee.value = order?.assignee || '未分配';
   updateFormDeleteButtons();
   if (formFields.title) formFields.title.value = order?.title || '';
@@ -1235,14 +1329,24 @@ function closeOrderSheet() {
   setFormMessage('');
 }
 
+function categoryNotesSummary(lines = [], fallback = '') {
+  const manual = String(fallback || '').trim();
+  if (manual) return manual;
+  return lines.map(line => [line.description, line.note].filter(Boolean).join('\n').trim())
+    .filter(Boolean)
+    .join('\n\n');
+}
+
 function collectFormData() {
-  const total = money(formFields.totalAmount.value);
+  const lineItems = readCategoryLines();
+  const lineTotal = categoryLinesTotal(lineItems);
+  const total = lineTotal > 0 ? lineTotal : money(formFields.totalAmount.value);
   const paid = Math.min(total, money(formFields.paidAmount.value));
   const requestedStatus = formFields.status.value || 'new';
   const status = derivePaymentStatus(total, paid, requestedStatus);
   const categories = selectedCategoryValues();
-  const serviceType = categories[0] || formFields.serviceType.value || '活动餐饮';
-  const itemsSummary = formFields.itemsSummary.value.trim();
+  const serviceType = categories[0] || '';
+  const itemsSummary = categoryNotesSummary(lineItems, formFields.itemsSummary.value);
   const title = autoOrderTitle({
     categories: categories.length ? categories : [serviceType],
     serviceType,
@@ -1257,10 +1361,11 @@ function collectFormData() {
     eventDate: formFields.eventDate.value || todayDate(),
     eventTime: formFields.eventTime.value || '',
     serviceType,
-    categories: categories.length ? categories : [serviceType],
+    categories,
     assignee: formFields.assignee.value || '未分配',
     title,
     itemsSummary,
+    lineItems,
     location: formFields.location.value.trim(),
     totalAmount: total,
     paidAmount: paid,
@@ -1280,6 +1385,20 @@ function validateOrderData(data) {
 }
 
 function lineItemsFrom(data) {
+  if (Array.isArray(data.lineItems) && data.lineItems.length) {
+    const rows = data.lineItems.map(item => cleanCategoryLine(item));
+    const hasLineAmount = rows.some(item => item.amount > 0);
+    return rows.map((item, index) => {
+      const amount = hasLineAmount ? item.amount : (index === 0 ? data.totalAmount : 0);
+      return {
+        description: item.description || data.title,
+        note: item.note,
+        qty: 1,
+        unitPrice: amount,
+        amount
+      };
+    });
+  }
   return [{
     description: data.title,
     qty: 1,
@@ -1507,6 +1626,7 @@ function printItems(order, lang = 'zh') {
     const computedAmount = money(qty * unitPrice);
     return {
       description: item.description || order.title || serviceTypeLabel(order.serviceType, lang) || (lang === 'en' ? '90 PROJECT service' : '90 PROJECT 服务'),
+      note: String(item.note || '').trim(),
       qty,
       unitPrice,
       amount: money(item.amount ?? (computedAmount || order.totalAmount))
@@ -1520,7 +1640,7 @@ function printItemRows(order, lang = 'zh') {
       <td>${index + 1}</td>
       <td>
         <strong>${escapeHtml(item.description)}</strong>
-        <span>${escapeHtml(categoryText(order, lang))}</span>
+        <span>${escapeHtml(item.note || categoryText(order, lang))}</span>
       </td>
       <td>${escapeHtml(String(item.qty))}</td>
       <td>${escapeHtml(formatMoney(item.unitPrice))}</td>
@@ -1911,6 +2031,26 @@ function bind() {
       return;
     }
 
+    if (event.target.closest('[data-order-category-add-line]')) {
+      addCategoryLine();
+      return;
+    }
+
+    const categoryShortcut = event.target.closest('[data-order-category-shortcut]');
+    if (categoryShortcut) {
+      addCategoryLine({ description: categoryShortcut.dataset.orderCategoryShortcut || '' });
+      return;
+    }
+
+    const categoryRemove = event.target.closest('[data-order-category-remove]');
+    if (categoryRemove) {
+      categoryRemove.closest('[data-order-category-row]')?.remove();
+      const lines = readCategoryLines({ keepEmpty: true });
+      setCategoryPickerOptions(orderSettingsWithUsage(currentOrders()).categories, lines);
+      syncCategoryFormState({ updateTotal: true });
+      return;
+    }
+
     if (event.target.closest('[data-order-category-delete]')) {
       const selectedCategories = selectedCategoryValues();
       const currentCategory = selectedCategories[0] || cleanSettingValue(formFields.serviceType?.value || '');
@@ -2051,26 +2191,9 @@ function bind() {
     });
   });
 
-  els.categoryPicker?.addEventListener('change', event => {
-    if (!event.target.closest('[data-order-category-option]')) return;
-    const selected = selectedCategoryValues();
-    if (!selected.length) {
-      event.target.checked = true;
-      setFormMessage('每张订单至少保留一个类别。');
-      return;
-    }
-    formFields.serviceType.value = selected[0] || '活动餐饮';
-    updateFormDeleteButtons();
-  });
-
-  els.categoryPicker?.addEventListener('click', async event => {
-    if (!event.target.closest('[data-order-category-add-inline]')) return;
-    const value = cleanSettingValue(window.prompt('新增类别'));
-    if (!value) return;
-    const selected = selectedCategoryValues();
-    const added = await addOrderSetting('categories', value);
-    renderOrderSelects(currentOrders(), { categories: normalizeSettingList([...selected, added || value], []) });
-    updateFormDeleteButtons();
+  els.categoryLines?.addEventListener('input', event => {
+    if (!event.target.closest('[data-order-category-row]')) return;
+    syncCategoryFormState({ updateTotal: event.target.matches('[data-order-category-amount]') });
   });
 
   els.search?.addEventListener('input', event => {
