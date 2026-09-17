@@ -997,6 +997,151 @@ body.order-center-page [hidden]{display:none!important}
   font-size:14px;
   font-weight:900;
 }
+
+.order-receipt-field{
+  display:grid;
+  gap:10px;
+  min-width:0;
+  padding:14px;
+  border:1px solid #d7dde9;
+  border-radius:8px;
+  background:#f8faff;
+}
+.order-receipt-heading{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:12px;
+}
+.order-receipt-heading span{
+  color:#172033;
+  font-size:15px;
+  font-weight:950;
+}
+.order-receipt-heading small{
+  max-width:320px;
+  color:var(--oc-muted);
+  font-size:12px;
+  line-height:1.45;
+  text-align:right;
+}
+.order-receipt-empty,
+.order-receipt-preview{
+  min-height:76px;
+  display:grid;
+  grid-template-columns:48px minmax(0,1fr) auto;
+  gap:12px;
+  align-items:center;
+  padding:10px;
+  border:1px dashed #bdc9df;
+  border-radius:8px;
+  background:#fff;
+}
+.order-receipt-empty > i{
+  width:48px;
+  height:48px;
+  display:grid;
+  place-items:center;
+  border-radius:8px;
+  color:var(--oc-blue);
+  background:var(--oc-soft);
+  font-size:24px;
+}
+.order-receipt-empty strong,
+.order-receipt-preview strong,
+.order-receipt-empty small,
+.order-receipt-preview small{
+  display:block;
+  min-width:0;
+}
+.order-receipt-empty strong,
+.order-receipt-preview strong{
+  overflow:hidden;
+  color:#172033;
+  font-size:14px;
+  font-weight:950;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+.order-receipt-empty small,
+.order-receipt-preview small{
+  margin-top:3px;
+  color:var(--oc-muted);
+  font-size:12px;
+  font-weight:800;
+}
+.order-receipt-empty button{
+  min-height:42px;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:7px;
+  padding:8px 13px;
+  border:0;
+  border-radius:8px;
+  color:#fff;
+  background:var(--oc-blue);
+  font:inherit;
+  font-weight:950;
+  cursor:pointer;
+}
+.order-receipt-preview img{
+  width:48px;
+  height:56px;
+  object-fit:cover;
+  border:1px solid var(--oc-line);
+  border-radius:6px;
+  background:#fff;
+}
+.order-receipt-actions{
+  display:flex;
+  gap:6px;
+}
+.order-receipt-actions button{
+  width:38px;
+  height:38px;
+  display:grid;
+  place-items:center;
+  padding:0;
+  border:1px solid #d7dde9;
+  border-radius:8px;
+  color:#28436f;
+  background:#fff;
+  font-size:17px;
+  cursor:pointer;
+}
+.order-receipt-actions button:last-child{
+  color:var(--oc-red);
+  border-color:#f0c3c0;
+  background:#fff8f7;
+}
+.order-receipt-badge{
+  color:#17613f;
+  background:#ddf8eb;
+}
+
+@media (max-width:640px){
+  .order-receipt-heading{
+    display:block;
+  }
+  .order-receipt-heading small{
+    display:block;
+    margin-top:4px;
+    text-align:left;
+  }
+  .order-receipt-empty,
+  .order-receipt-preview{
+    grid-template-columns:48px minmax(0,1fr);
+  }
+  .order-receipt-empty button,
+  .order-receipt-actions{
+    grid-column:1 / -1;
+  }
+  .order-receipt-actions button{
+    flex:1;
+    width:auto;
+  }
+}
 .order-message{
   min-height:22px;
   margin:10px 0 0;

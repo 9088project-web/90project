@@ -9,7 +9,7 @@
   <link rel="icon" type="image/jpeg" href="assets/images/logo/logo-icon-dark.jpg" />
   <link rel="manifest" href="orders.webmanifest" />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/remixicon@4.6.0/fonts/remixicon.css" />
-  <link rel="stylesheet" href="css/order-center.css?v=20260917-category-price" />
+  <link rel="stylesheet" href="css/order-center.css?v=20260917-payment-receipt" />
 </head>
 <body class="order-center-page">
   <main class="order-app" data-order-app hidden>
@@ -207,6 +207,27 @@
               <option value="en">English receipt</option>
             </select>
           </label>
+          <section class="order-wide order-receipt-field">
+            <div class="order-receipt-heading">
+              <span>顾客付款收据</span>
+              <small>完成新交易前必须上传，照片会自动压缩并同步云端。</small>
+            </div>
+            <input data-order-receipt-input type="file" accept="image/*" capture="environment" hidden>
+            <div class="order-receipt-empty" data-order-receipt-empty>
+              <i class="ri-receipt-line" aria-hidden="true"></i>
+              <div><strong>还没有收据</strong><small>拍照或从手机相册选择</small></div>
+              <button type="button" data-order-receipt-choose><i class="ri-upload-2-line" aria-hidden="true"></i>上传收据</button>
+            </div>
+            <div class="order-receipt-preview" data-order-receipt-preview hidden>
+              <img data-order-receipt-image alt="顾客付款收据预览">
+              <div><strong data-order-receipt-name>付款收据</strong><small data-order-receipt-meta>已准备同步</small></div>
+              <div class="order-receipt-actions">
+                <button type="button" data-order-receipt-open aria-label="查看收据" title="查看收据"><i class="ri-eye-line" aria-hidden="true"></i></button>
+                <button type="button" data-order-receipt-choose aria-label="更换收据" title="更换收据"><i class="ri-refresh-line" aria-hidden="true"></i></button>
+                <button type="button" data-order-receipt-remove aria-label="删除收据" title="删除收据"><i class="ri-delete-bin-6-line" aria-hidden="true"></i></button>
+              </div>
+            </div>
+          </section>
         </div>
 
         <p class="order-message" data-order-form-message aria-live="polite"></p>
@@ -221,6 +242,6 @@
 
   <section class="order-print" data-order-print></section>
 
-  <script type="module" src="js/order-center.js?v=20260917-category-price"></script>
+  <script type="module" src="js/order-center.js?v=20260917-payment-receipt"></script>
 </body>
 </html>

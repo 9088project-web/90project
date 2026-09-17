@@ -74,7 +74,8 @@ const state = {
   cloudReady: false,
   syncState: 'loading',
   syncMessage: '同步中',
-  demoMode: false
+  demoMode: false,
+  receiptDraft: null
 };
 
 const els = {
@@ -116,6 +117,12 @@ const els = {
   formMessage: document.querySelector('[data-order-form-message]'),
   categoryDelete: document.querySelector('[data-order-category-delete]'),
   assigneeDelete: document.querySelector('[data-order-assignee-delete]'),
+  receiptInput: document.querySelector('[data-order-receipt-input]'),
+  receiptEmpty: document.querySelector('[data-order-receipt-empty]'),
+  receiptPreview: document.querySelector('[data-order-receipt-preview]'),
+  receiptImage: document.querySelector('[data-order-receipt-image]'),
+  receiptName: document.querySelector('[data-order-receipt-name]'),
+  receiptMeta: document.querySelector('[data-order-receipt-meta]'),
   print: document.querySelector('[data-order-print]')
 };
 
@@ -167,6 +174,78 @@ function normalizePhone(phone) {
 
 function todayDate() {
   return new Date().toISOString().slice(0, 10);
+}
+
+function normalizePaymentReceipt(value) {
+  if (!value || typeof value !== 'object') return null;
+  const dataUrl = String(value.dataUrl || '').trim();
+  if (!/^data:image\/(?:jpeg|png|webp);base64,/i.test(dataUrl)) return null;
+  return {
+    dataUrl,
+    name: String(value.name || 'payment-receipt.jpg').trim(),
+    type: String(value.type || 'image/jpeg').trim(),
+    size: Math.max(0, Number(value.size) || 0),
+    uploadedAt: value.uploadedAt || new Date().toISOString()
+  };
+}
+
+function receiptSizeLabel(size) {
+  const kb = Math.max(1, Math.round((Number(size) || 0) / 1024));
+  return kb >= 1000 ? `${(kb / 1024).toFixed(1)} MB` : `${kb} KB`;
+}
+
+function renderReceiptDraft() {
+  const receipt = normalizePaymentReceipt(state.receiptDraft);
+  if (els.receiptEmpty) els.receiptEmpty.hidden = Boolean(receipt);
+  if (els.receiptPreview) els.receiptPreview.hidden = !receipt;
+  if (!receipt) return;
+  if (els.receiptImage) els.receiptImage.src = receipt.dataUrl;
+  if (els.receiptName) els.receiptName.textContent = receipt.name || '付款收据';
+  if (els.receiptMeta) els.receiptMeta.textContent = `${receiptSizeLabel(receipt.size)} · 将随订单同步云端`;
+}
+
+function loadImage(dataUrl) {
+  return new Promise((resolve, reject) => {
+    const image = new Image();
+    image.onload = () => resolve(image);
+    image.onerror = () => reject(new Error('invalid_image'));
+    image.src = dataUrl;
+  });
+}
+
+function readFileAsDataUrl(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result || ''));
+    reader.onerror = () => reject(reader.error || new Error('read_failed'));
+    reader.readAsDataURL(file);
+  });
+}
+
+async function compressReceiptImage(file) {
+  if (!file?.type?.startsWith('image/')) throw new Error('invalid_type');
+  if (file.size > 15 * 1024 * 1024) throw new Error('too_large');
+  const source = await readFileAsDataUrl(file);
+  const image = await loadImage(source);
+  const scale = Math.min(1, 1600 / Math.max(image.naturalWidth, image.naturalHeight));
+  const canvas = document.createElement('canvas');
+  canvas.width = Math.max(1, Math.round(image.naturalWidth * scale));
+  canvas.height = Math.max(1, Math.round(image.naturalHeight * scale));
+  canvas.getContext('2d', { alpha: false }).drawImage(image, 0, 0, canvas.width, canvas.height);
+  let quality = 0.82;
+  let dataUrl = canvas.toDataURL('image/jpeg', quality);
+  while (dataUrl.length > 560000 && quality > 0.45) {
+    quality -= 0.08;
+    dataUrl = canvas.toDataURL('image/jpeg', quality);
+  }
+  if (dataUrl.length > 700000) throw new Error('compressed_too_large');
+  return {
+    dataUrl,
+    name: `${String(file.name || 'payment-receipt').replace(/\.[^.]+$/, '').slice(0, 90)}.jpg`,
+    type: 'image/jpeg',
+    size: Math.round((dataUrl.length - dataUrl.indexOf(',') - 1) * 0.75),
+    uploadedAt: new Date().toISOString()
+  };
 }
 
 function invoiceNo() {
@@ -686,6 +765,7 @@ function mapGrowthOrders() {
       status: displayStatus(order),
       rawStatus: order.status || 'new',
       receiptLanguage: receiptLanguage(order.receiptLanguage || member.language),
+      paymentReceipt: normalizePaymentReceipt(order.paymentReceipt),
       source: 'growth',
       createdAt: order.createdAt || new Date().toISOString(),
       locked: ['refunded', 'partially_refunded'].includes(String(order.status || ''))
@@ -922,12 +1002,14 @@ function renderOrderCard(order) {
           <span><i class="ri-refund-2-line" aria-hidden="true"></i>待收 ${escapeHtml(formatMoney(balance))}</span>
           ${order.location ? `<span><i class="ri-map-pin-2-line" aria-hidden="true"></i>${escapeHtml(order.location)}</span>` : ''}
           ${order.assignee ? `<span><i class="ri-user-star-line" aria-hidden="true"></i>${escapeHtml(order.assignee)}</span>` : ''}
+          ${order.paymentReceipt ? '<span class="order-receipt-badge"><i class="ri-receipt-line" aria-hidden="true"></i>已附收据</span>' : ''}
           <span><i class="ri-translate-2" aria-hidden="true"></i>${escapeHtml(receiptLanguageLabel(order.receiptLanguage))}</span>
         </div>
         <div class="order-card-actions">
           <button class="order-card-action" type="button" data-order-edit="${escapeHtml(order.id)}"><i class="ri-edit-line" aria-hidden="true"></i>编辑</button>
           <button class="order-card-action" type="button" data-order-whatsapp="${escapeHtml(order.id)}"><i class="ri-whatsapp-line" aria-hidden="true"></i>WhatsApp</button>
           <button class="order-card-action" type="button" data-order-print="${escapeHtml(order.id)}"><i class="ri-printer-line" aria-hidden="true"></i>打印</button>
+          ${order.paymentReceipt ? `<button class="order-card-action" type="button" data-order-view-receipt="${escapeHtml(order.id)}"><i class="ri-eye-line" aria-hidden="true"></i>查看收据</button>` : ''}
         </div>
       </div>
     </article>
@@ -1355,6 +1437,9 @@ function openOrderSheet(orderId = '', forcedDate = '') {
   formFields.paidAmount.value = order ? money(order.paidAmount).toFixed(2) : '0';
   formFields.status.value = order?.status || 'new';
   formFields.receiptLanguage.value = receiptLanguage(order?.receiptLanguage);
+  state.receiptDraft = normalizePaymentReceipt(order?.paymentReceipt);
+  if (els.receiptInput) els.receiptInput.value = '';
+  renderReceiptDraft();
   document.getElementById('orderSheetTitle').textContent = order && !isDemo ? '编辑订单' : '新增订单';
   setFormMessage(isDemo
     ? '这是示例资料，保存后会成为真实订单。'
@@ -1413,7 +1498,8 @@ function collectFormData() {
     balanceAmount: Math.max(0, money(total - paid)),
     status,
     requestedStatus,
-    receiptLanguage: receiptLanguage(formFields.receiptLanguage?.value)
+    receiptLanguage: receiptLanguage(formFields.receiptLanguage?.value),
+    paymentReceipt: normalizePaymentReceipt(state.receiptDraft)
   };
 }
 
@@ -1422,6 +1508,11 @@ function validateOrderData(data) {
   if (!data.categories?.length) return '请选择至少一个类别。';
   if (!data.eventDate) return '请选择日期。';
   if (data.totalAmount <= 0) return '总额必须大过 RM0。';
+  const existing = data.id ? findOrder(data.id) : null;
+  if (data.requestedStatus === 'service_completed' && !data.paymentReceipt
+    && (existing?.rawStatus !== 'service_completed' || Boolean(existing?.paymentReceipt))) {
+    return '请先上传顾客付款收据，再完成交易。';
+  }
   return '';
 }
 
@@ -1519,6 +1610,7 @@ async function saveOrderFromForm({ close = true } = {}) {
     paymentStatus,
     status: data.requestedStatus === 'service_completed' ? (paymentStatus || 'confirmed') : data.status,
     receiptLanguage: data.receiptLanguage,
+    paymentReceipt: data.paymentReceipt,
     adminNotes: `负责人：${data.assignee}`,
     source: 'order-center',
     createdAt: new Date().toISOString()
@@ -1536,6 +1628,7 @@ async function saveOrderFromForm({ close = true } = {}) {
       paymentStatus,
       status: data.status,
       receiptLanguage: data.receiptLanguage,
+      paymentReceipt: data.paymentReceipt,
       packageName: data.title,
       eventDate: data.eventDate,
       eventTime: data.eventTime,
@@ -2148,6 +2241,32 @@ function bind() {
       return;
     }
 
+    const viewReceipt = event.target.closest('[data-order-view-receipt]');
+    if (viewReceipt) {
+      const receipt = findOrder(viewReceipt.dataset.orderViewReceipt)?.paymentReceipt;
+      if (receipt?.dataUrl) window.open(receipt.dataUrl, '_blank', 'noopener,noreferrer');
+      return;
+    }
+
+    if (event.target.closest('[data-order-receipt-choose]')) {
+      els.receiptInput?.click();
+      return;
+    }
+
+    if (event.target.closest('[data-order-receipt-open]')) {
+      const receipt = normalizePaymentReceipt(state.receiptDraft);
+      if (receipt?.dataUrl) window.open(receipt.dataUrl, '_blank', 'noopener,noreferrer');
+      return;
+    }
+
+    if (event.target.closest('[data-order-receipt-remove]')) {
+      state.receiptDraft = null;
+      if (els.receiptInput) els.receiptInput.value = '';
+      renderReceiptDraft();
+      setFormMessage('收据已移除，保存订单后会同步更新。');
+      return;
+    }
+
     const calendarPrev = event.target.closest('[data-calendar-prev]');
     if (calendarPrev) {
       state.calendarMonth = new Date(state.calendarMonth.getFullYear(), state.calendarMonth.getMonth() - 1, 1);
@@ -2224,6 +2343,20 @@ function bind() {
     if (event.key !== 'Enter') return;
     event.preventDefault();
     document.querySelector('[data-order-config-add="categories"]')?.click();
+  });
+
+  els.receiptInput?.addEventListener('change', async event => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    setFormMessage('正在处理收据照片…');
+    try {
+      state.receiptDraft = await compressReceiptImage(file);
+      renderReceiptDraft();
+      setFormMessage('收据已准备好，保存订单后会同步云端。', true);
+    } catch (error) {
+      event.target.value = '';
+      setFormMessage(error?.message === 'too_large' ? '收据照片太大，请选择 15MB 以下的图片。' : '收据照片无法读取，请换一张图片。');
+    }
   });
 
   [[ 'assignees', formFields.assignee ]].forEach(([group, select]) => {
