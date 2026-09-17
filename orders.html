@@ -9,7 +9,7 @@
   <link rel="icon" type="image/jpeg" href="assets/images/logo/logo-icon-dark.jpg" />
   <link rel="manifest" href="orders.webmanifest" />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/remixicon@4.6.0/fonts/remixicon.css" />
-  <link rel="stylesheet" href="css/order-center.css?v=20260914-premium-simple" />
+  <link rel="stylesheet" href="css/order-center.css?v=20260917-category-price" />
 </head>
 <body class="order-center-page">
   <main class="order-app" data-order-app hidden>
@@ -107,8 +107,9 @@
           <section>
             <h3>类别</h3>
             <p>开单时会出现在类别下拉名单。</p>
-            <div class="order-settings-input">
+            <div class="order-settings-input order-settings-input-category">
               <input data-order-config-input="categories" type="text" placeholder="新增类别，例如：烧腊" />
+              <input data-order-config-price="categories" type="number" min="0" step="0.01" inputmode="decimal" placeholder="固定价 RM" aria-label="类别固定价格" />
               <button type="button" data-order-config-add="categories">新增</button>
             </div>
             <div class="order-chip-list" data-order-config-items="categories"></div>
@@ -220,6 +221,6 @@
 
   <section class="order-print" data-order-print></section>
 
-  <script type="module" src="js/order-center.js?v=20260917-edit-completed"></script>
+  <script type="module" src="js/order-center.js?v=20260917-category-price"></script>
 </body>
 </html>

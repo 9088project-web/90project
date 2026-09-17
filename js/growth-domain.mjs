@@ -15,6 +15,7 @@ export const DEFAULT_GROWTH_CONFIG = {
   pointsPerMyr: 1,
   orderCenter: {
     categories: ['活动餐饮', '包伙食', '场地布置', '鸡尾酒服务', '其他服务'],
+    categoryPrices: {},
     assignees: ['未分配', 'LIYAN & KS', 'Tom', 'KS']
   },
   levels: [
@@ -109,6 +110,7 @@ function withDefaults(raw) {
         ...base.config.orderCenter,
         ...(source.config?.orderCenter || {}),
         categories: Array.isArray(source.config?.orderCenter?.categories) && source.config.orderCenter.categories.length ? source.config.orderCenter.categories : base.config.orderCenter.categories,
+        categoryPrices: source.config?.orderCenter?.categoryPrices && typeof source.config.orderCenter.categoryPrices === 'object' ? source.config.orderCenter.categoryPrices : base.config.orderCenter.categoryPrices,
         assignees: Array.isArray(source.config?.orderCenter?.assignees) && source.config.orderCenter.assignees.length ? source.config.orderCenter.assignees : base.config.orderCenter.assignees
       },
       levels: Array.isArray(source.config?.levels) && source.config.levels.length ? source.config.levels : base.config.levels,

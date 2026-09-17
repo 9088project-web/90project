@@ -106,6 +106,7 @@ const els = {
     categories: document.querySelector('[data-order-config-input="categories"]'),
     assignees: document.querySelector('[data-order-config-input="assignees"]')
   },
+  categoryPriceInput: document.querySelector('[data-order-config-price="categories"]'),
   configLists: {
     categories: document.querySelector('[data-order-config-items="categories"]'),
     assignees: document.querySelector('[data-order-config-items="assignees"]')
@@ -433,8 +434,22 @@ function savedOrderSettings() {
   const config = growthApi.getState()?.config?.orderCenter || {};
   return {
     categories: normalizeSettingList(config.categories, orderSettingDefaults.categories),
+    categoryPrices: sanitizeCategoryPrices(config.categoryPrices),
     assignees: normalizeSettingList(config.assignees, orderSettingDefaults.assignees)
   };
+}
+
+function sanitizeCategoryPrices(prices = {}) {
+  if (!prices || typeof prices !== 'object' || Array.isArray(prices)) return {};
+  return Object.fromEntries(Object.entries(prices)
+    .map(([name, price]) => [cleanSettingValue(name), money(price)])
+    .filter(([name, price]) => name && price >= 0));
+}
+
+function categoryPriceFor(name, prices = savedOrderSettings().categoryPrices) {
+  const target = cleanSettingValue(name).toLocaleLowerCase();
+  const match = Object.entries(prices || {}).find(([key]) => cleanSettingValue(key).toLocaleLowerCase() === target);
+  return match ? money(match[1]) : 0;
 }
 
 function orderSettingsWithUsage(orders = []) {
@@ -443,6 +458,7 @@ function orderSettingsWithUsage(orders = []) {
   const assigneeUsage = orders.map(order => order.assignee || orderAssignee(order));
   return {
     categories: normalizeSettingList([...saved.categories, ...categoryUsage], orderSettingDefaults.categories),
+    categoryPrices: saved.categoryPrices,
     assignees: normalizeSettingList([...saved.assignees, ...assigneeUsage], orderSettingDefaults.assignees)
   };
 }
@@ -450,6 +466,7 @@ function orderSettingsWithUsage(orders = []) {
 function sanitizeOrderSettings(settings = {}) {
   const next = {
     categories: normalizeSettingList(settings.categories, orderSettingDefaults.categories),
+    categoryPrices: sanitizeCategoryPrices(settings.categoryPrices),
     assignees: normalizeSettingList(settings.assignees, orderSettingDefaults.assignees)
   };
   if (!next.assignees.some(item => item === '未分配')) next.assignees.unshift('未分配');
@@ -554,16 +571,17 @@ async function saveOrderSettings(settings, options = {}) {
   return result;
 }
 
-function settingsAfterAdd(group, value) {
+function settingsAfterAdd(group, value, price = 0) {
   const name = cleanSettingValue(value);
   if (!orderSettingLabels[group] || !name) return null;
   const settings = savedOrderSettings();
   settings[group] = normalizeSettingList([...settings[group], name], orderSettingDefaults[group]);
+  if (group === 'categories') settings.categoryPrices[name] = money(price);
   return { settings, name };
 }
 
-async function addOrderSetting(group, rawValue) {
-  const next = settingsAfterAdd(group, rawValue);
+async function addOrderSetting(group, rawValue, price = 0) {
+  const next = settingsAfterAdd(group, rawValue, price);
   if (!next) {
     setSettingsStatus(`请输入${orderSettingLabels[group]?.singular || '名单'}名称。`);
     return '';
@@ -577,12 +595,19 @@ async function editOrderSetting(group, oldValue) {
   const cleanOld = cleanSettingValue(oldValue);
   if (!cleanOld || (group === 'assignees' && cleanOld === '未分配')) return;
   const nextValue = cleanSettingValue(window.prompt(`更改${label}名称`, cleanOld));
-  if (!nextValue || nextValue === cleanOld) return;
+  if (!nextValue || (group !== 'categories' && nextValue === cleanOld)) return;
   const settings = savedOrderSettings();
   settings[group] = normalizeSettingList(settings[group].map(item => (
     cleanSettingValue(item).toLocaleLowerCase() === cleanOld.toLocaleLowerCase() ? nextValue : item
   )), orderSettingDefaults[group]);
-  await saveOrderSettings(settings, { rename: { group, oldValue: cleanOld, newValue: nextValue } });
+  if (group === 'categories') {
+    const currentPrice = categoryPriceFor(cleanOld, settings.categoryPrices);
+    const rawPrice = window.prompt(`设置「${nextValue}」固定价格 RM`, currentPrice.toFixed(2));
+    if (rawPrice === null) return;
+    delete settings.categoryPrices[cleanOld];
+    settings.categoryPrices[nextValue] = money(rawPrice);
+  }
+  await saveOrderSettings(settings, nextValue === cleanOld ? {} : { rename: { group, oldValue: cleanOld, newValue: nextValue } });
 }
 
 async function removeOrderSetting(group, value, options = {}) {
@@ -592,6 +617,11 @@ async function removeOrderSetting(group, value, options = {}) {
   const usage = settingUsageCount(group, cleanValue, orders);
   const settings = savedOrderSettings();
   settings[group] = settings[group].filter(item => cleanSettingValue(item).toLocaleLowerCase() !== cleanValue.toLocaleLowerCase());
+  if (group === 'categories') {
+    Object.keys(settings.categoryPrices).forEach(key => {
+      if (cleanSettingValue(key).toLocaleLowerCase() === cleanValue.toLocaleLowerCase()) delete settings.categoryPrices[key];
+    });
+  }
   const replacement = group === 'assignees' ? '未分配' : (settings[group][0] || orderSettingDefaults[group][0] || '');
   if (usage > 0 && options.confirm !== false) {
     const label = orderSettingLabels[group].singular;
@@ -1160,12 +1190,17 @@ function categoryLineTemplate(line = {}, index = 0) {
   `;
 }
 
-function renderCategoryShortcuts(values = []) {
+function renderCategoryShortcuts(values = [], prices = {}) {
   if (!els.categoryShortcuts) return;
   const options = normalizeSettingList(values, orderSettingDefaults.categories);
-  els.categoryShortcuts.innerHTML = options.map(value => `
-    <button type="button" data-order-category-shortcut="${escapeHtml(value)}">${escapeHtml(value)}</button>
-  `).join('');
+  els.categoryShortcuts.innerHTML = options.map(value => {
+    const price = categoryPriceFor(value, prices);
+    return `
+      <button type="button" data-order-category-shortcut="${escapeHtml(value)}" data-order-category-price="${price.toFixed(2)}">
+        <span>${escapeHtml(value)}</span>${price > 0 ? `<small>RM ${price.toFixed(2)}</small>` : ''}
+      </button>
+    `;
+  }).join('');
 }
 
 function syncCategoryFormState({ updateTotal = false } = {}) {
@@ -1179,14 +1214,14 @@ function syncCategoryFormState({ updateTotal = false } = {}) {
   updateFormDeleteButtons();
 }
 
-function setCategoryPickerOptions(values, selectedLines = []) {
+function setCategoryPickerOptions(values, selectedLines = [], prices = savedOrderSettings().categoryPrices) {
   const lines = Array.isArray(selectedLines)
     ? selectedLines.map(line => (typeof line === 'string' ? cleanCategoryLine({ description: line }) : cleanCategoryLine(line)))
     : [];
   if (els.categoryLines) {
     els.categoryLines.innerHTML = lines.map(categoryLineTemplate).join('');
   }
-  renderCategoryShortcuts(values);
+  renderCategoryShortcuts(values, prices);
   syncCategoryFormState();
 }
 
@@ -1194,6 +1229,7 @@ function addCategoryLine(line = {}) {
   const lines = readCategoryLines({ keepEmpty: true });
   lines.push(cleanCategoryLine(line));
   setCategoryPickerOptions(orderSettingsWithUsage(currentOrders()).categories, lines);
+  syncCategoryFormState({ updateTotal: true });
   window.setTimeout(() => {
     const rows = els.categoryLines?.querySelectorAll('[data-order-category-row]');
     rows?.[rows.length - 1]?.querySelector('[data-order-category-name]')?.focus();
@@ -1226,7 +1262,7 @@ function renderOrderSelects(orders = currentOrders(), selected = {}) {
   const categoryLines = Array.isArray(selected.categoryLines)
     ? selected.categoryLines
     : (selected.categories || (selected.serviceType ? [selected.serviceType] : []));
-  setCategoryPickerOptions(settings.categories, categoryLines);
+  setCategoryPickerOptions(settings.categories, categoryLines, settings.categoryPrices);
   setManagedSelectOptions(formFields.assignee, 'assignees', settings.assignees, selected.assignee);
   updateFormDeleteButtons();
 }
@@ -1237,12 +1273,13 @@ function renderSettingsGroup(group, values, orders = []) {
   target.innerHTML = values.length
     ? values.map(value => {
       const count = settingUsageCount(group, value, orders);
+      const price = group === 'categories' ? categoryPriceFor(value) : 0;
       const fixed = group === 'assignees' && value === '未分配';
       return `
         <span class="order-chip">
           <button type="button" data-order-config-edit="${escapeHtml(group)}" data-order-config-value="${escapeHtml(value)}" ${fixed ? 'disabled' : ''}>
             <span>${escapeHtml(value)}</span>
-            <small>${count ? `${count} 单` : '名单'}</small>
+            <small>${price > 0 ? `RM ${price.toFixed(2)}${count ? ` · ${count} 单` : ''}` : (count ? `${count} 单` : '名单')}</small>
           </button>
           <button class="order-chip-remove" type="button" data-order-config-remove="${escapeHtml(group)}" data-order-config-value="${escapeHtml(value)}" ${fixed ? 'disabled' : ''} aria-label="删除${escapeHtml(value)}">
             <i class="ri-close-line" aria-hidden="true"></i>
@@ -2042,7 +2079,10 @@ function bind() {
 
     const categoryShortcut = event.target.closest('[data-order-category-shortcut]');
     if (categoryShortcut) {
-      addCategoryLine({ description: categoryShortcut.dataset.orderCategoryShortcut || '' });
+      addCategoryLine({
+        description: categoryShortcut.dataset.orderCategoryShortcut || '',
+        amount: money(categoryShortcut.dataset.orderCategoryPrice)
+      });
       return;
     }
 
@@ -2146,8 +2186,12 @@ function bind() {
     if (configAdd) {
       const group = configAdd.dataset.orderConfigAdd;
       const input = els.configInputs[group];
-      const added = await addOrderSetting(group, input?.value || '');
-      if (added && input) input.value = '';
+      const price = group === 'categories' ? money(els.categoryPriceInput?.value) : 0;
+      const added = await addOrderSetting(group, input?.value || '', price);
+      if (added && input) {
+        input.value = '';
+        if (group === 'categories' && els.categoryPriceInput) els.categoryPriceInput.value = '';
+      }
       return;
     }
 
@@ -2167,9 +2211,19 @@ function bind() {
     input?.addEventListener('keydown', async event => {
       if (event.key !== 'Enter') return;
       event.preventDefault();
-      const added = await addOrderSetting(group, input.value);
-      if (added) input.value = '';
+      const price = group === 'categories' ? money(els.categoryPriceInput?.value) : 0;
+      const added = await addOrderSetting(group, input.value, price);
+      if (added) {
+        input.value = '';
+        if (group === 'categories' && els.categoryPriceInput) els.categoryPriceInput.value = '';
+      }
     });
+  });
+
+  els.categoryPriceInput?.addEventListener('keydown', event => {
+    if (event.key !== 'Enter') return;
+    event.preventDefault();
+    document.querySelector('[data-order-config-add="categories"]')?.click();
   });
 
   [[ 'assignees', formFields.assignee ]].forEach(([group, select]) => {
