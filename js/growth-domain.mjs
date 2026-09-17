@@ -618,7 +618,7 @@ export function createGrowthApi(storage = defaultStorage(), options = {}) {
     const current = read();
     const order = current.orders.find(item => item.id === orderId);
     if (!order) return { ok: false, reason: 'order_not_found' };
-    if (['service_completed', 'refunded', 'partially_refunded'].includes(order.status)) {
+    if (['refunded', 'partially_refunded'].includes(order.status)) {
       return { ok: false, reason: 'order_locked' };
     }
 

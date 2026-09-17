@@ -658,7 +658,7 @@ function mapGrowthOrders() {
       receiptLanguage: receiptLanguage(order.receiptLanguage || member.language),
       source: 'growth',
       createdAt: order.createdAt || new Date().toISOString(),
-      locked: String(order.status || '') === 'service_completed'
+      locked: ['refunded', 'partially_refunded'].includes(String(order.status || ''))
     };
   }).sort((a, b) => `${b.eventDate} ${b.eventTime}`.localeCompare(`${a.eventDate} ${a.eventTime}`));
 }
@@ -1319,7 +1319,11 @@ function openOrderSheet(orderId = '', forcedDate = '') {
   formFields.status.value = order?.status || 'new';
   formFields.receiptLanguage.value = receiptLanguage(order?.receiptLanguage);
   document.getElementById('orderSheetTitle').textContent = order && !isDemo ? '编辑订单' : '新增订单';
-  setFormMessage(isDemo ? '这是示例资料，保存后会成为真实订单。' : '');
+  setFormMessage(isDemo
+    ? '这是示例资料，保存后会成为真实订单。'
+    : order?.status === 'service_completed'
+      ? '此订单已完成，仍可修改；保存后会保留完成记录。'
+      : '');
   els.sheet.hidden = false;
   window.setTimeout(() => formFields.customerName.focus(), 40);
 }
@@ -1493,7 +1497,7 @@ async function saveOrderFromForm({ close = true } = {}) {
       depositAmount: data.paidAmount,
       balanceAmount: data.balanceAmount,
       paymentStatus,
-      status: data.requestedStatus === 'service_completed' ? (paymentStatus || 'confirmed') : data.status,
+      status: data.status,
       receiptLanguage: data.receiptLanguage,
       packageName: data.title,
       eventDate: data.eventDate,
@@ -1508,7 +1512,7 @@ async function saveOrderFromForm({ close = true } = {}) {
   }
 
   if (!result?.ok) {
-    setFormMessage(result?.reason === 'order_locked' ? '已完成订单已锁定，不能再改金额。' : '订单保存不到，请检查资料。');
+    setFormMessage(result?.reason === 'order_locked' ? '退款处理中的订单暂时不能修改。' : '订单保存不到，请检查资料。');
     return null;
   }
 
