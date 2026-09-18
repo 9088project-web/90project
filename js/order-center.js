@@ -75,7 +75,7 @@ const state = {
   syncState: 'loading',
   syncMessage: '同步中',
   demoMode: false,
-  receiptDraft: null
+  receiptDrafts: []
 };
 
 const els = {
@@ -119,10 +119,8 @@ const els = {
   assigneeDelete: document.querySelector('[data-order-assignee-delete]'),
   receiptInput: document.querySelector('[data-order-receipt-input]'),
   receiptEmpty: document.querySelector('[data-order-receipt-empty]'),
-  receiptPreview: document.querySelector('[data-order-receipt-preview]'),
-  receiptImage: document.querySelector('[data-order-receipt-image]'),
-  receiptName: document.querySelector('[data-order-receipt-name]'),
-  receiptMeta: document.querySelector('[data-order-receipt-meta]'),
+  receiptGallery: document.querySelector('[data-order-receipt-gallery]'),
+  receiptList: document.querySelector('[data-order-receipt-list]'),
   print: document.querySelector('[data-order-print]')
 };
 
@@ -189,19 +187,31 @@ function normalizePaymentReceipt(value) {
   };
 }
 
+function normalizePaymentReceipts(values, legacyReceipt = null) {
+  const source = Array.isArray(values) ? values : (legacyReceipt ? [legacyReceipt] : []);
+  return source.map(normalizePaymentReceipt).filter(Boolean).slice(0, 10);
+}
+
 function receiptSizeLabel(size) {
   const kb = Math.max(1, Math.round((Number(size) || 0) / 1024));
   return kb >= 1000 ? `${(kb / 1024).toFixed(1)} MB` : `${kb} KB`;
 }
 
 function renderReceiptDraft() {
-  const receipt = normalizePaymentReceipt(state.receiptDraft);
-  if (els.receiptEmpty) els.receiptEmpty.hidden = Boolean(receipt);
-  if (els.receiptPreview) els.receiptPreview.hidden = !receipt;
-  if (!receipt) return;
-  if (els.receiptImage) els.receiptImage.src = receipt.dataUrl;
-  if (els.receiptName) els.receiptName.textContent = receipt.name || '付款收据';
-  if (els.receiptMeta) els.receiptMeta.textContent = `${receiptSizeLabel(receipt.size)} · 将随订单同步云端`;
+  const receipts = normalizePaymentReceipts(state.receiptDrafts);
+  if (els.receiptEmpty) els.receiptEmpty.hidden = receipts.length > 0;
+  if (els.receiptGallery) els.receiptGallery.hidden = receipts.length === 0;
+  if (!els.receiptList) return;
+  els.receiptList.innerHTML = receipts.map((receipt, index) => `
+    <article class="order-receipt-preview">
+      <img src="${escapeHtml(receipt.dataUrl)}" alt="付款收据 ${index + 1}">
+      <div><strong>${escapeHtml(receipt.name || `付款收据 ${index + 1}`)}</strong><small>${escapeHtml(receiptSizeLabel(receipt.size))} · 收据 ${index + 1}</small></div>
+      <div class="order-receipt-actions">
+        <button type="button" data-order-receipt-open="${index}" aria-label="查看收据 ${index + 1}" title="查看收据"><i class="ri-eye-line" aria-hidden="true"></i></button>
+        <button type="button" data-order-receipt-remove="${index}" aria-label="删除收据 ${index + 1}" title="删除收据"><i class="ri-delete-bin-6-line" aria-hidden="true"></i></button>
+      </div>
+    </article>
+  `).join('');
 }
 
 function loadImage(dataUrl) {
@@ -765,7 +775,7 @@ function mapGrowthOrders() {
       status: displayStatus(order),
       rawStatus: order.status || 'new',
       receiptLanguage: receiptLanguage(order.receiptLanguage || member.language),
-      paymentReceipt: normalizePaymentReceipt(order.paymentReceipt),
+      paymentReceipts: normalizePaymentReceipts(order.paymentReceipts, order.paymentReceipt),
       source: 'growth',
       createdAt: order.createdAt || new Date().toISOString(),
       locked: ['refunded', 'partially_refunded'].includes(String(order.status || ''))
@@ -1002,14 +1012,14 @@ function renderOrderCard(order) {
           <span><i class="ri-refund-2-line" aria-hidden="true"></i>待收 ${escapeHtml(formatMoney(balance))}</span>
           ${order.location ? `<span><i class="ri-map-pin-2-line" aria-hidden="true"></i>${escapeHtml(order.location)}</span>` : ''}
           ${order.assignee ? `<span><i class="ri-user-star-line" aria-hidden="true"></i>${escapeHtml(order.assignee)}</span>` : ''}
-          ${order.paymentReceipt ? '<span class="order-receipt-badge"><i class="ri-receipt-line" aria-hidden="true"></i>已附收据</span>' : ''}
+          ${order.paymentReceipts?.length ? `<span class="order-receipt-badge"><i class="ri-receipt-line" aria-hidden="true"></i>${order.paymentReceipts.length} 张收据</span>` : ''}
           <span><i class="ri-translate-2" aria-hidden="true"></i>${escapeHtml(receiptLanguageLabel(order.receiptLanguage))}</span>
         </div>
         <div class="order-card-actions">
           <button class="order-card-action" type="button" data-order-edit="${escapeHtml(order.id)}"><i class="ri-edit-line" aria-hidden="true"></i>编辑</button>
           <button class="order-card-action" type="button" data-order-whatsapp="${escapeHtml(order.id)}"><i class="ri-whatsapp-line" aria-hidden="true"></i>WhatsApp</button>
           <button class="order-card-action" type="button" data-order-print="${escapeHtml(order.id)}"><i class="ri-printer-line" aria-hidden="true"></i>打印</button>
-          ${order.paymentReceipt ? `<button class="order-card-action" type="button" data-order-view-receipt="${escapeHtml(order.id)}"><i class="ri-eye-line" aria-hidden="true"></i>查看收据</button>` : ''}
+          ${order.paymentReceipts?.length ? `<button class="order-card-action" type="button" data-order-view-receipt="${escapeHtml(order.id)}"><i class="ri-eye-line" aria-hidden="true"></i>查看收据</button>` : ''}
         </div>
       </div>
     </article>
@@ -1437,7 +1447,7 @@ function openOrderSheet(orderId = '', forcedDate = '') {
   formFields.paidAmount.value = order ? money(order.paidAmount).toFixed(2) : '0';
   formFields.status.value = order?.status || 'new';
   formFields.receiptLanguage.value = receiptLanguage(order?.receiptLanguage);
-  state.receiptDraft = normalizePaymentReceipt(order?.paymentReceipt);
+  state.receiptDrafts = normalizePaymentReceipts(order?.paymentReceipts, order?.paymentReceipt);
   if (els.receiptInput) els.receiptInput.value = '';
   renderReceiptDraft();
   document.getElementById('orderSheetTitle').textContent = order && !isDemo ? '编辑订单' : '新增订单';
@@ -1499,7 +1509,7 @@ function collectFormData() {
     status,
     requestedStatus,
     receiptLanguage: receiptLanguage(formFields.receiptLanguage?.value),
-    paymentReceipt: normalizePaymentReceipt(state.receiptDraft)
+    paymentReceipts: normalizePaymentReceipts(state.receiptDrafts)
   };
 }
 
@@ -1508,11 +1518,6 @@ function validateOrderData(data) {
   if (!data.categories?.length) return '请选择至少一个类别。';
   if (!data.eventDate) return '请选择日期。';
   if (data.totalAmount <= 0) return '总额必须大过 RM0。';
-  const existing = data.id ? findOrder(data.id) : null;
-  if (data.requestedStatus === 'service_completed' && !data.paymentReceipt
-    && (existing?.rawStatus !== 'service_completed' || Boolean(existing?.paymentReceipt))) {
-    return '请先上传顾客付款收据，再完成交易。';
-  }
   return '';
 }
 
@@ -1610,7 +1615,7 @@ async function saveOrderFromForm({ close = true } = {}) {
     paymentStatus,
     status: data.requestedStatus === 'service_completed' ? (paymentStatus || 'confirmed') : data.status,
     receiptLanguage: data.receiptLanguage,
-    paymentReceipt: data.paymentReceipt,
+    paymentReceipts: data.paymentReceipts,
     adminNotes: `负责人：${data.assignee}`,
     source: 'order-center',
     createdAt: new Date().toISOString()
@@ -1628,7 +1633,7 @@ async function saveOrderFromForm({ close = true } = {}) {
       paymentStatus,
       status: data.status,
       receiptLanguage: data.receiptLanguage,
-      paymentReceipt: data.paymentReceipt,
+      paymentReceipts: data.paymentReceipts,
       packageName: data.title,
       eventDate: data.eventDate,
       eventTime: data.eventTime,
@@ -2243,8 +2248,8 @@ function bind() {
 
     const viewReceipt = event.target.closest('[data-order-view-receipt]');
     if (viewReceipt) {
-      const receipt = findOrder(viewReceipt.dataset.orderViewReceipt)?.paymentReceipt;
-      if (receipt?.dataUrl) window.open(receipt.dataUrl, '_blank', 'noopener,noreferrer');
+      openOrderSheet(viewReceipt.dataset.orderViewReceipt);
+      window.setTimeout(() => els.receiptGallery?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 80);
       return;
     }
 
@@ -2253,17 +2258,20 @@ function bind() {
       return;
     }
 
-    if (event.target.closest('[data-order-receipt-open]')) {
-      const receipt = normalizePaymentReceipt(state.receiptDraft);
+    const receiptOpen = event.target.closest('[data-order-receipt-open]');
+    if (receiptOpen) {
+      const receipt = normalizePaymentReceipts(state.receiptDrafts)[Number(receiptOpen.dataset.orderReceiptOpen)];
       if (receipt?.dataUrl) window.open(receipt.dataUrl, '_blank', 'noopener,noreferrer');
       return;
     }
 
-    if (event.target.closest('[data-order-receipt-remove]')) {
-      state.receiptDraft = null;
+    const receiptRemove = event.target.closest('[data-order-receipt-remove]');
+    if (receiptRemove) {
+      const index = Number(receiptRemove.dataset.orderReceiptRemove);
+      state.receiptDrafts = normalizePaymentReceipts(state.receiptDrafts).filter((_, itemIndex) => itemIndex !== index);
       if (els.receiptInput) els.receiptInput.value = '';
       renderReceiptDraft();
-      setFormMessage('收据已移除，保存订单后会同步更新。');
+      setFormMessage('已删除这张收据，保存订单后会同步更新。');
       return;
     }
 
@@ -2346,17 +2354,25 @@ function bind() {
   });
 
   els.receiptInput?.addEventListener('change', async event => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-    setFormMessage('正在处理收据照片…');
-    try {
-      state.receiptDraft = await compressReceiptImage(file);
-      renderReceiptDraft();
-      setFormMessage('收据已准备好，保存订单后会同步云端。', true);
-    } catch (error) {
+    const files = Array.from(event.target.files || []);
+    if (!files.length) return;
+    const existing = normalizePaymentReceipts(state.receiptDrafts);
+    const available = Math.max(0, 10 - existing.length);
+    if (!available) {
       event.target.value = '';
-      setFormMessage(error?.message === 'too_large' ? '收据照片太大，请选择 15MB 以下的图片。' : '收据照片无法读取，请换一张图片。');
+      setFormMessage('每张订单最多保存 10 张收据。');
+      return;
     }
+    setFormMessage(`正在处理 ${Math.min(files.length, available)} 张收据照片…`);
+    const results = await Promise.allSettled(files.slice(0, available).map(compressReceiptImage));
+    const added = results.filter(result => result.status === 'fulfilled').map(result => result.value);
+    state.receiptDrafts = [...existing, ...added];
+    event.target.value = '';
+    renderReceiptDraft();
+    const failed = results.length - added.length;
+    setFormMessage(added.length
+      ? `已加入 ${added.length} 张收据${failed ? `，${failed} 张无法读取` : ''}，保存后同步云端。`
+      : '收据照片无法读取，请选择 15MB 以下的图片。', added.length > 0);
   });
 
   [[ 'assignees', formFields.assignee ]].forEach(([group, select]) => {

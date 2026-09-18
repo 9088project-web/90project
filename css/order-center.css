@@ -1037,6 +1037,31 @@ body.order-center-page [hidden]{display:none!important}
   border-radius:8px;
   background:#fff;
 }
+.order-receipt-gallery,
+.order-receipt-list{
+  display:grid;
+  gap:8px;
+}
+.order-receipt-gallery[hidden]{display:none}
+.order-receipt-add{
+  min-height:42px;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:7px;
+  padding:8px 13px;
+  border:1px solid #bdc9df;
+  border-radius:8px;
+  color:var(--oc-blue);
+  background:#fff;
+  font:inherit;
+  font-weight:950;
+  cursor:pointer;
+}
+.order-receipt-add:hover{
+  border-color:var(--oc-blue);
+  background:var(--oc-soft);
+}
 .order-receipt-empty > i{
   width:48px;
   height:48px;
