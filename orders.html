@@ -9,7 +9,7 @@
   <link rel="icon" type="image/jpeg" href="assets/images/logo/logo-icon-dark.jpg" />
   <link rel="manifest" href="orders.webmanifest" />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/remixicon@4.6.0/fonts/remixicon.css" />
-  <link rel="stylesheet" href="css/order-center.css?v=20260918-multiple-receipts" />
+  <link rel="stylesheet" href="css/order-center.css?v=20260919-order-management" />
 </head>
 <body class="order-center-page">
   <main class="order-app" data-order-app hidden>
@@ -32,13 +32,14 @@
       <button type="button" data-order-view="calendar">订单日历</button>
       <button type="button" data-order-view="orders">全部订单</button>
       <button type="button" data-order-view="analysis">经营分析</button>
+      <button type="button" data-order-view="deleted">删除记录</button>
     </nav>
 
     <section class="order-panel active" data-order-panel="overview">
       <div class="order-stats" data-order-stats></div>
       <article class="order-card">
         <div class="order-section-head">
-          <h2>近期订单</h2>
+          <h2>全部订单</h2>
           <button class="order-primary" type="button" data-order-new><i class="ri-add-line" aria-hidden="true"></i>新增订单</button>
         </div>
         <div class="order-list" data-order-recent-list></div>
@@ -82,6 +83,26 @@
     </section>
 
     <section class="order-panel" data-order-panel="analysis" hidden>
+      <article class="order-card order-analysis-controls">
+        <div class="order-section-head">
+          <div><h2>查看阶段</h2><p>按月份、日期范围或全部资料查看订单与业绩。</p></div>
+          <button type="button" data-analysis-reset>全部总结</button>
+        </div>
+        <div class="order-analysis-filters">
+          <label>快捷查看
+            <select data-analysis-period>
+              <option value="all">全部总结</option>
+              <option value="this-month">本月</option>
+              <option value="last-month">上个月</option>
+              <option value="this-year">今年</option>
+              <option value="custom">自订日期</option>
+            </select>
+          </label>
+          <label>开始日期<input data-analysis-start type="date"></label>
+          <label>结束日期<input data-analysis-end type="date"></label>
+        </div>
+        <div class="order-analysis-summary" data-analysis-summary></div>
+      </article>
       <article class="order-card">
         <h2>类别分析</h2>
         <div class="order-table" data-order-category-analysis></div>
@@ -124,6 +145,15 @@
             <div class="order-chip-list" data-order-config-items="assignees"></div>
           </section>
         </div>
+      </article>
+    </section>
+
+    <section class="order-panel" data-order-panel="deleted" hidden>
+      <article class="order-card">
+        <div class="order-section-head">
+          <div><h2>最近删除订单</h2><p>删除记录会永久保留，只供查看，不能再次删除。</p></div>
+        </div>
+        <div class="order-list" data-order-deleted-list></div>
       </article>
     </section>
   </main>
@@ -237,6 +267,6 @@
 
   <section class="order-print" data-order-print></section>
 
-  <script type="module" src="js/order-center.js?v=20260918-multiple-receipts"></script>
+  <script type="module" src="js/order-center.js?v=20260919-order-management"></script>
 </body>
 </html>

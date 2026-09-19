@@ -75,7 +75,10 @@ const state = {
   syncState: 'loading',
   syncMessage: '同步中',
   demoMode: false,
-  receiptDrafts: []
+  receiptDrafts: [],
+  analysisPeriod: 'all',
+  analysisStart: '',
+  analysisEnd: ''
 };
 
 const els = {
@@ -100,6 +103,11 @@ const els = {
   statusAnalysis: document.querySelector('[data-order-status-analysis]'),
   monthIncome: document.querySelector('[data-order-month-income]'),
   staffAnalysis: document.querySelector('[data-order-staff-analysis]'),
+  analysisPeriod: document.querySelector('[data-analysis-period]'),
+  analysisStart: document.querySelector('[data-analysis-start]'),
+  analysisEnd: document.querySelector('[data-analysis-end]'),
+  analysisSummary: document.querySelector('[data-analysis-summary]'),
+  deletedList: document.querySelector('[data-order-deleted-list]'),
   settingsStatus: document.querySelector('[data-order-settings-status]'),
   categoryLines: document.querySelector('[data-order-category-lines]'),
   categoryShortcuts: document.querySelector('[data-order-category-shortcuts]'),
@@ -541,13 +549,30 @@ function categoryPriceFor(name, prices = savedOrderSettings().categoryPrices) {
   return match ? money(match[1]) : 0;
 }
 
+function historicalCategoryPrices(orders = []) {
+  const prices = {};
+  orders.forEach(order => {
+    const categories = orderCategories(order);
+    const items = Array.isArray(order.lineItems) ? order.lineItems : [];
+    categories.forEach(category => {
+      if (categoryPriceFor(category, prices) > 0) return;
+      const target = cleanSettingValue(category).toLocaleLowerCase();
+      const matchingItem = items.find(item => cleanSettingValue(item?.description).toLocaleLowerCase() === target);
+      const inferred = money(matchingItem?.amount || matchingItem?.unitPrice || (categories.length === 1 ? order.totalAmount : 0));
+      if (inferred > 0) prices[category] = inferred;
+    });
+  });
+  return prices;
+}
+
 function orderSettingsWithUsage(orders = []) {
   const saved = savedOrderSettings();
   const categoryUsage = orders.flatMap(order => orderCategories(order));
   const assigneeUsage = orders.map(order => order.assignee || orderAssignee(order));
+  const savedPositivePrices = Object.fromEntries(Object.entries(saved.categoryPrices).filter(([, price]) => money(price) > 0));
   return {
     categories: normalizeSettingList([...saved.categories, ...categoryUsage], orderSettingDefaults.categories),
-    categoryPrices: saved.categoryPrices,
+    categoryPrices: { ...historicalCategoryPrices(orders), ...savedPositivePrices },
     assignees: normalizeSettingList([...saved.assignees, ...assigneeUsage], orderSettingDefaults.assignees)
   };
 }
@@ -735,10 +760,10 @@ function orderAssignee(order) {
   return ['order-center', 'admin-order-center'].includes(String(value).trim()) ? '未分配' : value;
 }
 
-function mapGrowthOrders() {
+function mapOrderCollection(sourceOrders = [], { deleted = false } = {}) {
   const snapshot = getSnapshot();
   const memberById = new Map((snapshot.members || []).map(member => [member.id, member]));
-  return (snapshot.orders || []).map(order => {
+  return sourceOrders.map(order => {
     const member = memberById.get(order.memberId) || {};
     const lineItems = Array.isArray(order.lineItems) ? order.lineItems : [];
     const title = firstLine(order.packageName)
@@ -757,8 +782,8 @@ function mapGrowthOrders() {
       id: order.id,
       invoiceNo: order.invoiceNo || order.externalInquiryId || order.id,
       externalInquiryId: order.externalInquiryId || order.invoiceNo || order.id,
-      customerName: member.name || order.customerName || '90 Customer',
-      phone: member.phone || order.phone || '',
+      customerName: order.customerName || member.name || '90 Customer',
+      phone: order.phone || member.phone || '',
       serviceType: categories[0] || '活动餐饮',
       categories,
       category: categories.join(' / ') || title,
@@ -778,9 +803,21 @@ function mapGrowthOrders() {
       paymentReceipts: normalizePaymentReceipts(order.paymentReceipts, order.paymentReceipt),
       source: 'growth',
       createdAt: order.createdAt || new Date().toISOString(),
+      deletedAt: order.deletedAt || '',
+      deletedBy: order.deletedBy || '',
+      deleted,
       locked: ['refunded', 'partially_refunded'].includes(String(order.status || ''))
     };
   }).sort((a, b) => `${b.eventDate} ${b.eventTime}`.localeCompare(`${a.eventDate} ${a.eventTime}`));
+}
+
+function mapGrowthOrders() {
+  return mapOrderCollection(getSnapshot().orders || []);
+}
+
+function deletedOrders() {
+  return mapOrderCollection(getSnapshot().deletedOrders || [], { deleted: true })
+    .sort((a, b) => String(b.deletedAt || '').localeCompare(String(a.deletedAt || '')));
 }
 
 function demoOrders() {
@@ -1020,6 +1057,7 @@ function renderOrderCard(order) {
           <button class="order-card-action" type="button" data-order-whatsapp="${escapeHtml(order.id)}"><i class="ri-whatsapp-line" aria-hidden="true"></i>WhatsApp</button>
           <button class="order-card-action" type="button" data-order-print="${escapeHtml(order.id)}"><i class="ri-printer-line" aria-hidden="true"></i>打印</button>
           ${order.paymentReceipts?.length ? `<button class="order-card-action" type="button" data-order-view-receipt="${escapeHtml(order.id)}"><i class="ri-eye-line" aria-hidden="true"></i>查看收据</button>` : ''}
+          ${order.source !== 'demo' ? `<button class="order-card-action order-card-delete" type="button" data-order-delete="${escapeHtml(order.id)}"><i class="ri-delete-bin-6-line" aria-hidden="true"></i>删除</button>` : ''}
         </div>
       </div>
     </article>
@@ -1028,10 +1066,30 @@ function renderOrderCard(order) {
 
 function renderRecent(orders) {
   if (!els.recentList) return;
-  const recent = orders.slice(0, 5);
-  els.recentList.innerHTML = recent.length
-    ? recent.map(renderOrderCard).join('')
+  els.recentList.innerHTML = orders.length
+    ? orders.map(renderOrderCard).join('')
     : '<div class="order-empty">还没有订单，先新增第一张单。</div>';
+}
+
+function renderDeletedOrders() {
+  if (!els.deletedList) return;
+  const records = deletedOrders();
+  els.deletedList.innerHTML = records.length ? records.map(order => `
+    <article class="order-item order-item-deleted">
+      <div class="order-date"><strong>${escapeHtml(dateParts(order.eventDate).day)}</strong><span>${escapeHtml(dateParts(order.eventDate).weekday)}</span><small>${escapeHtml(order.eventTime || '-')}</small></div>
+      <div class="order-main">
+        <div class="order-main-head"><h3 class="order-customer">${escapeHtml(order.customerName)}</h3><b class="order-amount">${escapeHtml(formatMoney(order.totalAmount))}</b></div>
+        <div class="order-title"><i class="ri-archive-line" aria-hidden="true"></i>${escapeHtml(order.title)}</div>
+        <p class="order-note">${escapeHtml(order.itemsSummary || '-')}</p>
+        <div class="order-meta">
+          <span class="order-status cancelled">已删除</span>
+          <span><i class="ri-price-tag-3-line" aria-hidden="true"></i>${escapeHtml(categoryText(order))}</span>
+          <span><i class="ri-phone-line" aria-hidden="true"></i>${escapeHtml(order.phone || '-')}</span>
+          <span><i class="ri-time-line" aria-hidden="true"></i>${escapeHtml(order.deletedAt ? new Date(order.deletedAt).toLocaleString('zh-MY') : '-')}</span>
+        </div>
+      </div>
+    </article>
+  `).join('') : '<div class="order-empty">还没有删除记录。</div>';
 }
 
 function filteredOrders(orders) {
@@ -1103,6 +1161,45 @@ function renderCalendar(orders) {
   els.calendarGrid.innerHTML = cells.join('');
 }
 
+function dateRangeForPeriod(period) {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = now.getMonth();
+  const format = date => `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+  if (period === 'this-month') return [format(new Date(year, month, 1)), format(new Date(year, month + 1, 0))];
+  if (period === 'last-month') return [format(new Date(year, month - 1, 1)), format(new Date(year, month, 0))];
+  if (period === 'this-year') return [`${year}-01-01`, `${year}-12-31`];
+  return ['', ''];
+}
+
+function filteredAnalysisOrders(orders) {
+  const start = state.analysisStart;
+  const end = state.analysisEnd;
+  return orders.filter(order => {
+    const date = String(order.eventDate || '').slice(0, 10);
+    if (!date) return !start && !end;
+    return (!start || date >= start) && (!end || date <= end);
+  });
+}
+
+function renderAnalysisControls(orders) {
+  if (els.analysisPeriod) els.analysisPeriod.value = state.analysisPeriod;
+  if (els.analysisStart) els.analysisStart.value = state.analysisStart;
+  if (els.analysisEnd) els.analysisEnd.value = state.analysisEnd;
+  if (!els.analysisSummary) return;
+  const totals = totalsFor(orders);
+  const periodLabel = state.analysisStart || state.analysisEnd
+    ? `${state.analysisStart || '最早'} 至 ${state.analysisEnd || '今天'}`
+    : '全部经营记录';
+  els.analysisSummary.innerHTML = `
+    <span><small>查看阶段</small><b>${escapeHtml(periodLabel)}</b></span>
+    <span><small>订单</small><b>${totals.count} 单</b></span>
+    <span><small>营业额</small><b>${escapeHtml(formatMoney(totals.total))}</b></span>
+    <span><small>已收款</small><b>${escapeHtml(formatMoney(totals.paid))}</b></span>
+    <span><small>待收款</small><b>${escapeHtml(formatMoney(totals.balance))}</b></span>
+  `;
+}
+
 function renderCategoryAnalysis(orders) {
   if (!els.categoryAnalysis) return;
   const rows = Array.from(orders.reduce((map, order) => {
@@ -1155,16 +1252,17 @@ function renderMonthIncome(orders) {
     map.set(key, current);
     return map;
   }, new Map());
-  const latest = Array.from(monthMap.entries()).sort((a, b) => b[0].localeCompare(a[0]))[0];
-  if (!latest) {
+  const months = Array.from(monthMap.entries()).sort((a, b) => b[0].localeCompare(a[0]));
+  if (!months.length) {
     els.monthIncome.innerHTML = '<div class="order-empty">还没有收入资料。</div>';
     return;
   }
-  const [month, item] = latest;
-  els.monthIncome.innerHTML = `
-    <strong>${escapeHtml(month)} ${escapeHtml(formatMoney(item.total))}</strong>
-    <span>${item.count} 单 · 已收 ${escapeHtml(formatMoney(item.paid))} · 待收 ${escapeHtml(formatMoney(item.balance))}</span>
-  `;
+  els.monthIncome.innerHTML = months.map(([month, item]) => `
+    <div class="order-month-row">
+      <strong>${escapeHtml(month)} ${escapeHtml(formatMoney(item.total))}</strong>
+      <span>${item.count} 单 · 已收 ${escapeHtml(formatMoney(item.paid))} · 待收 ${escapeHtml(formatMoney(item.balance))}</span>
+    </div>
+  `).join('');
 }
 
 function staffDateText(dateValue, timeValue = '') {
@@ -1359,13 +1457,13 @@ function renderOrderSelects(orders = currentOrders(), selected = {}) {
   updateFormDeleteButtons();
 }
 
-function renderSettingsGroup(group, values, orders = []) {
+function renderSettingsGroup(group, values, orders = [], prices = {}) {
   const target = els.configLists[group];
   if (!target) return;
   target.innerHTML = values.length
     ? values.map(value => {
       const count = settingUsageCount(group, value, orders);
-      const price = group === 'categories' ? categoryPriceFor(value) : 0;
+      const price = group === 'categories' ? categoryPriceFor(value, prices) : 0;
       const fixed = group === 'assignees' && value === '未分配';
       return `
         <span class="order-chip">
@@ -1384,7 +1482,7 @@ function renderSettingsGroup(group, values, orders = []) {
 
 function renderOrderSettings(orders = currentOrders()) {
   const settings = orderSettingsWithUsage(orders);
-  renderSettingsGroup('categories', settings.categories, orders);
+  renderSettingsGroup('categories', settings.categories, orders, settings.categoryPrices);
   renderSettingsGroup('assignees', settings.assignees, orders);
   const label = state.syncState === 'ok' ? '已同步云端' : state.cloudReady ? state.syncMessage : '本机设置';
   setSettingsStatus(label, state.syncState === 'ok');
@@ -1401,16 +1499,19 @@ function renderPanels() {
 
 function render() {
   const orders = currentOrders();
+  const analysisOrders = filteredAnalysisOrders(orders);
   renderPanels();
   renderSyncStatus(orders);
   renderStats(orders);
   renderRecent(orders);
   renderAllOrders(orders);
   renderCalendar(orders);
-  renderCategoryAnalysis(orders);
-  renderStatusAnalysis(orders);
-  renderMonthIncome(orders);
-  renderStaffAnalysis(orders);
+  renderAnalysisControls(analysisOrders);
+  renderCategoryAnalysis(analysisOrders);
+  renderStatusAnalysis(analysisOrders);
+  renderMonthIncome(analysisOrders);
+  renderStaffAnalysis(analysisOrders);
+  renderDeletedOrders();
   renderOrderSelects(orders);
   renderOrderSettings(orders);
   window.NP90OrderCenter = {
@@ -1624,6 +1725,8 @@ async function saveOrderFromForm({ close = true } = {}) {
   let result;
   if (data.id) {
     result = growthApi.updateOrder(data.id, {
+      customerName: data.customerName,
+      phone: data.phone,
       serviceType: data.serviceType,
       categories: data.categories,
       totalAmount: data.totalAmount,
@@ -2228,6 +2331,17 @@ function bind() {
       return;
     }
 
+    const deleteButton = event.target.closest('[data-order-delete]');
+    if (deleteButton) {
+      const order = findOrder(deleteButton.dataset.orderDelete);
+      if (!order || !window.confirm(`删除 ${order.customerName} 的订单？订单会移到「删除记录」，记录永久保留。`)) return;
+      const result = growthApi.deleteOrder(order.id, 'order-center');
+      if (!result.ok) return;
+      await syncCloudState();
+      render();
+      return;
+    }
+
     const edit = event.target.closest('[data-order-edit]');
     if (edit) {
       openOrderSheet(edit.dataset.orderEdit);
@@ -2305,6 +2419,14 @@ function bind() {
 
     if (event.target.closest('[data-clear-date-filter]')) {
       state.dateFilter = '';
+      render();
+      return;
+    }
+
+    if (event.target.closest('[data-analysis-reset]')) {
+      state.analysisPeriod = 'all';
+      state.analysisStart = '';
+      state.analysisEnd = '';
       render();
       return;
     }
@@ -2412,6 +2534,23 @@ function bind() {
     state.status = event.target.value || 'all';
     renderAllOrders(currentOrders());
   });
+
+  els.analysisPeriod?.addEventListener('change', event => {
+    state.analysisPeriod = event.target.value || 'all';
+    if (state.analysisPeriod !== 'custom') {
+      [state.analysisStart, state.analysisEnd] = dateRangeForPeriod(state.analysisPeriod);
+    }
+    render();
+  });
+
+  const updateCustomAnalysisRange = () => {
+    state.analysisPeriod = 'custom';
+    state.analysisStart = els.analysisStart?.value || '';
+    state.analysisEnd = els.analysisEnd?.value || '';
+    render();
+  };
+  els.analysisStart?.addEventListener('change', updateCustomAnalysisRange);
+  els.analysisEnd?.addEventListener('change', updateCustomAnalysisRange);
 
   els.form?.addEventListener('submit', async event => {
     event.preventDefault();

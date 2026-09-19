@@ -99,6 +99,7 @@ export function createGrowthState() {
     referralRelations: [],
     enquiries: [],
     orders: [],
+    deletedOrders: [],
     pointsLedgers: [],
     couponTemplates: [],
     memberCoupons: [],
@@ -526,6 +527,8 @@ export function createGrowthApi(storage = defaultStorage(), options = {}) {
       id: id('order'),
       enquiryId: enquiry.id,
       memberId: member.id,
+      customerName: String(input.name || member.name || '').trim(),
+      phone: String(input.phone || member.phone || '').trim(),
       externalInquiryId,
       invoiceNo: input.invoiceNo || externalInquiryId,
       serviceType: input.serviceType || enquiry.serviceType,
@@ -627,7 +630,8 @@ export function createGrowthApi(storage = defaultStorage(), options = {}) {
     const totalAmount = money(input.totalAmount);
     const depositAmount = money(input.depositAmount);
     const paymentReceipts = normalizePaymentReceipts(input.paymentReceipts, input.paymentReceipt);
-    const order = { id: id('order'), enquiryId, memberId, externalInquiryId: input.externalInquiryId || enquiry.externalInquiryId || '', invoiceNo: input.invoiceNo || input.externalInquiryId || enquiry.invoiceNo || enquiry.externalInquiryId || '', serviceType: input.serviceType || enquiry.serviceType, categories: normalizeCategories(input.categories, input.serviceType || enquiry.serviceType), packageName: input.packageName || enquiry.packageName || '', totalAmount, originalAmount: money(input.originalAmount || input.totalAmount), discountAmount: money(input.discountAmount), depositAmount, balanceAmount: orderBalance(input, totalAmount, depositAmount), sstAmount: money(input.sstAmount), deliveryFee: money(input.deliveryFee), extraLabourFee: money(input.extraLabourFee), thirdPartyFee: money(input.thirdPartyFee), couponDiscount: money(input.couponDiscount), refundedAmount: 0, eventDate: input.eventDate || enquiry.eventDate || '', eventTime: input.eventTime || enquiry.eventTime || '', location: input.location || enquiry.location || '', pax: Number(input.pax) || Number(enquiry.pax) || 0, itemsSummary: input.itemsSummary || enquiry.foodChoice || '', lineItems: normalizeOrderLineItems(input.lineItems), adminNotes: input.adminNotes || '', whatsappMessage: input.whatsappMessage || '', sentAt: input.sentAt || null, receiptLanguage: normalizeReceiptLanguage(input.receiptLanguage || input.language), paymentReceipts, paymentReceipt: paymentReceipts[0] || null, status: input.status || 'confirmed', source: input.source || 'manual-order', createdAt: dateValue(now()), updatedAt: dateValue(now()), completedAt: null, manualVerifiedAt: null, manualVerifiedBy: '' };
+    const member = findMember(current, memberId) || {};
+    const order = { id: id('order'), enquiryId, memberId, customerName: String(input.customerName || input.name || member.name || '').trim(), phone: String(input.phone || member.phone || '').trim(), externalInquiryId: input.externalInquiryId || enquiry.externalInquiryId || '', invoiceNo: input.invoiceNo || input.externalInquiryId || enquiry.invoiceNo || enquiry.externalInquiryId || '', serviceType: input.serviceType || enquiry.serviceType, categories: normalizeCategories(input.categories, input.serviceType || enquiry.serviceType), packageName: input.packageName || enquiry.packageName || '', totalAmount, originalAmount: money(input.originalAmount || input.totalAmount), discountAmount: money(input.discountAmount), depositAmount, balanceAmount: orderBalance(input, totalAmount, depositAmount), sstAmount: money(input.sstAmount), deliveryFee: money(input.deliveryFee), extraLabourFee: money(input.extraLabourFee), thirdPartyFee: money(input.thirdPartyFee), couponDiscount: money(input.couponDiscount), refundedAmount: 0, eventDate: input.eventDate || enquiry.eventDate || '', eventTime: input.eventTime || enquiry.eventTime || '', location: input.location || enquiry.location || '', pax: Number(input.pax) || Number(enquiry.pax) || 0, itemsSummary: input.itemsSummary || enquiry.foodChoice || '', lineItems: normalizeOrderLineItems(input.lineItems), adminNotes: input.adminNotes || '', whatsappMessage: input.whatsappMessage || '', sentAt: input.sentAt || null, receiptLanguage: normalizeReceiptLanguage(input.receiptLanguage || input.language), paymentReceipts, paymentReceipt: paymentReceipts[0] || null, status: input.status || 'confirmed', source: input.source || 'manual-order', createdAt: dateValue(now()), updatedAt: dateValue(now()), completedAt: null, manualVerifiedAt: null, manualVerifiedBy: '' };
     const next = clone(current);
     next.orders.unshift(order);
     audit(next, 'order.created', memberId, 'order', order.id, 'MOCK order');
@@ -645,7 +649,7 @@ export function createGrowthApi(storage = defaultStorage(), options = {}) {
 
     const next = clone(current);
     const target = next.orders.find(item => item.id === orderId);
-    ['serviceType', 'source', 'invoiceNo', 'eventDate', 'eventTime', 'location', 'itemsSummary', 'whatsappMessage', 'sentAt', 'paymentStatus', 'manualVerifiedBy', 'receiptLanguage', 'packageName'].forEach(field => {
+    ['customerName', 'phone', 'serviceType', 'source', 'invoiceNo', 'eventDate', 'eventTime', 'location', 'itemsSummary', 'whatsappMessage', 'sentAt', 'paymentStatus', 'manualVerifiedBy', 'receiptLanguage', 'packageName'].forEach(field => {
       if (input[field] !== undefined) target[field] = String(input[field] || '').trim();
     });
     if (input.receiptLanguage !== undefined) target.receiptLanguage = normalizeReceiptLanguage(input.receiptLanguage);
@@ -697,6 +701,25 @@ export function createGrowthApi(storage = defaultStorage(), options = {}) {
     audit(next, 'order.updated', actorId, 'order', orderId, `Status ${target.status}, total RM${target.totalAmount.toFixed(2)}`);
     state = write(next);
     return { ok: true, order: clone(target) };
+  }
+
+  function deleteOrder(orderId, actorId = 'mock-admin') {
+    const current = read();
+    const order = current.orders.find(item => item.id === orderId);
+    if (!order) return { ok: false, reason: 'order_not_found' };
+    const next = clone(current);
+    const target = next.orders.find(item => item.id === orderId);
+    next.orders = next.orders.filter(item => item.id !== orderId);
+    next.deletedOrders = Array.isArray(next.deletedOrders) ? next.deletedOrders : [];
+    const deletedOrder = {
+      ...target,
+      deletedAt: dateValue(now()),
+      deletedBy: actorId || 'mock-admin'
+    };
+    next.deletedOrders.unshift(deletedOrder);
+    audit(next, 'order.deleted', actorId, 'order', orderId, `Archived ${target.invoiceNo || orderId}`);
+    state = write(next);
+    return { ok: true, order: clone(deletedOrder) };
   }
 
   function eligibleAmount(order) {
@@ -1006,6 +1029,7 @@ export function createGrowthApi(storage = defaultStorage(), options = {}) {
       relations: clone(current.referralRelations),
       enquiries: clone(current.enquiries),
       orders: clone(current.orders),
+      deletedOrders: clone(current.deletedOrders || []),
       points: clone(current.pointsLedgers),
       commissions: clone(current.commissionLedgers),
       withdrawals: clone(current.withdrawalRequests),
@@ -1024,7 +1048,7 @@ export function createGrowthApi(storage = defaultStorage(), options = {}) {
     return { ok: true, config: clone(next.config) };
   }
 
-  return { getState, replaceState, captureReferralVisit, pendingReferral, registerMember, loginMember, logoutMember, currentMember, importMember, updateMemberProfile, upsertOrderLead, submitPromoterApplication, reviewPromoterApplication, createEnquiry, createOrder, updateOrder, completeOrder, releaseCommissions, mockAdvanceCommissionObservation, refundOrder, submitWithdrawal, reviewWithdrawal, grantCoupon, summary, adminSnapshot, updateConfig, availableCommissionFor };
+  return { getState, replaceState, captureReferralVisit, pendingReferral, registerMember, loginMember, logoutMember, currentMember, importMember, updateMemberProfile, upsertOrderLead, submitPromoterApplication, reviewPromoterApplication, createEnquiry, createOrder, updateOrder, deleteOrder, completeOrder, releaseCommissions, mockAdvanceCommissionObservation, refundOrder, submitWithdrawal, reviewWithdrawal, grantCoupon, summary, adminSnapshot, updateConfig, availableCommissionFor };
 }
 
 export { COMMISSION_STATUSES, ORDER_STATUSES, WITHDRAWAL_STATUSES, money, normalizePhone };
