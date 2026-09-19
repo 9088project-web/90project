@@ -149,7 +149,7 @@ const videoPlaceholder = document.getElementById('videoPlaceholder');
 
 const heroSection = heroImage?.closest('.hero');
 if (serviceStrip && heroSection) {
-  heroSection.before(serviceStrip);
+  heroSection.after(serviceStrip);
 }
 
 const MEMBERS_KEY = 'np90_members_v1';
@@ -3723,9 +3723,12 @@ function updateStaticLanguage() {
   document.querySelectorAll('.service-card').forEach((card, index) => {
     const service = t.services[index];
     if (!service) return;
-    card.querySelector('h3').textContent = service.title;
-    card.querySelector('.service-en').textContent = service.label;
-    card.querySelector('p:last-child').textContent = service.desc;
+    const title = card.querySelector('h3');
+    const label = card.querySelector('.service-en');
+    const description = card.querySelector('p:not(.service-en)');
+    if (title) title.textContent = service.title;
+    if (label) label.textContent = service.label;
+    if (description) description.textContent = service.desc;
   });
 
   setText('#meal-plan .compact-title h2', t.mealPlan.title);
