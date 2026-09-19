@@ -325,9 +325,31 @@ body.order-center-page [hidden]{display:none!important}
   display:grid;
   gap:14px;
 }
+
+.order-load-more{
+  width:100%;
+  min-height:52px;
+  border:1px solid #dbe3f0;
+  border-radius:8px;
+  background:#f7f9fd;
+  color:#2458bf;
+  font-family:inherit;
+  font-size:15px;
+  font-weight:700;
+  line-height:1.2;
+  cursor:pointer;
+}
+
+.order-load-more:hover,
+.order-load-more:focus-visible{
+  background:#edf3ff;
+  border-color:#9db9ef;
+}
 .order-item{
   display:grid;
   grid-template-columns:84px minmax(0,1fr);
+  content-visibility:auto;
+  contain-intrinsic-size:260px;
   gap:10px;
   padding:0 0 14px;
   border-bottom:1px solid var(--oc-line);

@@ -78,7 +78,12 @@ const state = {
   receiptDrafts: [],
   analysisPeriod: 'all',
   analysisStart: '',
-  analysisEnd: ''
+  analysisEnd: '',
+  orderCacheDirty: true,
+  cachedOrders: [],
+  cachedDeletedOrders: [],
+  overviewLimit: 12,
+  ordersLimit: 20
 };
 
 const els = {
@@ -678,6 +683,7 @@ async function saveOrderSettings(settings, options = {}) {
     nextState.orders = applySettingRemoveToOrders(current.orders || [], options.remove.group, options.remove.value, options.remove.replacement);
   }
   growthApi.replaceState(nextState);
+  invalidateOrderCache();
   setSettingsStatus('同步中');
   const result = await syncCloudState();
   setSettingsStatus(result.ok ? '已同步云端' : '已保存在本机', Boolean(result.ok));
@@ -760,9 +766,7 @@ function orderAssignee(order) {
   return ['order-center', 'admin-order-center'].includes(String(value).trim()) ? '未分配' : value;
 }
 
-function mapOrderCollection(sourceOrders = [], { deleted = false } = {}) {
-  const snapshot = getSnapshot();
-  const memberById = new Map((snapshot.members || []).map(member => [member.id, member]));
+function mapOrderCollection(sourceOrders = [], { deleted = false, memberById = new Map() } = {}) {
   return sourceOrders.map(order => {
     const member = memberById.get(order.memberId) || {};
     const lineItems = Array.isArray(order.lineItems) ? order.lineItems : [];
@@ -812,12 +816,27 @@ function mapOrderCollection(sourceOrders = [], { deleted = false } = {}) {
 }
 
 function mapGrowthOrders() {
-  return mapOrderCollection(getSnapshot().orders || []);
+  refreshOrderCache();
+  return state.cachedOrders;
 }
 
 function deletedOrders() {
-  return mapOrderCollection(getSnapshot().deletedOrders || [], { deleted: true })
+  refreshOrderCache();
+  return state.cachedDeletedOrders;
+}
+
+function invalidateOrderCache() {
+  state.orderCacheDirty = true;
+}
+
+function refreshOrderCache() {
+  if (!state.orderCacheDirty) return;
+  const snapshot = getSnapshot();
+  const memberById = new Map((snapshot.members || []).map(member => [member.id, member]));
+  state.cachedOrders = mapOrderCollection(snapshot.orders || [], { memberById });
+  state.cachedDeletedOrders = mapOrderCollection(snapshot.deletedOrders || [], { deleted: true, memberById })
     .sort((a, b) => String(b.deletedAt || '').localeCompare(String(a.deletedAt || '')));
+  state.orderCacheDirty = false;
 }
 
 function demoOrders() {
@@ -1066,9 +1085,15 @@ function renderOrderCard(order) {
 
 function renderRecent(orders) {
   if (!els.recentList) return;
+  const visible = orders.slice(0, state.overviewLimit);
   els.recentList.innerHTML = orders.length
-    ? orders.map(renderOrderCard).join('')
+    ? `${visible.map(renderOrderCard).join('')}${renderMoreButton('overview', orders.length - visible.length)}`
     : '<div class="order-empty">还没有订单，先新增第一张单。</div>';
+}
+
+function renderMoreButton(scope, remaining) {
+  if (remaining <= 0) return '';
+  return `<button class="order-load-more" type="button" data-order-load-more="${scope}">继续显示（还有 ${remaining} 张）</button>`;
 }
 
 function renderDeletedOrders() {
@@ -1121,8 +1146,9 @@ function renderAllOrders(orders) {
       ? `<span>${escapeHtml(shortDate(state.dateFilter))}</span><button type="button" data-clear-date-filter>清除</button>`
       : '';
   }
+  const page = visible.slice(0, state.ordersLimit);
   els.allList.innerHTML = visible.length
-    ? visible.map(renderOrderCard).join('')
+    ? `${page.map(renderOrderCard).join('')}${renderMoreButton('orders', visible.length - page.length)}`
     : '<div class="order-empty">没有符合条件的订单。</div>';
 }
 
@@ -1499,23 +1525,28 @@ function renderPanels() {
 
 function render() {
   const orders = currentOrders();
-  const analysisOrders = filteredAnalysisOrders(orders);
   renderPanels();
   renderSyncStatus(orders);
-  renderStats(orders);
-  renderRecent(orders);
-  renderAllOrders(orders);
-  renderCalendar(orders);
-  renderAnalysisControls(analysisOrders);
-  renderCategoryAnalysis(analysisOrders);
-  renderStatusAnalysis(analysisOrders);
-  renderMonthIncome(analysisOrders);
-  renderStaffAnalysis(analysisOrders);
-  renderDeletedOrders();
-  renderOrderSelects(orders);
-  renderOrderSettings(orders);
+  if (state.view === 'overview') {
+    renderStats(orders);
+    renderRecent(orders);
+  } else if (state.view === 'orders') {
+    renderAllOrders(orders);
+  } else if (state.view === 'calendar') {
+    renderCalendar(orders);
+  } else if (state.view === 'analysis') {
+    const analysisOrders = filteredAnalysisOrders(orders);
+    renderAnalysisControls(analysisOrders);
+    renderCategoryAnalysis(analysisOrders);
+    renderStatusAnalysis(analysisOrders);
+    renderMonthIncome(analysisOrders);
+    renderStaffAnalysis(analysisOrders);
+    renderOrderSettings(orders);
+  } else if (state.view === 'deleted') {
+    renderDeletedOrders();
+  }
   window.NP90OrderCenter = {
-    orders,
+    orders: orders.map(({ paymentReceipts, ...order }) => ({ ...order, receiptCount: paymentReceipts?.length || 0 })),
     settings: orderSettingsWithUsage(orders),
     demoMode: state.demoMode,
     totals: totalsFor(orders)
@@ -1524,6 +1555,8 @@ function render() {
 
 function setView(view) {
   state.view = view;
+  if (view === 'overview') state.overviewLimit = 12;
+  if (view === 'orders') state.ordersLimit = 20;
   render();
 }
 
@@ -1657,7 +1690,10 @@ async function syncCloudState() {
     renderSyncStatus(currentOrders());
     const result = await cloud.saveSharedGrowthState(growthApi.getState(), { admin: true });
     if (result.ok) {
-      if (result.state && typeof growthApi.replaceState === 'function') growthApi.replaceState(result.state);
+      if (result.state && typeof growthApi.replaceState === 'function') {
+        growthApi.replaceState(result.state);
+        invalidateOrderCache();
+      }
       state.syncState = 'ok';
       state.syncMessage = '已同步';
       return result;
@@ -1753,6 +1789,8 @@ async function saveOrderFromForm({ close = true } = {}) {
     setFormMessage(result?.reason === 'order_locked' ? '退款处理中的订单暂时不能修改。' : '订单保存不到，请检查资料。');
     return null;
   }
+
+  invalidateOrderCache();
 
   let savedOrder = result.order;
   if (data.requestedStatus === 'service_completed' && savedOrder?.status !== 'service_completed') {
@@ -2212,6 +2250,7 @@ async function loadCloudState() {
     const result = await cloud.loadSharedGrowthState({ admin: true });
     if (result.ok && result.state && typeof growthApi.replaceState === 'function') {
       growthApi.replaceState(result.state);
+      invalidateOrderCache();
       state.syncState = 'ok';
       state.syncMessage = '已同步';
       return;
@@ -2260,6 +2299,14 @@ function bind() {
     const tab = event.target.closest('[data-order-view]');
     if (tab) {
       setView(tab.dataset.orderView || 'overview');
+      return;
+    }
+
+    const loadMore = event.target.closest('[data-order-load-more]');
+    if (loadMore) {
+      if (loadMore.dataset.orderLoadMore === 'overview') state.overviewLimit += 12;
+      if (loadMore.dataset.orderLoadMore === 'orders') state.ordersLimit += 20;
+      render();
       return;
     }
 
@@ -2337,6 +2384,7 @@ function bind() {
       if (!order || !window.confirm(`删除 ${order.customerName} 的订单？订单会移到「删除记录」，记录永久保留。`)) return;
       const result = growthApi.deleteOrder(order.id, 'order-center');
       if (!result.ok) return;
+      invalidateOrderCache();
       await syncCloudState();
       render();
       return;
@@ -2527,11 +2575,13 @@ function bind() {
 
   els.search?.addEventListener('input', event => {
     state.query = event.target.value || '';
+    state.ordersLimit = 20;
     renderAllOrders(currentOrders());
   });
 
   els.statusFilter?.addEventListener('change', event => {
     state.status = event.target.value || 'all';
+    state.ordersLimit = 20;
     renderAllOrders(currentOrders());
   });
 
@@ -2568,7 +2618,10 @@ function bind() {
   });
 
   window.addEventListener('storage', event => {
-    if (event.key === 'np90_growth_mock_v1') render();
+    if (event.key === 'np90_growth_mock_v1') {
+      invalidateOrderCache();
+      render();
+    }
   });
 }
 
