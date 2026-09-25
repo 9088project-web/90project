@@ -20,8 +20,8 @@ export const DEFAULT_GROWTH_CONFIG = {
     business: {
       nameZh: '九零食刻',
       nameEn: '90 PROJECT',
-      whatsapp: '60196909088',
-      phoneDisplay: '+60 19-690 9088',
+      whatsapp: '60189490908',
+      phoneDisplay: '018-949 0908',
       email: '9088project@gmail.com',
       website: 'www.90project.online',
       invoicePrefix: '90P',

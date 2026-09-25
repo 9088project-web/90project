@@ -175,9 +175,9 @@ const ADMIN_CONTENT_API_PATH = '/api/admin-content';
 const MEMBER_SYNC_API_PATH = '/api/member-sync';
 const ADMIN_EMAIL = '9088project@gmail.com';
 const ADMIN_PASSWORD_HASH = '7045830c';
-const WHATSAPP_NUMBER = '60196909088';
-const BUSINESS_PHONE_DISPLAY = '019-690 9088';
-const LEGACY_WHATSAPP_DIGITS = new Set(['0189490908', '60189490908']);
+const WHATSAPP_NUMBER = '60189490908';
+const BUSINESS_PHONE_DISPLAY = '018-949 0908';
+const LEGACY_WHATSAPP_DIGITS = new Set(['0196909088', '60196909088']);
 const DEFAULT_MEMBER_WHATSAPP_TEMPLATES = {
   zh: `你好 {name}，这里是九零食刻 90 PROJECT。
 
@@ -2527,8 +2527,8 @@ function deepMerge(base, override) {
 
 function cleanDeprecatedAdminText(value) {
   return String(value ?? '')
-    .replace(/018-?949\s?0908/g, BUSINESS_PHONE_DISPLAY)
-    .replace(/60189490908/g, WHATSAPP_NUMBER)
+    .replace(/019-?690\s?9088/g, BUSINESS_PHONE_DISPLAY)
+    .replace(/60196909088/g, WHATSAPP_NUMBER)
     .replace(/小型\s*Buffet\s*\/?\s*Setup/gi, '活动餐饮 / Event Catering')
     .replace(/Packed\s*Meal/gi, 'Event Catering')
     .replace(/小型\s*Buffet/gi, '活动餐饮');

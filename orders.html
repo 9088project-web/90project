@@ -9,7 +9,7 @@
   <link rel="icon" type="image/jpeg" href="assets/images/logo/logo-icon-dark.jpg" />
   <link rel="manifest" href="orders.webmanifest" />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/remixicon@4.6.0/fonts/remixicon.css" />
-  <link rel="stylesheet" href="css/order-center.css?v=20260925-full-settings" />
+  <link rel="stylesheet" href="css/order-center.css?v=20260925-order-fields" />
 </head>
 <body class="order-center-page">
   <main class="order-app" data-order-app hidden>
@@ -251,9 +251,25 @@
               <button class="order-field-delete" type="button" data-order-assignee-delete aria-label="删除当前负责人" title="删除当前负责人" disabled><i class="ri-delete-bin-6-line" aria-hidden="true"></i></button>
             </span>
           </label>
+          <label>协作负责人
+            <select data-order-field="collaborator">
+              <option value="">没有协作负责人</option>
+            </select>
+          </label>
+          <label>顾客来源
+            <select data-order-field="customerSource">
+              <option value="自然询问">自然询问</option>
+              <option value="广告">广告</option>
+              <option value="转介绍">转介绍</option>
+              <option value="旧顾客">旧顾客</option>
+              <option value="其他">其他</option>
+            </select>
+          </label>
           <label class="order-wide">菜单 / 备注<textarea data-order-field="itemsSummary" rows="5" placeholder="主食、肉类、海鲜、菜、地址备注"></textarea></label>
           <label class="order-wide">地点<input data-order-field="location" type="text" placeholder="地址 / Venue / Area"></label>
-          <label>总额 RM<input data-order-field="totalAmount" type="number" min="0" step="0.01" required></label>
+          <label>原价小计 RM<input data-order-field="totalAmount" type="number" min="0" step="0.01" required></label>
+          <label>优惠金额 RM<input data-order-field="discountAmount" type="number" min="0" step="0.01" value="0"></label>
+          <label>优惠后应收 RM<input data-order-field="payableAmount" type="text" value="RM 0.00" readonly></label>
           <label>已收 RM<input data-order-field="paidAmount" type="number" min="0" step="0.01" value="0"></label>
           <label>状态
             <select data-order-field="status">
@@ -290,7 +306,7 @@
 
         <p class="order-message" data-order-form-message aria-live="polite"></p>
         <div class="order-sheet-actions">
-          <button class="order-primary" type="submit"><i class="ri-save-3-line" aria-hidden="true"></i>保存订单</button>
+          <button class="order-primary" type="submit" data-order-save><i class="ri-save-3-line" aria-hidden="true"></i><span>保存订单</span></button>
           <button type="button" data-order-form-whatsapp><i class="ri-whatsapp-line" aria-hidden="true"></i>WhatsApp</button>
           <button type="button" data-order-form-print><i class="ri-printer-line" aria-hidden="true"></i>打印</button>
         </div>
@@ -300,6 +316,6 @@
 
   <section class="order-print" data-order-print></section>
 
-  <script type="module" src="js/order-center.js?v=20260925-full-settings"></script>
+  <script type="module" src="js/order-center.js?v=20260925-order-fields"></script>
 </body>
 </html>

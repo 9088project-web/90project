@@ -1,12 +1,12 @@
-import { createGrowthApi } from './growth-domain.mjs?v=20260925-full-settings';
+import { createGrowthApi } from './growth-domain.mjs?v=20260925-order-fields';
 import { createGrowthCloud } from './growth-cloud.mjs?v=20260818-reset-live';
 
 const ADMIN_SESSION_KEY = 'np90_admin_session_v1';
 const ADMIN_CLOUD_PASSWORD_SESSION_KEY = 'np90_admin_cloud_password_session_v1';
 const ADMIN_EMAIL = '9088project@gmail.com';
 const ADMIN_PASSWORD_HASH = '7045830c';
-const BUSINESS_WHATSAPP = '60196909088';
-const BUSINESS_PHONE_DISPLAY = '+60 19-690 9088';
+const BUSINESS_WHATSAPP = '60189490908';
+const BUSINESS_PHONE_DISPLAY = '018-949 0908';
 const BUSINESS_EMAIL = '9088project@gmail.com';
 const BUSINESS_WEBSITE = 'www.90project.online';
 const LOGO_PATH = 'assets/images/logo/logo-icon-dark.jpg';
@@ -147,6 +147,7 @@ const els = {
   },
   sheet: document.querySelector('[data-order-sheet]'),
   form: document.querySelector('[data-order-form]'),
+  saveButton: document.querySelector('[data-order-save]'),
   formMessage: document.querySelector('[data-order-form-message]'),
   categoryDelete: document.querySelector('[data-order-category-delete]'),
   assigneeDelete: document.querySelector('[data-order-assignee-delete]'),
@@ -165,10 +166,14 @@ const formFields = {
   eventTime: document.querySelector('[data-order-field="eventTime"]'),
   serviceType: document.querySelector('[data-order-field="serviceType"]'),
   assignee: document.querySelector('[data-order-field="assignee"]'),
+  collaborator: document.querySelector('[data-order-field="collaborator"]'),
+  customerSource: document.querySelector('[data-order-field="customerSource"]'),
   title: document.querySelector('[data-order-field="title"]'),
   itemsSummary: document.querySelector('[data-order-field="itemsSummary"]'),
   location: document.querySelector('[data-order-field="location"]'),
   totalAmount: document.querySelector('[data-order-field="totalAmount"]'),
+  discountAmount: document.querySelector('[data-order-field="discountAmount"]'),
+  payableAmount: document.querySelector('[data-order-field="payableAmount"]'),
   paidAmount: document.querySelector('[data-order-field="paidAmount"]'),
   status: document.querySelector('[data-order-field="status"]'),
   receiptLanguage: document.querySelector('[data-order-field="receiptLanguage"]')
@@ -559,7 +564,9 @@ function cleanBusinessText(value, fallback = '', max = 300) {
 }
 
 function sanitizeBusinessSettings(settings = {}) {
-  const whatsapp = normalizePhone(settings.whatsapp || defaultBusinessSettings.whatsapp) || defaultBusinessSettings.whatsapp;
+  const savedWhatsapp = normalizePhone(settings.whatsapp || defaultBusinessSettings.whatsapp);
+  const whatsapp = savedWhatsapp === '60196909088' ? defaultBusinessSettings.whatsapp : (savedWhatsapp || defaultBusinessSettings.whatsapp);
+  const savedDisplay = cleanBusinessText(settings.phoneDisplay, defaultBusinessSettings.phoneDisplay, 30);
   const prefix = String(settings.invoicePrefix || defaultBusinessSettings.invoicePrefix)
     .toUpperCase()
     .replace(/[^A-Z0-9-]/g, '')
@@ -568,7 +575,7 @@ function sanitizeBusinessSettings(settings = {}) {
     nameZh: cleanBusinessText(settings.nameZh, defaultBusinessSettings.nameZh, 60),
     nameEn: cleanBusinessText(settings.nameEn, defaultBusinessSettings.nameEn, 60),
     whatsapp,
-    phoneDisplay: cleanBusinessText(settings.phoneDisplay, defaultBusinessSettings.phoneDisplay, 30),
+    phoneDisplay: savedDisplay.includes('19-690') ? defaultBusinessSettings.phoneDisplay : savedDisplay,
     email: cleanBusinessText(settings.email, defaultBusinessSettings.email, 100),
     website: cleanBusinessText(settings.website, defaultBusinessSettings.website, 100),
     invoicePrefix: prefix,
@@ -653,7 +660,8 @@ function settingUsageCount(group, value, orders = []) {
     if (group === 'categories') {
       return orderCategories(order).some(item => cleanSettingValue(item).toLocaleLowerCase() === target);
     }
-    return cleanSettingValue(order.assignee || orderAssignee(order)).toLocaleLowerCase() === target;
+    return [orderAssignee(order), orderCollaborator(order)]
+      .some(item => cleanSettingValue(item).toLocaleLowerCase() === target);
   }).length;
 }
 
@@ -670,6 +678,15 @@ function updateAssigneeNote(notes, assignee) {
   if (!text) return value;
   if (/负责人[:：]\s*[^\n]*/.test(text)) return text.replace(/负责人[:：]\s*[^\n]*/, value);
   return `${value}\n${text}`;
+}
+
+function updateCollaboratorNote(notes, collaborator = '') {
+  const text = String(notes || '').trim();
+  const pattern = /协作负责人[:：]\s*[^\n]*/;
+  if (!collaborator) return text.replace(pattern, '').replace(/\n{2,}/g, '\n').trim();
+  const value = `协作负责人：${collaborator}`;
+  if (pattern.test(text)) return text.replace(pattern, value);
+  return [text, value].filter(Boolean).join('\n');
 }
 
 function applySettingRenameToOrders(orders = [], group, oldValue, newValue) {
@@ -695,6 +712,10 @@ function applySettingRenameToOrders(orders = [], group, oldValue, newValue) {
       next.adminNotes = updateAssigneeNote(order.adminNotes, newValue);
       if (cleanSettingValue(order.manualVerifiedBy).toLocaleLowerCase() === oldKey) next.manualVerifiedBy = newValue;
     }
+    if (group === 'assignees' && cleanSettingValue(orderCollaborator(order)).toLocaleLowerCase() === oldKey) {
+      next.collaborator = newValue;
+      next.adminNotes = updateCollaboratorNote(next.adminNotes || order.adminNotes, newValue);
+    }
     return next;
   });
 }
@@ -716,6 +737,10 @@ function applySettingRemoveToOrders(orders = [], group, value, replacement) {
       next.assignee = replacement || '未分配';
       next.adminNotes = updateAssigneeNote(order.adminNotes, next.assignee);
       if (cleanSettingValue(order.manualVerifiedBy).toLocaleLowerCase() === targetKey) next.manualVerifiedBy = '';
+    }
+    if (group === 'assignees' && cleanSettingValue(orderCollaborator(order)).toLocaleLowerCase() === targetKey) {
+      next.collaborator = '';
+      next.adminNotes = updateCollaboratorNote(next.adminNotes || order.adminNotes, '');
     }
     return next;
   });
@@ -820,6 +845,24 @@ function orderAssignee(order) {
   return ['order-center', 'admin-order-center'].includes(String(value).trim()) ? '未分配' : value;
 }
 
+function orderCollaborator(order) {
+  const match = String(order.adminNotes || '').match(/协作负责人[:：]\s*([^\n]+)/);
+  return cleanSettingValue(order.collaborator || match?.[1] || '');
+}
+
+function orderCustomerSource(order) {
+  const match = String(order.adminNotes || '').match(/顾客来源[:：]\s*([^\n]+)/);
+  return cleanSettingValue(order.customerSource || match?.[1] || '自然询问');
+}
+
+function orderAdminNotes(data = {}) {
+  return [
+    `负责人：${data.assignee || '未分配'}`,
+    data.collaborator ? `协作负责人：${data.collaborator}` : '',
+    `顾客来源：${data.customerSource || '自然询问'}`
+  ].filter(Boolean).join('\n');
+}
+
 function mapOrderCollection(sourceOrders = [], { deleted = false, memberById = new Map() } = {}) {
   return sourceOrders.map(order => {
     const member = memberById.get(order.memberId) || {};
@@ -852,6 +895,10 @@ function mapOrderCollection(sourceOrders = [], { deleted = false, memberById = n
       eventTime: order.eventTime || '',
       location: order.location || member.address || '',
       assignee: orderAssignee(order),
+      collaborator: orderCollaborator(order),
+      customerSource: orderCustomerSource(order),
+      originalAmount: money(order.originalAmount || total + money(order.discountAmount)),
+      discountAmount: money(order.discountAmount),
       totalAmount: total,
       paidAmount: paid,
       balanceAmount: balance,
@@ -1121,7 +1168,9 @@ function renderOrderCard(order) {
           <span><i class="ri-wallet-3-line" aria-hidden="true"></i>已收 ${escapeHtml(formatMoney(order.paidAmount))}</span>
           <span><i class="ri-refund-2-line" aria-hidden="true"></i>待收 ${escapeHtml(formatMoney(balance))}</span>
           ${order.location ? `<span><i class="ri-map-pin-2-line" aria-hidden="true"></i>${escapeHtml(order.location)}</span>` : ''}
-          ${order.assignee ? `<span><i class="ri-user-star-line" aria-hidden="true"></i>${escapeHtml(order.assignee)}</span>` : ''}
+          ${order.assignee ? `<span><i class="ri-user-star-line" aria-hidden="true"></i>${escapeHtml([order.assignee, order.collaborator].filter(Boolean).join(' + '))}</span>` : ''}
+          ${order.customerSource ? `<span><i class="ri-megaphone-line" aria-hidden="true"></i>${escapeHtml(order.customerSource)}</span>` : ''}
+          ${order.discountAmount > 0 ? `<span><i class="ri-discount-percent-line" aria-hidden="true"></i>优惠 ${escapeHtml(formatMoney(order.discountAmount))}</span>` : ''}
           ${order.paymentReceipts?.length ? `<span class="order-receipt-badge"><i class="ri-receipt-line" aria-hidden="true"></i>${order.paymentReceipts.length} 张收据</span>` : ''}
           <span><i class="ri-translate-2" aria-hidden="true"></i>${escapeHtml(receiptLanguageLabel(order.receiptLanguage))}</span>
         </div>
@@ -1481,7 +1530,19 @@ function syncCategoryFormState({ updateTotal = false } = {}) {
   if (updateTotal && total > 0 && formFields.totalAmount) {
     formFields.totalAmount.value = total.toFixed(2);
   }
+  updatePayableSummary();
   updateFormDeleteButtons();
+}
+
+function updatePayableSummary() {
+  const subtotal = money(formFields.totalAmount?.value);
+  const discount = Math.min(subtotal, money(formFields.discountAmount?.value));
+  const payable = Math.max(0, money(subtotal - discount));
+  if (formFields.payableAmount) formFields.payableAmount.value = formatMoney(payable);
+  if (formFields.paidAmount && money(formFields.paidAmount.value) > payable) {
+    formFields.paidAmount.value = payable.toFixed(2);
+  }
+  return { subtotal, discount, payable };
 }
 
 function setCategoryPickerOptions(values, selectedLines = [], prices = savedOrderSettings().categoryPrices) {
@@ -1534,6 +1595,15 @@ function renderOrderSelects(orders = currentOrders(), selected = {}) {
     : (selected.categories || (selected.serviceType ? [selected.serviceType] : []));
   setCategoryPickerOptions(settings.categories, categoryLines, settings.categoryPrices);
   setManagedSelectOptions(formFields.assignee, 'assignees', settings.assignees, selected.assignee);
+  if (formFields.collaborator) {
+    const current = Object.prototype.hasOwnProperty.call(selected, 'collaborator')
+      ? (selected.collaborator || '')
+      : (formFields.collaborator.value || '');
+    formFields.collaborator.innerHTML = `<option value="">没有协作负责人</option>${settings.assignees
+      .filter(value => value !== '未分配')
+      .map(value => `<option value="${escapeHtml(value)}">${escapeHtml(value)}</option>`).join('')}`;
+    formFields.collaborator.value = current;
+  }
   updateFormDeleteButtons();
 }
 
@@ -1654,7 +1724,7 @@ function openOrderSheet(orderId = '', forcedDate = '') {
   const isDemo = order?.source === 'demo';
   const categoryLines = order ? orderCategoryLines(order) : [];
   const categories = categoryValuesFrom(categoryLines.map(line => line.description));
-  renderOrderSelects(currentOrders(), { categoryLines, assignee: order?.assignee });
+  renderOrderSelects(currentOrders(), { categoryLines, assignee: order?.assignee, collaborator: order?.collaborator });
   formFields.id.value = order && !isDemo ? order.id : '';
   formFields.customerName.value = order?.customerName || '';
   formFields.phone.value = order?.phone || '';
@@ -1662,12 +1732,16 @@ function openOrderSheet(orderId = '', forcedDate = '') {
   formFields.eventTime.value = order?.eventTime || '';
   formFields.serviceType.value = categories[0] || '';
   formFields.assignee.value = order?.assignee || '未分配';
+  if (formFields.collaborator) formFields.collaborator.value = order?.collaborator || '';
+  if (formFields.customerSource) formFields.customerSource.value = order?.customerSource || '自然询问';
   updateFormDeleteButtons();
   if (formFields.title) formFields.title.value = order?.title || '';
   formFields.itemsSummary.value = order?.itemsSummary || '';
   formFields.location.value = order?.location || '';
-  formFields.totalAmount.value = order ? money(order.totalAmount).toFixed(2) : '';
+  formFields.totalAmount.value = order ? money(order.originalAmount || order.totalAmount).toFixed(2) : '';
+  if (formFields.discountAmount) formFields.discountAmount.value = order ? money(order.discountAmount).toFixed(2) : '0';
   formFields.paidAmount.value = order ? money(order.paidAmount).toFixed(2) : '0';
+  updatePayableSummary();
   formFields.status.value = order?.status || 'new';
   formFields.receiptLanguage.value = receiptLanguage(order?.receiptLanguage || businessSettings().defaultReceiptLanguage);
   state.receiptDrafts = normalizePaymentReceipts(order?.paymentReceipts, order?.paymentReceipt);
@@ -1699,7 +1773,9 @@ function categoryNotesSummary(lines = [], fallback = '') {
 function collectFormData() {
   const lineItems = readCategoryLines();
   const lineTotal = categoryLinesTotal(lineItems);
-  const total = lineTotal > 0 ? lineTotal : money(formFields.totalAmount.value);
+  const originalAmount = lineTotal > 0 ? lineTotal : money(formFields.totalAmount.value);
+  const discountAmount = Math.min(originalAmount, money(formFields.discountAmount?.value));
+  const total = Math.max(0, money(originalAmount - discountAmount));
   const paid = Math.min(total, money(formFields.paidAmount.value));
   const requestedStatus = formFields.status.value || 'new';
   const status = derivePaymentStatus(total, paid, requestedStatus);
@@ -1722,11 +1798,15 @@ function collectFormData() {
     serviceType,
     categories,
     assignee: formFields.assignee.value || '未分配',
+    collaborator: formFields.collaborator?.value === formFields.assignee.value ? '' : (formFields.collaborator?.value || ''),
+    customerSource: formFields.customerSource?.value || '自然询问',
     title,
     itemsSummary,
     lineItems,
     location: formFields.location.value.trim(),
     totalAmount: total,
+    originalAmount,
+    discountAmount,
     paidAmount: paid,
     balanceAmount: Math.max(0, money(total - paid)),
     status,
@@ -1740,7 +1820,8 @@ function validateOrderData(data) {
   if (!data.customerName) return '请填写顾客姓名。';
   if (!data.categories?.length) return '请选择至少一个类别。';
   if (!data.eventDate) return '请选择日期。';
-  if (data.totalAmount <= 0) return '总额必须大过 RM0。';
+  if (data.originalAmount <= 0) return '请填写原价小计，金额必须大过 RM0。';
+  if (data.totalAmount <= 0) return '优惠后应收必须大过 RM0。';
   return '';
 }
 
@@ -1749,7 +1830,7 @@ function lineItemsFrom(data) {
     const rows = data.lineItems.map(item => cleanCategoryLine(item));
     const hasLineAmount = rows.some(item => item.amount > 0);
     return rows.map((item, index) => {
-      const amount = hasLineAmount ? item.amount : (index === 0 ? data.totalAmount : 0);
+      const amount = hasLineAmount ? item.amount : (index === 0 ? data.originalAmount : 0);
       return {
         description: item.description || data.title,
         note: item.note,
@@ -1762,8 +1843,8 @@ function lineItemsFrom(data) {
   return [{
     description: data.title,
     qty: 1,
-    unitPrice: data.totalAmount,
-    amount: data.totalAmount
+    unitPrice: data.originalAmount,
+    amount: data.originalAmount
   }];
 }
 
@@ -1805,10 +1886,19 @@ async function syncCloudState() {
 }
 
 async function saveOrderFromForm({ close = true } = {}) {
+  if (els.saveButton?.disabled) return null;
+  if (els.saveButton) {
+    els.saveButton.disabled = true;
+    els.saveButton.querySelector('span').textContent = '保存中…';
+  }
   const data = collectFormData();
   const error = validateOrderData(data);
   if (error) {
     setFormMessage(error);
+    if (els.saveButton) {
+      els.saveButton.disabled = false;
+      els.saveButton.querySelector('span').textContent = '保存订单';
+    }
     return null;
   }
 
@@ -1835,14 +1925,15 @@ async function saveOrderFromForm({ close = true } = {}) {
     itemsSummary: data.itemsSummary || data.title,
     lineItems: lineItemsFrom(data),
     totalAmount: data.totalAmount,
-    originalAmount: data.totalAmount,
+    originalAmount: data.originalAmount,
+    discountAmount: data.discountAmount,
     depositAmount: data.paidAmount,
     balanceAmount: data.balanceAmount,
     paymentStatus,
     status: data.requestedStatus === 'service_completed' ? (paymentStatus || 'confirmed') : data.status,
     receiptLanguage: data.receiptLanguage,
     paymentReceipts: data.paymentReceipts,
-    adminNotes: `负责人：${data.assignee}`,
+    adminNotes: orderAdminNotes(data),
     source: 'order-center',
     createdAt: new Date().toISOString()
   };
@@ -1855,7 +1946,8 @@ async function saveOrderFromForm({ close = true } = {}) {
       serviceType: data.serviceType,
       categories: data.categories,
       totalAmount: data.totalAmount,
-      originalAmount: data.totalAmount,
+      originalAmount: data.originalAmount,
+      discountAmount: data.discountAmount,
       depositAmount: data.paidAmount,
       balanceAmount: data.balanceAmount,
       paymentStatus,
@@ -1868,7 +1960,7 @@ async function saveOrderFromForm({ close = true } = {}) {
       location: data.location,
       itemsSummary: data.itemsSummary || data.title,
       lineItems: lineItemsFrom(data),
-      adminNotes: `负责人：${data.assignee}`
+      adminNotes: orderAdminNotes(data)
     }, 'order-center');
   } else {
     result = growthApi.upsertOrderLead(payload);
@@ -1876,6 +1968,10 @@ async function saveOrderFromForm({ close = true } = {}) {
 
   if (!result?.ok) {
     setFormMessage(result?.reason === 'order_locked' ? '退款处理中的订单暂时不能修改。' : '订单保存不到，请检查资料。');
+    if (els.saveButton) {
+      els.saveButton.disabled = false;
+      els.saveButton.querySelector('span').textContent = '保存订单';
+    }
     return null;
   }
 
@@ -1887,10 +1983,14 @@ async function saveOrderFromForm({ close = true } = {}) {
     if (completed.ok) savedOrder = completed.order;
   }
 
-  await syncCloudState();
+  const cloudResult = await syncCloudState();
   render();
-  setFormMessage(state.syncState === 'ok' ? '已保存并同步。' : '已保存，本机可用；云端稍后再同步。', true);
-  if (close) closeOrderSheet();
+  setFormMessage(state.syncState === 'ok' ? '已保存并同步云端。' : '订单已保存在本机，但云端尚未同步，请重新登录后再保存一次。', state.syncState === 'ok');
+  if (els.saveButton) {
+    els.saveButton.disabled = false;
+    els.saveButton.querySelector('span').textContent = '保存订单';
+  }
+  if (close && cloudResult?.ok) closeOrderSheet();
   return findOrder(savedOrder?.id) || mapGrowthOrders().find(order => order.id === savedOrder?.id) || null;
 }
 
@@ -1906,12 +2006,16 @@ function buildWhatsAppMessage(order) {
       `Customer: ${order.customerName || '-'}`,
       `Service: ${order.title || serviceTypeLabel(order.serviceType, lang) || '-'}`,
       `Category: ${categoryText(order, lang) || '-'}`,
+      `PIC: ${[order.assignee, order.collaborator].filter(Boolean).join(' + ') || '-'}`,
+      `Customer source: ${order.customerSource || '-'}`,
       order.eventDate ? `Date: ${order.eventDate}${order.eventTime ? ` ${order.eventTime}` : ''}` : '',
       order.location ? `Venue: ${order.location}` : '',
       '',
       'Menu / Notes:',
       order.itemsSummary || '-',
       '',
+      order.discountAmount > 0 ? `Subtotal: ${formatMoney(order.originalAmount)}` : '',
+      order.discountAmount > 0 ? `Discount: -${formatMoney(order.discountAmount)}` : '',
       `Total: ${formatMoney(order.totalAmount)}`,
       `Paid: ${formatMoney(order.paidAmount)}`,
       `Balance: ${formatMoney(balance)}`,
@@ -1926,12 +2030,16 @@ function buildWhatsAppMessage(order) {
     `顾客：${order.customerName || '-'}`,
     `服务：${order.title || order.serviceType || '-'}`,
     `类别：${categoryText(order) || '-'}`,
+    `负责人：${[order.assignee, order.collaborator].filter(Boolean).join(' + ') || '-'}`,
+    `顾客来源：${order.customerSource || '-'}`,
     order.eventDate ? `日期：${order.eventDate}${order.eventTime ? ` ${order.eventTime}` : ''}` : '',
     order.location ? `地点：${order.location}` : '',
     '',
     '菜单 / 备注：',
     order.itemsSummary || '-',
     '',
+    order.discountAmount > 0 ? `原价小计：${formatMoney(order.originalAmount)}` : '',
+    order.discountAmount > 0 ? `优惠：-${formatMoney(order.discountAmount)}` : '',
     `应收总额：${formatMoney(order.totalAmount)}`,
     `已收款：${formatMoney(order.paidAmount)}`,
     `余额：${formatMoney(balance)}`,
@@ -2120,6 +2228,8 @@ function renderPrint(order) {
       paymentNotes: 'Payment Notes',
       paymentLine1: business.paymentNoteEn,
       paymentLine2: 'Deposit confirms the order. Balance should be settled before delivery or before service completion.',
+      subtotal: 'Subtotal',
+      discount: 'Discount',
       total: 'Total',
       paid: 'Paid',
       balance: 'Balance',
@@ -2161,6 +2271,8 @@ function renderPrint(order) {
       paymentNotes: '付款说明',
       paymentLine1: business.paymentNoteZh,
       paymentLine2: '订金确认订单；余额请在送餐前或现场服务完成前确认。',
+      subtotal: '原价小计',
+      discount: '优惠',
       total: '应收总额',
       paid: '已收款',
       balance: '余额',
@@ -2194,7 +2306,7 @@ function renderPrint(order) {
       <section class="order-print-meta">
         <div><span>${escapeHtml(t.invoiceNo)}</span><strong>${escapeHtml(order.invoiceNo || '-')}</strong></div>
         <div><span>${escapeHtml(t.issuedAt)}</span><strong>${escapeHtml(issuedDateTime())}</strong></div>
-        <div><span>${escapeHtml(t.assignee)}</span><strong>${escapeHtml(assigneeLabel(order.assignee, lang))}</strong></div>
+        <div><span>${escapeHtml(t.assignee)}</span><strong>${escapeHtml([assigneeLabel(order.assignee, lang), order.collaborator].filter(Boolean).join(' + '))}</strong></div>
         <div><span>${escapeHtml(t.paymentStatus)}</span><strong>${escapeHtml(status)}</strong></div>
       </section>
 
@@ -2203,7 +2315,7 @@ function renderPrint(order) {
           <h3>${escapeHtml(t.customerDetails)}</h3>
           <p><b>${escapeHtml(order.customerName || '-')}</b></p>
           <p>${escapeHtml(t.phone)}: ${escapeHtml(order.phone || '-')}</p>
-          <p>${escapeHtml(t.source)}: ${escapeHtml(order.source === 'demo' ? t.sampleOrder : t.orderCenter)}</p>
+          <p>${escapeHtml(t.source)}: ${escapeHtml(order.source === 'demo' ? t.sampleOrder : (order.customerSource || t.orderCenter))}</p>
         </div>
         <div class="order-print-box">
           <h3>${escapeHtml(t.eventDetails)}</h3>
@@ -2234,6 +2346,8 @@ function renderPrint(order) {
           <p>${escapeHtml(t.paymentLine2)}</p>
         </div>
         <div class="order-print-total">
+          ${order.discountAmount > 0 ? `<div><span>${escapeHtml(t.subtotal)}</span><strong>${escapeHtml(formatMoney(order.originalAmount))}</strong></div>` : ''}
+          ${order.discountAmount > 0 ? `<div><span>${escapeHtml(t.discount)}</span><strong>-${escapeHtml(formatMoney(order.discountAmount))}</strong></div>` : ''}
           <div><span>${escapeHtml(t.total)}</span><strong>${escapeHtml(formatMoney(order.totalAmount))}</strong></div>
           <div><span>${escapeHtml(t.paid)}</span><strong>${escapeHtml(formatMoney(order.paidAmount))}</strong></div>
           <div class="${balance > 0 ? 'is-due' : 'is-clear'}"><span>${escapeHtml(t.balance)}</span><strong>${escapeHtml(formatMoney(balance))}</strong></div>
@@ -2446,7 +2560,7 @@ function bind() {
       if (formFields.serviceType) formFields.serviceType.value = remainingSelected[0] || fallback;
       updateFormDeleteButtons();
       const replacement = await removeOrderSetting('categories', currentCategory, { confirm: false });
-      renderOrderSelects(currentOrders(), { categories: remainingSelected.length ? remainingSelected : [replacement || fallback], assignee: formFields.assignee?.value || '未分配' });
+      renderOrderSelects(currentOrders(), { categories: remainingSelected.length ? remainingSelected : [replacement || fallback], assignee: formFields.assignee?.value || '未分配', collaborator: formFields.collaborator?.value || '' });
       updateFormDeleteButtons();
       setFormMessage(currentCategory ? `类别「${currentCategory}」已删除，当前订单保留「${(selectedCategoryValues()[0] || replacement || fallback)}」。` : '', true);
       return;
@@ -2649,12 +2763,12 @@ function bind() {
       const label = orderSettingLabels[group]?.singular || '名单';
       const value = cleanSettingValue(window.prompt(`新增${label}`));
       if (!value) {
-        renderOrderSelects(currentOrders(), { [group === 'categories' ? 'serviceType' : 'assignee']: select.dataset.previousValue || '' });
+        renderOrderSelects(currentOrders(), { [group === 'categories' ? 'serviceType' : 'assignee']: select.dataset.previousValue || '', collaborator: formFields.collaborator?.value || '' });
         updateFormDeleteButtons();
         return;
       }
       const added = await addOrderSetting(group, value);
-      renderOrderSelects(currentOrders(), { assignee: added || value });
+      renderOrderSelects(currentOrders(), { assignee: added || value, collaborator: formFields.collaborator?.value || '' });
       updateFormDeleteButtons();
     });
   });
@@ -2663,6 +2777,9 @@ function bind() {
     if (!event.target.closest('[data-order-category-row]')) return;
     syncCategoryFormState({ updateTotal: event.target.matches('[data-order-category-amount]') });
   });
+
+  formFields.totalAmount?.addEventListener('input', updatePayableSummary);
+  formFields.discountAmount?.addEventListener('input', updatePayableSummary);
 
   els.search?.addEventListener('input', event => {
     state.query = event.target.value || '';
