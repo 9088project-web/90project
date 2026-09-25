@@ -1,4 +1,4 @@
-import { createGrowthApi } from './growth-domain.mjs';
+import { createGrowthApi } from './growth-domain.mjs?v=20260925-full-settings';
 import { createGrowthCloud } from './growth-cloud.mjs?v=20260818-reset-live';
 
 const ADMIN_SESSION_KEY = 'np90_admin_session_v1';
@@ -10,6 +10,20 @@ const BUSINESS_PHONE_DISPLAY = '+60 19-690 9088';
 const BUSINESS_EMAIL = '9088project@gmail.com';
 const BUSINESS_WEBSITE = 'www.90project.online';
 const LOGO_PATH = 'assets/images/logo/logo-icon-dark.jpg';
+const defaultBusinessSettings = {
+  nameZh: '九零食刻',
+  nameEn: '90 PROJECT',
+  whatsapp: BUSINESS_WHATSAPP,
+  phoneDisplay: BUSINESS_PHONE_DISPLAY,
+  email: BUSINESS_EMAIL,
+  website: BUSINESS_WEBSITE,
+  invoicePrefix: '90P',
+  defaultReceiptLanguage: 'zh',
+  paymentNoteZh: '付款方式：按 WhatsApp 确认的付款资料处理。',
+  paymentNoteEn: 'Payment method follows the details confirmed by WhatsApp.',
+  footerNoteZh: '菜单或时间如需调整，请通过 WhatsApp 确认，避免遗漏。',
+  footerNoteEn: 'Any menu or timing changes should be confirmed by WhatsApp to avoid omissions.'
+};
 
 const growthApi = createGrowthApi();
 const cloud = createGrowthCloud();
@@ -94,6 +108,8 @@ const els = {
   loginPassword: document.querySelector('[data-order-login-password]'),
   loginMessage: document.querySelector('[data-order-login-message]'),
   syncStatus: document.querySelector('[data-order-sync-status]'),
+  brandTitle: document.querySelector('.order-brand h1'),
+  lockBrand: document.querySelector('[data-order-lock] article > span'),
   tabs: Array.from(document.querySelectorAll('[data-order-view]')),
   panels: Array.from(document.querySelectorAll('[data-order-panel]')),
   stats: document.querySelector('[data-order-stats]'),
@@ -114,6 +130,10 @@ const els = {
   analysisSummary: document.querySelector('[data-analysis-summary]'),
   deletedList: document.querySelector('[data-order-deleted-list]'),
   settingsStatus: document.querySelector('[data-order-settings-status]'),
+  businessSettingsStatus: document.querySelector('[data-business-settings-status]'),
+  businessSettingsForm: document.querySelector('[data-business-settings-form]'),
+  businessSettingsReset: document.querySelector('[data-business-settings-reset]'),
+  businessSettingsFields: Object.fromEntries(Array.from(document.querySelectorAll('[data-business-setting]')).map(field => [field.dataset.businessSetting, field])),
   categoryLines: document.querySelector('[data-order-category-lines]'),
   categoryShortcuts: document.querySelector('[data-order-category-shortcuts]'),
   configInputs: {
@@ -278,7 +298,8 @@ function invoiceNo() {
     String(date.getMonth() + 1).padStart(2, '0'),
     String(date.getDate()).padStart(2, '0')
   ].join('');
-  return `90P-${stamp}-${String(Date.now()).slice(-5)}`;
+  const prefix = businessSettings().invoicePrefix || '90P';
+  return `${prefix}-${stamp}-${String(Date.now()).slice(-5)}`;
 }
 
 function hashLocalSecret(value) {
@@ -532,12 +553,44 @@ function normalizeSettingList(values = [], fallback = []) {
   return output;
 }
 
+function cleanBusinessText(value, fallback = '', max = 300) {
+  const text = String(value ?? '').trim().slice(0, max);
+  return text || fallback;
+}
+
+function sanitizeBusinessSettings(settings = {}) {
+  const whatsapp = normalizePhone(settings.whatsapp || defaultBusinessSettings.whatsapp) || defaultBusinessSettings.whatsapp;
+  const prefix = String(settings.invoicePrefix || defaultBusinessSettings.invoicePrefix)
+    .toUpperCase()
+    .replace(/[^A-Z0-9-]/g, '')
+    .slice(0, 12) || defaultBusinessSettings.invoicePrefix;
+  return {
+    nameZh: cleanBusinessText(settings.nameZh, defaultBusinessSettings.nameZh, 60),
+    nameEn: cleanBusinessText(settings.nameEn, defaultBusinessSettings.nameEn, 60),
+    whatsapp,
+    phoneDisplay: cleanBusinessText(settings.phoneDisplay, defaultBusinessSettings.phoneDisplay, 30),
+    email: cleanBusinessText(settings.email, defaultBusinessSettings.email, 100),
+    website: cleanBusinessText(settings.website, defaultBusinessSettings.website, 100),
+    invoicePrefix: prefix,
+    defaultReceiptLanguage: receiptLanguage(settings.defaultReceiptLanguage),
+    paymentNoteZh: cleanBusinessText(settings.paymentNoteZh, defaultBusinessSettings.paymentNoteZh),
+    paymentNoteEn: cleanBusinessText(settings.paymentNoteEn, defaultBusinessSettings.paymentNoteEn),
+    footerNoteZh: cleanBusinessText(settings.footerNoteZh, defaultBusinessSettings.footerNoteZh),
+    footerNoteEn: cleanBusinessText(settings.footerNoteEn, defaultBusinessSettings.footerNoteEn)
+  };
+}
+
+function businessSettings() {
+  return sanitizeBusinessSettings(growthApi.getState()?.config?.orderCenter?.business || {});
+}
+
 function savedOrderSettings() {
   const config = growthApi.getState()?.config?.orderCenter || {};
   return {
     categories: normalizeSettingList(config.categories, orderSettingDefaults.categories),
     categoryPrices: sanitizeCategoryPrices(config.categoryPrices),
-    assignees: normalizeSettingList(config.assignees, orderSettingDefaults.assignees)
+    assignees: normalizeSettingList(config.assignees, orderSettingDefaults.assignees),
+    business: sanitizeBusinessSettings(config.business)
   };
 }
 
@@ -586,7 +639,8 @@ function sanitizeOrderSettings(settings = {}) {
   const next = {
     categories: normalizeSettingList(settings.categories, orderSettingDefaults.categories),
     categoryPrices: sanitizeCategoryPrices(settings.categoryPrices),
-    assignees: normalizeSettingList(settings.assignees, orderSettingDefaults.assignees)
+    assignees: normalizeSettingList(settings.assignees, orderSettingDefaults.assignees),
+    business: sanitizeBusinessSettings(settings.business)
   };
   if (!next.assignees.some(item => item === '未分配')) next.assignees.unshift('未分配');
   return next;
@@ -1514,6 +1568,32 @@ function renderOrderSettings(orders = currentOrders()) {
   setSettingsStatus(label, state.syncState === 'ok');
 }
 
+function setBusinessSettingsStatus(message, good = false) {
+  if (!els.businessSettingsStatus) return;
+  els.businessSettingsStatus.textContent = message || '';
+  els.businessSettingsStatus.classList.toggle('is-good', good);
+  els.businessSettingsStatus.classList.toggle('is-bad', !good && /失败|不能|错误/.test(message || ''));
+}
+
+function renderBusinessSettings() {
+  const settings = businessSettings();
+  Object.entries(els.businessSettingsFields).forEach(([key, field]) => {
+    if (field) field.value = settings[key] ?? '';
+  });
+  setBusinessSettingsStatus(state.syncState === 'ok' ? '已同步云端' : state.cloudReady ? state.syncMessage : '本机设置', state.syncState === 'ok');
+}
+
+async function saveBusinessSettingsFromForm() {
+  const values = Object.fromEntries(Object.entries(els.businessSettingsFields).map(([key, field]) => [key, field?.value || '']));
+  const settings = savedOrderSettings();
+  settings.business = sanitizeBusinessSettings(values);
+  setBusinessSettingsStatus('同步中');
+  const result = await saveOrderSettings(settings);
+  setBusinessSettingsStatus(result.ok ? '已同步云端' : '已保存在本机', Boolean(result.ok));
+  renderBusinessSettings();
+  return result;
+}
+
 function renderPanels() {
   els.tabs.forEach(tab => tab.classList.toggle('active', tab.dataset.orderView === state.view));
   els.panels.forEach(panel => {
@@ -1523,8 +1603,15 @@ function renderPanels() {
   });
 }
 
+function renderBusinessIdentity() {
+  const business = businessSettings();
+  if (els.brandTitle) els.brandTitle.innerHTML = `${escapeHtml(business.nameEn)} <span>| 订单经营中心</span>`;
+  if (els.lockBrand) els.lockBrand.textContent = business.nameEn;
+}
+
 function render() {
   const orders = currentOrders();
+  renderBusinessIdentity();
   renderPanels();
   renderSyncStatus(orders);
   if (state.view === 'overview') {
@@ -1541,6 +1628,8 @@ function render() {
     renderStatusAnalysis(analysisOrders);
     renderMonthIncome(analysisOrders);
     renderStaffAnalysis(analysisOrders);
+  } else if (state.view === 'settings') {
+    renderBusinessSettings();
     renderOrderSettings(orders);
   } else if (state.view === 'deleted') {
     renderDeletedOrders();
@@ -1580,7 +1669,7 @@ function openOrderSheet(orderId = '', forcedDate = '') {
   formFields.totalAmount.value = order ? money(order.totalAmount).toFixed(2) : '';
   formFields.paidAmount.value = order ? money(order.paidAmount).toFixed(2) : '0';
   formFields.status.value = order?.status || 'new';
-  formFields.receiptLanguage.value = receiptLanguage(order?.receiptLanguage);
+  formFields.receiptLanguage.value = receiptLanguage(order?.receiptLanguage || businessSettings().defaultReceiptLanguage);
   state.receiptDrafts = normalizePaymentReceipts(order?.paymentReceipts, order?.paymentReceipt);
   if (els.receiptInput) els.receiptInput.value = '';
   renderReceiptDraft();
@@ -1808,9 +1897,10 @@ async function saveOrderFromForm({ close = true } = {}) {
 function buildWhatsAppMessage(order) {
   const balance = Math.max(0, money(order.totalAmount) - money(order.paidAmount));
   const lang = receiptLanguage(order.receiptLanguage);
+  const business = businessSettings();
   if (lang === 'en') {
     return [
-      '90 PROJECT',
+      business.nameEn,
       `Order: ${order.invoiceNo || '-'}`,
       '',
       `Customer: ${order.customerName || '-'}`,
@@ -1830,7 +1920,7 @@ function buildWhatsAppMessage(order) {
     ].filter(Boolean).join('\n');
   }
   return [
-    '九零食刻 90 PROJECT',
+    `${business.nameZh} ${business.nameEn}`.trim(),
     `订单：${order.invoiceNo || '-'}`,
     '',
     `顾客：${order.customerName || '-'}`,
@@ -1852,7 +1942,7 @@ function buildWhatsAppMessage(order) {
 
 function openWhatsApp(order) {
   if (!order) return;
-  const phone = normalizePhone(order.phone) || BUSINESS_WHATSAPP;
+  const phone = normalizePhone(order.phone) || businessSettings().whatsapp;
   const message = buildWhatsAppMessage(order);
   if (window.AndroidPosBridge?.openWhatsApp) {
     window.AndroidPosBridge.openWhatsApp(phone, message);
@@ -1998,6 +2088,7 @@ function renderPrint(order) {
   if (!els.print || !order) return;
   const balance = Math.max(0, money(order.totalAmount) - money(order.paidAmount));
   const lang = receiptLanguage(order.receiptLanguage);
+  const business = businessSettings();
   const status = printPaymentStatus(order, balance, lang);
   const t = lang === 'en'
     ? {
@@ -2027,7 +2118,7 @@ function renderPrint(order) {
       amount: 'Amount',
       menuNotes: 'Menu / Service Notes',
       paymentNotes: 'Payment Notes',
-      paymentLine1: 'Payment method follows the details confirmed by WhatsApp.',
+      paymentLine1: business.paymentNoteEn,
       paymentLine2: 'Deposit confirms the order. Balance should be settled before delivery or before service completion.',
       total: 'Total',
       paid: 'Paid',
@@ -2036,10 +2127,10 @@ function renderPrint(order) {
       terms: [
         'This document is prepared based on the current pax, menu and service details.',
         'Final pricing depends on location, portion, transport, tableware and on-site service.',
-        'Any menu or timing changes should be confirmed by WhatsApp to avoid omissions.'
+        business.footerNoteEn
       ],
       customerSign: 'Customer Confirmation',
-      companySign: '90 PROJECT Confirmation'
+      companySign: `${business.nameEn} Confirmation`
     }
     : {
       htmlLang: 'zh-Hans',
@@ -2068,7 +2159,7 @@ function renderPrint(order) {
       amount: '金额',
       menuNotes: '菜单内容 / 服务备注',
       paymentNotes: '付款说明',
-      paymentLine1: '付款方式：按 WhatsApp 确认的付款资料处理。',
+      paymentLine1: business.paymentNoteZh,
       paymentLine2: '订金确认订单；余额请在送餐前或现场服务完成前确认。',
       total: '应收总额',
       paid: '已收款',
@@ -2077,10 +2168,10 @@ function renderPrint(order) {
       terms: [
         '此单据按目前人数、菜单和服务资料制作。',
         '最终报价会按地点、份量、运输、餐具和现场服务确认。',
-        '菜单或时间如需调整，请通过 WhatsApp 确认，避免遗漏。'
+        business.footerNoteZh
       ],
       customerSign: '顾客确认',
-      companySign: '90 PROJECT 确认'
+      companySign: `${business.nameZh} 确认`
     };
   els.print.innerHTML = `
     <article class="order-print-paper" lang="${escapeHtml(t.htmlLang)}">
@@ -2088,9 +2179,9 @@ function renderPrint(order) {
         <div class="order-print-brand">
           <img src="${LOGO_PATH}" alt="90 PROJECT logo" />
           <div>
-            <strong>九零食刻 90 PROJECT</strong>
+            <strong>${escapeHtml(`${business.nameZh} ${business.nameEn}`.trim())}</strong>
             <span>${escapeHtml(t.brandLine)}</span>
-            <small>WhatsApp ${BUSINESS_PHONE_DISPLAY} · ${BUSINESS_EMAIL} · ${BUSINESS_WEBSITE}</small>
+            <small>WhatsApp ${escapeHtml(business.phoneDisplay)} · ${escapeHtml(business.email)} · ${escapeHtml(business.website)}</small>
           </div>
         </div>
         <div class="order-print-doc">
@@ -2601,6 +2692,19 @@ function bind() {
   };
   els.analysisStart?.addEventListener('change', updateCustomAnalysisRange);
   els.analysisEnd?.addEventListener('change', updateCustomAnalysisRange);
+
+  els.businessSettingsForm?.addEventListener('submit', async event => {
+    event.preventDefault();
+    await saveBusinessSettingsFromForm();
+  });
+
+  els.businessSettingsReset?.addEventListener('click', async () => {
+    if (!window.confirm('恢复公司与单据的默认资料？类别、负责人和订单不会受影响。')) return;
+    Object.entries(els.businessSettingsFields).forEach(([key, field]) => {
+      if (field) field.value = defaultBusinessSettings[key] ?? '';
+    });
+    await saveBusinessSettingsFromForm();
+  });
 
   els.form?.addEventListener('submit', async event => {
     event.preventDefault();

@@ -16,7 +16,21 @@ export const DEFAULT_GROWTH_CONFIG = {
   orderCenter: {
     categories: ['活动餐饮', '包伙食', '场地布置', '鸡尾酒服务', '其他服务'],
     categoryPrices: {},
-    assignees: ['未分配', 'LIYAN & KS', 'Tom', 'KS']
+    assignees: ['未分配', 'LIYAN & KS', 'Tom', 'KS'],
+    business: {
+      nameZh: '九零食刻',
+      nameEn: '90 PROJECT',
+      whatsapp: '60196909088',
+      phoneDisplay: '+60 19-690 9088',
+      email: '9088project@gmail.com',
+      website: 'www.90project.online',
+      invoicePrefix: '90P',
+      defaultReceiptLanguage: 'zh',
+      paymentNoteZh: '付款方式：按 WhatsApp 确认的付款资料处理。',
+      paymentNoteEn: 'Payment method follows the details confirmed by WhatsApp.',
+      footerNoteZh: '菜单或时间如需调整，请通过 WhatsApp 确认，避免遗漏。',
+      footerNoteEn: 'Any menu or timing changes should be confirmed by WhatsApp to avoid omissions.'
+    }
   },
   levels: [
     { id: 'member', name: '90 Member', spendThreshold: 0, orderThreshold: 0, discountPercent: 0, pointsMultiplier: 1, active: true },
@@ -128,7 +142,11 @@ function withDefaults(raw) {
         ...(source.config?.orderCenter || {}),
         categories: Array.isArray(source.config?.orderCenter?.categories) && source.config.orderCenter.categories.length ? source.config.orderCenter.categories : base.config.orderCenter.categories,
         categoryPrices: source.config?.orderCenter?.categoryPrices && typeof source.config.orderCenter.categoryPrices === 'object' ? source.config.orderCenter.categoryPrices : base.config.orderCenter.categoryPrices,
-        assignees: Array.isArray(source.config?.orderCenter?.assignees) && source.config.orderCenter.assignees.length ? source.config.orderCenter.assignees : base.config.orderCenter.assignees
+        assignees: Array.isArray(source.config?.orderCenter?.assignees) && source.config.orderCenter.assignees.length ? source.config.orderCenter.assignees : base.config.orderCenter.assignees,
+        business: {
+          ...base.config.orderCenter.business,
+          ...(source.config?.orderCenter?.business || {})
+        }
       },
       levels: Array.isArray(source.config?.levels) && source.config.levels.length ? source.config.levels : base.config.levels,
       commissionRules: Array.isArray(source.config?.commissionRules) && source.config.commissionRules.length ? source.config.commissionRules : base.config.commissionRules,

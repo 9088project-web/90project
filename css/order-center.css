@@ -116,7 +116,7 @@ body.order-center-page [hidden]{display:none!important}
   top:0;
   z-index:5;
   display:grid;
-  grid-template-columns:repeat(5,minmax(0,1fr));
+  grid-template-columns:repeat(6,minmax(0,1fr));
   gap:6px;
   margin-bottom:22px;
   padding:8px;
@@ -999,6 +999,67 @@ body.order-center-page [hidden]{display:none!important}
   background:var(--oc-blue);
   font-weight:950;
 }
+
+.order-business-settings{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:14px 16px;
+}
+.order-business-settings label{
+  display:grid;
+  gap:7px;
+  min-width:0;
+  color:var(--oc-ink);
+  font-size:13px;
+  font-weight:900;
+}
+.order-business-settings .order-wide{
+  grid-column:1/-1;
+}
+.order-business-settings input,
+.order-business-settings select,
+.order-business-settings textarea{
+  width:100%;
+  min-height:44px;
+  border:1px solid #d7dde9;
+  border-radius:8px;
+  padding:10px 12px;
+  color:var(--oc-ink);
+  background:#fff;
+  font-family:inherit;
+  font-size:14px;
+  font-weight:800;
+  line-height:1.45;
+  outline:none;
+  resize:vertical;
+}
+.order-business-settings textarea{min-height:80px}
+.order-business-settings input:focus,
+.order-business-settings select:focus,
+.order-business-settings textarea:focus{
+  border-color:var(--oc-blue);
+  box-shadow:0 0 0 3px rgba(47,99,216,.13);
+}
+.order-business-actions{
+  display:flex;
+  justify-content:flex-end;
+  gap:10px;
+  padding-top:6px;
+}
+.order-business-actions button{
+  min-height:46px;
+  padding:0 18px;
+  border:1px solid #d7dde9;
+  border-radius:8px;
+  background:#fff;
+  color:var(--oc-ink);
+  font-weight:900;
+}
+.order-business-actions .order-primary{
+  border-color:var(--oc-blue);
+  background:var(--oc-blue);
+  color:#fff;
+}
 .order-chip-list{
   display:flex;
   flex-wrap:wrap;
@@ -1480,6 +1541,15 @@ body.order-center-page [hidden]{display:none!important}
   }
   .order-settings-input-category button{
     grid-column:1/-1;
+  }
+  .order-business-settings{
+    grid-template-columns:1fr;
+  }
+  .order-business-settings .order-wide{
+    grid-column:auto;
+  }
+  .order-business-actions{
+    display:grid;
   }
   .order-form-grid{
     grid-template-columns:1fr;
@@ -2172,11 +2242,19 @@ body.order-center-page textarea{
 
   .order-tabs{
     top:0;
+    display:flex;
+    overflow-x:auto;
+    scrollbar-width:none;
     margin-inline:-2px;
     margin-bottom:14px;
   }
 
+  .order-tabs::-webkit-scrollbar{
+    display:none;
+  }
+
   .order-tabs button{
+    flex:0 0 88px;
     min-height:40px;
     font-size:12px;
   }
