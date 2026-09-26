@@ -190,13 +190,20 @@
       <article class="order-card order-tools-card">
         <div class="order-section-head"><div><h2>管理工具</h2><p>权限、备份、导出及不可删除的修改记录。</p></div></div>
         <div class="order-tools-grid">
-          <label>当前操作权限
-            <select data-order-role>
-              <option value="owner">老板</option><option value="manager">经理</option><option value="staff">开单员</option><option value="viewer">只可查看</option>
-            </select>
-          </label>
+          <label>当前登录身份<input data-order-role-display type="text" readonly></label>
           <label>优惠需批准金额 RM<input data-order-discount-limit type="number" min="0" step="1" value="50"></label>
         </div>
+        <section class="order-staff-manager" data-order-staff-manager>
+          <h3>员工账号与权限</h3>
+          <div class="order-staff-form">
+            <input data-staff-name type="text" placeholder="员工名称">
+            <input data-staff-email type="email" placeholder="Email">
+            <input data-staff-password type="password" placeholder="密码（至少 6 位）">
+            <select data-staff-role><option value="manager">经理</option><option value="staff">开单员</option><option value="viewer">只可查看</option></select>
+            <button type="button" data-staff-add>新增员工</button>
+          </div>
+          <div class="order-staff-list" data-staff-list></div>
+        </section>
         <div class="order-tool-actions">
           <button type="button" data-order-export-csv><i class="ri-file-excel-2-line"></i>导出订单 Excel/CSV</button>
           <button type="button" data-order-backup><i class="ri-download-cloud-2-line"></i>下载完整备份</button>
@@ -205,6 +212,11 @@
           <input data-order-restore-input type="file" accept="application/json" hidden>
         </div>
         <p class="order-settings-status" data-order-tools-status></p>
+        <div class="order-control-checks">
+          <section data-order-reconciliation></section>
+          <section data-order-duplicates></section>
+          <section data-order-health></section>
+        </div>
         <div class="order-audit-list" data-order-audit-list></div>
       </article>
     </section>

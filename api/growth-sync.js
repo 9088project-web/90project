@@ -1,4 +1,5 @@
 const GROWTH_STATE_SETTING_KEY = 'growth_state';
+const ORDER_STAFF_SETTING_KEY = 'order_staff_accounts_v1';
 const DEFAULT_ADMIN_EMAIL = '9088project@gmail.com';
 const DEFAULT_ADMIN_PASSWORD_HASH = '7045830c';
 
@@ -126,6 +127,19 @@ function isAdminAuthorized(request, body = {}) {
   const password = String(header(request, 'x-admin-password') || body.adminPassword || '');
   const passwordHash = hashLocalSecret(password);
   return email === expectedEmail && (passwordHash === expectedHash || passwordHash === DEFAULT_ADMIN_PASSWORD_HASH);
+}
+
+async function staffAuthorization(request, body = {}) {
+  const email = String(header(request, 'x-admin-email') || body.adminEmail || '').trim().toLowerCase();
+  const password = String(header(request, 'x-admin-password') || body.adminPassword || '');
+  if (!email || !password) return null;
+  const rows = await supabaseRequest(`/rest/v1/site_settings?select=value&key=eq.${encodeURIComponent(ORDER_STAFF_SETTING_KEY)}&limit=1`, supabaseServiceKey());
+  let accounts = [];
+  try {
+    const value = Array.isArray(rows) && rows[0]?.value;
+    accounts = Array.isArray(value) ? value : JSON.parse(value || '[]');
+  } catch {}
+  return accounts.find(item => item.email === email && item.active !== false && item.passwordHash === hashLocalSecret(password)) || null;
 }
 
 function supabaseUrl() {
@@ -825,7 +839,7 @@ module.exports = async function handler(request, response) {
 
     if (request.method === 'GET') {
       const { state, updatedAt } = await loadMergedState();
-      if (isAdminAuthorized(request)) {
+      if (isAdminAuthorized(request) || await staffAuthorization(request)) {
         return send(response, 200, { ok: true, source: 'supabase', state, updatedAt: updatedAt || null });
       }
       const user = await readMemberUser(request);
@@ -840,9 +854,11 @@ module.exports = async function handler(request, response) {
 
     if (request.method === 'POST' || request.method === 'PUT' || request.method === 'PATCH') {
       const body = await readJsonBody(request);
-      if (!isAdminAuthorized(request, body)) {
+      const staff = await staffAuthorization(request, body);
+      if (!isAdminAuthorized(request, body) && !staff) {
         return send(response, 401, { ok: false, message: 'Unauthorized growth sync update.' });
       }
+      if (staff?.role === 'viewer') return send(response, 403, { ok: false, message: 'Read-only staff cannot update orders.' });
       const currentCloud = await readCloudState();
       if (body.expectedUpdatedAt && currentCloud.updatedAt && body.expectedUpdatedAt !== currentCloud.updatedAt) {
         return send(response, 409, {

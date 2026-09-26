@@ -3,6 +3,7 @@ const MEMBER_SYNC_API_PATH = '/api/member-sync';
 const GROWTH_SYNC_API_PATH = '/api/growth-sync';
 const ADMIN_EMAIL = '9088project@gmail.com';
 const ADMIN_CLOUD_PASSWORD_SESSION_KEY = 'np90_admin_cloud_password_session_v1';
+const ADMIN_CLOUD_EMAIL_SESSION_KEY = 'np90_admin_cloud_email_session_v1';
 
 const normalize = value => String(value || '').trim();
 const normalizeEmail = value => normalize(value).toLowerCase();
@@ -376,7 +377,7 @@ export function createGrowthCloud() {
       const password = sessionStorage.getItem(ADMIN_CLOUD_PASSWORD_SESSION_KEY) || '';
       if (!password) return null;
       return {
-        'X-Admin-Email': ADMIN_EMAIL,
+        'X-Admin-Email': sessionStorage.getItem(ADMIN_CLOUD_EMAIL_SESSION_KEY) || ADMIN_EMAIL,
         'X-Admin-Password': password
       };
     } catch {

@@ -3,6 +3,8 @@ import { createGrowthCloud } from './growth-cloud.mjs?v=20260926-operations';
 
 const ADMIN_SESSION_KEY = 'np90_admin_session_v1';
 const ADMIN_CLOUD_PASSWORD_SESSION_KEY = 'np90_admin_cloud_password_session_v1';
+const ADMIN_CLOUD_EMAIL_SESSION_KEY = 'np90_admin_cloud_email_session_v1';
+const ORDER_OPERATOR_NAME_KEY = 'np90_order_operator_name_v1';
 const ADMIN_EMAIL = '9088project@gmail.com';
 const ADMIN_PASSWORD_HASH = '7045830c';
 const BUSINESS_WHATSAPP = '60189490908';
@@ -104,7 +106,9 @@ const state = {
   ordersLimit: 20,
   cloudUpdatedAt: '',
   pendingSync: localStorage.getItem(ORDER_PENDING_SYNC_KEY) === '1',
-  operatorRole: localStorage.getItem(ORDER_ROLE_KEY) || 'owner'
+  operatorRole: sessionStorage.getItem(ORDER_ROLE_KEY) || 'owner',
+  operatorName: sessionStorage.getItem(ORDER_OPERATOR_NAME_KEY) || '老板',
+  staffAccounts: []
 };
 
 const els = {
@@ -143,10 +147,19 @@ const els = {
   businessSettingsForm: document.querySelector('[data-business-settings-form]'),
   businessSettingsReset: document.querySelector('[data-business-settings-reset]'),
   businessSettingsFields: Object.fromEntries(Array.from(document.querySelectorAll('[data-business-setting]')).map(field => [field.dataset.businessSetting, field])),
-  role: document.querySelector('[data-order-role]'),
+  roleDisplay: document.querySelector('[data-order-role-display]'),
   discountLimit: document.querySelector('[data-order-discount-limit]'),
   toolsStatus: document.querySelector('[data-order-tools-status]'),
   auditList: document.querySelector('[data-order-audit-list]'),
+  staffManager: document.querySelector('[data-order-staff-manager]'),
+  staffList: document.querySelector('[data-staff-list]'),
+  staffName: document.querySelector('[data-staff-name]'),
+  staffEmail: document.querySelector('[data-staff-email]'),
+  staffPassword: document.querySelector('[data-staff-password]'),
+  staffRole: document.querySelector('[data-staff-role]'),
+  reconciliation: document.querySelector('[data-order-reconciliation]'),
+  duplicates: document.querySelector('[data-order-duplicates]'),
+  health: document.querySelector('[data-order-health]'),
   restoreInput: document.querySelector('[data-order-restore-input]'),
   paymentHistory: document.querySelector('[data-order-payment-history]'),
   categoryLines: document.querySelector('[data-order-category-lines]'),
@@ -360,15 +373,23 @@ function isAdminLoggedIn() {
   return localStorage.getItem(ADMIN_SESSION_KEY) === '1' && Boolean(adminCloudPassword());
 }
 
-function setAdminLoggedIn(password) {
+function setAdminLoggedIn({ email, password, role = 'viewer', name = '' }) {
   localStorage.setItem(ADMIN_SESSION_KEY, '1');
   if (password) sessionStorage.setItem(ADMIN_CLOUD_PASSWORD_SESSION_KEY, password);
+  sessionStorage.setItem(ADMIN_CLOUD_EMAIL_SESSION_KEY, email || ADMIN_EMAIL);
+  sessionStorage.setItem(ORDER_ROLE_KEY, role);
+  sessionStorage.setItem(ORDER_OPERATOR_NAME_KEY, name || email || '员工');
+  state.operatorRole = role;
+  state.operatorName = name || email || '员工';
 }
 
 function clearAdminLoggedIn() {
   localStorage.removeItem(ADMIN_SESSION_KEY);
   try {
     sessionStorage.removeItem(ADMIN_CLOUD_PASSWORD_SESSION_KEY);
+    sessionStorage.removeItem(ADMIN_CLOUD_EMAIL_SESSION_KEY);
+    sessionStorage.removeItem(ORDER_ROLE_KEY);
+    sessionStorage.removeItem(ORDER_OPERATOR_NAME_KEY);
   } catch {}
 }
 
@@ -1213,13 +1234,65 @@ function renderSourceAnalysis(orders) {
 }
 
 function renderManagementTools() {
-  if (els.role) els.role.value = state.operatorRole;
+  if (els.roleDisplay) els.roleDisplay.value = `${state.operatorName} · ${{ owner: '老板', manager: '经理', staff: '开单员', viewer: '只可查看' }[state.operatorRole] || state.operatorRole}`;
+  if (els.staffManager) els.staffManager.hidden = state.operatorRole !== 'owner';
   if (els.discountLimit) els.discountLimit.value = savedOrderSettings().discountApprovalLimit.toFixed(0);
   if (!els.auditList) return;
   const logs = growthApi.getState()?.auditLogs || [];
   els.auditList.innerHTML = `<h3>最近修改记录</h3>${logs.slice(0, 30).map(log => `
-    <div class="order-audit-item"><strong>${escapeHtml(log.action || '记录')}</strong><span>${escapeHtml(log.reason || '-')}</span><small>${escapeHtml(new Date(log.createdAt).toLocaleString('zh-MY'))}</small></div>
+    <div class="order-audit-item"><strong>${escapeHtml(log.action || '记录')}</strong><span>${escapeHtml(log.reason || '-')}</span><small>${escapeHtml(log.actorId || log.createdBy || '系统')} · ${escapeHtml(new Date(log.createdAt).toLocaleString('zh-MY'))}</small></div>
   `).join('') || '<div class="order-empty">还没有修改记录。</div>'}`;
+  renderStaffAccounts();
+  renderControlChecks();
+}
+
+function renderControlChecks() {
+  const orders = currentOrders();
+  const mismatches = orders.filter(order => {
+    const entries = (order.paymentEntries || []).reduce((sum, entry) => money(sum + Number(entry.amount || 0)), 0);
+    return order.paymentEntries?.length && Math.abs(entries - money(order.paidAmount)) >= 0.01;
+  });
+  if (els.reconciliation) els.reconciliation.innerHTML = `<h3>收款核账</h3><strong>${mismatches.length ? `${mismatches.length} 张需检查` : '全部相符'}</strong><p>${mismatches.length ? escapeHtml(mismatches.slice(0, 3).map(item => item.invoiceNo).join('、')) : '收款记录与已收金额相符。'}</p>`;
+  const byPhone = new Map();
+  orders.forEach(order => {
+    const phone = normalizePhone(order.phone);
+    if (!phone) return;
+    const names = byPhone.get(phone) || new Set();
+    names.add(order.customerName || '未命名');
+    byPhone.set(phone, names);
+  });
+  const duplicates = [...byPhone.entries()].filter(([, names]) => names.size > 1);
+  if (els.duplicates) els.duplicates.innerHTML = `<h3>重复顾客检查</h3><strong>${duplicates.length ? `${duplicates.length} 组同号码异名` : '没有发现重复'}</strong><p>${duplicates.length ? escapeHtml(duplicates.slice(0, 3).map(([phone, names]) => `${phone}: ${[...names].join('/')}`).join(' · ')) : '顾客电话与名称记录正常。'}</p>`;
+  if (els.health) els.health.innerHTML = `<h3>系统健康</h3><strong>${state.syncState === 'ok' ? '云端正常' : state.syncMessage}</strong><p>${state.cloudUpdatedAt ? `云端版本：${escapeHtml(new Date(state.cloudUpdatedAt).toLocaleString('zh-MY'))}` : '目前使用本机资料。'}${state.pendingSync ? ' · 有资料等待同步' : ''}</p>`;
+}
+
+function staffAuthHeaders() {
+  return { 'Content-Type': 'application/json', 'X-Admin-Email': sessionStorage.getItem(ADMIN_CLOUD_EMAIL_SESSION_KEY) || '', 'X-Admin-Password': adminCloudPassword() };
+}
+
+function renderStaffAccounts() {
+  if (!els.staffList) return;
+  els.staffList.innerHTML = state.staffAccounts.map(account => `<div class="order-staff-item"><span><strong>${escapeHtml(account.name)}</strong><small>${escapeHtml(account.email)} · ${{ manager: '经理', staff: '开单员', viewer: '只可查看' }[account.role] || account.role}</small></span><button type="button" data-staff-delete="${escapeHtml(account.id)}">删除</button></div>`).join('') || '<div class="order-empty">还没有员工账号。</div>';
+}
+
+async function loadStaffAccounts() {
+  if (state.operatorRole !== 'owner') return;
+  try {
+    const response = await fetch('/api/order-auth', { headers: staffAuthHeaders(), cache: 'no-store' });
+    const result = await response.json();
+    if (response.ok) state.staffAccounts = result.accounts || [];
+  } catch {}
+  renderStaffAccounts();
+}
+
+async function saveStaffAccount() {
+  const account = { name: els.staffName?.value.trim(), email: els.staffEmail?.value.trim(), password: els.staffPassword?.value || '', role: els.staffRole?.value || 'staff', active: true };
+  const response = await fetch('/api/order-auth', { method: 'PUT', headers: staffAuthHeaders(), body: JSON.stringify({ account }) });
+  const result = await response.json();
+  if (!response.ok) throw new Error(result.message || '新增失败');
+  state.staffAccounts = result.accounts || [];
+  [els.staffName, els.staffEmail, els.staffPassword].forEach(input => { if (input) input.value = ''; });
+  renderStaffAccounts();
 }
 
 function downloadFile(name, content, type) {
@@ -2160,7 +2233,7 @@ async function saveOrderFromForm({ close = true } = {}) {
       itemsSummary: data.itemsSummary || data.title,
       lineItems: lineItemsFrom(data),
       adminNotes: orderAdminNotes(data)
-    }, 'order-center');
+    }, state.operatorName || 'order-center');
   } else {
     result = growthApi.upsertOrderLead(payload);
   }
@@ -2178,7 +2251,7 @@ async function saveOrderFromForm({ close = true } = {}) {
 
   let savedOrder = result.order;
   if (data.requestedStatus === 'service_completed' && savedOrder?.status !== 'service_completed') {
-    const completed = growthApi.completeOrder(savedOrder.id, 'order-center');
+    const completed = growthApi.completeOrder(savedOrder.id, state.operatorName || 'order-center');
     if (completed.ok) savedOrder = completed.order;
   }
 
@@ -2702,14 +2775,20 @@ function bind() {
     event.preventDefault();
     const email = els.loginEmail?.value.trim().toLowerCase() || '';
     const password = els.loginPassword?.value || '';
-    if (email !== ADMIN_EMAIL || hashLocalSecret(password) !== ADMIN_PASSWORD_HASH) {
-      setLoginMessage('后台账号或密码不正确。');
-      return;
-    }
-    setAdminLoggedIn(password);
-    setLoginMessage('已进入系统。', true);
+    setLoginMessage('正在验证云端账号…');
+    let user = null;
+    try {
+      const response = await fetch('/api/order-auth', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'login', email, password }) });
+      const result = await response.json();
+      if (response.ok) user = result.user;
+    } catch {}
+    if (!user && email === ADMIN_EMAIL && hashLocalSecret(password) === ADMIN_PASSWORD_HASH) user = { name: '老板', email, role: 'owner' };
+    if (!user) return setLoginMessage('后台账号或密码不正确。');
+    setAdminLoggedIn({ email, password, role: user.role, name: user.name });
+    setLoginMessage(`欢迎 ${user.name}。`, true);
     renderAccess();
     await loadCloudState();
+    await loadStaffAccounts();
     render();
   });
 
@@ -2801,7 +2880,7 @@ function bind() {
       if (!roleCanManage()) return window.alert('只有老板或经理可以删除订单。');
       const order = findOrder(deleteButton.dataset.orderDelete);
       if (!order || !window.confirm(`删除 ${order.customerName} 的订单？订单会移到「删除记录」，记录永久保留。`)) return;
-      const result = growthApi.deleteOrder(order.id, 'order-center');
+      const result = growthApi.deleteOrder(order.id, state.operatorName || 'order-center');
       if (!result.ok) return;
       invalidateOrderCache();
       await syncCloudState();
@@ -3030,11 +3109,23 @@ function bind() {
     await saveBusinessSettingsFromForm();
   });
 
-  els.role?.addEventListener('change', () => {
-    state.operatorRole = els.role.value || 'viewer';
-    localStorage.setItem(ORDER_ROLE_KEY, state.operatorRole);
-    if (els.toolsStatus) els.toolsStatus.textContent = '当前设备权限已更新。';
-    render();
+  document.querySelector('[data-staff-add]')?.addEventListener('click', async () => {
+    try {
+      await saveStaffAccount();
+      if (els.toolsStatus) els.toolsStatus.textContent = '员工账号已保存到云端。';
+    } catch (error) {
+      if (els.toolsStatus) els.toolsStatus.textContent = error.message;
+    }
+  });
+
+  els.staffList?.addEventListener('click', async event => {
+    const button = event.target.closest('[data-staff-delete]');
+    if (!button || !window.confirm('删除这个员工账号？')) return;
+    const response = await fetch('/api/order-auth', { method: 'DELETE', headers: staffAuthHeaders(), body: JSON.stringify({ id: button.dataset.staffDelete }) });
+    const result = await response.json();
+    if (response.ok) state.staffAccounts = result.accounts || [];
+    if (els.toolsStatus) els.toolsStatus.textContent = response.ok ? '员工账号已删除。' : (result.message || '删除失败。');
+    renderStaffAccounts();
   });
 
   els.discountLimit?.addEventListener('change', async () => {
@@ -3116,7 +3207,10 @@ function bind() {
 async function init() {
   bind();
   renderAccess();
-  if (isAdminLoggedIn()) await loadCloudState();
+  if (isAdminLoggedIn()) {
+    await loadCloudState();
+    await loadStaffAccounts();
+  }
   render();
 }
 

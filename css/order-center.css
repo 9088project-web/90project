@@ -1067,6 +1067,8 @@ body.order-center-page [hidden]{display:none!important}
 .order-tools-grid,.order-payment-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
 .order-tools-grid label,.order-payment-grid label{display:grid;gap:6px;font-size:12px;font-weight:900}
 .order-tools-grid input,.order-tools-grid select,.order-payment-grid input,.order-payment-grid select{width:100%;min-height:44px;border:1px solid #d7dde9;border-radius:8px;padding:8px 10px;background:#fff;font:inherit}
+.order-staff-manager{margin-top:18px;padding-top:18px;border-top:1px solid #e5e8ef}.order-staff-manager[hidden]{display:none}.order-staff-form{display:grid;grid-template-columns:1fr 1.4fr 1fr .8fr auto;gap:8px}.order-staff-form input,.order-staff-form select,.order-staff-form button{min-height:42px;border:1px solid #d7dde9;border-radius:8px;padding:8px 10px;background:#fff;font:inherit}.order-staff-form button{background:#152f62;color:#fff;font-weight:800}.order-staff-list{display:grid;gap:8px;margin-top:12px}.order-staff-item{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border:1px solid #e5e8ef;border-radius:8px}.order-staff-item span{display:grid}.order-staff-item small{color:#697386}.order-staff-item button{border:0;background:#fff0f0;color:#b42318;border-radius:7px;padding:8px 12px}
+.order-control-checks{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:18px 0}.order-control-checks section{padding:14px;border:1px solid #e1e6ef;border-radius:8px;background:#f8faff}.order-control-checks h3{margin:0 0 8px;font-size:13px}.order-control-checks strong{font-size:17px;color:#10244a}.order-control-checks p{margin:6px 0 0;color:#667085;font-size:12px;line-height:1.5}
 .order-tool-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
 .order-tool-actions button{min-height:42px;border:1px solid #d7dde9;border-radius:8px;padding:0 13px;background:#fff;color:var(--oc-ink);font-weight:850}
 .order-audit-list{display:grid;gap:7px;margin-top:18px}
@@ -1494,6 +1496,8 @@ input[readonly][data-order-field="payableAmount"]{background:#edf7f0;color:#205f
   }
 
   .order-tools-grid,.order-payment-grid{grid-template-columns:1fr}
+  .order-staff-form{grid-template-columns:1fr}
+  .order-control-checks{grid-template-columns:1fr}
   .order-tool-actions{display:grid}
   .order-audit-item{grid-template-columns:1fr;gap:3px}
   .order-card{
