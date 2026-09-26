@@ -811,8 +811,7 @@ async function loadMergedState() {
     loadGrowthTables()
   ]);
   const mergedState = mergeSupabaseGrowthTables(mergeProfilesIntoState(state, profiles, users), growthTables);
-  const written = await writeCloudState(mergedState);
-  return { state: written.state || mergedState, updatedAt: written.updatedAt || updatedAt };
+  return { state: mergedState, updatedAt };
 }
 
 module.exports = async function handler(request, response) {
@@ -843,6 +842,15 @@ module.exports = async function handler(request, response) {
       const body = await readJsonBody(request);
       if (!isAdminAuthorized(request, body)) {
         return send(response, 401, { ok: false, message: 'Unauthorized growth sync update.' });
+      }
+      const currentCloud = await readCloudState();
+      if (body.expectedUpdatedAt && currentCloud.updatedAt && body.expectedUpdatedAt !== currentCloud.updatedAt) {
+        return send(response, 409, {
+          ok: false,
+          reason: 'version_conflict',
+          message: 'Cloud data changed in another session. Reload before saving.',
+          updatedAt: currentCloud.updatedAt
+        });
       }
       const [profiles, users, growthTables] = await Promise.all([loadProfiles(), readAuthUsers(), loadGrowthTables()]);
       const state = mergeSupabaseGrowthTables(mergeProfilesIntoState(body.state || body.value || {}, profiles, users), growthTables);

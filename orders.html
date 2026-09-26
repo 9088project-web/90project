@@ -9,7 +9,7 @@
   <link rel="icon" type="image/jpeg" href="assets/images/logo/logo-icon-dark.jpg" />
   <link rel="manifest" href="orders.webmanifest" />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/remixicon@4.6.0/fonts/remixicon.css" />
-  <link rel="stylesheet" href="css/order-center.css?v=20260925-order-fields" />
+  <link rel="stylesheet" href="css/order-center.css?v=20260926-operations" />
 </head>
 <body class="order-center-page">
   <main class="order-app" data-order-app hidden>
@@ -38,6 +38,10 @@
 
     <section class="order-panel active" data-order-panel="overview">
       <div class="order-stats" data-order-stats></div>
+      <article class="order-card order-alert-card">
+        <div class="order-section-head"><div><h2>今日提醒</h2><p>自动检查临近活动、欠款和未分配订单。</p></div></div>
+        <div class="order-alert-list" data-order-alerts></div>
+      </article>
       <article class="order-card">
         <div class="order-section-head">
           <h2>全部订单</h2>
@@ -120,6 +124,10 @@
         <h2>负责人业绩</h2>
         <div class="order-staff-bars" data-order-staff-analysis></div>
       </article>
+      <article class="order-card">
+        <h2>顾客来源分析</h2>
+        <div class="order-table" data-order-source-analysis></div>
+      </article>
     </section>
 
     <section class="order-panel" data-order-panel="settings" hidden>
@@ -178,6 +186,26 @@
             <div class="order-chip-list" data-order-config-items="assignees"></div>
           </section>
         </div>
+      </article>
+      <article class="order-card order-tools-card">
+        <div class="order-section-head"><div><h2>管理工具</h2><p>权限、备份、导出及不可删除的修改记录。</p></div></div>
+        <div class="order-tools-grid">
+          <label>当前操作权限
+            <select data-order-role>
+              <option value="owner">老板</option><option value="manager">经理</option><option value="staff">开单员</option><option value="viewer">只可查看</option>
+            </select>
+          </label>
+          <label>优惠需批准金额 RM<input data-order-discount-limit type="number" min="0" step="1" value="50"></label>
+        </div>
+        <div class="order-tool-actions">
+          <button type="button" data-order-export-csv><i class="ri-file-excel-2-line"></i>导出订单 Excel/CSV</button>
+          <button type="button" data-order-backup><i class="ri-download-cloud-2-line"></i>下载完整备份</button>
+          <button type="button" data-order-restore-auto><i class="ri-history-line"></i>恢复今日自动备份</button>
+          <button type="button" data-order-restore><i class="ri-upload-cloud-2-line"></i>恢复备份</button>
+          <input data-order-restore-input type="file" accept="application/json" hidden>
+        </div>
+        <p class="order-settings-status" data-order-tools-status></p>
+        <div class="order-audit-list" data-order-audit-list></div>
       </article>
     </section>
 
@@ -269,8 +297,21 @@
           <label class="order-wide">地点<input data-order-field="location" type="text" placeholder="地址 / Venue / Area"></label>
           <label>原价小计 RM<input data-order-field="totalAmount" type="number" min="0" step="0.01" required></label>
           <label>优惠金额 RM<input data-order-field="discountAmount" type="number" min="0" step="0.01" value="0"></label>
+          <label>优惠原因<input data-order-field="discountReason" type="text" placeholder="例如：旧顾客回馈"></label>
+          <label>批准人<input data-order-field="discountApprovedBy" type="text" placeholder="超过限额时必填"></label>
           <label>优惠后应收 RM<input data-order-field="payableAmount" type="text" value="RM 0.00" readonly></label>
           <label>已收 RM<input data-order-field="paidAmount" type="number" min="0" step="0.01" value="0"></label>
+          <section class="order-wide order-payment-entry">
+            <div class="order-category-heading"><span>本次收款记录（选填）</span><small>每次收款会保留日期、方式、参考号及经手人。</small></div>
+            <div class="order-payment-grid">
+              <label>金额 RM<input data-order-field="paymentEntryAmount" type="number" min="0" step="0.01" value="0"></label>
+              <label>付款方式<select data-order-field="paymentMethod"><option>转账</option><option>现金</option><option>电子钱包</option><option>信用卡</option><option>其他</option></select></label>
+              <label>日期<input data-order-field="paymentDate" type="date"></label>
+              <label>参考号<input data-order-field="paymentReference" type="text" placeholder="银行参考号"></label>
+              <label>经手人<input data-order-field="paymentReceivedBy" type="text" placeholder="负责人姓名"></label>
+            </div>
+            <div class="order-payment-history" data-order-payment-history></div>
+          </section>
           <label>状态
             <select data-order-field="status">
               <option value="new">未付款</option>
@@ -316,6 +357,6 @@
 
   <section class="order-print" data-order-print></section>
 
-  <script type="module" src="js/order-center.js?v=20260925-order-fields"></script>
+  <script type="module" src="js/order-center.js?v=20260926-operations"></script>
 </body>
 </html>

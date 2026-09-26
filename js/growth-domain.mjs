@@ -16,6 +16,7 @@ export const DEFAULT_GROWTH_CONFIG = {
   orderCenter: {
     categories: ['活动餐饮', '包伙食', '场地布置', '鸡尾酒服务', '其他服务'],
     categoryPrices: {},
+    discountApprovalLimit: 50,
     assignees: ['未分配', 'LIYAN & KS', 'Tom', 'KS'],
     business: {
       nameZh: '九零食刻',
@@ -575,6 +576,9 @@ export function createGrowthApi(storage = defaultStorage(), options = {}) {
       receiptLanguage: normalizeReceiptLanguage(input.receiptLanguage || input.language),
       paymentReceipts: normalizePaymentReceipts(input.paymentReceipts, input.paymentReceipt),
       paymentReceipt: normalizePaymentReceipts(input.paymentReceipts, input.paymentReceipt)[0] || null,
+      paymentEntries: Array.isArray(input.paymentEntries) ? clone(input.paymentEntries) : [],
+      discountReason: String(input.discountReason || '').trim(),
+      discountApprovedBy: String(input.discountApprovedBy || '').trim(),
       status: input.status || 'confirmed',
       source: input.source || 'whatsapp-inquiry',
       createdAt: input.createdAt || dateValue(now()),
@@ -667,7 +671,7 @@ export function createGrowthApi(storage = defaultStorage(), options = {}) {
 
     const next = clone(current);
     const target = next.orders.find(item => item.id === orderId);
-    ['customerName', 'phone', 'serviceType', 'source', 'invoiceNo', 'eventDate', 'eventTime', 'location', 'itemsSummary', 'whatsappMessage', 'sentAt', 'paymentStatus', 'manualVerifiedBy', 'receiptLanguage', 'packageName'].forEach(field => {
+    ['customerName', 'phone', 'serviceType', 'source', 'invoiceNo', 'eventDate', 'eventTime', 'location', 'itemsSummary', 'whatsappMessage', 'sentAt', 'paymentStatus', 'manualVerifiedBy', 'receiptLanguage', 'packageName', 'discountReason', 'discountApprovedBy'].forEach(field => {
       if (input[field] !== undefined) target[field] = String(input[field] || '').trim();
     });
     if (input.receiptLanguage !== undefined) target.receiptLanguage = normalizeReceiptLanguage(input.receiptLanguage);
@@ -683,6 +687,7 @@ export function createGrowthApi(storage = defaultStorage(), options = {}) {
       target.paymentReceipts = normalizePaymentReceipts(input.paymentReceipts);
       target.paymentReceipt = target.paymentReceipts[0] || null;
     }
+    if (input.paymentEntries !== undefined) target.paymentEntries = Array.isArray(input.paymentEntries) ? clone(input.paymentEntries) : [];
     if (input.completedAt !== undefined) target.completedAt = input.completedAt || null;
     if (input.manualVerifiedAt !== undefined) target.manualVerifiedAt = input.manualVerifiedAt || null;
     if (input.balanceAmount === undefined && (
@@ -716,7 +721,8 @@ export function createGrowthApi(storage = defaultStorage(), options = {}) {
       enquiry.updatedAt = target.updatedAt;
     }
 
-    audit(next, 'order.updated', actorId, 'order', orderId, `Status ${target.status}, total RM${target.totalAmount.toFixed(2)}`);
+    const changedFields = Object.keys(input).filter(field => JSON.stringify(order[field]) !== JSON.stringify(target[field]));
+    audit(next, 'order.updated', actorId, 'order', orderId, `Changed: ${changedFields.join(', ') || 'none'}; status ${target.status}; total RM${target.totalAmount.toFixed(2)}`);
     state = write(next);
     return { ok: true, order: clone(target) };
   }

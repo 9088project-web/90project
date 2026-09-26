@@ -1,5 +1,5 @@
-import { createGrowthApi } from './growth-domain.mjs?v=20260925-order-fields';
-import { createGrowthCloud } from './growth-cloud.mjs?v=20260818-reset-live';
+import { createGrowthApi } from './growth-domain.mjs?v=20260926-operations';
+import { createGrowthCloud } from './growth-cloud.mjs?v=20260926-operations';
 
 const ADMIN_SESSION_KEY = 'np90_admin_session_v1';
 const ADMIN_CLOUD_PASSWORD_SESSION_KEY = 'np90_admin_cloud_password_session_v1';
@@ -10,6 +10,9 @@ const BUSINESS_PHONE_DISPLAY = '018-949 0908';
 const BUSINESS_EMAIL = '9088project@gmail.com';
 const BUSINESS_WEBSITE = 'www.90project.online';
 const LOGO_PATH = 'assets/images/logo/logo-icon-dark.jpg';
+const ORDER_PENDING_SYNC_KEY = 'np90_order_pending_sync_v1';
+const ORDER_ROLE_KEY = 'np90_order_operator_role_v1';
+const ORDER_AUTO_BACKUP_KEY = 'np90_order_auto_backup_v1';
 const defaultBusinessSettings = {
   nameZh: '九零食刻',
   nameEn: '90 PROJECT',
@@ -90,6 +93,7 @@ const state = {
   syncMessage: '同步中',
   demoMode: false,
   receiptDrafts: [],
+  paymentDrafts: [],
   analysisPeriod: 'all',
   analysisStart: '',
   analysisEnd: '',
@@ -97,7 +101,10 @@ const state = {
   cachedOrders: [],
   cachedDeletedOrders: [],
   overviewLimit: 12,
-  ordersLimit: 20
+  ordersLimit: 20,
+  cloudUpdatedAt: '',
+  pendingSync: localStorage.getItem(ORDER_PENDING_SYNC_KEY) === '1',
+  operatorRole: localStorage.getItem(ORDER_ROLE_KEY) || 'owner'
 };
 
 const els = {
@@ -124,6 +131,8 @@ const els = {
   statusAnalysis: document.querySelector('[data-order-status-analysis]'),
   monthIncome: document.querySelector('[data-order-month-income]'),
   staffAnalysis: document.querySelector('[data-order-staff-analysis]'),
+  sourceAnalysis: document.querySelector('[data-order-source-analysis]'),
+  alerts: document.querySelector('[data-order-alerts]'),
   analysisPeriod: document.querySelector('[data-analysis-period]'),
   analysisStart: document.querySelector('[data-analysis-start]'),
   analysisEnd: document.querySelector('[data-analysis-end]'),
@@ -134,6 +143,12 @@ const els = {
   businessSettingsForm: document.querySelector('[data-business-settings-form]'),
   businessSettingsReset: document.querySelector('[data-business-settings-reset]'),
   businessSettingsFields: Object.fromEntries(Array.from(document.querySelectorAll('[data-business-setting]')).map(field => [field.dataset.businessSetting, field])),
+  role: document.querySelector('[data-order-role]'),
+  discountLimit: document.querySelector('[data-order-discount-limit]'),
+  toolsStatus: document.querySelector('[data-order-tools-status]'),
+  auditList: document.querySelector('[data-order-audit-list]'),
+  restoreInput: document.querySelector('[data-order-restore-input]'),
+  paymentHistory: document.querySelector('[data-order-payment-history]'),
   categoryLines: document.querySelector('[data-order-category-lines]'),
   categoryShortcuts: document.querySelector('[data-order-category-shortcuts]'),
   configInputs: {
@@ -173,8 +188,15 @@ const formFields = {
   location: document.querySelector('[data-order-field="location"]'),
   totalAmount: document.querySelector('[data-order-field="totalAmount"]'),
   discountAmount: document.querySelector('[data-order-field="discountAmount"]'),
+  discountReason: document.querySelector('[data-order-field="discountReason"]'),
+  discountApprovedBy: document.querySelector('[data-order-field="discountApprovedBy"]'),
   payableAmount: document.querySelector('[data-order-field="payableAmount"]'),
   paidAmount: document.querySelector('[data-order-field="paidAmount"]'),
+  paymentEntryAmount: document.querySelector('[data-order-field="paymentEntryAmount"]'),
+  paymentMethod: document.querySelector('[data-order-field="paymentMethod"]'),
+  paymentDate: document.querySelector('[data-order-field="paymentDate"]'),
+  paymentReference: document.querySelector('[data-order-field="paymentReference"]'),
+  paymentReceivedBy: document.querySelector('[data-order-field="paymentReceivedBy"]'),
   status: document.querySelector('[data-order-field="status"]'),
   receiptLanguage: document.querySelector('[data-order-field="receiptLanguage"]')
 };
@@ -597,6 +619,7 @@ function savedOrderSettings() {
     categories: normalizeSettingList(config.categories, orderSettingDefaults.categories),
     categoryPrices: sanitizeCategoryPrices(config.categoryPrices),
     assignees: normalizeSettingList(config.assignees, orderSettingDefaults.assignees),
+    discountApprovalLimit: money(config.discountApprovalLimit ?? 50),
     business: sanitizeBusinessSettings(config.business)
   };
 }
@@ -647,6 +670,7 @@ function sanitizeOrderSettings(settings = {}) {
     categories: normalizeSettingList(settings.categories, orderSettingDefaults.categories),
     categoryPrices: sanitizeCategoryPrices(settings.categoryPrices),
     assignees: normalizeSettingList(settings.assignees, orderSettingDefaults.assignees),
+    discountApprovalLimit: money(settings.discountApprovalLimit ?? 50),
     business: sanitizeBusinessSettings(settings.business)
   };
   if (!next.assignees.some(item => item === '未分配')) next.assignees.unshift('未分配');
@@ -899,6 +923,9 @@ function mapOrderCollection(sourceOrders = [], { deleted = false, memberById = n
       customerSource: orderCustomerSource(order),
       originalAmount: money(order.originalAmount || total + money(order.discountAmount)),
       discountAmount: money(order.discountAmount),
+      discountReason: String(order.discountReason || ''),
+      discountApprovedBy: String(order.discountApprovedBy || ''),
+      paymentEntries: Array.isArray(order.paymentEntries) ? order.paymentEntries : [],
       totalAmount: total,
       paidAmount: paid,
       balanceAmount: balance,
@@ -1142,6 +1169,100 @@ function renderStats(orders) {
       <small>${escapeHtml(hint)}</small>
     </div>
   `).join('');
+}
+
+function roleCanEdit() {
+  return state.operatorRole !== 'viewer';
+}
+
+function roleCanManage() {
+  return ['owner', 'manager'].includes(state.operatorRole);
+}
+
+function renderAlerts(orders) {
+  if (!els.alerts) return;
+  const today = todayDate();
+  const tomorrowDate = new Date(`${today}T00:00:00`);
+  tomorrowDate.setDate(tomorrowDate.getDate() + 1);
+  const tomorrow = tomorrowDate.toISOString().slice(0, 10);
+  const alerts = [];
+  orders.forEach(order => {
+    if (order.eventDate === tomorrow && !['service_completed', 'cancelled'].includes(order.status)) alerts.push({ type: '活动', text: `${order.customerName} 明天 ${order.eventTime || ''} 有订单` });
+    if (order.eventDate <= today && order.balanceAmount > 0 && !['cancelled'].includes(order.status)) alerts.push({ type: '欠款', text: `${order.customerName} 尚欠 ${formatMoney(order.balanceAmount)}` });
+    if ((!order.assignee || order.assignee === '未分配') && !['service_completed', 'cancelled'].includes(order.status)) alerts.push({ type: '负责人', text: `${order.customerName} 的订单尚未分配负责人` });
+  });
+  els.alerts.innerHTML = alerts.length
+    ? alerts.slice(0, 12).map(item => `<div class="order-alert-item"><strong>${escapeHtml(item.type)}</strong><span>${escapeHtml(item.text)}</span></div>`).join('')
+    : '<div class="order-empty">目前没有需要处理的提醒。</div>';
+}
+
+function renderSourceAnalysis(orders) {
+  if (!els.sourceAnalysis) return;
+  const rows = new Map();
+  orders.forEach(order => {
+    const key = order.customerSource || '自然询问';
+    const current = rows.get(key) || { count: 0, total: 0, paid: 0 };
+    current.count += 1;
+    current.total = money(current.total + order.totalAmount);
+    current.paid = money(current.paid + order.paidAmount);
+    rows.set(key, current);
+  });
+  els.sourceAnalysis.innerHTML = `<div class="order-table-row order-table-head"><span>来源</span><span>订单</span><span>营业额</span></div>${[...rows.entries()]
+    .sort((a, b) => b[1].total - a[1].total)
+    .map(([name, value]) => `<div class="order-table-row"><strong>${escapeHtml(name)}</strong><span>${value.count} 单</span><b>${escapeHtml(formatMoney(value.total))}</b></div>`).join('') || '<div class="order-empty">还没有来源资料。</div>'}`;
+}
+
+function renderManagementTools() {
+  if (els.role) els.role.value = state.operatorRole;
+  if (els.discountLimit) els.discountLimit.value = savedOrderSettings().discountApprovalLimit.toFixed(0);
+  if (!els.auditList) return;
+  const logs = growthApi.getState()?.auditLogs || [];
+  els.auditList.innerHTML = `<h3>最近修改记录</h3>${logs.slice(0, 30).map(log => `
+    <div class="order-audit-item"><strong>${escapeHtml(log.action || '记录')}</strong><span>${escapeHtml(log.reason || '-')}</span><small>${escapeHtml(new Date(log.createdAt).toLocaleString('zh-MY'))}</small></div>
+  `).join('') || '<div class="order-empty">还没有修改记录。</div>'}`;
+}
+
+function downloadFile(name, content, type) {
+  const url = URL.createObjectURL(new Blob([content], { type }));
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = name;
+  link.click();
+  window.setTimeout(() => URL.revokeObjectURL(url), 500);
+}
+
+function exportOrdersCsv() {
+  const headers = ['订单编号','顾客','电话','日期','类别','负责人','顾客来源','原价','优惠','应收','已收','余额','状态'];
+  const rows = currentOrders().map(order => [order.invoiceNo, order.customerName, order.phone, order.eventDate, categoryText(order), [order.assignee, order.collaborator].filter(Boolean).join(' + '), order.customerSource, order.originalAmount, order.discountAmount, order.totalAmount, order.paidAmount, order.balanceAmount, statusLabels[order.status] || order.status]);
+  const csv = [headers, ...rows].map(row => row.map(value => `"${String(value ?? '').replace(/"/g, '""')}"`).join(',')).join('\r\n');
+  downloadFile(`90project-orders-${todayDate()}.csv`, `\uFEFF${csv}`, 'text/csv;charset=utf-8');
+}
+
+function backupOrders() {
+  downloadFile(`90project-backup-${todayDate()}.json`, JSON.stringify({ exportedAt: new Date().toISOString(), state: growthApi.getState() }, null, 2), 'application/json');
+}
+
+function saveDailyAutoBackup() {
+  try {
+    const existing = JSON.parse(localStorage.getItem(ORDER_AUTO_BACKUP_KEY) || 'null');
+    if (existing?.date === todayDate()) return;
+    const payload = JSON.stringify({ date: todayDate(), createdAt: new Date().toISOString(), state: growthApi.getState() });
+    if (payload.length > 3_000_000) return;
+    localStorage.setItem(ORDER_AUTO_BACKUP_KEY, payload);
+  } catch {
+    // A manual JSON backup remains available when browser storage is full.
+  }
+}
+
+async function restoreStateBackup(restored, label = '备份') {
+  if (!restored || !Array.isArray(restored.orders) || !Array.isArray(restored.auditLogs)) throw new Error('invalid_backup');
+  if (!window.confirm(`恢复${label}中的 ${restored.orders.length} 张订单？当前云端资料会被替换。`)) return false;
+  growthApi.replaceState(restored);
+  invalidateOrderCache();
+  state.cloudUpdatedAt = '';
+  const result = await syncCloudState();
+  render();
+  return Boolean(result.ok);
 }
 
 function renderOrderCard(order) {
@@ -1686,6 +1807,7 @@ function render() {
   renderSyncStatus(orders);
   if (state.view === 'overview') {
     renderStats(orders);
+    renderAlerts(orders);
     renderRecent(orders);
   } else if (state.view === 'orders') {
     renderAllOrders(orders);
@@ -1698,9 +1820,11 @@ function render() {
     renderStatusAnalysis(analysisOrders);
     renderMonthIncome(analysisOrders);
     renderStaffAnalysis(analysisOrders);
+    renderSourceAnalysis(analysisOrders);
   } else if (state.view === 'settings') {
     renderBusinessSettings();
     renderOrderSettings(orders);
+    renderManagementTools();
   } else if (state.view === 'deleted') {
     renderDeletedOrders();
   }
@@ -1710,6 +1834,12 @@ function render() {
     demoMode: state.demoMode,
     totals: totalsFor(orders)
   };
+  document.querySelectorAll('[data-order-new],[data-order-edit],[data-order-delete]').forEach(button => {
+    button.disabled = !roleCanEdit();
+  });
+  document.querySelectorAll('[data-order-config-add],[data-order-config-edit],[data-order-config-remove],[data-business-settings-form] button,[data-business-settings-form] input,[data-business-settings-form] select,[data-business-settings-form] textarea,[data-order-discount-limit]').forEach(control => {
+    control.disabled = !roleCanManage();
+  });
 }
 
 function setView(view) {
@@ -1717,6 +1847,25 @@ function setView(view) {
   if (view === 'overview') state.overviewLimit = 12;
   if (view === 'orders') state.ordersLimit = 20;
   render();
+}
+
+function normalizePaymentEntries(entries = []) {
+  return (Array.isArray(entries) ? entries : []).map(entry => ({
+    id: String(entry.id || `pay-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`),
+    amount: money(entry.amount),
+    method: String(entry.method || '转账').trim(),
+    date: String(entry.date || todayDate()).slice(0, 10),
+    reference: String(entry.reference || '').trim(),
+    receivedBy: String(entry.receivedBy || '').trim(),
+    createdAt: entry.createdAt || new Date().toISOString()
+  })).filter(entry => entry.amount > 0);
+}
+
+function renderPaymentHistory() {
+  if (!els.paymentHistory) return;
+  els.paymentHistory.innerHTML = state.paymentDrafts.length
+    ? `<h4>收款历史</h4>${state.paymentDrafts.map(entry => `<div><strong>${escapeHtml(formatMoney(entry.amount))}</strong><span>${escapeHtml(entry.date)} · ${escapeHtml(entry.method)}${entry.reference ? ` · ${escapeHtml(entry.reference)}` : ''}${entry.receivedBy ? ` · ${escapeHtml(entry.receivedBy)}` : ''}</span></div>`).join('')}`
+    : '<small>还没有分次收款记录。</small>';
 }
 
 function openOrderSheet(orderId = '', forcedDate = '') {
@@ -1740,7 +1889,16 @@ function openOrderSheet(orderId = '', forcedDate = '') {
   formFields.location.value = order?.location || '';
   formFields.totalAmount.value = order ? money(order.originalAmount || order.totalAmount).toFixed(2) : '';
   if (formFields.discountAmount) formFields.discountAmount.value = order ? money(order.discountAmount).toFixed(2) : '0';
+  if (formFields.discountReason) formFields.discountReason.value = order?.discountReason || '';
+  if (formFields.discountApprovedBy) formFields.discountApprovedBy.value = order?.discountApprovedBy || '';
   formFields.paidAmount.value = order ? money(order.paidAmount).toFixed(2) : '0';
+  state.paymentDrafts = normalizePaymentEntries(order?.paymentEntries);
+  if (formFields.paymentEntryAmount) formFields.paymentEntryAmount.value = '0';
+  if (formFields.paymentMethod) formFields.paymentMethod.value = '转账';
+  if (formFields.paymentDate) formFields.paymentDate.value = todayDate();
+  if (formFields.paymentReference) formFields.paymentReference.value = '';
+  if (formFields.paymentReceivedBy) formFields.paymentReceivedBy.value = order?.assignee === '未分配' ? '' : (order?.assignee || '');
+  renderPaymentHistory();
   updatePayableSummary();
   formFields.status.value = order?.status || 'new';
   formFields.receiptLanguage.value = receiptLanguage(order?.receiptLanguage || businessSettings().defaultReceiptLanguage);
@@ -1776,7 +1934,18 @@ function collectFormData() {
   const originalAmount = lineTotal > 0 ? lineTotal : money(formFields.totalAmount.value);
   const discountAmount = Math.min(originalAmount, money(formFields.discountAmount?.value));
   const total = Math.max(0, money(originalAmount - discountAmount));
-  const paid = Math.min(total, money(formFields.paidAmount.value));
+  const newPaymentAmount = Math.min(total, money(formFields.paymentEntryAmount?.value));
+  const paymentEntries = [...state.paymentDrafts];
+  if (newPaymentAmount > 0) paymentEntries.push({
+    id: `pay-${Date.now()}`,
+    amount: newPaymentAmount,
+    method: formFields.paymentMethod?.value || '转账',
+    date: formFields.paymentDate?.value || todayDate(),
+    reference: formFields.paymentReference?.value?.trim() || '',
+    receivedBy: formFields.paymentReceivedBy?.value?.trim() || '',
+    createdAt: new Date().toISOString()
+  });
+  const paid = Math.min(total, money(formFields.paidAmount.value) + newPaymentAmount);
   const requestedStatus = formFields.status.value || 'new';
   const status = derivePaymentStatus(total, paid, requestedStatus);
   const categories = selectedCategoryValues();
@@ -1807,12 +1976,15 @@ function collectFormData() {
     totalAmount: total,
     originalAmount,
     discountAmount,
+    discountReason: formFields.discountReason?.value?.trim() || '',
+    discountApprovedBy: formFields.discountApprovedBy?.value?.trim() || '',
     paidAmount: paid,
     balanceAmount: Math.max(0, money(total - paid)),
     status,
     requestedStatus,
     receiptLanguage: receiptLanguage(formFields.receiptLanguage?.value),
     paymentReceipts: normalizePaymentReceipts(state.receiptDrafts)
+    ,paymentEntries: normalizePaymentEntries(paymentEntries)
   };
 }
 
@@ -1822,6 +1994,8 @@ function validateOrderData(data) {
   if (!data.eventDate) return '请选择日期。';
   if (data.originalAmount <= 0) return '请填写原价小计，金额必须大过 RM0。';
   if (data.totalAmount <= 0) return '优惠后应收必须大过 RM0。';
+  if (data.discountAmount > 0 && !data.discountReason) return '有优惠时，请填写优惠原因。';
+  if (data.discountAmount >= savedOrderSettings().discountApprovalLimit && !data.discountApprovedBy) return `优惠达到 RM${savedOrderSettings().discountApprovalLimit.toFixed(0)}，请填写批准人。`;
   return '';
 }
 
@@ -1852,13 +2026,15 @@ async function syncCloudState() {
   if (!state.cloudReady || typeof cloud.saveSharedGrowthState !== 'function') {
     state.syncState = 'local';
     state.syncMessage = '本机';
+    state.pendingSync = true;
+    localStorage.setItem(ORDER_PENDING_SYNC_KEY, '1');
     return { ok: false, skipped: true };
   }
   try {
     state.syncState = 'loading';
     state.syncMessage = '同步中';
     renderSyncStatus(currentOrders());
-    const result = await cloud.saveSharedGrowthState(growthApi.getState(), { admin: true });
+    const result = await cloud.saveSharedGrowthState(growthApi.getState(), { admin: true, expectedUpdatedAt: state.cloudUpdatedAt });
     if (result.ok) {
       if (result.state && typeof growthApi.replaceState === 'function') {
         growthApi.replaceState(result.state);
@@ -1866,6 +2042,15 @@ async function syncCloudState() {
       }
       state.syncState = 'ok';
       state.syncMessage = '已同步';
+      state.cloudUpdatedAt = result.updatedAt || state.cloudUpdatedAt;
+      state.pendingSync = false;
+      localStorage.removeItem(ORDER_PENDING_SYNC_KEY);
+      saveDailyAutoBackup();
+      return result;
+    }
+    if (result.status === 409 || result.reason === 'version_conflict') {
+      state.syncState = 'error';
+      state.syncMessage = '资料有新版本，请刷新';
       return result;
     }
     if (result.reason === 'missing_admin_session') {
@@ -1877,15 +2062,23 @@ async function syncCloudState() {
     }
     state.syncState = result.skipped ? 'local' : 'error';
     state.syncMessage = result.skipped ? '本机' : '云端失败';
+    state.pendingSync = true;
+    localStorage.setItem(ORDER_PENDING_SYNC_KEY, '1');
     return result;
   } catch {
     state.syncState = 'error';
     state.syncMessage = '云端失败';
+    state.pendingSync = true;
+    localStorage.setItem(ORDER_PENDING_SYNC_KEY, '1');
     return { ok: false, message: 'sync_failed' };
   }
 }
 
 async function saveOrderFromForm({ close = true } = {}) {
+  if (!roleCanEdit()) {
+    setFormMessage('当前是只读权限，不能保存订单。');
+    return null;
+  }
   if (els.saveButton?.disabled) return null;
   if (els.saveButton) {
     els.saveButton.disabled = true;
@@ -1927,12 +2120,15 @@ async function saveOrderFromForm({ close = true } = {}) {
     totalAmount: data.totalAmount,
     originalAmount: data.originalAmount,
     discountAmount: data.discountAmount,
+    discountReason: data.discountReason,
+    discountApprovedBy: data.discountApprovedBy,
     depositAmount: data.paidAmount,
     balanceAmount: data.balanceAmount,
     paymentStatus,
     status: data.requestedStatus === 'service_completed' ? (paymentStatus || 'confirmed') : data.status,
     receiptLanguage: data.receiptLanguage,
     paymentReceipts: data.paymentReceipts,
+    paymentEntries: data.paymentEntries,
     adminNotes: orderAdminNotes(data),
     source: 'order-center',
     createdAt: new Date().toISOString()
@@ -1948,12 +2144,15 @@ async function saveOrderFromForm({ close = true } = {}) {
       totalAmount: data.totalAmount,
       originalAmount: data.originalAmount,
       discountAmount: data.discountAmount,
+      discountReason: data.discountReason,
+      discountApprovedBy: data.discountApprovedBy,
       depositAmount: data.paidAmount,
       balanceAmount: data.balanceAmount,
       paymentStatus,
       status: data.status,
       receiptLanguage: data.receiptLanguage,
       paymentReceipts: data.paymentReceipts,
+      paymentEntries: data.paymentEntries,
       packageName: data.title,
       eventDate: data.eventDate,
       eventTime: data.eventTime,
@@ -2228,6 +2427,8 @@ function renderPrint(order) {
       paymentNotes: 'Payment Notes',
       paymentLine1: business.paymentNoteEn,
       paymentLine2: 'Deposit confirms the order. Balance should be settled before delivery or before service completion.',
+      discountReason: 'Discount reason',
+      approvedBy: 'Approved by',
       subtotal: 'Subtotal',
       discount: 'Discount',
       total: 'Total',
@@ -2271,6 +2472,8 @@ function renderPrint(order) {
       paymentNotes: '付款说明',
       paymentLine1: business.paymentNoteZh,
       paymentLine2: '订金确认订单；余额请在送餐前或现场服务完成前确认。',
+      discountReason: '优惠原因',
+      approvedBy: '批准人',
       subtotal: '原价小计',
       discount: '优惠',
       total: '应收总额',
@@ -2344,6 +2547,8 @@ function renderPrint(order) {
           <h3>${escapeHtml(t.paymentNotes)}</h3>
           <p>${escapeHtml(t.paymentLine1)}</p>
           <p>${escapeHtml(t.paymentLine2)}</p>
+          ${order.discountAmount > 0 ? `<p>${escapeHtml(t.discountReason)}：${escapeHtml(order.discountReason || '-')} · ${escapeHtml(t.approvedBy)}：${escapeHtml(order.discountApprovedBy || '-')}</p>` : ''}
+          ${order.paymentEntries?.length ? `<p>${escapeHtml(order.paymentEntries.map(entry => `${entry.date} ${entry.method} ${formatMoney(entry.amount)}${entry.reference ? ` (${entry.reference})` : ''}`).join(' · '))}</p>` : ''}
         </div>
         <div class="order-print-total">
           ${order.discountAmount > 0 ? `<div><span>${escapeHtml(t.subtotal)}</span><strong>${escapeHtml(formatMoney(order.originalAmount))}</strong></div>` : ''}
@@ -2454,10 +2659,18 @@ async function loadCloudState() {
     }
     const result = await cloud.loadSharedGrowthState({ admin: true });
     if (result.ok && result.state && typeof growthApi.replaceState === 'function') {
+      state.cloudUpdatedAt = result.updatedAt || '';
+      if (state.pendingSync) {
+        await syncCloudState();
+        return;
+      }
       growthApi.replaceState(result.state);
       invalidateOrderCache();
       state.syncState = 'ok';
       state.syncMessage = '已同步';
+      state.pendingSync = false;
+      localStorage.removeItem(ORDER_PENDING_SYNC_KEY);
+      saveDailyAutoBackup();
       return;
     }
     if (result.reason === 'missing_admin_session') {
@@ -2585,6 +2798,7 @@ function bind() {
 
     const deleteButton = event.target.closest('[data-order-delete]');
     if (deleteButton) {
+      if (!roleCanManage()) return window.alert('只有老板或经理可以删除订单。');
       const order = findOrder(deleteButton.dataset.orderDelete);
       if (!order || !window.confirm(`删除 ${order.customerName} 的订单？订单会移到「删除记录」，记录永久保留。`)) return;
       const result = growthApi.deleteOrder(order.id, 'order-center');
@@ -2812,7 +3026,60 @@ function bind() {
 
   els.businessSettingsForm?.addEventListener('submit', async event => {
     event.preventDefault();
+    if (!roleCanManage()) return setBusinessSettingsStatus('只有老板或经理可以修改设置。');
     await saveBusinessSettingsFromForm();
+  });
+
+  els.role?.addEventListener('change', () => {
+    state.operatorRole = els.role.value || 'viewer';
+    localStorage.setItem(ORDER_ROLE_KEY, state.operatorRole);
+    if (els.toolsStatus) els.toolsStatus.textContent = '当前设备权限已更新。';
+    render();
+  });
+
+  els.discountLimit?.addEventListener('change', async () => {
+    if (!roleCanManage()) return;
+    const settings = savedOrderSettings();
+    settings.discountApprovalLimit = money(els.discountLimit.value);
+    await saveOrderSettings(settings);
+    if (els.toolsStatus) els.toolsStatus.textContent = state.syncState === 'ok' ? '优惠批准规则已同步。' : '规则已保存在本机，等待同步。';
+  });
+
+  document.querySelector('[data-order-export-csv]')?.addEventListener('click', exportOrdersCsv);
+  document.querySelector('[data-order-backup]')?.addEventListener('click', backupOrders);
+  document.querySelector('[data-order-restore-auto]')?.addEventListener('click', async () => {
+    if (!roleCanManage()) return window.alert('只有老板或经理可以恢复备份。');
+    try {
+      const backup = JSON.parse(localStorage.getItem(ORDER_AUTO_BACKUP_KEY) || 'null');
+      if (!backup?.state) return window.alert('今天还没有自动备份。');
+      const ok = await restoreStateBackup(backup.state, `今日 ${new Date(backup.createdAt).toLocaleTimeString('zh-MY')} 自动备份`);
+      if (els.toolsStatus) els.toolsStatus.textContent = ok ? '自动备份已恢复并同步。' : '自动备份已恢复到本机，云端等待同步。';
+    } catch {
+      if (els.toolsStatus) els.toolsStatus.textContent = '自动备份无法读取。';
+    }
+  });
+  document.querySelector('[data-order-restore]')?.addEventListener('click', () => {
+    if (!roleCanManage()) return window.alert('只有老板或经理可以恢复备份。');
+    els.restoreInput?.click();
+  });
+  els.restoreInput?.addEventListener('change', async event => {
+    const file = event.target.files?.[0];
+    event.target.value = '';
+    if (!file) return;
+    try {
+      const payload = JSON.parse(await file.text());
+      const restored = payload?.state || payload;
+      const ok = await restoreStateBackup(restored, '文件备份');
+      if (els.toolsStatus) els.toolsStatus.textContent = ok ? '备份已恢复并同步云端。' : '备份已恢复到本机，云端等待同步。';
+    } catch {
+      if (els.toolsStatus) els.toolsStatus.textContent = '备份文件无法读取。';
+    }
+  });
+
+  window.addEventListener('online', async () => {
+    if (!state.pendingSync || !isAdminLoggedIn()) return;
+    await syncCloudState();
+    render();
   });
 
   els.businessSettingsReset?.addEventListener('click', async () => {

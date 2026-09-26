@@ -422,7 +422,7 @@ export function createGrowthCloud() {
           Accept: 'application/json',
           ...adminHeaders
         },
-        body: JSON.stringify({ state })
+        body: JSON.stringify({ state, expectedUpdatedAt: options.expectedUpdatedAt || null })
       });
       if (response.status === 404) return { ok: false, skipped: true };
       if (!response.ok) return { ok: false, status: response.status, message: cloudMessage(await response.text()) };
