@@ -1753,7 +1753,8 @@ function setCategoryPickerOptions(values, selectedLines = [], prices = savedOrde
 function addCategoryLine(line = {}) {
   const lines = readCategoryLines({ keepEmpty: true });
   lines.push(cleanCategoryLine(line));
-  setCategoryPickerOptions(orderSettingsWithUsage(currentOrders()).categories, lines);
+  const settings = orderSettingsWithUsage(currentOrders());
+  setCategoryPickerOptions(settings.categories, lines, settings.categoryPrices);
   syncCategoryFormState({ updateTotal: true });
   window.setTimeout(() => {
     const rows = els.categoryLines?.querySelectorAll('[data-order-category-row]');
@@ -2835,7 +2836,8 @@ function bind() {
     if (categoryRemove) {
       categoryRemove.closest('[data-order-category-row]')?.remove();
       const lines = readCategoryLines({ keepEmpty: true });
-      setCategoryPickerOptions(orderSettingsWithUsage(currentOrders()).categories, lines);
+      const settings = orderSettingsWithUsage(currentOrders());
+      setCategoryPickerOptions(settings.categories, lines, settings.categoryPrices);
       syncCategoryFormState({ updateTotal: true });
       return;
     }
