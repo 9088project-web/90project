@@ -99,6 +99,22 @@
         <p>保存后，网站、后台和线上版本会读取同一份最新内容。</p>
       </div>
 
+      <section class="admin-control-center" aria-label="内容管理工具">
+        <div class="admin-control-main">
+          <div><span>CONTENT TOOLS</span><h2>发布与检查</h2><p>保存前检查内容，在电脑或手机尺寸预览，并可恢复最近的云端版本。</p></div>
+          <div class="admin-control-actions">
+            <button type="button" id="adminValidateContent"><i class="ri-shield-check-line" aria-hidden="true"></i>检查内容</button>
+            <button type="button" id="adminPreviewDesktop"><i class="ri-computer-line" aria-hidden="true"></i>电脑预览</button>
+            <button type="button" id="adminPreviewMobile"><i class="ri-smartphone-line" aria-hidden="true"></i>手机预览</button>
+          </div>
+        </div>
+        <div class="admin-version-tools">
+          <label>最近云端版本<select id="adminVersionSelect"><option value="">读取中...</option></select></label>
+          <button class="btn btn-outline" id="adminRestoreVersion" type="button" disabled><i class="ri-history-line" aria-hidden="true"></i>恢复所选版本</button>
+        </div>
+        <div class="admin-validation-result" id="adminValidationResult" hidden aria-live="polite"></div>
+      </section>
+
       <section class="admin-section" data-admin-panel="site">
         <div class="admin-section-head"><div><h2>全站文字与联系方式</h2><p>首页导航、Hero、套餐、服务卡、表单、FAQ、CTA、电话号码和页脚都可以编辑。</p></div></div>
         <div class="admin-site-rows" id="adminSiteRows"></div>
@@ -295,6 +311,14 @@
       <p class="member-message admin-bottom-message" id="adminMessageBottom" aria-live="polite"></p>
     </section>
   </main>
+
+  <dialog class="admin-preview-dialog" id="adminPreviewDialog">
+    <div class="admin-preview-head">
+      <div><span>LIVE PREVIEW</span><strong id="adminPreviewTitle">网站预览</strong></div>
+      <button type="button" id="adminPreviewClose" aria-label="关闭预览"><i class="ri-close-line" aria-hidden="true"></i></button>
+    </div>
+    <div class="admin-preview-frame" data-device="desktop"><iframe id="adminPreviewFrame" title="网站内容预览"></iframe></div>
+  </dialog>
 
   <script src="js/app.js?v=20260818-reset-live"></script>
   <script type="module" src="js/growth-mock.js?v=20260818-reset-live"></script>

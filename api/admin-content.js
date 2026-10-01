@@ -1,4 +1,6 @@
 const ADMIN_CONTENT_SETTING_KEY = 'admin_content';
+const ADMIN_CONTENT_HISTORY_KEY = 'admin_content_history';
+const ADMIN_CONTENT_HISTORY_LIMIT = 8;
 const DEFAULT_ADMIN_EMAIL = '9088project@gmail.com';
 const DEFAULT_ADMIN_PASSWORD_HASH = '7045830c';
 
@@ -134,10 +136,54 @@ async function readCloudContent() {
   };
 }
 
+async function readCloudHistory() {
+  const key = supabaseServiceKey() || supabaseAnonKey();
+  if (!supabaseUrl() || !key) return [];
+  const rows = await supabaseRequest(
+    `/rest/v1/site_settings?select=value&key=eq.${encodeURIComponent(ADMIN_CONTENT_HISTORY_KEY)}&limit=1`,
+    key
+  );
+  const value = Array.isArray(rows) && rows[0] ? rows[0].value : [];
+  if (Array.isArray(value)) return value;
+  try {
+    const parsed = JSON.parse(value || '[]');
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+async function writeCloudHistory(history) {
+  const key = supabaseServiceKey();
+  await supabaseRequest(`/rest/v1/site_settings?on_conflict=key`, key, {
+    method: 'POST',
+    headers: { Prefer: 'resolution=merge-duplicates,return=minimal' },
+    body: {
+      key: ADMIN_CONTENT_HISTORY_KEY,
+      value: JSON.stringify(history.slice(0, ADMIN_CONTENT_HISTORY_LIMIT))
+    }
+  });
+}
+
 async function writeCloudContent(content) {
   const key = supabaseServiceKey();
   if (!supabaseUrl() || !key) {
     throw new Error('SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are required for cloud writes.');
+  }
+
+  const current = await readCloudContent();
+  const history = await readCloudHistory();
+  if (current.content) {
+    const currentSerialized = typeof current.content === 'string' ? current.content : JSON.stringify(current.content);
+    const nextSerialized = JSON.stringify(content || {});
+    if (currentSerialized !== nextSerialized) {
+      history.unshift({
+        id: `version-${Date.now()}`,
+        savedAt: current.updatedAt || new Date().toISOString(),
+        content: current.content
+      });
+      await writeCloudHistory(history);
+    }
   }
 
   await supabaseRequest(`/rest/v1/site_settings?on_conflict=key`, key, {
@@ -158,10 +204,12 @@ module.exports = async function handler(request, response) {
   try {
     if (request.method === 'GET') {
       const result = await readCloudContent();
+      const history = result.configured ? await readCloudHistory() : [];
       return send(response, result.configured ? 200 : 503, {
         ok: result.configured,
         content: result.content,
         updatedAt: result.updatedAt || null,
+        history: history.map(version => ({ id: version.id, savedAt: version.savedAt })),
         source: result.configured ? 'supabase' : 'missing-config'
       });
     }
@@ -170,6 +218,20 @@ module.exports = async function handler(request, response) {
       const body = await readJsonBody(request);
       if (!isAdminAuthorized(request, body)) {
         return send(response, 401, { ok: false, message: 'Unauthorized admin content update.' });
+      }
+
+      if (body.action === 'restore-version') {
+        const history = await readCloudHistory();
+        const version = history.find(item => item.id === body.versionId);
+        if (!version?.content) return send(response, 404, { ok: false, message: 'Saved version was not found.' });
+        const restoredContent = typeof version.content === 'string' ? JSON.parse(version.content) : version.content;
+        const result = await writeCloudContent(restoredContent);
+        return send(response, 200, {
+          ok: true,
+          source: 'supabase-version-restore',
+          content: result.content,
+          updatedAt: result.updatedAt || null
+        });
       }
 
       const result = await writeCloudContent(body.content || body.value || {});

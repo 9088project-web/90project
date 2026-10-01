@@ -79,6 +79,16 @@ const addWeeklyRow = document.getElementById('addWeeklyRow');
 const addAddonRow = document.getElementById('addAddonRow');
 const saveAdminContent = document.getElementById('saveAdminContent');
 const resetAdminContent = document.getElementById('resetAdminContent');
+const adminValidateContent = document.getElementById('adminValidateContent');
+const adminPreviewDesktop = document.getElementById('adminPreviewDesktop');
+const adminPreviewMobile = document.getElementById('adminPreviewMobile');
+const adminVersionSelect = document.getElementById('adminVersionSelect');
+const adminRestoreVersion = document.getElementById('adminRestoreVersion');
+const adminValidationResult = document.getElementById('adminValidationResult');
+const adminPreviewDialog = document.getElementById('adminPreviewDialog');
+const adminPreviewFrame = document.getElementById('adminPreviewFrame');
+const adminPreviewTitle = document.getElementById('adminPreviewTitle');
+const adminPreviewClose = document.getElementById('adminPreviewClose');
 const adminDataStatus = document.getElementById('adminDataStatus');
 const adminInquiries = document.getElementById('adminInquiries');
 const adminMemberStatus = document.getElementById('adminMemberStatus');
@@ -5437,6 +5447,78 @@ function setAdminSaveStatus(state = 'idle', title = '', detail = '') {
   if (detailElement) detailElement.textContent = detail || '保存后，网站、后台和线上版本会读取同一份最新内容。';
 }
 
+function formatAdminVersionDate(value) {
+  const date = new Date(value || '');
+  if (Number.isNaN(date.getTime())) return '未知时间';
+  return new Intl.DateTimeFormat('zh-MY', {
+    dateStyle: 'medium',
+    timeStyle: 'short',
+    timeZone: 'Asia/Kuala_Lumpur'
+  }).format(date);
+}
+
+async function loadAdminVersions() {
+  if (!adminVersionSelect) return;
+  try {
+    const response = await fetch(`${ADMIN_CONTENT_API_PATH}?v=${Date.now()}`, { cache: 'no-store' });
+    if (!response.ok) throw new Error('Unable to load versions');
+    const result = await response.json();
+    const versions = Array.isArray(result.history) ? result.history : [];
+    adminVersionSelect.innerHTML = versions.length
+      ? `<option value="">请选择要恢复的版本</option>${versions.map(version => `<option value="${escapeHtml(version.id)}">${escapeHtml(formatAdminVersionDate(version.savedAt))}</option>`).join('')}`
+      : '<option value="">暂时没有旧版本</option>';
+    if (adminRestoreVersion) adminRestoreVersion.disabled = true;
+  } catch {
+    adminVersionSelect.innerHTML = '<option value="">版本读取失败，请稍后重试</option>';
+    if (adminRestoreVersion) adminRestoreVersion.disabled = true;
+  }
+}
+
+function adminImageCandidates() {
+  const values = Array.from(adminDashboard?.querySelectorAll('input[type="text"]') || [])
+    .map(input => input.value.trim())
+    .filter(value => /\.(?:avif|webp|png|jpe?g|gif)(?:\?.*)?$/i.test(value));
+  return [...new Set(values)];
+}
+
+async function validateAdminContentNow() {
+  const invalidFields = Array.from(adminDashboard?.querySelectorAll('input,textarea,select') || [])
+    .filter(field => !field.disabled && !field.checkValidity());
+  const images = adminImageCandidates();
+  const brokenImages = (await Promise.all(images.map(async path => {
+    try {
+      const response = await fetch(path, { method: 'GET', cache: 'no-store' });
+      return response.ok ? '' : path;
+    } catch {
+      return path;
+    }
+  }))).filter(Boolean);
+  const problems = [];
+  if (invalidFields.length) problems.push(`${invalidFields.length} 个输入数值超出允许范围`);
+  if (brokenImages.length) problems.push(`${brokenImages.length} 张图片无法读取`);
+  if (adminValidationResult) {
+    adminValidationResult.hidden = false;
+    adminValidationResult.classList.toggle('is-error', problems.length > 0);
+    adminValidationResult.textContent = problems.length
+      ? `需要处理：${problems.join('；')}。${brokenImages.length ? ` 路径：${brokenImages.slice(0, 3).join('、')}` : ''}`
+      : `检查完成：输入格式正常，${images.length} 张内容图片均可读取。`;
+  }
+  invalidFields[0]?.focus();
+  return problems.length === 0;
+}
+
+function openAdminContentPreview(device = 'desktop') {
+  if (!adminPreviewDialog || !adminPreviewFrame) return;
+  saveEditableContent(collectAdminContent(), { source: 'admin-preview', cloudSynced: false });
+  refreshAdminContentConsumers({ adminEditor: false });
+  const wrapper = adminPreviewFrame.closest('.admin-preview-frame');
+  if (wrapper) wrapper.dataset.device = device;
+  if (adminPreviewTitle) adminPreviewTitle.textContent = device === 'mobile' ? '手机预览 390px' : '电脑预览';
+  adminPreviewFrame.src = `index.html?preview=${Date.now()}#top`;
+  adminPreviewDialog.showModal();
+  setAdminSaveStatus('local', '草稿预览中', '预览使用当前草稿；确认无误后请保存到云端。');
+}
+
 function adminRowValue(row, selector) {
   return row.querySelector(selector)?.value?.trim() || '';
 }
@@ -6095,6 +6177,7 @@ function renderAdminState() {
     renderAdminEditor();
     renderAdminInquiries();
     renderAdminMembers();
+    loadAdminVersions();
   }
 }
 
@@ -6858,6 +6941,52 @@ document.querySelectorAll('[data-admin-panel-tab]').forEach(button => {
   });
 });
 
+adminDashboard?.addEventListener('input', event => {
+  if (!(event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement || event.target instanceof HTMLSelectElement)) return;
+  if (event.target.closest('.admin-control-center')) return;
+  setAdminSaveStatus('local', '有尚未保存的修改', '当前修改只在编辑器内，完成后请保存到云端。');
+});
+
+adminValidateContent?.addEventListener('click', validateAdminContentNow);
+adminPreviewDesktop?.addEventListener('click', () => openAdminContentPreview('desktop'));
+adminPreviewMobile?.addEventListener('click', () => openAdminContentPreview('mobile'));
+adminPreviewClose?.addEventListener('click', () => adminPreviewDialog?.close());
+adminPreviewDialog?.addEventListener('click', event => {
+  if (event.target === adminPreviewDialog) adminPreviewDialog.close();
+});
+adminVersionSelect?.addEventListener('change', () => {
+  if (adminRestoreVersion) adminRestoreVersion.disabled = !adminVersionSelect.value;
+});
+adminRestoreVersion?.addEventListener('click', async () => {
+  const versionId = adminVersionSelect?.value || '';
+  if (!versionId || !window.confirm('确定恢复这个云端版本吗？当前云端内容会先自动保留为一个版本。')) return;
+  const headers = adminSyncHeaders({ 'Content-Type': 'application/json' });
+  if (!headers) {
+    showAdminMessage('请重新登录后台后再恢复版本。', true);
+    return;
+  }
+  setAdminSaveStatus('saving', '正在恢复云端版本', '恢复完成后网站会同步使用该版本。');
+  try {
+    const response = await fetch(ADMIN_CONTENT_API_PATH, {
+      method: 'PUT',
+      headers,
+      body: JSON.stringify({ action: 'restore-version', versionId })
+    });
+    if (!response.ok) throw new Error(readableCloudMessage(await response.text()));
+    const result = await response.json();
+    const restored = parseRemoteAdminContent(result.content);
+    if (!restored) throw new Error('恢复版本内容无效。');
+    saveEditableContent(restored, { source: 'cloud-version-restore', updatedAt: result.updatedAt, cloudSynced: true });
+    refreshAdminContentConsumers({ adminEditor: true, adminLists: true });
+    setAdminSaveStatus('done', '旧版本已恢复', `恢复时间：${formatAdminVersionDate(result.updatedAt)}`);
+    showAdminMessage('旧版本已恢复并同步到云端。');
+    await loadAdminVersions();
+  } catch (error) {
+    setAdminSaveStatus('error', '版本恢复失败', '内容没有被更改，请重新登录后再试。');
+    showAdminMessage(error instanceof Error ? error.message : '版本恢复失败。', true);
+  }
+});
+
 addWeeklyRow?.addEventListener('click', addWeeklyEditorRow);
 addAddonRow?.addEventListener('click', addAddonEditorRow);
 addCateringRow?.addEventListener('click', addCateringEditorRow);
@@ -7038,6 +7167,11 @@ adminMembers?.addEventListener('change', event => {
 });
 
 saveAdminContent?.addEventListener('click', async () => {
+  if (!(await validateAdminContentNow())) {
+    setAdminSaveStatus('error', '内容检查未通过', '请先修正提示的问题，再保存到云端。');
+    showAdminMessage('内容检查未通过，暂时没有保存。', true);
+    return;
+  }
   setAdminSaveStatus('saving', '正在同步云端', '正在把后台内容保存到云端。');
   const content = saveEditableContent(collectAdminContent(), {
     source: 'admin-local',
@@ -7053,6 +7187,7 @@ saveAdminContent?.addEventListener('click', async () => {
         updatedAt: localStorage.getItem(ADMIN_CONTENT_UPDATED_AT_KEY) || new Date().toISOString()
       });
       refreshAdminContentConsumers({ adminEditor: true, adminLists: true });
+      loadAdminVersions();
     } else {
       markAdminContentSyncState({
         source: 'admin-local',
