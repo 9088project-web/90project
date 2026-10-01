@@ -28,7 +28,7 @@ function applyCors(request, response) {
   const origin = String(header(request, 'origin') || '');
   const allowed = new Set(['https://90project.online', 'https://www.90project.online', 'http://127.0.0.1:3050', 'http://localhost:3050']);
   if (allowed.has(origin)) response.setHeader('Access-Control-Allow-Origin', origin);
-  response.setHeader('Access-Control-Allow-Methods', 'GET,POST,OPTIONS');
+  response.setHeader('Access-Control-Allow-Methods', 'GET,POST,DELETE,OPTIONS');
   response.setHeader('Access-Control-Allow-Headers', 'Content-Type,X-Admin-Email,X-Admin-Password');
 }
 
@@ -97,7 +97,7 @@ module.exports = async function handler(request, response) {
   if (request.method === 'OPTIONS') return send(response, 204, {});
   if (!supabaseUrl() || !serviceKey()) return send(response, 503, { ok: false, message: '云端图片服务还没有连接。' });
   try {
-    const body = request.method === 'POST' ? await bodyOf(request) : {};
+    const body = ['POST', 'DELETE'].includes(request.method) ? await bodyOf(request) : {};
     const actor = await authorize(request, body);
     if (!actor || actor.role === 'viewer') return send(response, 401, { ok: false, message: '没有图片管理权限。' });
     await ensureBucket();
@@ -133,6 +133,13 @@ module.exports = async function handler(request, response) {
       });
       if (!upload.ok) throw new Error(await upload.text());
       return send(response, 200, { ok: true, file: { name: fileName, url: `${supabaseUrl()}/storage/v1/object/public/${BUCKET}/${objectPath}`, createdAt: new Date().toISOString() } });
+    }
+    if (request.method === 'DELETE') {
+      if (!['owner', 'manager'].includes(actor.role)) return send(response, 403, { ok: false, message: '只有老板或经理可以删除云端图片。' });
+      const fileName = String(body.name || '').trim();
+      if (!/^[A-Za-z0-9._-]{1,120}$/.test(fileName)) return send(response, 400, { ok: false, message: '图片名称无效。' });
+      await cloud(`/storage/v1/object/${BUCKET}/admin/${encodeURIComponent(fileName)}`, { method: 'DELETE' });
+      return send(response, 200, { ok: true, deleted: fileName });
     }
     return send(response, 405, { ok: false, message: 'Method not allowed.' });
   } catch (error) {

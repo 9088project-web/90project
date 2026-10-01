@@ -339,7 +339,11 @@ module.exports = async function handler(request, response) {
       }
 
       if (body.action === 'submit-approval') {
-        const pending = { content: body.content || {}, actor: actor.email, actorName: actor.name || '', submittedAt: new Date().toISOString() };
+        const current = await readCloudContent();
+        if (body.expectedUpdatedAt && current.updatedAt && body.expectedUpdatedAt !== current.updatedAt) {
+          return send(response, 409, { ok: false, reason: 'version_conflict', message: 'Cloud content changed. Reload before submitting approval.', updatedAt: current.updatedAt });
+        }
+        const pending = { content: body.content || {}, baseUpdatedAt: current.updatedAt || null, actor: actor.email, actorName: actor.name || '', submittedAt: new Date().toISOString() };
         await writeSetting(ADMIN_CONTENT_PENDING_KEY, pending);
         await recordAudit('提交发布审批', actor, { changedKeys: contentDifference((await readCloudContent()).content || {}, body.content || {}) });
         return send(response, 200, { ok: true, pending: { submittedAt: pending.submittedAt, actor: pending.actor, actorName: pending.actorName } });
@@ -349,6 +353,10 @@ module.exports = async function handler(request, response) {
         if (!['owner', 'manager'].includes(actor.role)) return send(response, 403, { ok: false, message: 'Only owner or manager can approve publishing.' });
         const pending = await readSetting(ADMIN_CONTENT_PENDING_KEY, null);
         if (!pending?.content) return send(response, 404, { ok: false, message: 'No pending content was found.' });
+        const current = await readCloudContent();
+        if (pending.baseUpdatedAt && current.updatedAt && pending.baseUpdatedAt !== current.updatedAt) {
+          return send(response, 409, { ok: false, reason: 'version_conflict', message: 'Published content changed after this approval request. Ask the editor to review and submit again.', updatedAt: current.updatedAt });
+        }
         const result = await writeCloudContent(pending.content, actor);
         await writeSetting(ADMIN_CONTENT_PENDING_KEY, null);
         await recordAudit('批准并发布内容', actor, { submittedBy: pending.actor || '' });
@@ -402,6 +410,9 @@ module.exports = async function handler(request, response) {
 
       const nextContent = body.content || body.value || {};
       const currentContent = await readCloudContent();
+      if (body.expectedUpdatedAt && currentContent.updatedAt && body.expectedUpdatedAt !== currentContent.updatedAt) {
+        return send(response, 409, { ok: false, reason: 'version_conflict', message: 'Cloud content changed in another session. Reload before publishing.', updatedAt: currentContent.updatedAt });
+      }
       const changedKeys = contentDifference(
         typeof currentContent.content === 'string' ? JSON.parse(currentContent.content) : currentContent.content || {},
         nextContent

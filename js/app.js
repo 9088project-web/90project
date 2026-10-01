@@ -3121,8 +3121,8 @@ async function saveAdminContentToCloudApi(content) {
       'X-Admin-Password': password
     },
     body: JSON.stringify(adminContentRole === 'staff'
-      ? { action: 'submit-approval', content: normalizeAdminContent(content) }
-      : { content: normalizeAdminContent(content) })
+      ? { action: 'submit-approval', content: normalizeAdminContent(content), expectedUpdatedAt: localStorage.getItem(ADMIN_CONTENT_UPDATED_AT_KEY) || null }
+      : { content: normalizeAdminContent(content), expectedUpdatedAt: localStorage.getItem(ADMIN_CONTENT_UPDATED_AT_KEY) || null })
   });
 
   if (response.status === 404) return false;
@@ -5339,10 +5339,20 @@ function exportLocalBackup() {
 
 function importLocalBackup(file) {
   if (!file) return;
+  if (file.size > 5 * 1024 * 1024) {
+    showAdminMessage(currentLanguage === 'en' ? 'Backup file must be below 5 MB.' : '备份文件必须小于 5MB。', true);
+    if (importLocalDataInput) importLocalDataInput.value = '';
+    return;
+  }
   const reader = new FileReader();
   reader.addEventListener('load', async () => {
     try {
       const data = JSON.parse(String(reader.result || '{}'));
+      const recognized = Boolean(data?.adminContent) || ['inquiries', 'members', 'conversions'].some(key => Array.isArray(data?.[key]));
+      if (!data || typeof data !== 'object' || Array.isArray(data) || !recognized) throw new Error('invalid_backup');
+      const itemCount = ['inquiries', 'members', 'conversions'].reduce((sum, key) => sum + (Array.isArray(data[key]) ? data[key].length : 0), 0);
+      const confirmed = window.confirm(`导入备份会替换本机后台资料${data.adminContent ? '，并尝试同步网站内容到云端' : ''}。\n\n备份日期：${data.exportedAt || '未记录'}\n资料记录：${itemCount} 项\n\n确定继续？`);
+      if (!confirmed) return;
       let importedAdminContent = null;
       if (data.adminContent) {
         importedAdminContent = saveEditableContent(data.adminContent, {
@@ -5818,6 +5828,7 @@ function renderAdminMediaLibrary(files = []) {
       <select data-media-target><option value="">选择要替换的栏目</option>${targetOptions}</select>
       <button type="button" data-apply-media-url="${escapeHtml(file.url)}"><i class="ri-image-add-line" aria-hidden="true"></i>套用到栏目</button>
       <button type="button" data-copy-media-url="${escapeHtml(file.url)}"><i class="ri-file-copy-line" aria-hidden="true"></i>复制图片网址</button>
+      ${['owner', 'manager'].includes(adminContentRole) ? `<button type="button" data-delete-media-name="${escapeHtml(file.name)}"><i class="ri-delete-bin-6-line" aria-hidden="true"></i>删除云端图片</button>` : ''}
     </article>
   `).join('') : '<p>还没有上传云端图片。</p>';
 }
@@ -7527,6 +7538,24 @@ adminMediaLibrary?.addEventListener('click', async event => {
     target.scrollIntoView({ behavior: 'smooth', block: 'center' });
     return;
   }
+  const deleteButton = event.target instanceof HTMLElement ? event.target.closest('[data-delete-media-name]') : null;
+  if (deleteButton instanceof HTMLElement) {
+    const name = deleteButton.dataset.deleteMediaName || '';
+    if (!name || !window.confirm(`删除云端图片「${name}」？如果网站正在使用这张图片，请先替换栏目图片。`)) return;
+    const headers = adminSyncHeaders({ 'Content-Type': 'application/json' });
+    if (!headers) return showAdminMessage('请重新登录后台。', true);
+    deleteButton.setAttribute('disabled', '');
+    try {
+      const response = await fetch(ADMIN_MEDIA_API_PATH, { method: 'DELETE', headers, body: JSON.stringify({ name }) });
+      if (!response.ok) throw new Error(readableCloudMessage(await response.text(), '删除图片失败。'));
+      showAdminMessage('云端图片已删除。');
+      await loadAdminMediaLibrary();
+    } catch (error) {
+      showAdminMessage(error instanceof Error ? error.message : '删除图片失败。', true);
+      deleteButton.removeAttribute('disabled');
+    }
+    return;
+  }
   const button = event.target instanceof HTMLElement ? event.target.closest('[data-copy-media-url]') : null;
   if (!(button instanceof HTMLElement)) return;
   await copyText(button.dataset.copyMediaUrl || '');
@@ -7802,6 +7831,8 @@ saveAdminContent?.addEventListener('click', async () => {
 });
 
 resetAdminContent?.addEventListener('click', async () => {
+  const confirmed = window.confirm('恢复默认内容会覆盖当前网站文字、菜单、价格和媒体设置，并同步到云端。历史版本仍会保留。\n\n确定继续？');
+  if (!confirmed) return;
   setAdminSaveStatus('saving', '正在恢复并同步', '正在恢复默认内容并保存到云端。');
   const defaults = saveEditableContent(defaultAdminContent(), {
     source: 'admin-reset-local',
