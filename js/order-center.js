@@ -250,14 +250,21 @@ function todayDate() {
 function normalizePaymentReceipt(value) {
   if (!value || typeof value !== 'object') return null;
   const dataUrl = String(value.dataUrl || '').trim();
-  if (!/^data:image\/(?:jpeg|png|webp);base64,/i.test(dataUrl)) return null;
+  const signedUrl = String(value.signedUrl || value.url || '').trim();
+  if (!/^data:image\/(?:jpeg|png|webp);base64,/i.test(dataUrl) && !/^https:\/\//i.test(signedUrl)) return null;
   return {
     dataUrl,
+    signedUrl,
+    storagePath: String(value.storagePath || '').trim(),
     name: String(value.name || 'payment-receipt.jpg').trim(),
     type: String(value.type || 'image/jpeg').trim(),
     size: Math.max(0, Number(value.size) || 0),
     uploadedAt: value.uploadedAt || new Date().toISOString()
   };
+}
+
+function receiptSource(receipt) {
+  return receipt?.signedUrl || receipt?.dataUrl || '';
 }
 
 function normalizePaymentReceipts(values, legacyReceipt = null) {
@@ -277,7 +284,7 @@ function renderReceiptDraft() {
   if (!els.receiptList) return;
   els.receiptList.innerHTML = receipts.map((receipt, index) => `
     <article class="order-receipt-preview">
-      <img src="${escapeHtml(receipt.dataUrl)}" alt="付款收据 ${index + 1}">
+      <img src="${escapeHtml(receiptSource(receipt))}" alt="付款收据 ${index + 1}">
       <div><strong>${escapeHtml(receipt.name || `付款收据 ${index + 1}`)}</strong><small>${escapeHtml(receiptSizeLabel(receipt.size))} · 收据 ${index + 1}</small></div>
       <div class="order-receipt-actions">
         <button type="button" data-order-receipt-open="${index}" aria-label="查看收据 ${index + 1}" title="查看收据"><i class="ri-eye-line" aria-hidden="true"></i></button>
@@ -329,6 +336,30 @@ async function compressReceiptImage(file) {
     size: Math.round((dataUrl.length - dataUrl.indexOf(',') - 1) * 0.75),
     uploadedAt: new Date().toISOString()
   };
+}
+
+async function uploadReceiptToCloud(receipt, orderId) {
+  if (!receipt?.dataUrl || receipt.storagePath) return receipt;
+  const response = await fetch('/api/order-receipts', {
+    method: 'POST',
+    headers: staffAuthHeaders(),
+    body: JSON.stringify({ orderId, name: receipt.name, dataUrl: receipt.dataUrl })
+  });
+  if (!response.ok) throw new Error('receipt_upload_failed');
+  const result = await response.json();
+  return normalizePaymentReceipt(result.receipt) || receipt;
+}
+
+async function uploadReceiptDrafts(orderId) {
+  const receipts = normalizePaymentReceipts(state.receiptDrafts);
+  const uploaded = [];
+  let failures = 0;
+  for (const receipt of receipts) {
+    try { uploaded.push(await uploadReceiptToCloud(receipt, orderId)); }
+    catch { uploaded.push(receipt); failures += 1; }
+  }
+  state.receiptDrafts = uploaded;
+  return failures;
 }
 
 function invoiceNo() {
@@ -809,7 +840,7 @@ async function saveOrderSettings(settings, options = {}) {
   growthApi.replaceState(nextState);
   invalidateOrderCache();
   setSettingsStatus('同步中');
-  const result = await syncCloudState();
+  const result = await syncCloudState('settings-write');
   setSettingsStatus(result.ok ? '已同步云端' : '已保存在本机', Boolean(result.ok));
   render();
   return result;
@@ -1304,22 +1335,54 @@ function downloadFile(name, content, type) {
   window.setTimeout(() => URL.revokeObjectURL(url), 500);
 }
 
+function stateChecksum(value) {
+  const text = typeof value === 'string' ? value : JSON.stringify(value);
+  let hash = 2166136261;
+  for (let index = 0; index < text.length; index += 1) {
+    hash ^= text.charCodeAt(index);
+    hash = Math.imul(hash, 16777619);
+  }
+  return (hash >>> 0).toString(16).padStart(8, '0');
+}
+
+function backupEnvelope(source = growthApi.getState()) {
+  const stateValue = JSON.parse(JSON.stringify(source));
+  return {
+    format: '90project-order-backup',
+    schemaVersion: 2,
+    exportedAt: new Date().toISOString(),
+    checksum: stateChecksum(stateValue),
+    state: stateValue
+  };
+}
+
+function validateBackupPayload(payload) {
+  const restored = payload?.state && typeof payload.state === 'object' ? payload.state : payload;
+  if (!restored || !Array.isArray(restored.orders) || !Array.isArray(restored.auditLogs)) throw new Error('invalid_backup');
+  if (payload?.checksum && payload.checksum !== stateChecksum(restored)) throw new Error('checksum_mismatch');
+  return { state: restored, orderCount: restored.orders.length, auditCount: restored.auditLogs.length, verified: Boolean(payload?.checksum) };
+}
+
 function exportOrdersCsv() {
-  const headers = ['订单编号','顾客','电话','日期','类别','负责人','顾客来源','原价','优惠','应收','已收','余额','状态'];
-  const rows = currentOrders().map(order => [order.invoiceNo, order.customerName, order.phone, order.eventDate, categoryText(order), [order.assignee, order.collaborator].filter(Boolean).join(' + '), order.customerSource, order.originalAmount, order.discountAmount, order.totalAmount, order.paidAmount, order.balanceAmount, statusLabels[order.status] || order.status]);
+  const headers = ['订单编号','顾客','电话','日期','时间','类别','负责人','顾客来源','原价','优惠','优惠原因','批准人','应收','已收','余额','付款次数','付款方式','付款参考号','收据数量','状态','建立日期','更新日期'];
+  const rows = currentOrders().map(order => {
+    const payments = Array.isArray(order.paymentEntries) ? order.paymentEntries : [];
+    return [order.invoiceNo, order.customerName, order.phone, order.eventDate, order.eventTime, categoryText(order), [order.assignee, order.collaborator].filter(Boolean).join(' + '), order.customerSource, order.originalAmount, order.discountAmount, order.discountReason, order.discountApprovedBy, order.totalAmount, order.paidAmount, order.balanceAmount, payments.length, payments.map(item => item.method).filter(Boolean).join(' / '), payments.map(item => item.reference).filter(Boolean).join(' / '), order.paymentReceipts?.length || 0, statusLabels[order.status] || order.status, order.createdAt, order.updatedAt || ''];
+  });
   const csv = [headers, ...rows].map(row => row.map(value => `"${String(value ?? '').replace(/"/g, '""')}"`).join(',')).join('\r\n');
   downloadFile(`90project-orders-${todayDate()}.csv`, `\uFEFF${csv}`, 'text/csv;charset=utf-8');
 }
 
 function backupOrders() {
-  downloadFile(`90project-backup-${todayDate()}.json`, JSON.stringify({ exportedAt: new Date().toISOString(), state: growthApi.getState() }, null, 2), 'application/json');
+  downloadFile(`90project-backup-${todayDate()}.json`, JSON.stringify(backupEnvelope(), null, 2), 'application/json');
 }
 
 function saveDailyAutoBackup() {
   try {
     const existing = JSON.parse(localStorage.getItem(ORDER_AUTO_BACKUP_KEY) || 'null');
-    if (existing?.date === todayDate()) return;
-    const payload = JSON.stringify({ date: todayDate(), createdAt: new Date().toISOString(), state: growthApi.getState() });
+    if (existing?.date === todayDate() && existing?.checksum) return;
+    const envelope = backupEnvelope();
+    const payload = JSON.stringify({ ...envelope, date: todayDate(), createdAt: envelope.exportedAt });
     if (payload.length > 3_000_000) return;
     localStorage.setItem(ORDER_AUTO_BACKUP_KEY, payload);
   } catch {
@@ -1328,12 +1391,23 @@ function saveDailyAutoBackup() {
 }
 
 async function restoreStateBackup(restored, label = '备份') {
-  if (!restored || !Array.isArray(restored.orders) || !Array.isArray(restored.auditLogs)) throw new Error('invalid_backup');
-  if (!window.confirm(`恢复${label}中的 ${restored.orders.length} 张订单？当前云端资料会被替换。`)) return false;
-  growthApi.replaceState(restored);
+  const checked = validateBackupPayload(restored);
+  if (!window.confirm(`恢复${label}中的 ${checked.orderCount} 张订单？完整性${checked.verified ? '已验证' : '为旧版未校验'}，当前云端资料会被替换。`)) return false;
+  const restoredState = JSON.parse(JSON.stringify(checked.state));
+  restoredState.auditLogs = Array.isArray(restoredState.auditLogs) ? restoredState.auditLogs : [];
+  restoredState.auditLogs.unshift({
+    id: `audit_restore_${Date.now()}`,
+    action: 'backup.restored',
+    actorId: state.operatorName || 'owner',
+    entityType: 'backup',
+    entityId: todayDate(),
+    reason: `${label}; ${checked.orderCount} orders; checksum ${checked.verified ? 'verified' : 'legacy'}`,
+    createdAt: new Date().toISOString()
+  });
+  growthApi.replaceState(restoredState);
   invalidateOrderCache();
   state.cloudUpdatedAt = '';
-  const result = await syncCloudState();
+  const result = await syncCloudState('restore');
   render();
   return Boolean(result.ok);
 }
@@ -2096,7 +2170,7 @@ function lineItemsFrom(data) {
   }];
 }
 
-async function syncCloudState() {
+async function syncCloudState(operation = 'order-write') {
   if (!state.cloudReady || typeof cloud.saveSharedGrowthState !== 'function') {
     state.syncState = 'local';
     state.syncMessage = '本机';
@@ -2108,7 +2182,11 @@ async function syncCloudState() {
     state.syncState = 'loading';
     state.syncMessage = '同步中';
     renderSyncStatus(currentOrders());
-    const result = await cloud.saveSharedGrowthState(growthApi.getState(), { admin: true, expectedUpdatedAt: state.cloudUpdatedAt });
+    const result = await cloud.saveSharedGrowthState(growthApi.getState(), {
+      admin: true,
+      expectedUpdatedAt: state.cloudUpdatedAt,
+      operation
+    });
     if (result.ok) {
       if (result.state && typeof growthApi.replaceState === 'function') {
         growthApi.replaceState(result.state);
@@ -2168,6 +2246,10 @@ async function saveOrderFromForm({ close = true } = {}) {
     }
     return null;
   }
+
+  const receiptUploadFailures = await uploadReceiptDrafts(data.id || `order-${Date.now()}`);
+  data.paymentReceipts = normalizePaymentReceipts(state.receiptDrafts);
+  if (receiptUploadFailures) setFormMessage(`${receiptUploadFailures} 张收据暂存本机，订单保存后会继续同步。`);
 
   const paymentStatus = data.status === 'fully_paid'
     ? 'fully_paid'
@@ -2923,7 +3005,8 @@ function bind() {
     const receiptOpen = event.target.closest('[data-order-receipt-open]');
     if (receiptOpen) {
       const receipt = normalizePaymentReceipts(state.receiptDrafts)[Number(receiptOpen.dataset.orderReceiptOpen)];
-      if (receipt?.dataUrl) window.open(receipt.dataUrl, '_blank', 'noopener,noreferrer');
+      const source = receiptSource(receipt);
+      if (source) window.open(source, '_blank', 'noopener,noreferrer');
       return;
     }
 
@@ -3140,19 +3223,29 @@ function bind() {
 
   document.querySelector('[data-order-export-csv]')?.addEventListener('click', exportOrdersCsv);
   document.querySelector('[data-order-backup]')?.addEventListener('click', backupOrders);
-  document.querySelector('[data-order-restore-auto]')?.addEventListener('click', async () => {
-    if (!roleCanManage()) return window.alert('只有老板或经理可以恢复备份。');
+  document.querySelector('[data-order-verify-backup]')?.addEventListener('click', () => {
     try {
       const backup = JSON.parse(localStorage.getItem(ORDER_AUTO_BACKUP_KEY) || 'null');
       if (!backup?.state) return window.alert('今天还没有自动备份。');
-      const ok = await restoreStateBackup(backup.state, `今日 ${new Date(backup.createdAt).toLocaleTimeString('zh-MY')} 自动备份`);
+      const checked = validateBackupPayload(backup);
+      if (els.toolsStatus) els.toolsStatus.textContent = `备份完整：${checked.orderCount} 张订单、${checked.auditCount} 条修改记录，校验码正确。`;
+    } catch (error) {
+      if (els.toolsStatus) els.toolsStatus.textContent = error.message === 'checksum_mismatch' ? '备份校验失败，文件可能不完整。' : '自动备份无法读取。';
+    }
+  });
+  document.querySelector('[data-order-restore-auto]')?.addEventListener('click', async () => {
+    if (state.operatorRole !== 'owner') return window.alert('只有老板可以恢复备份。');
+    try {
+      const backup = JSON.parse(localStorage.getItem(ORDER_AUTO_BACKUP_KEY) || 'null');
+      if (!backup?.state) return window.alert('今天还没有自动备份。');
+      const ok = await restoreStateBackup(backup, `今日 ${new Date(backup.createdAt).toLocaleTimeString('zh-MY')} 自动备份`);
       if (els.toolsStatus) els.toolsStatus.textContent = ok ? '自动备份已恢复并同步。' : '自动备份已恢复到本机，云端等待同步。';
     } catch {
       if (els.toolsStatus) els.toolsStatus.textContent = '自动备份无法读取。';
     }
   });
   document.querySelector('[data-order-restore]')?.addEventListener('click', () => {
-    if (!roleCanManage()) return window.alert('只有老板或经理可以恢复备份。');
+    if (state.operatorRole !== 'owner') return window.alert('只有老板可以恢复备份。');
     els.restoreInput?.click();
   });
   els.restoreInput?.addEventListener('change', async event => {
@@ -3161,8 +3254,7 @@ function bind() {
     if (!file) return;
     try {
       const payload = JSON.parse(await file.text());
-      const restored = payload?.state || payload;
-      const ok = await restoreStateBackup(restored, '文件备份');
+      const ok = await restoreStateBackup(payload, '文件备份');
       if (els.toolsStatus) els.toolsStatus.textContent = ok ? '备份已恢复并同步云端。' : '备份已恢复到本机，云端等待同步。';
     } catch {
       if (els.toolsStatus) els.toolsStatus.textContent = '备份文件无法读取。';

@@ -12,6 +12,7 @@ const GROWTH_ARRAY_KEYS = [
   'referralRelations',
   'enquiries',
   'orders',
+  'deletedOrders',
   'pointsLedgers',
   'couponTemplates',
   'memberCoupons',
@@ -219,6 +220,24 @@ function normalizeState(raw) {
     state[key] = Array.isArray(source[key]) ? source[key] : [];
   });
   return state;
+}
+
+function changedStateKeys(current = {}, incoming = {}) {
+  const keys = new Set([...Object.keys(current || {}), ...Object.keys(incoming || {})]);
+  return [...keys].filter(key => JSON.stringify(current?.[key]) !== JSON.stringify(incoming?.[key]));
+}
+
+function staffMayWriteState(staff, operation, current, incoming) {
+  if (!staff || staff.role === 'viewer') return false;
+  const changed = changedStateKeys(current, incoming);
+  if (staff.role === 'manager') return operation !== 'restore';
+  if (staff.role !== 'staff' || operation !== 'order-write') return false;
+  const allowed = new Set([
+    'members', 'promoters', 'referralCodes', 'referralRelations', 'enquiries',
+    'orders', 'deletedOrders', 'pointsLedgers', 'commissionLedgers',
+    'notifications', 'auditLogs', 'riskFlags'
+  ]);
+  return changed.every(key => allowed.has(key));
 }
 
 function parseStoredState(value) {
@@ -858,8 +877,12 @@ module.exports = async function handler(request, response) {
       if (!isAdminAuthorized(request, body) && !staff) {
         return send(response, 401, { ok: false, message: 'Unauthorized growth sync update.' });
       }
-      if (staff?.role === 'viewer') return send(response, 403, { ok: false, message: 'Read-only staff cannot update orders.' });
       const currentCloud = await readCloudState();
+      const incomingState = normalizeState(body.state || body.value || {});
+      const operation = String(body.operation || 'order-write');
+      if (staff && !staffMayWriteState(staff, operation, currentCloud.state, incomingState)) {
+        return send(response, 403, { ok: false, message: 'This staff role cannot perform the requested cloud update.' });
+      }
       if (body.expectedUpdatedAt && currentCloud.updatedAt && body.expectedUpdatedAt !== currentCloud.updatedAt) {
         return send(response, 409, {
           ok: false,
@@ -869,7 +892,7 @@ module.exports = async function handler(request, response) {
         });
       }
       const [profiles, users, growthTables] = await Promise.all([loadProfiles(), readAuthUsers(), loadGrowthTables()]);
-      const state = mergeSupabaseGrowthTables(mergeProfilesIntoState(body.state || body.value || {}, profiles, users), growthTables);
+      const state = mergeSupabaseGrowthTables(mergeProfilesIntoState(incomingState, profiles, users), growthTables);
       const written = await writeCloudState(state);
       return send(response, 200, {
         ok: true,
@@ -887,3 +910,5 @@ module.exports = async function handler(request, response) {
     });
   }
 };
+
+module.exports._test = { normalizeState, changedStateKeys, staffMayWriteState };

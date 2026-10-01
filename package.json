@@ -8,6 +8,7 @@
     "sync:apk-assets": "node scripts/sync-pos-apk-assets.mjs",
     "build:apk": "powershell -ExecutionPolicy Bypass -File scripts/build-pos-apk.ps1",
     "test:production": "node scripts/verify-production.mjs",
+    "test:orders": "node --test tests/order-center-hardening.test.cjs",
     "start": "node scripts/serve-static-site.mjs",
     "test:growth": "node --test tests/growth-domain.test.mjs"
   },
