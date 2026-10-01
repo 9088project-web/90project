@@ -105,6 +105,11 @@
         <div><button type="button" id="adminRestoreDraft">恢复草稿</button><button type="button" id="adminDiscardDraft">删除草稿</button></div>
       </div>
 
+      <div class="admin-approval-notice" id="adminApprovalNotice" hidden>
+        <div><strong>有内容等待发布审批</strong><p id="adminApprovalMeta">内容编辑已提交修改。</p></div>
+        <div><button type="button" id="adminPreviewApproval">预览修改</button><button type="button" id="adminApproveContent">批准发布</button><button type="button" id="adminRejectContent">退回</button></div>
+      </div>
+
       <section class="admin-control-center" aria-label="内容管理工具">
         <div class="admin-control-main">
           <div><span>CONTENT TOOLS</span><h2>发布与检查</h2><p>保存前检查内容，在电脑或手机尺寸预览，并可恢复最近的云端版本。</p></div>
@@ -114,6 +119,10 @@
             <button type="button" id="adminPreviewMobile"><i class="ri-smartphone-line" aria-hidden="true"></i>手机预览</button>
           </div>
         </div>
+        <label class="admin-content-search">搜索后台设置
+          <input id="adminContentSearch" type="search" placeholder="输入文字、价格、栏目或图片名称">
+          <small id="adminContentSearchStatus">可搜索当前分类内的设置。</small>
+        </label>
         <div class="admin-version-tools">
           <label>最近云端版本<select id="adminVersionSelect"><option value="">读取中...</option></select></label>
           <button class="btn btn-outline" id="adminRestoreVersion" type="button" disabled><i class="ri-history-line" aria-hidden="true"></i>恢复所选版本</button>
@@ -126,6 +135,12 @@
           <p id="adminScheduleStatus">目前没有定时发布内容。</p>
         </div>
         <div class="admin-validation-result" id="adminValidationResult" hidden aria-live="polite"></div>
+        <div class="admin-version-diff" id="adminVersionDiff" hidden></div>
+        <div class="admin-monitor-grid">
+          <article><span>通知中心</span><strong id="adminNotificationCount">0 项待处理</strong><p id="adminNotificationText">系统目前正常。</p></article>
+          <article><span>网站健康</span><strong id="adminHealthStatus">等待检查</strong><p id="adminHealthText">登录后会自动检查主要页面和 WhatsApp 链接。</p><button type="button" id="adminRunHealthCheck">立即检查</button></article>
+          <article><span>内容成效</span><strong id="adminAnalyticsTotal">0 次互动</strong><p id="adminAnalyticsText">暂时没有转化记录。</p></article>
+        </div>
       </section>
 
       <section class="admin-section" data-admin-panel="site">

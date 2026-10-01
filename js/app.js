@@ -103,6 +103,21 @@ const adminMediaFiles = document.getElementById('adminMediaFiles');
 const adminUploadMedia = document.getElementById('adminUploadMedia');
 const adminMediaStatus = document.getElementById('adminMediaStatus');
 const adminMediaLibrary = document.getElementById('adminMediaLibrary');
+const adminApprovalNotice = document.getElementById('adminApprovalNotice');
+const adminApprovalMeta = document.getElementById('adminApprovalMeta');
+const adminPreviewApproval = document.getElementById('adminPreviewApproval');
+const adminApproveContent = document.getElementById('adminApproveContent');
+const adminRejectContent = document.getElementById('adminRejectContent');
+const adminContentSearch = document.getElementById('adminContentSearch');
+const adminContentSearchStatus = document.getElementById('adminContentSearchStatus');
+const adminVersionDiff = document.getElementById('adminVersionDiff');
+const adminNotificationCount = document.getElementById('adminNotificationCount');
+const adminNotificationText = document.getElementById('adminNotificationText');
+const adminHealthStatus = document.getElementById('adminHealthStatus');
+const adminHealthText = document.getElementById('adminHealthText');
+const adminRunHealthCheck = document.getElementById('adminRunHealthCheck');
+const adminAnalyticsTotal = document.getElementById('adminAnalyticsTotal');
+const adminAnalyticsText = document.getElementById('adminAnalyticsText');
 const adminDataStatus = document.getElementById('adminDataStatus');
 const adminInquiries = document.getElementById('adminInquiries');
 const adminMemberStatus = document.getElementById('adminMemberStatus');
@@ -704,6 +719,8 @@ let adminCloudPassword = '';
 let adminContentRole = 'owner';
 let adminContentName = '老板';
 let adminDraftTimer = 0;
+let adminPendingContent = null;
+let lastAdminSavePending = false;
 let selectedMealPackageId = 'one-meat-two-veg-fruit';
 let selectedMealPackageMeals = 20;
 
@@ -3087,7 +3104,9 @@ async function saveAdminContentToCloudApi(content) {
       'X-Admin-Email': adminSyncEmail(),
       'X-Admin-Password': password
     },
-    body: JSON.stringify({ content: normalizeAdminContent(content) })
+    body: JSON.stringify(adminContentRole === 'staff'
+      ? { action: 'submit-approval', content: normalizeAdminContent(content) }
+      : { content: normalizeAdminContent(content) })
   });
 
   if (response.status === 404) return false;
@@ -3096,6 +3115,7 @@ async function saveAdminContentToCloudApi(content) {
     throw new Error(readableCloudMessage(message, `Cloud admin content save failed: ${response.status}`));
   }
   const result = await response.json().catch(() => null);
+  lastAdminSavePending = Boolean(result?.pending);
   const remoteContent = parseRemoteAdminContent(result?.content);
   if (remoteContent) {
     saveEditableContent(remoteContent, {
@@ -5485,7 +5505,12 @@ function applyAdminPermissions() {
   if (adminSchedulePublish) adminSchedulePublish.hidden = !canManage;
   if (adminCancelSchedule) adminCancelSchedule.hidden = !canManage;
   if (resetAdminContent) resetAdminContent.hidden = !canManage;
-  if (saveAdminContent) saveAdminContent.hidden = adminContentRole === 'viewer';
+  if (saveAdminContent) {
+    saveAdminContent.hidden = adminContentRole === 'viewer';
+    saveAdminContent.innerHTML = adminContentRole === 'staff'
+      ? '<i class="ri-send-plane-line" aria-hidden="true"></i>提交发布审批'
+      : '<i class="ri-save-3-line" aria-hidden="true"></i>保存全部内容';
+  }
 }
 
 function showAdminMessage(message, isError = false) {
@@ -5527,6 +5552,8 @@ async function loadAdminVersions() {
       : '<option value="">暂时没有旧版本</option>';
     if (adminRestoreVersion) adminRestoreVersion.disabled = true;
     renderAdminSchedule(result.schedule, result.scheduled);
+    renderAdminApproval(result.pending);
+    renderAdminNotifications();
   } catch {
     adminVersionSelect.innerHTML = '<option value="">版本读取失败，请稍后重试</option>';
     if (adminRestoreVersion) adminRestoreVersion.disabled = true;
@@ -5588,6 +5615,49 @@ function renderAdminSchedule(schedule, active = false) {
   adminScheduleStatus.textContent = `${active ? '正在发布' : '已排程'}：${range}${schedule.actor ? ` · ${schedule.actor}` : ''}`;
 }
 
+function renderAdminApproval(pending) {
+  adminPendingContent = pending?.content ? normalizeAdminContent(pending.content) : null;
+  if (!adminApprovalNotice) return;
+  const canApprove = ['owner', 'manager'].includes(adminContentRole);
+  adminApprovalNotice.hidden = !pending || !canApprove;
+  if (pending && adminApprovalMeta) {
+    adminApprovalMeta.textContent = `${pending.actorName || pending.actor || '内容编辑'} · ${formatAdminVersionDate(pending.submittedAt)}`;
+  }
+}
+
+function flattenAdminContent(value, prefix = '', result = {}) {
+  if (value == null || typeof value !== 'object') {
+    result[prefix || 'content'] = String(value ?? '');
+    return result;
+  }
+  Object.entries(value).forEach(([key, child]) => flattenAdminContent(child, prefix ? `${prefix}.${key}` : key, result));
+  return result;
+}
+
+function adminContentDifferences(before, after, limit = 60) {
+  const left = flattenAdminContent(before);
+  const right = flattenAdminContent(after);
+  const keys = [...new Set([...Object.keys(left), ...Object.keys(right)])];
+  return keys.filter(key => left[key] !== right[key]).slice(0, limit).map(key => ({ key, before: left[key] || '（空白）', after: right[key] || '（空白）' }));
+}
+
+function showAdminDiff(title, before, after) {
+  if (!adminVersionDiff) return;
+  const differences = adminContentDifferences(before, after);
+  adminVersionDiff.hidden = false;
+  adminVersionDiff.innerHTML = `<h3>${escapeHtml(title)}</h3>${differences.length ? `<ul>${differences.map(item => `<li><strong>${escapeHtml(item.key)}</strong><br><del>${escapeHtml(item.before).slice(0, 160)}</del><br><ins>${escapeHtml(item.after).slice(0, 160)}</ins></li>`).join('')}</ul>` : '<p>两个版本没有内容差异。</p>'}`;
+  adminVersionDiff.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+function adminImageTargets() {
+  const selectors = '[data-field*="image"], [data-field*="gallery"], #adminVideoPoster';
+  return Array.from(adminDashboard?.querySelectorAll(selectors) || []).filter(field => field instanceof HTMLInputElement && !field.readOnly).map((field, index) => {
+    if (!field.id) field.id = `admin-image-target-${index}`;
+    const label = field.closest('label')?.textContent?.trim().replace(/\s+/g, ' ') || field.dataset.field || `图片 ${index + 1}`;
+    return { id: field.id, label: label.slice(0, 46) };
+  });
+}
+
 function readAdminDraft() {
   try {
     const draft = JSON.parse(localStorage.getItem(ADMIN_CONTENT_DRAFT_KEY) || 'null');
@@ -5644,12 +5714,61 @@ async function prepareAdminImage(file) {
 
 function renderAdminMediaLibrary(files = []) {
   if (!adminMediaLibrary) return;
+  const targets = adminImageTargets();
+  const targetOptions = targets.map(target => `<option value="${escapeHtml(target.id)}">${escapeHtml(target.label)}</option>`).join('');
   adminMediaLibrary.innerHTML = files.length ? files.map(file => `
     <article class="admin-media-item">
       <img src="${escapeHtml(file.url)}" alt="${escapeHtml(file.name || '云端图片')}" loading="lazy">
+      <select data-media-target><option value="">选择要替换的栏目</option>${targetOptions}</select>
+      <button type="button" data-apply-media-url="${escapeHtml(file.url)}"><i class="ri-image-add-line" aria-hidden="true"></i>套用到栏目</button>
       <button type="button" data-copy-media-url="${escapeHtml(file.url)}"><i class="ri-file-copy-line" aria-hidden="true"></i>复制图片网址</button>
     </article>
   `).join('') : '<p>还没有上传云端图片。</p>';
+}
+
+function renderAdminNotifications() {
+  if (!adminNotificationCount || !adminNotificationText) return;
+  const notices = [];
+  if (adminPendingContent && ['owner', 'manager'].includes(adminContentRole)) notices.push('有内容等待审批');
+  if (readAdminDraft()) notices.push('有未发布草稿');
+  try {
+    const sync = JSON.parse(localStorage.getItem(ADMIN_CONTENT_SYNC_STATE_KEY) || 'null');
+    if (sync?.lastError) notices.push('最近一次云端同步失败');
+  } catch {}
+  adminNotificationCount.textContent = `${notices.length} 项待处理`;
+  adminNotificationText.textContent = notices.join('；') || '系统目前正常。';
+}
+
+async function runAdminHealthCheck() {
+  if (!adminHealthStatus || !adminHealthText) return;
+  adminHealthStatus.textContent = '检查中...';
+  const paths = ['index.html', 'catering.html', 'member.html', 'orders.html'];
+  const failures = [];
+  for (const path of paths) {
+    try {
+      const response = await fetch(`${path}?health=${Date.now()}`, { cache: 'no-store' });
+      if (!response.ok) failures.push(`${path} 无法打开`);
+      else if (path === 'index.html' && !(await response.text()).includes('wa.me/60189490908')) failures.push('首页 WhatsApp 号码异常');
+    } catch {
+      failures.push(`${path} 无法连接`);
+    }
+  }
+  adminHealthStatus.textContent = failures.length ? `${failures.length} 项异常` : '全部正常';
+  adminHealthText.textContent = failures.join('；') || '主要页面和 WhatsApp 链接均可正常读取。';
+  adminHealthStatus.closest('article')?.classList.toggle('is-error', failures.length > 0);
+}
+
+function renderAdminAnalyticsSummary() {
+  if (!adminAnalyticsTotal || !adminAnalyticsText) return;
+  const events = combinedConversionEvents();
+  const counts = events.reduce((summary, event) => {
+    const key = event.type === 'order_submit' ? '提交询问' : event.type === 'whatsapp_click' ? 'WhatsApp 点击' : (event.type || '其他互动');
+    summary[key] = (summary[key] || 0) + 1;
+    return summary;
+  }, {});
+  const top = Object.entries(counts).sort((a, b) => b[1] - a[1]).slice(0, 3);
+  adminAnalyticsTotal.textContent = `${events.length} 次互动`;
+  adminAnalyticsText.textContent = top.map(([name, count]) => `${name} ${count}`).join(' · ') || '暂时没有转化记录。';
 }
 
 async function loadAdminMediaLibrary() {
@@ -6221,6 +6340,7 @@ function renderAdminConversions(refreshRemote = true) {
   if (!adminConversions) return;
   if (refreshRemote) refreshSupabaseConversions();
   const events = combinedConversionEvents();
+  renderAdminAnalyticsSummary();
   if (adminConversionStatus) {
     adminConversionStatus.textContent = events.length
       ? `目前记录 ${events.length} 次 WhatsApp / 下单转化来源（云端 ${supabaseConversionsCache.length}，本地 ${loadConversionEvents().length}）。`
@@ -6328,6 +6448,8 @@ function renderAdminState() {
     loadAdminVersions();
     showAdminDraftNotice();
     loadAdminMediaLibrary();
+    renderAdminNotifications();
+    window.setTimeout(runAdminHealthCheck, 400);
   }
 }
 
@@ -7111,6 +7233,8 @@ adminLogout?.addEventListener('click', () => {
 document.querySelectorAll('[data-admin-panel-tab]').forEach(button => {
   button.addEventListener('click', () => {
     setAdminPanel(button.dataset.adminPanelTab || 'site');
+    if (adminContentSearch) adminContentSearch.value = '';
+    document.querySelectorAll('.admin-search-hidden').forEach(item => item.classList.remove('admin-search-hidden'));
     const drawer = button.closest('[data-admin-nav-drawer]');
     if (drawer instanceof HTMLDetailsElement) drawer.open = false;
   });
@@ -7135,6 +7259,19 @@ adminRestoreDraft?.addEventListener('click', () => {
 
 adminDiscardDraft?.addEventListener('click', clearAdminDraft);
 
+adminContentSearch?.addEventListener('input', () => {
+  const query = adminContentSearch.value.trim().toLowerCase();
+  const active = adminDashboard?.querySelector('.admin-section:not([hidden])');
+  const rows = Array.from(active?.querySelectorAll('[data-site-row],[data-weekly-row],[data-addon-row],[data-catering-row],[data-catering-service-row],[data-catering-combo-row],[data-homepage-row],[data-case-row],[data-detail-editor],.admin-media-block') || []);
+  let visible = 0;
+  rows.forEach(row => {
+    const match = !query || String(row.textContent || '').toLowerCase().includes(query) || Array.from(row.querySelectorAll('input,textarea,select')).some(field => String(field.value || '').toLowerCase().includes(query));
+    row.classList.toggle('admin-search-hidden', !match);
+    if (match) visible += 1;
+  });
+  if (adminContentSearchStatus) adminContentSearchStatus.textContent = query ? `找到 ${visible} 项相关设置。` : '可搜索当前分类内的设置。';
+});
+
 adminValidateContent?.addEventListener('click', validateAdminContentNow);
 adminPreviewDesktop?.addEventListener('click', () => openAdminContentPreview('desktop'));
 adminPreviewMobile?.addEventListener('click', () => openAdminContentPreview('mobile'));
@@ -7142,9 +7279,55 @@ adminPreviewClose?.addEventListener('click', () => adminPreviewDialog?.close());
 adminPreviewDialog?.addEventListener('click', event => {
   if (event.target === adminPreviewDialog) adminPreviewDialog.close();
 });
-adminVersionSelect?.addEventListener('change', () => {
+adminVersionSelect?.addEventListener('change', async () => {
   if (adminRestoreVersion) adminRestoreVersion.disabled = !adminVersionSelect.value;
+  if (!adminVersionSelect.value) {
+    if (adminVersionDiff) adminVersionDiff.hidden = true;
+    return;
+  }
+  const headers = adminSyncHeaders({ 'Content-Type': 'application/json' });
+  if (!headers) return;
+  try {
+    const response = await fetch(ADMIN_CONTENT_API_PATH, { method: 'PUT', headers, body: JSON.stringify({ action: 'preview-version', versionId: adminVersionSelect.value }) });
+    if (!response.ok) throw new Error('Version preview failed');
+    const result = await response.json();
+    const oldContent = parseRemoteAdminContent(result.version?.content);
+    if (oldContent) showAdminDiff('所选版本与当前编辑内容的差异', oldContent, collectAdminContent());
+  } catch {
+    if (adminVersionDiff) {
+      adminVersionDiff.hidden = false;
+      adminVersionDiff.textContent = '暂时无法读取版本差异。';
+    }
+  }
 });
+
+adminPreviewApproval?.addEventListener('click', () => {
+  if (adminPendingContent) showAdminDiff('待审批内容与当前网站的差异', loadAdminContent(), adminPendingContent);
+});
+
+async function handleAdminApproval(action) {
+  const headers = adminSyncHeaders({ 'Content-Type': 'application/json' });
+  if (!headers) return showAdminMessage('请重新登录后台。', true);
+  try {
+    const response = await fetch(ADMIN_CONTENT_API_PATH, { method: 'PUT', headers, body: JSON.stringify({ action }) });
+    if (!response.ok) throw new Error(readableCloudMessage(await response.text()));
+    const result = await response.json();
+    if (action === 'approve-pending' && result.content) {
+      saveEditableContent(parseRemoteAdminContent(result.content), { source: 'approval-publish', updatedAt: result.updatedAt, cloudSynced: true });
+      renderAdminEditor();
+    }
+    renderAdminApproval(null);
+    renderAdminNotifications();
+    showAdminMessage(action === 'approve-pending' ? '审批完成，内容已经发布。' : '待审批内容已退回。');
+    await loadAdminVersions();
+  } catch (error) {
+    showAdminMessage(error instanceof Error ? error.message : '审批操作失败。', true);
+  }
+}
+
+adminApproveContent?.addEventListener('click', () => handleAdminApproval('approve-pending'));
+adminRejectContent?.addEventListener('click', () => handleAdminApproval('reject-pending'));
+adminRunHealthCheck?.addEventListener('click', runAdminHealthCheck);
 adminSchedulePublish?.addEventListener('click', async () => {
   if (!adminScheduleStart?.value) {
     showAdminMessage('请选择开始发布时间。', true);
@@ -7215,6 +7398,18 @@ adminUploadMedia?.addEventListener('click', async () => {
 });
 
 adminMediaLibrary?.addEventListener('click', async event => {
+  const applyButton = event.target instanceof HTMLElement ? event.target.closest('[data-apply-media-url]') : null;
+  if (applyButton instanceof HTMLElement) {
+    const item = applyButton.closest('.admin-media-item');
+    const targetId = item?.querySelector('[data-media-target]')?.value || '';
+    const target = targetId ? document.getElementById(targetId) : null;
+    if (!(target instanceof HTMLInputElement)) return showAdminMessage('请先选择要替换的图片栏目。', true);
+    target.value = applyButton.dataset.applyMediaUrl || '';
+    target.dispatchEvent(new Event('input', { bubbles: true }));
+    showAdminMessage('图片已套用到指定栏目，请预览后保存。');
+    target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    return;
+  }
   const button = event.target instanceof HTMLElement ? event.target.closest('[data-copy-media-url]') : null;
   if (!(button instanceof HTMLElement)) return;
   await copyText(button.dataset.copyMediaUrl || '');
@@ -7443,12 +7638,13 @@ saveAdminContent?.addEventListener('click', async () => {
   });
   refreshAdminContentConsumers({ adminEditor: true });
   try {
+    lastAdminSavePending = false;
     const cloudSaved = await saveAdminContentToCloud(content);
     if (cloudSaved) {
       clearAdminDraft();
       markAdminContentSyncState({
-        source: 'cloud-save',
-        cloudSynced: true,
+        source: lastAdminSavePending ? 'approval-pending' : 'cloud-save',
+        cloudSynced: !lastAdminSavePending,
         updatedAt: localStorage.getItem(ADMIN_CONTENT_UPDATED_AT_KEY) || new Date().toISOString()
       });
       refreshAdminContentConsumers({ adminEditor: true, adminLists: true });
@@ -7462,13 +7658,13 @@ saveAdminContent?.addEventListener('click', async () => {
     }
     setAdminSaveStatus(
       cloudSaved ? 'done' : 'local',
-      cloudSaved ? '云端已同步' : '只保存本机',
+      cloudSaved ? (lastAdminSavePending ? '已提交发布审批' : '云端已同步') : '只保存本机',
       cloudSaved
-        ? '网站、后台和线上版本会读取同一份最新内容。'
+        ? (lastAdminSavePending ? '老板或经理批准后才会更新网站。' : '网站、后台和线上版本会读取同一份最新内容。')
         : '本机内容已更新；请重新登录后台后再保存一次，让云端同步。'
     );
     showAdminMessage(cloudSaved
-      ? '内容已保存到云端，网站会读取同一份最新内容。'
+      ? (lastAdminSavePending ? '内容已提交审批，批准后才会正式发布。' : '内容已保存到云端，网站会读取同一份最新内容。')
       : '内容已更新并保留本地备份；云端暂时未连接。请重新登录后台后再保存一次。');
   } catch (error) {
     console.warn('Supabase admin content save failed', error);

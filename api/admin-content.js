@@ -1,6 +1,7 @@
 const ADMIN_CONTENT_SETTING_KEY = 'admin_content';
 const ADMIN_CONTENT_HISTORY_KEY = 'admin_content_history';
 const ADMIN_CONTENT_SCHEDULE_KEY = 'admin_content_schedule';
+const ADMIN_CONTENT_PENDING_KEY = 'admin_content_pending';
 const STAFF_SETTING_KEY = 'order_staff_accounts_v1';
 const ADMIN_CONTENT_HISTORY_LIMIT = 8;
 const DEFAULT_ADMIN_EMAIL = '9088project@gmail.com';
@@ -272,11 +273,13 @@ module.exports = async function handler(request, response) {
       const schedule = result.configured ? await readSetting(ADMIN_CONTENT_SCHEDULE_KEY, null) : null;
       const scheduledContent = activeScheduledContent(schedule);
       const adminViewer = header(request, 'x-admin-email') ? await authorizeAdmin(request) : null;
+      const pending = adminViewer ? await readSetting(ADMIN_CONTENT_PENDING_KEY, null) : null;
       return send(response, result.configured ? 200 : 503, {
         ok: result.configured,
         content: scheduledContent || result.content,
         scheduled: Boolean(scheduledContent),
         schedule: schedule ? { startAt: schedule.startAt, endAt: schedule.endAt || null, actor: adminViewer ? schedule.actor || '' : '' } : null,
+        pending: pending ? { submittedAt: pending.submittedAt, actor: pending.actor || '', actorName: pending.actorName || '', content: pending.content } : null,
         updatedAt: result.updatedAt || null,
         history: adminViewer ? history.map(version => ({ id: version.id, savedAt: version.savedAt, actor: version.actor || '', actorName: version.actorName || '', changedKeys: version.changedKeys || [] })) : [],
         source: result.configured ? 'supabase' : 'missing-config'
@@ -288,6 +291,34 @@ module.exports = async function handler(request, response) {
       const actor = await authorizeAdmin(request, body);
       if (!actor || actor.role === 'viewer') {
         return send(response, 401, { ok: false, message: 'Unauthorized admin content update.' });
+      }
+
+      if (body.action === 'preview-version') {
+        const history = await readCloudHistory();
+        const version = history.find(item => item.id === body.versionId);
+        if (!version?.content) return send(response, 404, { ok: false, message: 'Saved version was not found.' });
+        return send(response, 200, { ok: true, version: { id: version.id, savedAt: version.savedAt, actor: version.actor || '', content: version.content } });
+      }
+
+      if (body.action === 'submit-approval') {
+        const pending = { content: body.content || {}, actor: actor.email, actorName: actor.name || '', submittedAt: new Date().toISOString() };
+        await writeSetting(ADMIN_CONTENT_PENDING_KEY, pending);
+        return send(response, 200, { ok: true, pending: { submittedAt: pending.submittedAt, actor: pending.actor, actorName: pending.actorName } });
+      }
+
+      if (body.action === 'approve-pending') {
+        if (!['owner', 'manager'].includes(actor.role)) return send(response, 403, { ok: false, message: 'Only owner or manager can approve publishing.' });
+        const pending = await readSetting(ADMIN_CONTENT_PENDING_KEY, null);
+        if (!pending?.content) return send(response, 404, { ok: false, message: 'No pending content was found.' });
+        const result = await writeCloudContent(pending.content, actor);
+        await writeSetting(ADMIN_CONTENT_PENDING_KEY, null);
+        return send(response, 200, { ok: true, source: 'approval-publish', content: result.content, updatedAt: result.updatedAt || null });
+      }
+
+      if (body.action === 'reject-pending') {
+        if (!['owner', 'manager'].includes(actor.role)) return send(response, 403, { ok: false, message: 'Only owner or manager can reject publishing.' });
+        await writeSetting(ADMIN_CONTENT_PENDING_KEY, null);
+        return send(response, 200, { ok: true, pending: null });
       }
 
       if (body.action === 'schedule') {
@@ -322,6 +353,8 @@ module.exports = async function handler(request, response) {
           updatedAt: result.updatedAt || null
         });
       }
+
+      if (actor.role === 'staff') return send(response, 403, { ok: false, message: 'Content editor changes must be submitted for approval.' });
 
       const result = await writeCloudContent(body.content || body.value || {}, actor);
       return send(response, 200, {
