@@ -320,6 +320,11 @@ module.exports = async function handler(request, response) {
         history: adminViewer ? history.map(version => ({ id: version.id, savedAt: version.savedAt, actor: version.actor || '', actorName: version.actorName || '', changedKeys: version.changedKeys || [] })) : [],
         audits: adminViewer ? (Array.isArray(audits) ? audits : []).slice(0, 20) : [],
         backups: adminViewer ? (Array.isArray(backups) ? backups : []).map(item => ({ id: item.id, date: item.date, savedAt: item.savedAt })) : [],
+        capabilities: adminViewer ? {
+          cloudRead: result.configured,
+          cloudWrite: Boolean(supabaseUrl() && supabaseServiceKey()),
+          role: adminViewer.role
+        } : undefined,
         source: result.configured ? 'supabase' : 'missing-config'
       });
     }

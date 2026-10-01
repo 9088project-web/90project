@@ -92,6 +92,7 @@ const adminPreviewClose = document.getElementById('adminPreviewClose');
 const adminRoleBadge = document.getElementById('adminRoleBadge');
 const adminDraftNotice = document.getElementById('adminDraftNotice');
 const adminDraftTime = document.getElementById('adminDraftTime');
+const adminDraftSaveStatus = document.getElementById('adminDraftSaveStatus');
 const adminRestoreDraft = document.getElementById('adminRestoreDraft');
 const adminDiscardDraft = document.getElementById('adminDiscardDraft');
 const adminScheduleStart = document.getElementById('adminScheduleStart');
@@ -218,6 +219,7 @@ const ADMIN_CLOUD_EMAIL_SESSION_KEY = 'np90_admin_cloud_email_v1';
 const ADMIN_CONTENT_ROLE_SESSION_KEY = 'np90_admin_content_role_v1';
 const ADMIN_CONTENT_NAME_SESSION_KEY = 'np90_admin_content_name_v1';
 const ADMIN_CONTENT_DRAFT_KEY = 'np90_admin_content_draft_v1';
+const ADMIN_CONTENT_PREVIEW_KEY = 'np90_admin_content_preview_v1';
 const ADMIN_ATTEMPTS_KEY = 'np90_admin_attempts_v1';
 const ADMIN_LOCK_KEY = 'np90_admin_lock_until_v1';
 const SUPABASE_SESSION_KEY = 'np90_supabase_session_v1';
@@ -3020,6 +3022,10 @@ function normalizeAdminContent(content) {
 
 function loadAdminContent() {
   try {
+    if (new URLSearchParams(window.location.search).has('preview')) {
+      const preview = JSON.parse(localStorage.getItem(ADMIN_CONTENT_PREVIEW_KEY) || 'null');
+      if (preview) return normalizeAdminContent(preview);
+    }
     return normalizeAdminContent(JSON.parse(localStorage.getItem(ADMIN_CONTENT_KEY) || 'null'));
   } catch (error) {
     return defaultAdminContent();
@@ -5637,14 +5643,27 @@ async function validateAdminContentNow() {
   return problems.length === 0;
 }
 
+function adminPreviewDestination() {
+  const activePanel = Array.from(adminDashboard?.querySelectorAll('[data-admin-panel]') || []).find(panel => !panel.hidden)?.dataset.adminPanel || 'site';
+  const destinations = {
+    site: ['index.html', '首页'],
+    meal: ['index.html#menu', '包伙食菜单'],
+    catering: ['catering.html#catering-menu', '外餐菜单'],
+    media: ['index.html#top', '首页媒体'],
+    pages: ['styling.html#top', '独立服务页']
+  };
+  return destinations[activePanel] || destinations.site;
+}
+
 function openAdminContentPreview(device = 'desktop') {
   if (!adminPreviewDialog || !adminPreviewFrame) return;
-  saveEditableContent(collectAdminContent(), { source: 'admin-preview', cloudSynced: false });
-  refreshAdminContentConsumers({ adminEditor: false });
+  localStorage.setItem(ADMIN_CONTENT_PREVIEW_KEY, JSON.stringify(normalizeAdminContent(collectAdminContent())));
   const wrapper = adminPreviewFrame.closest('.admin-preview-frame');
   if (wrapper) wrapper.dataset.device = device;
-  if (adminPreviewTitle) adminPreviewTitle.textContent = device === 'mobile' ? '手机预览 390px' : '电脑预览';
-  adminPreviewFrame.src = `index.html?preview=${Date.now()}#top`;
+  const [target, label] = adminPreviewDestination();
+  const [path, hash = ''] = target.split('#');
+  if (adminPreviewTitle) adminPreviewTitle.textContent = `${label} · ${device === 'mobile' ? '手机 390px' : '电脑'}`;
+  adminPreviewFrame.src = `${path}?preview=${Date.now()}${hash ? `#${hash}` : ''}`;
   adminPreviewDialog.showModal();
   setAdminSaveStatus('local', '草稿预览中', '预览使用当前草稿；确认无误后请保存到云端。');
 }
@@ -5758,7 +5777,9 @@ function readAdminDraft() {
 function saveAdminDraft() {
   if (!adminDashboard || adminDashboard.hidden || adminContentRole === 'viewer') return;
   try {
-    localStorage.setItem(ADMIN_CONTENT_DRAFT_KEY, JSON.stringify({ content: collectAdminContent(), savedAt: new Date().toISOString(), editor: adminSyncEmail() }));
+    const savedAt = new Date().toISOString();
+    localStorage.setItem(ADMIN_CONTENT_DRAFT_KEY, JSON.stringify({ content: collectAdminContent(), savedAt, editor: adminSyncEmail() }));
+    if (adminDraftSaveStatus) adminDraftSaveStatus.innerHTML = `<i class="ri-check-line" aria-hidden="true"></i> 草稿已自动保存 · ${escapeHtml(formatAdminVersionDate(savedAt))}`;
   } catch (error) {
     console.warn('Unable to save admin draft', error);
   }
@@ -5767,6 +5788,7 @@ function saveAdminDraft() {
 function clearAdminDraft() {
   localStorage.removeItem(ADMIN_CONTENT_DRAFT_KEY);
   if (adminDraftNotice) adminDraftNotice.hidden = true;
+  if (adminDraftSaveStatus) adminDraftSaveStatus.innerHTML = '<i class="ri-cloud-line" aria-hidden="true"></i> 已发布，无待保存草稿';
 }
 
 function showAdminDraftNotice() {
@@ -5774,6 +5796,7 @@ function showAdminDraftNotice() {
   if (!adminDraftNotice) return;
   adminDraftNotice.hidden = !draft;
   if (draft && adminDraftTime) adminDraftTime.textContent = `保存于 ${formatAdminVersionDate(draft.savedAt)}${draft.editor ? ` · ${draft.editor}` : ''}`;
+  if (draft && adminDraftSaveStatus) adminDraftSaveStatus.innerHTML = `<i class="ri-draft-line" aria-hidden="true"></i> 有自动草稿 · ${escapeHtml(formatAdminVersionDate(draft.savedAt))}`;
 }
 
 function fileAsDataUrl(file) {
@@ -5822,15 +5845,31 @@ function renderAdminMediaLibrary(files = []) {
   if (!adminMediaLibrary) return;
   const targets = adminImageTargets();
   const targetOptions = targets.map(target => `<option value="${escapeHtml(target.id)}">${escapeHtml(target.label)}</option>`).join('');
-  adminMediaLibrary.innerHTML = files.length ? files.map(file => `
+  const flattened = flattenAdminContent(collectAdminContent());
+  adminMediaLibrary.innerHTML = files.length ? files.map(file => {
+    const references = Object.entries(flattened).filter(([, value]) => mediaValueMatches(value, file.url, file.name)).map(([key]) => key);
+    return `
     <article class="admin-media-item">
       <img src="${escapeHtml(file.url)}" alt="${escapeHtml(file.name || '云端图片')}" loading="lazy">
+      <p class="admin-media-usage ${references.length ? 'is-used' : ''}">${references.length ? `使用中 · ${references.length} 个位置` : '未使用'}</p>
       <select data-media-target><option value="">选择要替换的栏目</option>${targetOptions}</select>
       <button type="button" data-apply-media-url="${escapeHtml(file.url)}"><i class="ri-image-add-line" aria-hidden="true"></i>套用到栏目</button>
       <button type="button" data-copy-media-url="${escapeHtml(file.url)}"><i class="ri-file-copy-line" aria-hidden="true"></i>复制图片网址</button>
-      ${['owner', 'manager'].includes(adminContentRole) ? `<button type="button" data-delete-media-name="${escapeHtml(file.name)}"><i class="ri-delete-bin-6-line" aria-hidden="true"></i>删除云端图片</button>` : ''}
-    </article>
-  `).join('') : '<p>还没有上传云端图片。</p>';
+      ${['owner', 'manager'].includes(adminContentRole) ? `<button type="button" data-delete-media-name="${escapeHtml(file.name)}" data-delete-media-url="${escapeHtml(file.url)}"><i class="ri-delete-bin-6-line" aria-hidden="true"></i>删除云端图片</button>` : ''}
+    </article>`;
+  }).join('') : '<p>还没有上传云端图片。</p>';
+}
+
+function mediaValueMatches(value, url, name) {
+  const candidate = String(value || '').split('?')[0].replace(/\\/g, '/');
+  const mediaUrl = String(url || '').split('?')[0].replace(/\\/g, '/');
+  return Boolean(candidate && (candidate === mediaUrl || candidate.endsWith(`/admin/${name}`) || candidate.endsWith(`/${name}`)));
+}
+
+function adminMediaReferences(url, name) {
+  return Object.entries(flattenAdminContent(collectAdminContent()))
+    .filter(([, value]) => mediaValueMatches(value, url, name))
+    .map(([key]) => key);
 }
 
 function renderAdminNotifications() {
@@ -5851,18 +5890,26 @@ async function runAdminHealthCheck() {
   adminHealthStatus.textContent = '检查中...';
   const paths = ['index.html', 'catering.html', 'member.html', 'orders.html', 'admin.html', 'js/app.js', 'api/admin-content'];
   const failures = [];
+  const headers = adminSyncHeaders() || {};
   for (const path of paths) {
     try {
-      const response = await fetch(`${path}?health=${Date.now()}`, { cache: 'no-store' });
+      const response = await fetch(`${path}?health=${Date.now()}`, { cache: 'no-store', headers: path.startsWith('api/') ? headers : {} });
       if (!response.ok) failures.push(`${path} 无法打开`);
       else if (path === 'index.html' && !(await response.text()).includes('wa.me/60189490908')) failures.push('首页 WhatsApp 号码异常');
       else if (path === 'api/admin-content') {
         const payload = await response.json().catch(() => null);
         if (!payload?.ok || !payload.content) failures.push('云端内容无法读取');
+        if (!payload?.capabilities?.cloudWrite) failures.push('云端内容暂时无法写入');
       }
     } catch {
       failures.push(`${path} 无法连接`);
     }
+  }
+  try {
+    const mediaResponse = await fetch(`${ADMIN_MEDIA_API_PATH}?health=${Date.now()}`, { cache: 'no-store', headers });
+    if (!mediaResponse.ok) failures.push('云端图片服务无法读取');
+  } catch {
+    failures.push('云端图片服务无法连接');
   }
   adminHealthStatus.textContent = failures.length ? `${failures.length} 项异常` : '全部正常';
   adminHealthText.textContent = failures.join('；') || '主要页面和 WhatsApp 链接均可正常读取。';
@@ -7356,6 +7403,7 @@ adminDashboard?.addEventListener('input', event => {
   if (event.target.closest('.admin-control-center')) return;
   setAdminSaveStatus('local', '有尚未保存的修改', '当前修改只在编辑器内，完成后请保存到云端。');
   window.clearTimeout(adminDraftTimer);
+  if (adminDraftSaveStatus) adminDraftSaveStatus.innerHTML = '<i class="ri-loader-4-line" aria-hidden="true"></i> 正在保存草稿...';
   adminDraftTimer = window.setTimeout(saveAdminDraft, 700);
 });
 
@@ -7390,6 +7438,7 @@ adminPreviewClose?.addEventListener('click', () => adminPreviewDialog?.close());
 adminPreviewDialog?.addEventListener('click', event => {
   if (event.target === adminPreviewDialog) adminPreviewDialog.close();
 });
+adminPreviewDialog?.addEventListener('close', () => localStorage.removeItem(ADMIN_CONTENT_PREVIEW_KEY));
 adminVersionSelect?.addEventListener('change', async () => {
   if (adminRestoreVersion) adminRestoreVersion.disabled = !adminVersionSelect.value;
   if (!adminVersionSelect.value) {
@@ -7541,7 +7590,12 @@ adminMediaLibrary?.addEventListener('click', async event => {
   const deleteButton = event.target instanceof HTMLElement ? event.target.closest('[data-delete-media-name]') : null;
   if (deleteButton instanceof HTMLElement) {
     const name = deleteButton.dataset.deleteMediaName || '';
-    if (!name || !window.confirm(`删除云端图片「${name}」？如果网站正在使用这张图片，请先替换栏目图片。`)) return;
+    const references = adminMediaReferences(deleteButton.dataset.deleteMediaUrl || '', name);
+    if (references.length) {
+      showAdminMessage(`这张图片正在 ${references.length} 个位置使用，不能删除。请先替换对应栏目：${references.slice(0, 3).join('、')}`, true);
+      return;
+    }
+    if (!name || !window.confirm(`删除未使用的云端图片「${name}」？删除后无法恢复。`)) return;
     const headers = adminSyncHeaders({ 'Content-Type': 'application/json' });
     if (!headers) return showAdminMessage('请重新登录后台。', true);
     deleteButton.setAttribute('disabled', '');
@@ -8130,7 +8184,7 @@ form?.addEventListener('submit', event => {
 
 async function initializeApp() {
   await loadSupabaseRuntimeConfig();
-  await loadAdminContentFromCloud();
+  if (!new URLSearchParams(window.location.search).has('preview')) await loadAdminContentFromCloud();
   initializeMealPlanDates();
   refreshCateringInterface();
   if (document.body?.dataset.detailPage === 'catering') {
