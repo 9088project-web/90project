@@ -2,8 +2,12 @@ const ADMIN_CONTENT_SETTING_KEY = 'admin_content';
 const ADMIN_CONTENT_HISTORY_KEY = 'admin_content_history';
 const ADMIN_CONTENT_SCHEDULE_KEY = 'admin_content_schedule';
 const ADMIN_CONTENT_PENDING_KEY = 'admin_content_pending';
+const ADMIN_CONTENT_AUDIT_KEY = 'admin_content_audit';
+const ADMIN_CONTENT_BACKUP_KEY = 'admin_content_daily_backups';
 const STAFF_SETTING_KEY = 'order_staff_accounts_v1';
 const ADMIN_CONTENT_HISTORY_LIMIT = 8;
+const ADMIN_CONTENT_AUDIT_LIMIT = 40;
+const ADMIN_CONTENT_BACKUP_LIMIT = 14;
 const DEFAULT_ADMIN_EMAIL = '9088project@gmail.com';
 const DEFAULT_ADMIN_PASSWORD_HASH = '7045830c';
 
@@ -176,6 +180,35 @@ async function writeSetting(keyName, value) {
   });
 }
 
+async function recordAudit(action, actor = {}, detail = {}) {
+  const entries = await readSetting(ADMIN_CONTENT_AUDIT_KEY, []);
+  const next = [{
+    id: `audit-${Date.now()}`,
+    action,
+    actor: actor.email || 'system',
+    actorName: actor.name || '系统',
+    role: actor.role || 'system',
+    createdAt: new Date().toISOString(),
+    ...detail
+  }, ...(Array.isArray(entries) ? entries : [])].slice(0, ADMIN_CONTENT_AUDIT_LIMIT);
+  await writeSetting(ADMIN_CONTENT_AUDIT_KEY, next);
+}
+
+async function createDailyBackup(content, updatedAt) {
+  if (!content) return;
+  const today = new Date().toISOString().slice(0, 10);
+  const backups = await readSetting(ADMIN_CONTENT_BACKUP_KEY, []);
+  const list = Array.isArray(backups) ? backups : [];
+  if (list.some(item => item.date === today)) return;
+  await writeSetting(ADMIN_CONTENT_BACKUP_KEY, [{
+    id: `backup-${today}`,
+    date: today,
+    savedAt: new Date().toISOString(),
+    sourceUpdatedAt: updatedAt || null,
+    content
+  }, ...list].slice(0, ADMIN_CONTENT_BACKUP_LIMIT));
+}
+
 async function authorizeAdmin(request, body = {}) {
   const email = String(header(request, 'x-admin-email') || body.adminEmail || '').trim().toLowerCase();
   const password = String(header(request, 'x-admin-password') || body.adminPassword || '');
@@ -231,6 +264,7 @@ async function writeCloudContent(content, actor = {}) {
   }
 
   const current = await readCloudContent();
+  await createDailyBackup(current.content, current.updatedAt);
   const history = await readCloudHistory();
   if (current.content) {
     const currentSerialized = typeof current.content === 'string' ? current.content : JSON.stringify(current.content);
@@ -274,6 +308,8 @@ module.exports = async function handler(request, response) {
       const scheduledContent = activeScheduledContent(schedule);
       const adminViewer = header(request, 'x-admin-email') ? await authorizeAdmin(request) : null;
       const pending = adminViewer ? await readSetting(ADMIN_CONTENT_PENDING_KEY, null) : null;
+      const audits = adminViewer ? await readSetting(ADMIN_CONTENT_AUDIT_KEY, []) : [];
+      const backups = adminViewer ? await readSetting(ADMIN_CONTENT_BACKUP_KEY, []) : [];
       return send(response, result.configured ? 200 : 503, {
         ok: result.configured,
         content: scheduledContent || result.content,
@@ -282,6 +318,8 @@ module.exports = async function handler(request, response) {
         pending: pending ? { submittedAt: pending.submittedAt, actor: pending.actor || '', actorName: pending.actorName || '', content: pending.content } : null,
         updatedAt: result.updatedAt || null,
         history: adminViewer ? history.map(version => ({ id: version.id, savedAt: version.savedAt, actor: version.actor || '', actorName: version.actorName || '', changedKeys: version.changedKeys || [] })) : [],
+        audits: adminViewer ? (Array.isArray(audits) ? audits : []).slice(0, 20) : [],
+        backups: adminViewer ? (Array.isArray(backups) ? backups : []).map(item => ({ id: item.id, date: item.date, savedAt: item.savedAt })) : [],
         source: result.configured ? 'supabase' : 'missing-config'
       });
     }
@@ -303,6 +341,7 @@ module.exports = async function handler(request, response) {
       if (body.action === 'submit-approval') {
         const pending = { content: body.content || {}, actor: actor.email, actorName: actor.name || '', submittedAt: new Date().toISOString() };
         await writeSetting(ADMIN_CONTENT_PENDING_KEY, pending);
+        await recordAudit('提交发布审批', actor, { changedKeys: contentDifference((await readCloudContent()).content || {}, body.content || {}) });
         return send(response, 200, { ok: true, pending: { submittedAt: pending.submittedAt, actor: pending.actor, actorName: pending.actorName } });
       }
 
@@ -312,12 +351,14 @@ module.exports = async function handler(request, response) {
         if (!pending?.content) return send(response, 404, { ok: false, message: 'No pending content was found.' });
         const result = await writeCloudContent(pending.content, actor);
         await writeSetting(ADMIN_CONTENT_PENDING_KEY, null);
+        await recordAudit('批准并发布内容', actor, { submittedBy: pending.actor || '' });
         return send(response, 200, { ok: true, source: 'approval-publish', content: result.content, updatedAt: result.updatedAt || null });
       }
 
       if (body.action === 'reject-pending') {
         if (!['owner', 'manager'].includes(actor.role)) return send(response, 403, { ok: false, message: 'Only owner or manager can reject publishing.' });
         await writeSetting(ADMIN_CONTENT_PENDING_KEY, null);
+        await recordAudit('退回待审批内容', actor);
         return send(response, 200, { ok: true, pending: null });
       }
 
@@ -330,12 +371,14 @@ module.exports = async function handler(request, response) {
         }
         const schedule = { content: body.content || {}, startAt: startAt.toISOString(), endAt: endAt?.toISOString() || null, actor: actor.email, createdAt: new Date().toISOString() };
         await writeSetting(ADMIN_CONTENT_SCHEDULE_KEY, schedule);
+        await recordAudit('设定自动发布', actor, { startAt: schedule.startAt, endAt: schedule.endAt });
         return send(response, 200, { ok: true, schedule: { startAt: schedule.startAt, endAt: schedule.endAt, actor: schedule.actor } });
       }
 
       if (body.action === 'cancel-schedule') {
         if (!['owner', 'manager'].includes(actor.role)) return send(response, 403, { ok: false, message: 'Only owner or manager can cancel scheduled publishing.' });
         await writeSetting(ADMIN_CONTENT_SCHEDULE_KEY, null);
+        await recordAudit('取消自动发布', actor);
         return send(response, 200, { ok: true, schedule: null });
       }
 
@@ -346,6 +389,7 @@ module.exports = async function handler(request, response) {
         if (!version?.content) return send(response, 404, { ok: false, message: 'Saved version was not found.' });
         const restoredContent = typeof version.content === 'string' ? JSON.parse(version.content) : version.content;
         const result = await writeCloudContent(restoredContent, actor);
+        await recordAudit('恢复历史版本', actor, { versionId: body.versionId });
         return send(response, 200, {
           ok: true,
           source: 'supabase-version-restore',
@@ -356,7 +400,14 @@ module.exports = async function handler(request, response) {
 
       if (actor.role === 'staff') return send(response, 403, { ok: false, message: 'Content editor changes must be submitted for approval.' });
 
-      const result = await writeCloudContent(body.content || body.value || {}, actor);
+      const nextContent = body.content || body.value || {};
+      const currentContent = await readCloudContent();
+      const changedKeys = contentDifference(
+        typeof currentContent.content === 'string' ? JSON.parse(currentContent.content) : currentContent.content || {},
+        nextContent
+      );
+      const result = await writeCloudContent(nextContent, actor);
+      await recordAudit('发布网站内容', actor, { changedKeys });
       return send(response, 200, {
         ok: true,
         source: 'supabase',

@@ -140,7 +140,9 @@
           <article><span>通知中心</span><strong id="adminNotificationCount">0 项待处理</strong><p id="adminNotificationText">系统目前正常。</p></article>
           <article><span>网站健康</span><strong id="adminHealthStatus">等待检查</strong><p id="adminHealthText">登录后会自动检查主要页面和 WhatsApp 链接。</p><button type="button" id="adminRunHealthCheck">立即检查</button></article>
           <article><span>内容成效</span><strong id="adminAnalyticsTotal">0 次互动</strong><p id="adminAnalyticsText">暂时没有转化记录。</p></article>
+          <article><span>云端保障</span><strong id="adminBackupStatus">等待读取</strong><p id="adminBackupText">每日自动备份，并记录所有发布操作。</p><button type="button" id="adminShowAudit">查看操作记录</button></article>
         </div>
+        <div class="admin-audit-log" id="adminAuditLog" hidden></div>
       </section>
 
       <section class="admin-section" data-admin-panel="site">
@@ -352,6 +354,16 @@
       <button type="button" id="adminPreviewClose" aria-label="关闭预览"><i class="ri-close-line" aria-hidden="true"></i></button>
     </div>
     <div class="admin-preview-frame" data-device="desktop"><iframe id="adminPreviewFrame" title="网站内容预览"></iframe></div>
+  </dialog>
+
+  <dialog class="admin-publish-dialog" id="adminPublishDialog">
+    <div class="admin-publish-head"><div><span>PUBLISH REVIEW</span><strong>确认发布内容</strong></div><button type="button" id="adminPublishCancel" aria-label="关闭"><i class="ri-close-line" aria-hidden="true"></i></button></div>
+    <div class="admin-publish-body">
+      <p id="adminPublishSummary">正在整理修改内容...</p>
+      <div class="admin-publish-warning" id="adminPublishWarning" hidden><i class="ri-error-warning-line" aria-hidden="true"></i><div><strong>包含重要设置</strong><p>电话号码、WhatsApp 或价格规则已修改，请确认无误。</p></div></div>
+      <div class="admin-publish-changes" id="adminPublishChanges"></div>
+    </div>
+    <div class="admin-publish-actions"><button type="button" id="adminPublishBack">返回检查</button><button type="button" id="adminPublishConfirm"><i class="ri-send-plane-fill" aria-hidden="true"></i>确认发布</button></div>
   </dialog>
 
   <script src="js/app.js?v=20260818-reset-live"></script>

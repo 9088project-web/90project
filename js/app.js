@@ -118,6 +118,17 @@ const adminHealthText = document.getElementById('adminHealthText');
 const adminRunHealthCheck = document.getElementById('adminRunHealthCheck');
 const adminAnalyticsTotal = document.getElementById('adminAnalyticsTotal');
 const adminAnalyticsText = document.getElementById('adminAnalyticsText');
+const adminBackupStatus = document.getElementById('adminBackupStatus');
+const adminBackupText = document.getElementById('adminBackupText');
+const adminShowAudit = document.getElementById('adminShowAudit');
+const adminAuditLog = document.getElementById('adminAuditLog');
+const adminPublishDialog = document.getElementById('adminPublishDialog');
+const adminPublishSummary = document.getElementById('adminPublishSummary');
+const adminPublishWarning = document.getElementById('adminPublishWarning');
+const adminPublishChanges = document.getElementById('adminPublishChanges');
+const adminPublishCancel = document.getElementById('adminPublishCancel');
+const adminPublishBack = document.getElementById('adminPublishBack');
+const adminPublishConfirm = document.getElementById('adminPublishConfirm');
 const adminDataStatus = document.getElementById('adminDataStatus');
 const adminInquiries = document.getElementById('adminInquiries');
 const adminMemberStatus = document.getElementById('adminMemberStatus');
@@ -721,6 +732,9 @@ let adminContentName = '老板';
 let adminDraftTimer = 0;
 let adminPendingContent = null;
 let lastAdminSavePending = false;
+let adminPublishedContent = null;
+let adminAuditEntries = [];
+let adminPublishResolver = null;
 let selectedMealPackageId = 'one-meat-two-veg-fruit';
 let selectedMealPackageMeals = 20;
 
@@ -3054,6 +3068,8 @@ async function loadAdminContentFromCloudApi() {
     const response = await fetch(`${ADMIN_CONTENT_API_PATH}?v=${Date.now()}`, { cache: 'no-store', headers: headers || {} });
     if (!response.ok) return false;
     const result = await response.json();
+    adminPublishedContent = parseRemoteAdminContent(result.content) || normalizeAdminContent(loadAdminContent());
+    adminAuditEntries = Array.isArray(result.audits) ? result.audits : [];
     const content = parseRemoteAdminContent(result?.content);
     if (!content) return false;
     saveEditableContent(content, {
@@ -3151,6 +3167,23 @@ async function saveAdminContentToSupabase(content) {
 
 async function saveAdminContentToCloud(content) {
   return (await saveAdminContentToCloudApi(content)) || (await saveAdminContentToSupabase(content));
+}
+
+async function saveAdminContentWithRetry(content, attempts = 3) {
+  let lastError = null;
+  for (let attempt = 1; attempt <= attempts; attempt += 1) {
+    try {
+      const saved = await saveAdminContentToCloud(content);
+      if (saved || attempt === attempts) return saved;
+    } catch (error) {
+      lastError = error;
+      if (attempt === attempts) throw error;
+    }
+    setAdminSaveStatus('saving', `云端同步重试 ${attempt}/${attempts - 1}`, '网络不稳定，系统正在自动重试。');
+    await new Promise(resolve => window.setTimeout(resolve, attempt * 700));
+  }
+  if (lastError) throw lastError;
+  return false;
 }
 
 function adminSyncPassword() {
@@ -5553,6 +5586,7 @@ async function loadAdminVersions() {
     if (adminRestoreVersion) adminRestoreVersion.disabled = true;
     renderAdminSchedule(result.schedule, result.scheduled);
     renderAdminApproval(result.pending);
+    renderAdminCloudProtection(result.backups, adminAuditEntries);
     renderAdminNotifications();
   } catch {
     adminVersionSelect.innerHTML = '<option value="">版本读取失败，请稍后重试</option>';
@@ -5649,6 +5683,50 @@ function showAdminDiff(title, before, after) {
   adminVersionDiff.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 }
 
+function renderAdminCloudProtection(backups = [], audits = []) {
+  const backupList = Array.isArray(backups) ? backups : [];
+  if (adminBackupStatus) adminBackupStatus.textContent = backupList.length ? `${backupList.length} 份每日备份` : '首次发布后备份';
+  if (adminBackupText) adminBackupText.textContent = backupList.length
+    ? `最近备份：${formatAdminVersionDate(backupList[0].savedAt)} · 操作记录 ${audits.length} 条`
+    : `操作记录 ${audits.length} 条；下次发布时会建立第一份每日备份。`;
+  if (!adminAuditLog) return;
+  adminAuditLog.innerHTML = audits.length ? audits.map(entry => `
+    <article class="admin-audit-entry">
+      <strong>${escapeHtml(entry.action || '后台操作')}</strong>
+      <span>${escapeHtml(formatAdminVersionDate(entry.createdAt))}</span>
+      <small>${escapeHtml(entry.actorName || entry.actor || '系统')}${entry.changedKeys?.length ? ` · ${entry.changedKeys.length} 项修改` : ''}</small>
+    </article>
+  `).join('') : '<p>目前还没有发布操作记录。</p>';
+}
+
+function closeAdminPublishReview(result) {
+  if (adminPublishDialog?.open) adminPublishDialog.close();
+  if (adminPublishResolver) adminPublishResolver(result);
+  adminPublishResolver = null;
+}
+
+function confirmAdminPublish(content) {
+  if (!adminPublishDialog) return Promise.resolve(window.confirm('确认发布这些内容到网站吗？'));
+  const before = adminPublishedContent || normalizeAdminContent(loadAdminContent());
+  const changes = adminContentDifferences(before, content, 80);
+  const criticalPattern = /(?:contact\.(?:phone|whatsapp)|price|total|average|minimum|catering.*(?:price|rate|fee|pax))/i;
+  const critical = changes.filter(item => criticalPattern.test(item.key));
+  if (adminPublishSummary) adminPublishSummary.textContent = changes.length
+    ? `这次共有 ${changes.length} 项修改。确认后将同步到云端并更新网站。`
+    : '内容没有变化，可以返回继续编辑。';
+  if (adminPublishWarning) adminPublishWarning.hidden = critical.length === 0;
+  if (adminPublishChanges) adminPublishChanges.innerHTML = changes.length ? changes.slice(0, 30).map(item => `
+    <article class="admin-publish-change">
+      <strong>${escapeHtml(item.key)}</strong>
+      <del>原本：${escapeHtml(item.before).slice(0, 180)}</del>
+      <ins>更新：${escapeHtml(item.after).slice(0, 180)}</ins>
+    </article>
+  `).join('') : '<p>没有需要发布的修改。</p>';
+  if (adminPublishConfirm) adminPublishConfirm.disabled = changes.length === 0;
+  adminPublishDialog.showModal();
+  return new Promise(resolve => { adminPublishResolver = resolve; });
+}
+
 function adminImageTargets() {
   const selectors = '[data-field*="image"], [data-field*="gallery"], #adminVideoPoster';
   return Array.from(adminDashboard?.querySelectorAll(selectors) || []).filter(field => field instanceof HTMLInputElement && !field.readOnly).map((field, index) => {
@@ -5699,17 +5777,35 @@ function fileAsDataUrl(file) {
 
 async function prepareAdminImage(file) {
   if (!file.type.startsWith('image/')) throw new Error(`${file.name} 不是图片。`);
-  const bitmap = await createImageBitmap(file);
-  const scale = Math.min(1, 1920 / Math.max(bitmap.width, bitmap.height));
+  let imageSource;
+  let cleanup = () => {};
+  if ('createImageBitmap' in window) {
+    try {
+      imageSource = await createImageBitmap(file);
+      cleanup = () => imageSource.close?.();
+    } catch {}
+  }
+  if (!imageSource) {
+    imageSource = await new Promise((resolve, reject) => {
+      const image = new Image();
+      const url = URL.createObjectURL(file);
+      image.onload = () => { cleanup = () => URL.revokeObjectURL(url); resolve(image); };
+      image.onerror = () => { URL.revokeObjectURL(url); reject(new Error(`${file.name} 无法读取。`)); };
+      image.src = url;
+    });
+  }
+  const width = imageSource.width || imageSource.naturalWidth;
+  const height = imageSource.height || imageSource.naturalHeight;
+  const scale = Math.min(1, 1920 / Math.max(width, height));
   const canvas = document.createElement('canvas');
-  canvas.width = Math.max(1, Math.round(bitmap.width * scale));
-  canvas.height = Math.max(1, Math.round(bitmap.height * scale));
-  canvas.getContext('2d', { alpha: false }).drawImage(bitmap, 0, 0, canvas.width, canvas.height);
-  bitmap.close();
+  canvas.width = Math.max(1, Math.round(width * scale));
+  canvas.height = Math.max(1, Math.round(height * scale));
+  canvas.getContext('2d', { alpha: false }).drawImage(imageSource, 0, 0, canvas.width, canvas.height);
+  cleanup();
   const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/webp', 0.84));
-  if (!blob) return { name: file.name, type: file.type, data: await fileAsDataUrl(file) };
+  if (!blob) return { name: file.name, type: file.type, data: await fileAsDataUrl(file), originalBytes: file.size, optimizedBytes: file.size };
   const optimized = new File([blob], file.name.replace(/\.[^.]+$/, '.webp'), { type: 'image/webp' });
-  return { name: optimized.name, type: optimized.type, data: await fileAsDataUrl(optimized) };
+  return { name: optimized.name, type: optimized.type, data: await fileAsDataUrl(optimized), originalBytes: file.size, optimizedBytes: optimized.size };
 }
 
 function renderAdminMediaLibrary(files = []) {
@@ -5742,13 +5838,17 @@ function renderAdminNotifications() {
 async function runAdminHealthCheck() {
   if (!adminHealthStatus || !adminHealthText) return;
   adminHealthStatus.textContent = '检查中...';
-  const paths = ['index.html', 'catering.html', 'member.html', 'orders.html'];
+  const paths = ['index.html', 'catering.html', 'member.html', 'orders.html', 'admin.html', 'js/app.js', 'api/admin-content'];
   const failures = [];
   for (const path of paths) {
     try {
       const response = await fetch(`${path}?health=${Date.now()}`, { cache: 'no-store' });
       if (!response.ok) failures.push(`${path} 无法打开`);
       else if (path === 'index.html' && !(await response.text()).includes('wa.me/60189490908')) failures.push('首页 WhatsApp 号码异常');
+      else if (path === 'api/admin-content') {
+        const payload = await response.json().catch(() => null);
+        if (!payload?.ok || !payload.content) failures.push('云端内容无法读取');
+      }
     } catch {
       failures.push(`${path} 无法连接`);
     }
@@ -7328,6 +7428,18 @@ async function handleAdminApproval(action) {
 adminApproveContent?.addEventListener('click', () => handleAdminApproval('approve-pending'));
 adminRejectContent?.addEventListener('click', () => handleAdminApproval('reject-pending'));
 adminRunHealthCheck?.addEventListener('click', runAdminHealthCheck);
+adminShowAudit?.addEventListener('click', () => {
+  if (!adminAuditLog) return;
+  adminAuditLog.hidden = !adminAuditLog.hidden;
+  adminShowAudit.textContent = adminAuditLog.hidden ? '查看操作记录' : '收起操作记录';
+});
+adminPublishCancel?.addEventListener('click', () => closeAdminPublishReview(false));
+adminPublishBack?.addEventListener('click', () => closeAdminPublishReview(false));
+adminPublishConfirm?.addEventListener('click', () => closeAdminPublishReview(true));
+adminPublishDialog?.addEventListener('cancel', event => {
+  event.preventDefault();
+  closeAdminPublishReview(false);
+});
 adminSchedulePublish?.addEventListener('click', async () => {
   if (!adminScheduleStart?.value) {
     showAdminMessage('请选择开始发布时间。', true);
@@ -7380,14 +7492,19 @@ adminUploadMedia?.addEventListener('click', async () => {
   adminUploadMedia.disabled = true;
   if (adminMediaStatus) adminMediaStatus.textContent = `正在上传 0 / ${files.length}`;
   try {
+    let originalBytes = 0;
+    let optimizedBytes = 0;
     for (let index = 0; index < files.length; index += 1) {
       const file = files[index];
       const prepared = await prepareAdminImage(file);
+      originalBytes += prepared.originalBytes || file.size;
+      optimizedBytes += prepared.optimizedBytes || file.size;
       const response = await fetch(ADMIN_MEDIA_API_PATH, { method: 'POST', headers, body: JSON.stringify(prepared) });
       if (!response.ok) throw new Error(readableCloudMessage(await response.text(), `${file.name} 上传失败。`));
       if (adminMediaStatus) adminMediaStatus.textContent = `正在上传 ${index + 1} / ${files.length}`;
     }
-    if (adminMediaStatus) adminMediaStatus.textContent = `${files.length} 张图片已上传到云端。`;
+    const savedPercent = originalBytes ? Math.max(0, Math.round((1 - optimizedBytes / originalBytes) * 100)) : 0;
+    if (adminMediaStatus) adminMediaStatus.textContent = `${files.length} 张图片已优化并上传到云端${savedPercent ? `，容量减少 ${savedPercent}%` : ''}。`;
     if (adminMediaFiles) adminMediaFiles.value = '';
     await loadAdminMediaLibrary();
   } catch (error) {
@@ -7631,16 +7748,22 @@ saveAdminContent?.addEventListener('click', async () => {
     showAdminMessage('内容检查未通过，暂时没有保存。', true);
     return;
   }
+  const collectedContent = normalizeAdminContent(collectAdminContent());
+  if (!(await confirmAdminPublish(collectedContent))) {
+    setAdminSaveStatus('local', '尚未发布', '修改仍保留在草稿中。');
+    return;
+  }
   setAdminSaveStatus('saving', '正在同步云端', '正在把后台内容保存到云端。');
-  const content = saveEditableContent(collectAdminContent(), {
+  const content = saveEditableContent(collectedContent, {
     source: 'admin-local',
     cloudSynced: false
   });
   refreshAdminContentConsumers({ adminEditor: true });
   try {
     lastAdminSavePending = false;
-    const cloudSaved = await saveAdminContentToCloud(content);
+    const cloudSaved = await saveAdminContentWithRetry(content);
     if (cloudSaved) {
+      adminPublishedContent = normalizeAdminContent(content);
       clearAdminDraft();
       markAdminContentSyncState({
         source: lastAdminSavePending ? 'approval-pending' : 'cloud-save',
