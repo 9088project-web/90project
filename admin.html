@@ -44,6 +44,7 @@
           <span>CONTENT ADMIN</span>
           <h1>全站内容控制中心</h1>
           <p>后台修改会同步到 Supabase 云端；本机只保留离线备份，网站会读取同一份云端内容。</p>
+          <small class="admin-role-badge" id="adminRoleBadge">老板 · 完整权限</small>
         </div>
         <button class="btn btn-outline" id="adminLogout" type="button"><i class="ri-logout-box-r-line" aria-hidden="true"></i>退出后台</button>
       </div>
@@ -99,6 +100,11 @@
         <p>保存后，网站、后台和线上版本会读取同一份最新内容。</p>
       </div>
 
+      <div class="admin-draft-notice" id="adminDraftNotice" hidden>
+        <div><strong>找到尚未发布的自动草稿</strong><p id="adminDraftTime">可恢复上次离开前的修改。</p></div>
+        <div><button type="button" id="adminRestoreDraft">恢复草稿</button><button type="button" id="adminDiscardDraft">删除草稿</button></div>
+      </div>
+
       <section class="admin-control-center" aria-label="内容管理工具">
         <div class="admin-control-main">
           <div><span>CONTENT TOOLS</span><h2>发布与检查</h2><p>保存前检查内容，在电脑或手机尺寸预览，并可恢复最近的云端版本。</p></div>
@@ -111,6 +117,13 @@
         <div class="admin-version-tools">
           <label>最近云端版本<select id="adminVersionSelect"><option value="">读取中...</option></select></label>
           <button class="btn btn-outline" id="adminRestoreVersion" type="button" disabled><i class="ri-history-line" aria-hidden="true"></i>恢复所选版本</button>
+        </div>
+        <div class="admin-schedule-tools">
+          <label>开始发布<input id="adminScheduleStart" type="datetime-local"></label>
+          <label>结束发布（可不填）<input id="adminScheduleEnd" type="datetime-local"></label>
+          <button type="button" id="adminSchedulePublish"><i class="ri-calendar-schedule-line" aria-hidden="true"></i>设定自动发布</button>
+          <button type="button" id="adminCancelSchedule"><i class="ri-calendar-close-line" aria-hidden="true"></i>取消排程</button>
+          <p id="adminScheduleStatus">目前没有定时发布内容。</p>
         </div>
         <div class="admin-validation-result" id="adminValidationResult" hidden aria-live="polite"></div>
       </section>
@@ -153,6 +166,12 @@
 
       <section class="admin-section" data-admin-panel="media" hidden>
         <div class="admin-section-head"><div><h2>首页媒体与案例</h2><p>可以替换首页主图、菜单照片、四张服务照片和联系图片区；图片填写项目内相对路径。</p></div><button type="button" id="addCaseRow">新增案例</button></div>
+        <div class="admin-media-library">
+          <div><span>云端图片中心</span><h3>从手机或电脑上传图片</h3><p>支持一次选择多张照片，系统会自动压缩成网页尺寸。上传后复制网址，贴入下面对应的图片栏。</p></div>
+          <div class="admin-media-upload-actions"><input id="adminMediaFiles" type="file" accept="image/jpeg,image/png,image/webp,image/avif" multiple><button type="button" id="adminUploadMedia"><i class="ri-upload-cloud-2-line" aria-hidden="true"></i>上传所选图片</button></div>
+          <p id="adminMediaStatus" aria-live="polite"></p>
+          <div class="admin-media-library-grid" id="adminMediaLibrary"></div>
+        </div>
         <div class="admin-media-block"><h3>首页图片</h3><p>菜单图片在“包伙食菜单”分类中随每一行一起编辑。</p><div class="admin-rows" id="adminHomepageRows"></div></div>
         <div class="admin-media-block"><h3>视频投放区</h3>
           <div class="admin-note-grid">

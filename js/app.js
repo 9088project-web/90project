@@ -89,6 +89,20 @@ const adminPreviewDialog = document.getElementById('adminPreviewDialog');
 const adminPreviewFrame = document.getElementById('adminPreviewFrame');
 const adminPreviewTitle = document.getElementById('adminPreviewTitle');
 const adminPreviewClose = document.getElementById('adminPreviewClose');
+const adminRoleBadge = document.getElementById('adminRoleBadge');
+const adminDraftNotice = document.getElementById('adminDraftNotice');
+const adminDraftTime = document.getElementById('adminDraftTime');
+const adminRestoreDraft = document.getElementById('adminRestoreDraft');
+const adminDiscardDraft = document.getElementById('adminDiscardDraft');
+const adminScheduleStart = document.getElementById('adminScheduleStart');
+const adminScheduleEnd = document.getElementById('adminScheduleEnd');
+const adminSchedulePublish = document.getElementById('adminSchedulePublish');
+const adminCancelSchedule = document.getElementById('adminCancelSchedule');
+const adminScheduleStatus = document.getElementById('adminScheduleStatus');
+const adminMediaFiles = document.getElementById('adminMediaFiles');
+const adminUploadMedia = document.getElementById('adminUploadMedia');
+const adminMediaStatus = document.getElementById('adminMediaStatus');
+const adminMediaLibrary = document.getElementById('adminMediaLibrary');
 const adminDataStatus = document.getElementById('adminDataStatus');
 const adminInquiries = document.getElementById('adminInquiries');
 const adminMemberStatus = document.getElementById('adminMemberStatus');
@@ -174,6 +188,10 @@ const ADMIN_CONTENT_UPDATED_AT_KEY = 'np90_admin_content_updated_at_v1';
 const ADMIN_CONTENT_SYNC_STATE_KEY = 'np90_admin_content_sync_state_v1';
 const ADMIN_SESSION_KEY = 'np90_admin_session_v1';
 const ADMIN_CLOUD_PASSWORD_SESSION_KEY = 'np90_admin_cloud_password_session_v1';
+const ADMIN_CLOUD_EMAIL_SESSION_KEY = 'np90_admin_cloud_email_v1';
+const ADMIN_CONTENT_ROLE_SESSION_KEY = 'np90_admin_content_role_v1';
+const ADMIN_CONTENT_NAME_SESSION_KEY = 'np90_admin_content_name_v1';
+const ADMIN_CONTENT_DRAFT_KEY = 'np90_admin_content_draft_v1';
 const ADMIN_ATTEMPTS_KEY = 'np90_admin_attempts_v1';
 const ADMIN_LOCK_KEY = 'np90_admin_lock_until_v1';
 const SUPABASE_SESSION_KEY = 'np90_supabase_session_v1';
@@ -182,6 +200,7 @@ const CONVERSION_EVENTS_KEY = 'np90_conversion_events_v1';
 const LEAD_SOURCE_KEY = 'np90_lead_source_v1';
 const ADMIN_CONTENT_SETTING_KEY = 'admin_content';
 const ADMIN_CONTENT_API_PATH = '/api/admin-content';
+const ADMIN_MEDIA_API_PATH = '/api/admin-media';
 const MEMBER_SYNC_API_PATH = '/api/member-sync';
 const ADMIN_EMAIL = '9088project@gmail.com';
 const ADMIN_PASSWORD_HASH = '7045830c';
@@ -682,6 +701,9 @@ let supabaseConversionsCache = [];
 let supabaseConversionsFetchInProgress = false;
 let supabaseRuntimeConfig = { ...(window.NP90_SUPABASE || {}) };
 let adminCloudPassword = '';
+let adminContentRole = 'owner';
+let adminContentName = '老板';
+let adminDraftTimer = 0;
 let selectedMealPackageId = 'one-meat-two-veg-fruit';
 let selectedMealPackageMeals = 20;
 
@@ -3011,7 +3033,8 @@ async function loadAdminContentFromCloudApi() {
   if (isLocalPreviewHost()) return false;
 
   try {
-    const response = await fetch(`${ADMIN_CONTENT_API_PATH}?v=${Date.now()}`, { cache: 'no-store' });
+    const headers = adminSyncHeaders();
+    const response = await fetch(`${ADMIN_CONTENT_API_PATH}?v=${Date.now()}`, { cache: 'no-store', headers: headers || {} });
     if (!response.ok) return false;
     const result = await response.json();
     const content = parseRemoteAdminContent(result?.content);
@@ -3061,7 +3084,7 @@ async function saveAdminContentToCloudApi(content) {
     method: 'PUT',
     headers: {
       'Content-Type': 'application/json',
-      'X-Admin-Email': ADMIN_EMAIL,
+      'X-Admin-Email': adminSyncEmail(),
       'X-Admin-Password': password
     },
     body: JSON.stringify({ content: normalizeAdminContent(content) })
@@ -3120,11 +3143,19 @@ function adminSyncPassword() {
   return adminCloudPassword || sessionPassword || adminPassword?.value || '';
 }
 
+function adminSyncEmail() {
+  try {
+    return sessionStorage.getItem(ADMIN_CLOUD_EMAIL_SESSION_KEY) || ADMIN_EMAIL;
+  } catch {
+    return ADMIN_EMAIL;
+  }
+}
+
 function adminSyncHeaders(extra = {}) {
   const password = adminSyncPassword();
   if (!password) return null;
   return {
-    'X-Admin-Email': ADMIN_EMAIL,
+    'X-Admin-Email': adminSyncEmail(),
     'X-Admin-Password': password,
     ...extra
   };
@@ -5427,8 +5458,34 @@ function setAdminLoggedIn(value) {
     adminCloudPassword = '';
     try {
       sessionStorage.removeItem(ADMIN_CLOUD_PASSWORD_SESSION_KEY);
+      sessionStorage.removeItem(ADMIN_CLOUD_EMAIL_SESSION_KEY);
+      sessionStorage.removeItem(ADMIN_CONTENT_ROLE_SESSION_KEY);
+      sessionStorage.removeItem(ADMIN_CONTENT_NAME_SESSION_KEY);
     } catch (error) {}
   }
+}
+
+function loadAdminOperator() {
+  try {
+    adminContentRole = sessionStorage.getItem(ADMIN_CONTENT_ROLE_SESSION_KEY) || 'owner';
+    adminContentName = sessionStorage.getItem(ADMIN_CONTENT_NAME_SESSION_KEY) || '老板';
+  } catch {
+    adminContentRole = 'owner';
+    adminContentName = '老板';
+  }
+}
+
+function applyAdminPermissions() {
+  loadAdminOperator();
+  const roleNames = { owner: '完整权限', manager: '经理权限', staff: '内容编辑', viewer: '只读' };
+  if (adminRoleBadge) adminRoleBadge.textContent = `${adminContentName} · ${roleNames[adminContentRole] || adminContentRole}`;
+  adminDashboard?.classList.toggle('admin-readonly', adminContentRole === 'viewer');
+  const canManage = ['owner', 'manager'].includes(adminContentRole);
+  if (adminRestoreVersion) adminRestoreVersion.hidden = !canManage;
+  if (adminSchedulePublish) adminSchedulePublish.hidden = !canManage;
+  if (adminCancelSchedule) adminCancelSchedule.hidden = !canManage;
+  if (resetAdminContent) resetAdminContent.hidden = !canManage;
+  if (saveAdminContent) saveAdminContent.hidden = adminContentRole === 'viewer';
 }
 
 function showAdminMessage(message, isError = false) {
@@ -5460,14 +5517,16 @@ function formatAdminVersionDate(value) {
 async function loadAdminVersions() {
   if (!adminVersionSelect) return;
   try {
-    const response = await fetch(`${ADMIN_CONTENT_API_PATH}?v=${Date.now()}`, { cache: 'no-store' });
+    const headers = adminSyncHeaders();
+    const response = await fetch(`${ADMIN_CONTENT_API_PATH}?v=${Date.now()}`, { cache: 'no-store', headers: headers || {} });
     if (!response.ok) throw new Error('Unable to load versions');
     const result = await response.json();
     const versions = Array.isArray(result.history) ? result.history : [];
     adminVersionSelect.innerHTML = versions.length
-      ? `<option value="">请选择要恢复的版本</option>${versions.map(version => `<option value="${escapeHtml(version.id)}">${escapeHtml(formatAdminVersionDate(version.savedAt))}</option>`).join('')}`
+      ? `<option value="">请选择要恢复的版本</option>${versions.map(version => `<option value="${escapeHtml(version.id)}">${escapeHtml(formatAdminVersionDate(version.savedAt))}${version.actorName || version.actor ? ` · ${escapeHtml(version.actorName || version.actor)}` : ''}${version.changedKeys?.length ? ` · ${version.changedKeys.length} 项修改` : ''}</option>`).join('')}`
       : '<option value="">暂时没有旧版本</option>';
     if (adminRestoreVersion) adminRestoreVersion.disabled = true;
+    renderAdminSchedule(result.schedule, result.scheduled);
   } catch {
     adminVersionSelect.innerHTML = '<option value="">版本读取失败，请稍后重试</option>';
     if (adminRestoreVersion) adminRestoreVersion.disabled = true;
@@ -5517,6 +5576,94 @@ function openAdminContentPreview(device = 'desktop') {
   adminPreviewFrame.src = `index.html?preview=${Date.now()}#top`;
   adminPreviewDialog.showModal();
   setAdminSaveStatus('local', '草稿预览中', '预览使用当前草稿；确认无误后请保存到云端。');
+}
+
+function renderAdminSchedule(schedule, active = false) {
+  if (!adminScheduleStatus) return;
+  if (!schedule?.startAt) {
+    adminScheduleStatus.textContent = '目前没有定时发布内容。';
+    return;
+  }
+  const range = `${formatAdminVersionDate(schedule.startAt)}${schedule.endAt ? ` 至 ${formatAdminVersionDate(schedule.endAt)}` : ' 起持续发布'}`;
+  adminScheduleStatus.textContent = `${active ? '正在发布' : '已排程'}：${range}${schedule.actor ? ` · ${schedule.actor}` : ''}`;
+}
+
+function readAdminDraft() {
+  try {
+    const draft = JSON.parse(localStorage.getItem(ADMIN_CONTENT_DRAFT_KEY) || 'null');
+    return draft?.content ? draft : null;
+  } catch {
+    return null;
+  }
+}
+
+function saveAdminDraft() {
+  if (!adminDashboard || adminDashboard.hidden || adminContentRole === 'viewer') return;
+  try {
+    localStorage.setItem(ADMIN_CONTENT_DRAFT_KEY, JSON.stringify({ content: collectAdminContent(), savedAt: new Date().toISOString(), editor: adminSyncEmail() }));
+  } catch (error) {
+    console.warn('Unable to save admin draft', error);
+  }
+}
+
+function clearAdminDraft() {
+  localStorage.removeItem(ADMIN_CONTENT_DRAFT_KEY);
+  if (adminDraftNotice) adminDraftNotice.hidden = true;
+}
+
+function showAdminDraftNotice() {
+  const draft = readAdminDraft();
+  if (!adminDraftNotice) return;
+  adminDraftNotice.hidden = !draft;
+  if (draft && adminDraftTime) adminDraftTime.textContent = `保存于 ${formatAdminVersionDate(draft.savedAt)}${draft.editor ? ` · ${draft.editor}` : ''}`;
+}
+
+function fileAsDataUrl(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result || ''));
+    reader.onerror = () => reject(reader.error || new Error('Unable to read file'));
+    reader.readAsDataURL(file);
+  });
+}
+
+async function prepareAdminImage(file) {
+  if (!file.type.startsWith('image/')) throw new Error(`${file.name} 不是图片。`);
+  const bitmap = await createImageBitmap(file);
+  const scale = Math.min(1, 1920 / Math.max(bitmap.width, bitmap.height));
+  const canvas = document.createElement('canvas');
+  canvas.width = Math.max(1, Math.round(bitmap.width * scale));
+  canvas.height = Math.max(1, Math.round(bitmap.height * scale));
+  canvas.getContext('2d', { alpha: false }).drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+  bitmap.close();
+  const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/webp', 0.84));
+  if (!blob) return { name: file.name, type: file.type, data: await fileAsDataUrl(file) };
+  const optimized = new File([blob], file.name.replace(/\.[^.]+$/, '.webp'), { type: 'image/webp' });
+  return { name: optimized.name, type: optimized.type, data: await fileAsDataUrl(optimized) };
+}
+
+function renderAdminMediaLibrary(files = []) {
+  if (!adminMediaLibrary) return;
+  adminMediaLibrary.innerHTML = files.length ? files.map(file => `
+    <article class="admin-media-item">
+      <img src="${escapeHtml(file.url)}" alt="${escapeHtml(file.name || '云端图片')}" loading="lazy">
+      <button type="button" data-copy-media-url="${escapeHtml(file.url)}"><i class="ri-file-copy-line" aria-hidden="true"></i>复制图片网址</button>
+    </article>
+  `).join('') : '<p>还没有上传云端图片。</p>';
+}
+
+async function loadAdminMediaLibrary() {
+  if (!adminMediaLibrary || adminContentRole === 'viewer') return;
+  const headers = adminSyncHeaders();
+  if (!headers) return;
+  try {
+    const response = await fetch(`${ADMIN_MEDIA_API_PATH}?v=${Date.now()}`, { headers, cache: 'no-store' });
+    if (!response.ok) throw new Error('Unable to load media');
+    const result = await response.json();
+    renderAdminMediaLibrary(result.files || []);
+  } catch {
+    if (adminMediaStatus) adminMediaStatus.textContent = '暂时无法读取云端图片，请稍后再试。';
+  }
 }
 
 function adminRowValue(row, selector) {
@@ -6174,10 +6321,13 @@ function renderAdminState() {
       ? requestedPanel
       : document.querySelector('[data-admin-panel-tab].active')?.dataset.adminPanelTab || 'site';
     setAdminPanel(activePanel);
+    applyAdminPermissions();
     renderAdminEditor();
     renderAdminInquiries();
     renderAdminMembers();
     loadAdminVersions();
+    showAdminDraftNotice();
+    loadAdminMediaLibrary();
   }
 }
 
@@ -6893,6 +7043,27 @@ copyOrderPreview?.addEventListener('click', async () => {
   }
 });
 
+async function authenticateAdminOperator(email, password) {
+  try {
+    const response = await fetch('/api/order-auth', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'login', email, password })
+    });
+    if (!response.ok) {
+      if (email === ADMIN_EMAIL && hashLocalSecret(password) === ADMIN_PASSWORD_HASH) return { name: '老板', email, role: 'owner' };
+      return null;
+    }
+    const result = await response.json();
+    return result?.user || null;
+  } catch {
+    if (email === ADMIN_EMAIL && hashLocalSecret(password) === ADMIN_PASSWORD_HASH) {
+      return { name: '老板', email, role: 'owner' };
+    }
+    return null;
+  }
+}
+
 adminLoginForm?.addEventListener('submit', async event => {
   event.preventDefault();
   if (isAdminLocked()) {
@@ -6903,17 +7074,21 @@ adminLoginForm?.addEventListener('submit', async event => {
 
   const email = adminEmail?.value?.trim().toLowerCase();
   const password = adminPassword?.value || '';
-  if (email === ADMIN_EMAIL && hashLocalSecret(password) === ADMIN_PASSWORD_HASH) {
+  const operator = await authenticateAdminOperator(email, password);
+  if (operator) {
     clearAdminLoginGuard();
     adminCloudPassword = password;
     try {
       sessionStorage.setItem(ADMIN_CLOUD_PASSWORD_SESSION_KEY, password);
+      sessionStorage.setItem(ADMIN_CLOUD_EMAIL_SESSION_KEY, email);
+      sessionStorage.setItem(ADMIN_CONTENT_ROLE_SESSION_KEY, operator.role || 'viewer');
+      sessionStorage.setItem(ADMIN_CONTENT_NAME_SESSION_KEY, operator.name || email);
     } catch (error) {}
-    const cloudLogin = await supabaseAdminSignIn(email, password);
+    const cloudLogin = operator.role === 'owner' ? await supabaseAdminSignIn(email, password) : { ok: true };
     setAdminLoggedIn(true);
     adminLoginForm.reset();
     showAdminMessage(cloudLogin.ok
-      ? '登录成功，Supabase 云端也已连接。'
+      ? `登录成功，${operator.name || email} 可以开始工作。`
       : '登录成功，可以开始编辑内容。保存时会同步到云端内容接口。');
     renderAdminState();
     return;
@@ -6945,7 +7120,20 @@ adminDashboard?.addEventListener('input', event => {
   if (!(event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement || event.target instanceof HTMLSelectElement)) return;
   if (event.target.closest('.admin-control-center')) return;
   setAdminSaveStatus('local', '有尚未保存的修改', '当前修改只在编辑器内，完成后请保存到云端。');
+  window.clearTimeout(adminDraftTimer);
+  adminDraftTimer = window.setTimeout(saveAdminDraft, 700);
 });
+
+adminRestoreDraft?.addEventListener('click', () => {
+  const draft = readAdminDraft();
+  if (!draft?.content) return;
+  saveEditableContent(draft.content, { source: 'admin-draft', cloudSynced: false, updatedAt: draft.savedAt });
+  renderAdminEditor();
+  if (adminDraftNotice) adminDraftNotice.hidden = true;
+  setAdminSaveStatus('local', '自动草稿已恢复', '请检查内容，确认后保存到云端。');
+});
+
+adminDiscardDraft?.addEventListener('click', clearAdminDraft);
 
 adminValidateContent?.addEventListener('click', validateAdminContentNow);
 adminPreviewDesktop?.addEventListener('click', () => openAdminContentPreview('desktop'));
@@ -6956,6 +7144,82 @@ adminPreviewDialog?.addEventListener('click', event => {
 });
 adminVersionSelect?.addEventListener('change', () => {
   if (adminRestoreVersion) adminRestoreVersion.disabled = !adminVersionSelect.value;
+});
+adminSchedulePublish?.addEventListener('click', async () => {
+  if (!adminScheduleStart?.value) {
+    showAdminMessage('请选择开始发布时间。', true);
+    adminScheduleStart?.focus();
+    return;
+  }
+  const headers = adminSyncHeaders({ 'Content-Type': 'application/json' });
+  if (!headers) return showAdminMessage('请重新登录后台。', true);
+  setAdminSaveStatus('saving', '正在设定自动发布', '内容会按照选择的时间自动上线及结束。');
+  try {
+    const response = await fetch(ADMIN_CONTENT_API_PATH, {
+      method: 'PUT',
+      headers,
+      body: JSON.stringify({
+        action: 'schedule',
+        startAt: new Date(adminScheduleStart.value).toISOString(),
+        endAt: adminScheduleEnd?.value ? new Date(adminScheduleEnd.value).toISOString() : '',
+        content: collectAdminContent()
+      })
+    });
+    if (!response.ok) throw new Error(readableCloudMessage(await response.text()));
+    const result = await response.json();
+    renderAdminSchedule(result.schedule, false);
+    setAdminSaveStatus('done', '自动发布已排程', '系统会按设定时间自动切换网站内容。');
+    showAdminMessage('自动发布已经设定。');
+  } catch (error) {
+    setAdminSaveStatus('error', '排程失败', '请检查时间或重新登录后再试。');
+    showAdminMessage(error instanceof Error ? error.message : '排程失败。', true);
+  }
+});
+
+adminCancelSchedule?.addEventListener('click', async () => {
+  const headers = adminSyncHeaders({ 'Content-Type': 'application/json' });
+  if (!headers) return showAdminMessage('请重新登录后台。', true);
+  try {
+    const response = await fetch(ADMIN_CONTENT_API_PATH, { method: 'PUT', headers, body: JSON.stringify({ action: 'cancel-schedule' }) });
+    if (!response.ok) throw new Error(readableCloudMessage(await response.text()));
+    renderAdminSchedule(null);
+    showAdminMessage('定时发布已取消。');
+  } catch (error) {
+    showAdminMessage(error instanceof Error ? error.message : '取消排程失败。', true);
+  }
+});
+
+adminUploadMedia?.addEventListener('click', async () => {
+  const files = Array.from(adminMediaFiles?.files || []);
+  if (!files.length) return showAdminMessage('请先选择图片。', true);
+  const headers = adminSyncHeaders({ 'Content-Type': 'application/json' });
+  if (!headers) return showAdminMessage('请重新登录后台。', true);
+  adminUploadMedia.disabled = true;
+  if (adminMediaStatus) adminMediaStatus.textContent = `正在上传 0 / ${files.length}`;
+  try {
+    for (let index = 0; index < files.length; index += 1) {
+      const file = files[index];
+      const prepared = await prepareAdminImage(file);
+      const response = await fetch(ADMIN_MEDIA_API_PATH, { method: 'POST', headers, body: JSON.stringify(prepared) });
+      if (!response.ok) throw new Error(readableCloudMessage(await response.text(), `${file.name} 上传失败。`));
+      if (adminMediaStatus) adminMediaStatus.textContent = `正在上传 ${index + 1} / ${files.length}`;
+    }
+    if (adminMediaStatus) adminMediaStatus.textContent = `${files.length} 张图片已上传到云端。`;
+    if (adminMediaFiles) adminMediaFiles.value = '';
+    await loadAdminMediaLibrary();
+  } catch (error) {
+    if (adminMediaStatus) adminMediaStatus.textContent = error instanceof Error ? error.message : '图片上传失败。';
+  } finally {
+    adminUploadMedia.disabled = false;
+  }
+});
+
+adminMediaLibrary?.addEventListener('click', async event => {
+  const button = event.target instanceof HTMLElement ? event.target.closest('[data-copy-media-url]') : null;
+  if (!(button instanceof HTMLElement)) return;
+  await copyText(button.dataset.copyMediaUrl || '');
+  button.textContent = '已复制网址';
+  window.setTimeout(() => { button.innerHTML = '<i class="ri-file-copy-line" aria-hidden="true"></i>复制图片网址'; }, 1400);
 });
 adminRestoreVersion?.addEventListener('click', async () => {
   const versionId = adminVersionSelect?.value || '';
@@ -7181,6 +7445,7 @@ saveAdminContent?.addEventListener('click', async () => {
   try {
     const cloudSaved = await saveAdminContentToCloud(content);
     if (cloudSaved) {
+      clearAdminDraft();
       markAdminContentSyncState({
         source: 'cloud-save',
         cloudSynced: true,
@@ -7227,6 +7492,7 @@ resetAdminContent?.addEventListener('click', async () => {
   try {
     const cloudSaved = await saveAdminContentToCloud(defaults);
     if (cloudSaved) {
+      clearAdminDraft();
       markAdminContentSyncState({
         source: 'cloud-reset',
         cloudSynced: true,
