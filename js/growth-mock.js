@@ -174,6 +174,9 @@ Object.assign(translations.zh, {
   existingMember: '已有会员',
   loginIntro: '登录后可以查看积分、优惠券、订单和推荐奖励。',
   forgotLogin: '忘记密码或无法登入？',
+  passwordRecoveryTitle: '选择重设密码方式',
+  sendResetEmail: '发送重设链接',
+  orUsePhone: '或使用手机验证码',
   phoneResetTitle: '使用手机验证码重设密码',
   verifyPhoneCode: '验证并继续',
   phoneResetHint: '请输入注册手机号码，再发送验证码。',
@@ -299,6 +302,9 @@ Object.assign(translations.en, {
   existingMember: 'Existing member',
   loginIntro: 'Log in to view points, coupons, orders and referral rewards.',
   forgotLogin: 'Forgot password or cannot log in?',
+  passwordRecoveryTitle: 'Choose how to reset your password',
+  sendResetEmail: 'Send reset link',
+  orUsePhone: 'Or verify your mobile number',
   phoneResetTitle: 'Reset with mobile verification',
   verifyPhoneCode: 'Verify and continue',
   phoneResetHint: 'Enter your registered mobile number, then request a verification code.',
@@ -1173,6 +1179,8 @@ function bindMemberPage() {
   const resetForm = document.getElementById('growthPasswordResetForm');
   const resetMessage = document.querySelector('[data-growth-reset-message]');
   const phoneResetBox = document.querySelector('[data-member-phone-reset]');
+  const emailResetInput = document.getElementById('passwordResetEmail');
+  const emailResetSend = document.getElementById('sendPasswordResetEmail');
   const phoneResetInput = document.getElementById('passwordResetPhone');
   const phoneResetCode = document.getElementById('passwordResetPhoneCode');
   const phoneResetSend = document.getElementById('sendPasswordResetPhoneCode');
@@ -1201,16 +1209,7 @@ function bindMemberPage() {
   };
   refreshMemberPasswordResetCard();
 
-  resetPasswordButton?.addEventListener('click', async () => {
-    const identity = String(loginIdentityInput?.value || '').trim();
-    if (!identity) return setMessage(t('resetPasswordPrompt'), true, 'login');
-    if (!isEmailIdentity(identity)) {
-      if (phoneResetBox) phoneResetBox.hidden = false;
-      if (phoneResetInput) phoneResetInput.value = identity;
-      updateMessageElement(phoneResetStatus, t('phoneResetHint'), false);
-      phoneResetInput?.focus();
-      return;
-    }
+  const sendEmailPasswordReset = async identity => {
     if (!cloudReady || typeof cloud.sendPasswordReset !== 'function') {
       setMessage(t('resetPasswordUnavailable'), true, 'login');
       return openLoginWhatsAppHelp();
@@ -1221,14 +1220,13 @@ function bindMemberPage() {
       return;
     }
 
-    resetPasswordButton.disabled = true;
-    resetPasswordButton.dataset.originalText = resetPasswordButton.textContent || '';
-    resetPasswordButton.textContent = t('resetPasswordSending');
+    emailResetSend.disabled = true;
+    emailResetSend.textContent = t('resetPasswordSending');
     setMessage(t('resetPasswordSending'), false, 'login');
     const redirectTo = passwordResetRedirectUrl();
     const result = await cloud.sendPasswordReset(identity, redirectTo);
-    resetPasswordButton.disabled = false;
-    resetPasswordButton.textContent = resetPasswordButton.dataset.originalText || t('forgotLogin');
+    emailResetSend.disabled = false;
+    emailResetSend.textContent = t('sendResetEmail');
     if (result.ok) {
       startPasswordResetCooldown();
       setMessage(t('resetPasswordSent'), false, 'login');
@@ -1238,6 +1236,21 @@ function bindMemberPage() {
     if (readableError === t('resetPasswordRateLimited')) startPasswordResetCooldown();
     setMessage(readableError, true, 'login');
     if (![t('resetPasswordRateLimited'), t('resetPasswordBadRequest')].includes(readableError)) openLoginWhatsAppHelp();
+  };
+
+  resetPasswordButton?.addEventListener('click', () => {
+    const identity = String(loginIdentityInput?.value || '').trim();
+    if (phoneResetBox) phoneResetBox.hidden = false;
+    if (isEmailIdentity(identity) && emailResetInput) emailResetInput.value = identity;
+    if (identity && !isEmailIdentity(identity) && phoneResetInput) phoneResetInput.value = identity;
+    updateMessageElement(phoneResetStatus, t('phoneResetHint'), false);
+    (isEmailIdentity(identity) ? emailResetInput : identity ? phoneResetInput : emailResetInput)?.focus();
+  });
+
+  emailResetSend?.addEventListener('click', async () => {
+    const email = String(emailResetInput?.value || '').trim();
+    if (!isEmailIdentity(email)) return setMessage(t('resetPasswordPrompt'), true, 'login');
+    await sendEmailPasswordReset(email);
   });
 
   phoneResetSend?.addEventListener('click', async () => {

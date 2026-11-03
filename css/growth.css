@@ -524,6 +524,30 @@ body.growth-page {
   display: none;
 }
 
+.member-email-reset {
+  display: grid;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.member-reset-divider {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 18px 0;
+  color: var(--growth-muted);
+  font-size: .86rem;
+  font-weight: 700;
+}
+
+.member-reset-divider::before,
+.member-reset-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: rgba(150, 101, 44, .2);
+}
+
 .member-security-card {
   border-color: rgba(77, 129, 98, .28);
 }
