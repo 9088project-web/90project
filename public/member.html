@@ -74,7 +74,17 @@
         </form>
         <div class="member-form-help">
           <button class="member-form-help-link" type="button" data-member-password-reset data-i18n="forgotLogin">忘记密码或无法登入？</button>
-          <a href="https://wa.me/60196909088?text=%E6%88%91%E6%83%B3%E5%8D%8F%E5%8A%A9%E5%A4%84%E7%90%86%2090%20PROJECT%20%E4%BC%9A%E5%91%98%E7%99%BB%E5%85%A5" target="_blank" rel="noopener" data-member-login-help data-i18n="whatsappHelp">WhatsApp 协助</a>
+          <a href="https://wa.me/60189490908?text=%E6%88%91%E6%83%B3%E5%8D%8F%E5%8A%A9%E5%A4%84%E7%90%86%2090%20PROJECT%20%E4%BC%9A%E5%91%98%E7%99%BB%E5%85%A5" target="_blank" rel="noopener" data-member-login-help data-i18n="whatsappHelp">WhatsApp 协助</a>
+        </div>
+        <div class="phone-verify-box member-phone-reset" data-member-phone-reset hidden>
+          <strong data-i18n="phoneResetTitle">使用手机验证码重设密码</strong>
+          <label data-i18n="phone">手机号码<input id="passwordResetPhone" inputmode="tel" autocomplete="tel" placeholder="011-xxxx xxxx"></label>
+          <div class="phone-verify-row">
+            <label data-i18n="phoneCode">手机验证码<input id="passwordResetPhoneCode" inputmode="numeric" maxlength="6" autocomplete="one-time-code" placeholder="6 位验证码"></label>
+            <button class="growth-button secondary phone-code-button" id="sendPasswordResetPhoneCode" type="button" data-i18n="sendPhoneCode">发送验证码</button>
+          </div>
+          <button class="growth-button" id="verifyPasswordResetPhoneCode" type="button" data-i18n="verifyPhoneCode">验证并继续</button>
+          <p class="phone-verify-status" data-password-phone-status aria-live="polite"></p>
         </div>
       </article>
 
@@ -178,6 +188,20 @@
           </form>
         </article>
 
+        <article class="growth-panel member-security-card">
+          <div class="member-section-title">
+            <span class="growth-badge">SECURITY</span>
+            <h3 data-i18n="accountSecurityTitle">账号与安全</h3>
+          </div>
+          <p data-i18n="accountSecurityIntro">登录状态已经验证你的身份，可以直接设置新的会员密码。</p>
+          <form class="growth-form" id="growthAccountPasswordForm">
+            <label data-i18n="resetPasswordNew">新密码<input name="password" type="password" required minlength="6" autocomplete="new-password" placeholder="至少 6 个字符"></label>
+            <label data-i18n="resetPasswordConfirm">确认新密码<input name="passwordConfirm" type="password" required minlength="6" autocomplete="new-password" placeholder="再次输入新密码"></label>
+            <button class="growth-button" type="submit" data-i18n="changePasswordAction">更改密码</button>
+            <p class="growth-message member-login-message" data-account-password-message aria-live="polite" hidden></p>
+          </form>
+        </article>
+
         <article class="growth-panel" data-growth-promoter-box>
           <h3 data-i18n="apply">我的推荐码</h3>
           <p data-i18n="promoterIntro">每位会员注册后自动拥有推荐码、分享链接和佣金记录。</p>
@@ -230,6 +254,6 @@
   <footer class="growth-footer">
     <div class="growth-shell">90 PROJECT Member System · <a href="index.html#top" data-i18n="footerBack">返回首页</a></div>
   </footer>
-  <script type="module" src="js/growth-mock.js?v=20260818-reset-live"></script>
+  <script type="module" src="js/growth-mock.js?v=20260925-whatsapp"></script>
 </body>
 </html>

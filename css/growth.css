@@ -516,6 +516,18 @@ body.growth-page {
     #fffaf1;
 }
 
+.member-phone-reset {
+  margin-top: 14px;
+}
+
+.member-phone-reset[hidden] {
+  display: none;
+}
+
+.member-security-card {
+  border-color: rgba(77, 129, 98, .28);
+}
+
 .phone-verify-row {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;

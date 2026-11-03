@@ -169,7 +169,7 @@ export function createGrowthCloud() {
     return { ok: true, session: session?.access_token ? session : null, user: payload?.user || session?.user || null };
   }
 
-  async function sendPhoneOtp(phone) {
+  async function sendPhoneOtp(phone, options = {}) {
     if (!configured()) return { ok: false, skipped: true };
     const normalizedPhone = otpPhone(phone);
     if (!normalizedPhone) return { ok: false, message: 'missing_phone' };
@@ -178,7 +178,7 @@ export function createGrowthCloud() {
       headers: { apikey: config.anonKey, 'Content-Type': 'application/json' },
       body: JSON.stringify({
         phone: normalizedPhone,
-        create_user: true,
+        create_user: options.createUser !== false,
         data: { source: '90_project_member_phone_verification' }
       })
     });
@@ -207,7 +207,9 @@ export function createGrowthCloud() {
     const response = await fetch(`${config.url}/auth/v1/token?grant_type=password`, {
       method: 'POST',
       headers: { apikey: config.anonKey, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email: normalizeEmail(identity), password })
+      body: JSON.stringify(/@/.test(String(identity || ''))
+        ? { email: normalizeEmail(identity), password }
+        : { phone: otpPhone(identity), password })
     });
     if (!response.ok) return { ok: false, message: cloudMessage(await response.text()) };
     const session = await response.json();
@@ -306,7 +308,7 @@ export function createGrowthCloud() {
   }
 
   function profileToMember(profile, session, fallback = {}) {
-    const email = normalizeEmail(session?.user?.email || fallback.email);
+    const email = normalizeEmail(session?.user?.email || profile?.email || fallback.email);
     return {
       id: fallback.id,
       name: profile?.full_name || fallback.name || email.split('@')[0] || '90 Member',

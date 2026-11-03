@@ -174,6 +174,15 @@ Object.assign(translations.zh, {
   existingMember: '已有会员',
   loginIntro: '登录后可以查看积分、优惠券、订单和推荐奖励。',
   forgotLogin: '忘记密码或无法登入？',
+  phoneResetTitle: '使用手机验证码重设密码',
+  verifyPhoneCode: '验证并继续',
+  phoneResetHint: '请输入注册手机号码，再发送验证码。',
+  phoneResetSent: '验证码已发送到注册手机，请输入 6 位验证码。',
+  phoneResetReady: '手机验证成功，请设置新密码。',
+  phoneResetUnavailable: '这个手机号码暂时不能自动重设，请使用 Email 重设或 WhatsApp 协助。',
+  accountSecurityTitle: '账号与安全',
+  accountSecurityIntro: '登录状态已经验证你的身份，可以直接设置新的会员密码。',
+  changePasswordAction: '更改密码',
   whatsappHelp: 'WhatsApp 协助',
   newMember: '新会员',
   registerIntro: '创建会员后会自动获得欢迎积分和新会员优惠券。',
@@ -290,6 +299,15 @@ Object.assign(translations.en, {
   existingMember: 'Existing member',
   loginIntro: 'Log in to view points, coupons, orders and referral rewards.',
   forgotLogin: 'Forgot password or cannot log in?',
+  phoneResetTitle: 'Reset with mobile verification',
+  verifyPhoneCode: 'Verify and continue',
+  phoneResetHint: 'Enter your registered mobile number, then request a verification code.',
+  phoneResetSent: 'The code was sent to your registered mobile number. Enter the 6-digit code.',
+  phoneResetReady: 'Mobile verification completed. Set your new password.',
+  phoneResetUnavailable: 'This mobile number cannot reset automatically right now. Use email reset or WhatsApp help.',
+  accountSecurityTitle: 'Account & security',
+  accountSecurityIntro: 'Your signed-in session confirms your identity, so you can set a new member password directly.',
+  changePasswordAction: 'Change password',
   whatsappHelp: 'WhatsApp help',
   newMember: 'New member',
   registerIntro: 'Create a member account to receive welcome points and a new member coupon.',
@@ -399,8 +417,9 @@ Object.assign(translations.zh, {
   resetPasswordNew: '新密码',
   resetPasswordConfirm: '确认新密码',
   resetPasswordAction: '更新密码',
-  resetPasswordPrompt: '请先在登录框输入注册 Email，系统才可以自动发送重设密码邮件。',
-  resetPasswordPhoneHelp: '手机号暂时不能自动重设密码，已为你打开 WhatsApp 协助。',
+  resetPasswordPrompt: '请先在登录框输入注册 Email 或手机号码。',
+  resetPasswordPhoneHelp: '请输入注册手机号码并完成短信验证码。',
+  passwordSessionRequired: '请先重新登录；如果无法登录，请使用 Email 或手机验证码重设密码。',
   resetPasswordSending: '正在发送重设密码邮件...',
   resetPasswordSent: '重设密码邮件已发送，请打开最新 Email 里的链接设置新密码；旧邮件链接不要再使用。',
   resetPasswordRateLimited: '重设密码邮件发送太频密，请等约 60 秒后再试；如果急用，可以点 WhatsApp 协助。',
@@ -447,8 +466,9 @@ Object.assign(translations.en, {
   resetPasswordNew: 'New password',
   resetPasswordConfirm: 'Confirm new password',
   resetPasswordAction: 'Update password',
-  resetPasswordPrompt: 'Please enter your registered email in the login box so the system can send a reset email.',
-  resetPasswordPhoneHelp: 'Mobile numbers cannot reset passwords automatically yet. WhatsApp help has been opened.',
+  resetPasswordPrompt: 'Enter your registered email or mobile number in the login box first.',
+  resetPasswordPhoneHelp: 'Enter the registered mobile number and complete SMS verification.',
+  passwordSessionRequired: 'Please log in again. If you cannot log in, reset with email or mobile verification.',
   resetPasswordSending: 'Sending password reset email...',
   resetPasswordSent: 'Password reset email sent. Please open the latest email link to set a new password; do not use older reset emails.',
   resetPasswordRateLimited: 'Too many reset emails were requested. Please wait about 60 seconds, or use WhatsApp help.',
@@ -481,6 +501,7 @@ let sharedGrowthStateSync = { loading: false, loaded: false, saving: false, last
 let adminGrowthSearch = '';
 let adminGrowthFilters = { order: 'all', withdrawal: 'all' };
 let phoneVerification = { phone: '', code: '', verified: false, cloudSession: null };
+let passwordPhoneVerification = { phone: '', session: null };
 
 function setText(selector, value) {
   document.querySelectorAll(selector).forEach(element => { element.textContent = value; });
@@ -1151,6 +1172,12 @@ function bindMemberPage() {
   const resetCard = document.querySelector('[data-member-reset-card]');
   const resetForm = document.getElementById('growthPasswordResetForm');
   const resetMessage = document.querySelector('[data-growth-reset-message]');
+  const phoneResetBox = document.querySelector('[data-member-phone-reset]');
+  const phoneResetInput = document.getElementById('passwordResetPhone');
+  const phoneResetCode = document.getElementById('passwordResetPhoneCode');
+  const phoneResetSend = document.getElementById('sendPasswordResetPhoneCode');
+  const phoneResetVerify = document.getElementById('verifyPasswordResetPhoneCode');
+  const phoneResetStatus = document.querySelector('[data-password-phone-status]');
   const phoneInput = document.getElementById('registerPhoneInput');
   const codeInput = document.getElementById('registerPhoneCode');
   const codeButton = document.getElementById('sendPhoneCode');
@@ -1178,8 +1205,11 @@ function bindMemberPage() {
     const identity = String(loginIdentityInput?.value || '').trim();
     if (!identity) return setMessage(t('resetPasswordPrompt'), true, 'login');
     if (!isEmailIdentity(identity)) {
-      setMessage(t('resetPasswordPhoneHelp'), true, 'login');
-      return openLoginWhatsAppHelp();
+      if (phoneResetBox) phoneResetBox.hidden = false;
+      if (phoneResetInput) phoneResetInput.value = identity;
+      updateMessageElement(phoneResetStatus, t('phoneResetHint'), false);
+      phoneResetInput?.focus();
+      return;
     }
     if (!cloudReady || typeof cloud.sendPasswordReset !== 'function') {
       setMessage(t('resetPasswordUnavailable'), true, 'login');
@@ -1210,6 +1240,42 @@ function bindMemberPage() {
     if (![t('resetPasswordRateLimited'), t('resetPasswordBadRequest')].includes(readableError)) openLoginWhatsAppHelp();
   });
 
+  phoneResetSend?.addEventListener('click', async () => {
+    const phone = String(phoneResetInput?.value || '').trim();
+    if (!normalizePhoneInput(phone)) return updateMessageElement(phoneResetStatus, t('phoneRequired'), true);
+    if (!cloudReady || typeof cloud.sendPhoneOtp !== 'function') return updateMessageElement(phoneResetStatus, t('phoneResetUnavailable'), true);
+    phoneResetSend.disabled = true;
+    phoneResetSend.textContent = t('phoneCodeSending');
+    const result = await cloud.sendPhoneOtp(phone, { createUser: false });
+    phoneResetSend.disabled = false;
+    phoneResetSend.textContent = t('resendPhoneCode');
+    if (!result.ok) return updateMessageElement(phoneResetStatus, readableMemberAuthMessage(result.message || result.reason, 'phoneResetUnavailable'), true);
+    passwordPhoneVerification = { phone: normalizePhoneInput(phone), session: null };
+    updateMessageElement(phoneResetStatus, t('phoneResetSent'), false);
+    phoneResetCode?.focus();
+  });
+
+  phoneResetVerify?.addEventListener('click', async () => {
+    const phone = String(phoneResetInput?.value || '').trim();
+    const code = String(phoneResetCode?.value || '').trim();
+    if (!normalizePhoneInput(phone) || code.length < 6) return updateMessageElement(phoneResetStatus, t('phoneCodeRequired'), true);
+    if (!cloudReady || typeof cloud.verifyPhoneOtp !== 'function') return updateMessageElement(phoneResetStatus, t('phoneResetUnavailable'), true);
+    phoneResetVerify.disabled = true;
+    phoneResetVerify.textContent = t('phoneCodeChecking');
+    const result = await cloud.verifyPhoneOtp(phone, code);
+    phoneResetVerify.disabled = false;
+    phoneResetVerify.textContent = t('verifyPhoneCode');
+    if (!result.ok || !result.session) return updateMessageElement(phoneResetStatus, t('phoneVerifyFailed'), true);
+    passwordPhoneVerification = { phone: normalizePhoneInput(phone), session: result.session };
+    if (resetCard) {
+      resetCard.hidden = false;
+      resetCard.dataset.resetReady = 'true';
+    }
+    updateMessageElement(phoneResetStatus, t('phoneResetReady'), false);
+    updateMessageElement(resetMessage, t('resetPasswordReady'), false);
+    resetCard?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  });
+
   resetForm?.addEventListener('submit', async event => {
     event.preventDefault();
     const resetData = new FormData(resetForm);
@@ -1221,10 +1287,13 @@ function bindMemberPage() {
     if (resetCard?.dataset.resetReady === 'false') return updateMessageElement(resetMessage, t('resetPasswordNeedEmailLink'), true);
     setBusy(resetForm, true, busyLabel('resetPasswordUpdating'));
     updateMessageElement(resetMessage, t('resetPasswordUpdating'), false);
-    const result = await cloud.updatePassword(password);
+    const result = await cloud.updatePassword(password, passwordPhoneVerification.session || cloud.getSession());
     setBusy(resetForm, false);
     if (!result.ok) return updateMessageElement(resetMessage, readableMemberAuthMessage(result.message || result.reason, 'resetPasswordFailed'), true);
+    const resetIdentity = result.user?.email || result.user?.phone || passwordPhoneVerification.phone;
+    if (resetIdentity) api.changeMemberPasswordByIdentity(resetIdentity, password);
     resetForm.reset();
+    passwordPhoneVerification = { phone: '', session: null };
     updateMessageElement(resetMessage, t('resetPasswordUpdated'), false);
     setMessage(t('resetPasswordUpdated'), false, 'login');
   });
@@ -1290,6 +1359,7 @@ function bindMemberPage() {
         ? { ok: true, session: phoneVerification.cloudSession }
         : await cloud.signUp(result.member, data.password);
       if (cloudResult.ok && cloudResult.session) {
+        if (phoneVerification.cloudSession) await cloud.updatePassword(data.password, cloudResult.session);
         await cloud.updateProfile(result.member, cloudResult.session);
         await syncCloudDashboard(result.member);
         setMessage(t('registerCloudOk'));
@@ -1318,13 +1388,21 @@ function bindMemberPage() {
       const cloudLogin = await cloud.signIn(data.identity, data.password);
       if (cloudLogin.ok) {
         const profile = await cloud.loadProfile(cloudLogin.session);
-        const imported = api.importMember(cloud.profileToMember(profile, cloudLogin.session, { email: data.identity, password: data.password }));
+        const existingMember = api.findMemberByIdentity(data.identity);
+        const fallbackMember = {
+          ...existingMember,
+          email: existingMember?.email || cloudLogin.session?.user?.email || data.identity,
+          phone: existingMember?.phone || cloudLogin.session?.user?.phone || data.identity,
+          password: data.password
+        };
+        const imported = api.importMember(cloud.profileToMember(profile, cloudLogin.session, fallbackMember));
         result = imported.ok ? { ok: true, member: imported.member } : result;
       } else {
         cloudLoginMessage = cloudLogin.message || cloudLogin.reason || '';
       }
     } else if (result.ok && cloudReady) {
-      const cloudLogin = await cloud.signIn(result.member.email, data.password);
+      let cloudLogin = await cloud.signIn(data.identity, data.password);
+      if (!cloudLogin.ok && data.identity !== result.member.email) cloudLogin = await cloud.signIn(result.member.email, data.password);
       if (cloudLogin.ok) await syncCloudDashboard(result.member);
     }
     if (!result.ok) {
@@ -1360,6 +1438,37 @@ function bindMemberPage() {
     }
     setBusy(event.currentTarget, false);
     renderMemberDashboard();
+  });
+  document.getElementById('growthAccountPasswordForm')?.addEventListener('submit', async event => {
+    event.preventDefault();
+    const form = event.currentTarget;
+    const message = form.querySelector('[data-account-password-message]');
+    const data = new FormData(form);
+    const password = String(data.get('password') || '');
+    const confirm = String(data.get('passwordConfirm') || '');
+    const member = currentMember();
+    if (!member) return updateMessageElement(message, t('loginRequired'), true);
+    if (password.length < 6) return updateMessageElement(message, t('resetPasswordInvalid'), true);
+    if (password !== confirm) return updateMessageElement(message, t('resetPasswordMismatch'), true);
+    setBusy(form, true, busyLabel('resetPasswordUpdating'));
+    updateMessageElement(message, t('resetPasswordUpdating'), false);
+    const session = cloud.getSession?.();
+    if (cloudReady && !session?.access_token) {
+      setBusy(form, false);
+      return updateMessageElement(message, t('passwordSessionRequired'), true);
+    }
+    if (cloudReady && session?.access_token) {
+      const cloudResult = await cloud.updatePassword(password, session);
+      if (!cloudResult.ok) {
+        setBusy(form, false);
+        return updateMessageElement(message, readableMemberAuthMessage(cloudResult.message || cloudResult.reason, 'resetPasswordFailed'), true);
+      }
+    }
+    const localResult = api.changeMemberPassword(member.id, password);
+    setBusy(form, false);
+    if (!localResult.ok) return updateMessageElement(message, t('resetPasswordFailed'), true);
+    form.reset();
+    updateMessageElement(message, t('resetPasswordUpdated'), false);
   });
   bindPromoterApplicationForm();
   document.getElementById('growthWithdrawalForm')?.addEventListener('submit', async event => {
