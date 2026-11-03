@@ -124,26 +124,31 @@
           <input id="adminContentSearch" type="search" placeholder="输入文字、价格、栏目或图片名称">
           <small id="adminContentSearchStatus">可搜索当前分类内的设置。</small>
         </label>
-        <div class="admin-version-tools">
-          <label>最近云端版本<select id="adminVersionSelect"><option value="">读取中...</option></select></label>
-          <button class="btn btn-outline" id="adminRestoreVersion" type="button" disabled><i class="ri-history-line" aria-hidden="true"></i>恢复所选版本</button>
-        </div>
-        <div class="admin-schedule-tools">
-          <label>开始发布<input id="adminScheduleStart" type="datetime-local"></label>
-          <label>结束发布（可不填）<input id="adminScheduleEnd" type="datetime-local"></label>
-          <button type="button" id="adminSchedulePublish"><i class="ri-calendar-schedule-line" aria-hidden="true"></i>设定自动发布</button>
-          <button type="button" id="adminCancelSchedule"><i class="ri-calendar-close-line" aria-hidden="true"></i>取消排程</button>
-          <p id="adminScheduleStatus">目前没有定时发布内容。</p>
-        </div>
+        <details class="admin-advanced-tools">
+          <summary><span><i class="ri-settings-3-line" aria-hidden="true"></i><strong>进阶管理</strong><small>版本恢复、定时发布、网站健康与操作记录</small></span><i class="ri-arrow-down-s-line" aria-hidden="true"></i></summary>
+          <div class="admin-advanced-body">
+            <div class="admin-version-tools">
+              <label>最近云端版本<select id="adminVersionSelect"><option value="">读取中...</option></select></label>
+              <button class="btn btn-outline" id="adminRestoreVersion" type="button" disabled><i class="ri-history-line" aria-hidden="true"></i>恢复所选版本</button>
+            </div>
+            <div class="admin-schedule-tools">
+              <label>开始发布<input id="adminScheduleStart" type="datetime-local"></label>
+              <label>结束发布（可不填）<input id="adminScheduleEnd" type="datetime-local"></label>
+              <button type="button" id="adminSchedulePublish"><i class="ri-calendar-schedule-line" aria-hidden="true"></i>设定自动发布</button>
+              <button type="button" id="adminCancelSchedule"><i class="ri-calendar-close-line" aria-hidden="true"></i>取消排程</button>
+              <p id="adminScheduleStatus">目前没有定时发布内容。</p>
+            </div>
+            <div class="admin-monitor-grid">
+              <article><span>通知中心</span><strong id="adminNotificationCount">0 项待处理</strong><p id="adminNotificationText">系统目前正常。</p></article>
+              <article><span>网站健康</span><strong id="adminHealthStatus">等待检查</strong><p id="adminHealthText">登录后会自动检查主要页面和 WhatsApp 链接。</p><button type="button" id="adminRunHealthCheck">立即检查</button></article>
+              <article><span>内容成效</span><strong id="adminAnalyticsTotal">0 次互动</strong><p id="adminAnalyticsText">暂时没有转化记录。</p></article>
+              <article><span>云端保障</span><strong id="adminBackupStatus">等待读取</strong><p id="adminBackupText">每日自动备份，并记录所有发布操作。</p><button type="button" id="adminShowAudit">查看操作记录</button></article>
+            </div>
+            <div class="admin-audit-log" id="adminAuditLog" hidden></div>
+          </div>
+        </details>
         <div class="admin-validation-result" id="adminValidationResult" hidden aria-live="polite"></div>
         <div class="admin-version-diff" id="adminVersionDiff" hidden></div>
-        <div class="admin-monitor-grid">
-          <article><span>通知中心</span><strong id="adminNotificationCount">0 项待处理</strong><p id="adminNotificationText">系统目前正常。</p></article>
-          <article><span>网站健康</span><strong id="adminHealthStatus">等待检查</strong><p id="adminHealthText">登录后会自动检查主要页面和 WhatsApp 链接。</p><button type="button" id="adminRunHealthCheck">立即检查</button></article>
-          <article><span>内容成效</span><strong id="adminAnalyticsTotal">0 次互动</strong><p id="adminAnalyticsText">暂时没有转化记录。</p></article>
-          <article><span>云端保障</span><strong id="adminBackupStatus">等待读取</strong><p id="adminBackupText">每日自动备份，并记录所有发布操作。</p><button type="button" id="adminShowAudit">查看操作记录</button></article>
-        </div>
-        <div class="admin-audit-log" id="adminAuditLog" hidden></div>
       </section>
 
       <section class="admin-section" data-admin-panel="site">
@@ -185,13 +190,16 @@
       <section class="admin-section" data-admin-panel="media" hidden>
         <div class="admin-section-head"><div><h2>首页媒体与案例</h2><p>可以替换首页主图、菜单照片、四张服务照片和联系图片区；图片填写项目内相对路径。</p></div><button type="button" id="addCaseRow">新增案例</button></div>
         <div class="admin-media-library">
-          <div><span>云端图片中心</span><h3>从手机或电脑上传图片</h3><p>支持一次选择多张照片，系统会自动压缩成网页尺寸。上传后复制网址，贴入下面对应的图片栏。</p></div>
-          <div class="admin-media-upload-actions"><input id="adminMediaFiles" type="file" accept="image/jpeg,image/png,image/webp,image/avif" multiple><button type="button" id="adminUploadMedia"><i class="ri-upload-cloud-2-line" aria-hidden="true"></i>上传所选图片</button></div>
+          <div><span>图片投放</span><h3>选择图片，自动优化并上传</h3><p>上传完成后，在图片下方选择投放位置，再按“套用图片”。</p></div>
+          <div class="admin-media-upload-actions">
+            <label class="admin-media-dropzone" for="adminMediaFiles"><i class="ri-image-add-line" aria-hidden="true"></i><strong>选择图片上传</strong><span>支持多选 · JPG、PNG、WEBP、AVIF</span><input id="adminMediaFiles" type="file" accept="image/jpeg,image/png,image/webp,image/avif" multiple></label>
+            <button type="button" id="adminUploadMedia"><i class="ri-upload-cloud-2-line" aria-hidden="true"></i>开始上传</button>
+          </div>
           <p id="adminMediaStatus" aria-live="polite"></p>
           <div class="admin-media-library-grid" id="adminMediaLibrary"></div>
         </div>
-        <div class="admin-media-block"><h3>首页图片</h3><p>菜单图片在“包伙食菜单”分类中随每一行一起编辑。</p><div class="admin-rows" id="adminHomepageRows"></div></div>
-        <div class="admin-media-block"><h3>视频投放区</h3>
+        <details class="admin-media-block admin-setting-drawer" open><summary><span><strong>首页图片</strong><small>主图、服务与联系图片区</small></span><i class="ri-arrow-down-s-line" aria-hidden="true"></i></summary><div class="admin-setting-drawer-body"><p>菜单图片在“包伙食菜单”分类中随每一行一起编辑。</p><div class="admin-rows" id="adminHomepageRows"></div></div></details>
+        <details class="admin-media-block admin-setting-drawer"><summary><span><strong>视频投放区</strong><small>标题、视频文件与海报图</small></span><i class="ri-arrow-down-s-line" aria-hidden="true"></i></summary><div class="admin-setting-drawer-body">
           <div class="admin-note-grid">
             <label>视频标题<input id="adminVideoTitle" type="text"></label>
             <label>视频小标<input id="adminVideoLabel" type="text"></label>
@@ -200,8 +208,8 @@
             <label>视频说明<textarea id="adminVideoDesc" rows="3"></textarea></label>
             <label>视频按钮文字<input id="adminVideoCta" type="text"></label>
           </div>
-        </div>
-        <div class="admin-media-block"><h3>活动案例</h3><div class="admin-rows" id="adminCaseRows"></div></div>
+        </div></details>
+        <details class="admin-media-block admin-setting-drawer"><summary><span><strong>活动案例</strong><small>案例图片与说明</small></span><i class="ri-arrow-down-s-line" aria-hidden="true"></i></summary><div class="admin-setting-drawer-body"><div class="admin-rows" id="adminCaseRows"></div></div></details>
       </section>
 
       <section class="admin-section" data-admin-panel="pages" hidden>

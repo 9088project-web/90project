@@ -5853,9 +5853,11 @@ function renderAdminMediaLibrary(files = []) {
       <img src="${escapeHtml(file.url)}" alt="${escapeHtml(file.name || '云端图片')}" loading="lazy">
       <p class="admin-media-usage ${references.length ? 'is-used' : ''}">${references.length ? `使用中 · ${references.length} 个位置` : '未使用'}</p>
       <select data-media-target><option value="">选择要替换的栏目</option>${targetOptions}</select>
-      <button type="button" data-apply-media-url="${escapeHtml(file.url)}"><i class="ri-image-add-line" aria-hidden="true"></i>套用到栏目</button>
-      <button type="button" data-copy-media-url="${escapeHtml(file.url)}"><i class="ri-file-copy-line" aria-hidden="true"></i>复制图片网址</button>
-      ${['owner', 'manager'].includes(adminContentRole) ? `<button type="button" data-delete-media-name="${escapeHtml(file.name)}" data-delete-media-url="${escapeHtml(file.url)}"><i class="ri-delete-bin-6-line" aria-hidden="true"></i>删除云端图片</button>` : ''}
+      <button type="button" data-apply-media-url="${escapeHtml(file.url)}"><i class="ri-image-add-line" aria-hidden="true"></i>套用图片</button>
+      <details class="admin-media-actions"><summary>更多操作</summary><div>
+        <button type="button" data-copy-media-url="${escapeHtml(file.url)}"><i class="ri-file-copy-line" aria-hidden="true"></i>复制网址</button>
+        ${['owner', 'manager'].includes(adminContentRole) ? `<button type="button" data-delete-media-name="${escapeHtml(file.name)}" data-delete-media-url="${escapeHtml(file.url)}"><i class="ri-delete-bin-6-line" aria-hidden="true"></i>删除图片</button>` : ''}
+      </div></details>
     </article>`;
   }).join('') : '<p>还没有上传云端图片。</p>';
 }
@@ -6029,8 +6031,28 @@ function ensureAdminTranslateHelper() {
 
 function renderAdminSiteRows(content) {
   if (!adminSiteRows) return;
-
-  adminSiteRows.innerHTML = SITE_CONTENT_FIELDS.map(field => {
+  const groupMeta = {
+    general: ['基础与 SEO', '浏览器标题和网站说明'],
+    nav: ['导航与按钮', '网站顶部、手机和 WhatsApp 按钮'],
+    contact: ['联系方式', '电话、Email 与页脚资料'],
+    hero: ['首页主视觉', '主标题、说明和主要按钮'],
+    mealPlan: ['包伙食配套', '配套名称、餐数与价格'],
+    prices: ['首页价格卡', '三张配套价格与说明'],
+    services: ['服务卡', '首页四项服务介绍'],
+    order: ['下单表单', '字段、提示和 WhatsApp 预览'],
+    features: ['服务介绍区', '活动餐饮与场地布置'],
+    cateringTool: ['外餐工具入口', '菜单计算器的标题与按钮'],
+    faq: ['常见问题', '顾客常见问题与答案'],
+    cta: ['页面结尾', '最终联系标题与按钮']
+  };
+  const grouped = SITE_CONTENT_FIELDS.reduce((result, field) => {
+    const first = field.path.split('.')[0];
+    const key = ['title', 'description'].includes(first) ? 'general' : first;
+    if (!result[key]) result[key] = [];
+    result[key].push(field);
+    return result;
+  }, {});
+  const rowMarkup = field => {
     const zhValue = getPathValue(content.zh.site, field.path) ?? '';
     const enValue = getPathValue(content.en.site, field.path) ?? '';
     const inputTag = field.multiline ? 'textarea' : 'input';
@@ -6051,6 +6073,13 @@ function renderAdminSiteRows(content) {
         <label>English${enField}</label>
       </div>
     `;
+  };
+  adminSiteRows.innerHTML = Object.entries(grouped).map(([key, fields], index) => {
+    const [title, description] = groupMeta[key] || [key, '网站内容设置'];
+    return `<details class="admin-site-group" data-admin-site-group="${escapeHtml(key)}" ${index === 0 ? 'open' : ''}>
+      <summary><span><strong>${escapeHtml(title)}</strong><small>${escapeHtml(description)} · ${fields.length} 项</small></span><i class="ri-arrow-down-s-line" aria-hidden="true"></i></summary>
+      <div class="admin-site-group-body">${fields.map(rowMarkup).join('')}</div>
+    </details>`;
   }).join('');
 }
 
@@ -7428,6 +7457,11 @@ adminContentSearch?.addEventListener('input', () => {
     row.classList.toggle('admin-search-hidden', !match);
     if (match) visible += 1;
   });
+  active?.querySelectorAll('.admin-site-group').forEach(group => {
+    const hasMatch = Boolean(group.querySelector('[data-site-row]:not(.admin-search-hidden)'));
+    group.classList.toggle('admin-search-hidden', !hasMatch);
+    if (query && hasMatch && group instanceof HTMLDetailsElement) group.open = true;
+  });
   if (adminContentSearchStatus) adminContentSearchStatus.textContent = query ? `找到 ${visible} 项相关设置。` : '可搜索当前分类内的设置。';
 });
 
@@ -7544,8 +7578,7 @@ adminCancelSchedule?.addEventListener('click', async () => {
   }
 });
 
-adminUploadMedia?.addEventListener('click', async () => {
-  const files = Array.from(adminMediaFiles?.files || []);
+async function uploadAdminMedia(files = []) {
   if (!files.length) return showAdminMessage('请先选择图片。', true);
   const headers = adminSyncHeaders({ 'Content-Type': 'application/json' });
   if (!headers) return showAdminMessage('请重新登录后台。', true);
@@ -7572,6 +7605,14 @@ adminUploadMedia?.addEventListener('click', async () => {
   } finally {
     adminUploadMedia.disabled = false;
   }
+}
+
+adminUploadMedia?.addEventListener('click', async () => {
+  await uploadAdminMedia(Array.from(adminMediaFiles?.files || []));
+});
+
+adminMediaFiles?.addEventListener('change', async () => {
+  await uploadAdminMedia(Array.from(adminMediaFiles.files || []));
 });
 
 adminMediaLibrary?.addEventListener('click', async event => {
