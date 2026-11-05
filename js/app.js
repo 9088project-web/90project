@@ -535,8 +535,8 @@ const DEFAULT_WEEKLY_MENU = [
 
 const DEFAULT_HOMEPAGE_MEDIA = {
   hero: {
-    image: 'assets/images/brand/hero-banquet.jpg',
-    alt: '九零食刻 90 PROJECT 黑金宴会与餐桌场景'
+    image: 'assets/images/brand/malaysian-table-hero.jpg',
+    alt: '九零食刻马来西亚烧鸡、咖喱、参巴虾与家常菜餐桌'
   },
   contact: {
     image: 'assets/images/reference-series/contact-table.png',
@@ -2686,8 +2686,12 @@ function normalizeManagedImage(item = {}, fallback = {}) {
 
 function normalizeHomepageMedia(homepage = {}) {
   const source = homepage || {};
+  const legacyHero = String(source.hero?.image || '').replace(/\\/g, '/');
+  const hero = /assets\/images\/brand\/hero-banquet\.(?:jpg|webp)$/i.test(legacyHero)
+    ? DEFAULT_HOMEPAGE_MEDIA.hero
+    : normalizeManagedImage(source.hero, DEFAULT_HOMEPAGE_MEDIA.hero);
   return {
-    hero: normalizeManagedImage(source.hero, DEFAULT_HOMEPAGE_MEDIA.hero),
+    hero,
     contact: normalizeManagedImage(source.contact, DEFAULT_HOMEPAGE_MEDIA.contact),
     services: DEFAULT_HOMEPAGE_MEDIA.services.map((fallback, index) => normalizeManagedImage(source.services?.[index], fallback))
   };
